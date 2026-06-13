@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const mascot = getMascotById(selectedMascotId)
   const chatHistory = useChatHistoryStore((s) => s.history)
   const license = useAuthStore((s) => s.license)
+  const googleUser = useAuthStore((s) => s.googleUser)
   const lock = useAuthStore((s) => s.lock)
   const coins = useCurrencyStore((s) => s.coins)
 
@@ -23,6 +24,8 @@ export default function SettingsPage() {
   const setMascotName = useSettingsStore((s) => s.setMascotName)
   const minimaxApiKey = useSettingsStore((s) => s.minimaxApiKey)
   const setMinimaxApiKey = useSettingsStore((s) => s.setMinimaxApiKey)
+  const deepseekApiKey = useSettingsStore((s) => s.deepseekApiKey)
+  const setDeepseekApiKey = useSettingsStore((s) => s.setDeepseekApiKey)
   const chatModel = useSettingsStore((s) => s.chatModel)
   const setChatModel = useSettingsStore((s) => s.setChatModel)
   const aiTone = useSettingsStore((s) => s.aiTone)
@@ -39,10 +42,11 @@ export default function SettingsPage() {
   const displayName = settingsMascotName || mascot.name
   const historyDays = Object.keys(chatHistory).sort((a, b) => b.localeCompare(a))
 
-  const accessLabel =
-    license?.type === 'full'
+  const accessLabel = license
+    ? license.type === 'full'
       ? 'Completo (todos los cursos)'
       : `Un curso (${license?.courseId ?? '—'})`
+    : 'Curso demo (regístrate o compra una llave para más)'
 
   const handleLogout = () => {
     lock()
@@ -64,6 +68,26 @@ export default function SettingsPage() {
 
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Cuenta</p>
+
+            {googleUser && (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
+                {googleUser.picture && (
+                  <img
+                    src={googleUser.picture}
+                    alt={googleUser.name}
+                    className="h-10 w-10 rounded-full"
+                  />
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-text">{googleUser.name}</p>
+                  <p className="text-xs text-text-muted">{googleUser.email}</p>
+                </div>
+                <span className="ml-auto rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
+                  Conectado con Google
+                </span>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
               <div>
                 <p className="text-text-muted">Licencia</p>
@@ -133,14 +157,29 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm font-semibold text-text">Minimax API key</p>
               <p className="mt-1 text-sm text-text-muted">
-                Tu mascota usa esta clave para responder en el chat. Si la dejas vacía verás
-                respuestas de demostración.
+                Se usa con los modelos MiniMax. Si la dejas vacía verás respuestas de
+                demostración.
               </p>
               <input
                 type="text"
                 value={minimaxApiKey}
                 onChange={(e) => setMinimaxApiKey(e.target.value)}
                 placeholder="mx-..."
+                className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-text outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-text">DeepSeek API key</p>
+              <p className="mt-1 text-sm text-text-muted">
+                Se usa con los modelos DeepSeek. Si la dejas vacía verás respuestas de
+                demostración.
+              </p>
+              <input
+                type="text"
+                value={deepseekApiKey}
+                onChange={(e) => setDeepseekApiKey(e.target.value)}
+                placeholder="sk-..."
                 className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-text outline-none focus:border-primary"
               />
             </div>

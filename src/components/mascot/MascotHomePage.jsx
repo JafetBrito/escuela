@@ -3,6 +3,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotViewport from './MascotViewport'
 import ItemsPanel from './ItemsPanel'
 import SkinSelector from './SkinSelector'
+import MascotSelector from './MascotSelector'
 import GalleryPanel from './GalleryPanel'
 import Inventory from '../inventory/Inventory'
 import ChatPanel from '../chat/ChatPanel'
@@ -98,6 +99,18 @@ export default function MascotHomePage() {
 
           {tab === 'appearance' && (
             <section className="flex flex-col gap-6 rounded-xl border border-border bg-surface p-5">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+                  Modelo de tu mascota
+                </p>
+                <p className="mt-1 text-sm text-text-muted">
+                  Elige el personaje 3D que te acompañará.
+                </p>
+                <div className="mt-3">
+                  <MascotSelector />
+                </div>
+              </div>
+
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
                   Aspecto de tu mascota

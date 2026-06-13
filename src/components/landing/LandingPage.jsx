@@ -56,17 +56,22 @@ export default function LandingPage() {
             llave maestra para todos los cursos, o una llave para el curso que más te interese.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Link to={isUnlocked ? '/dashboard' : '/crear-cuenta'}>
+            <Link to={isUnlocked ? '/dashboard' : '/unlock'}>
               <Button className="px-8 py-4 text-lg">
-                {isUnlocked ? 'Ir a mi Dashboard' : 'Comprar mi llave'}
+                {isUnlocked ? 'Ir a mi Dashboard' : 'Registrarme gratis'}
               </Button>
             </Link>
-            <Link to="/unlock">
+            <Link to="/crear-cuenta">
               <Button variant="secondary" className="px-8 py-4 text-lg">
-                Subir mi llave
+                Comprar mi llave
               </Button>
             </Link>
           </div>
+          {!isUnlocked && (
+            <p className="text-sm text-text-muted">
+              Regístrate con Google y prueba gratis el curso demo de la plataforma.
+            </p>
+          )}
         </section>
 
         <section className="mx-auto max-w-5xl pb-16">

@@ -21,6 +21,7 @@ export default function ChatPanel({ className = '', module, courseId }) {
   const completeMission = useProgressStore((s) => s.completeMission)
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const minimaxApiKey = useSettingsStore((s) => s.minimaxApiKey)
+  const deepseekApiKey = useSettingsStore((s) => s.deepseekApiKey)
   const chatModel = useSettingsStore((s) => s.chatModel)
   const aiTone = useSettingsStore((s) => s.aiTone)
   const aiVerbosity = useSettingsStore((s) => s.aiVerbosity)
@@ -33,6 +34,7 @@ export default function ChatPanel({ className = '', module, courseId }) {
     if (!content.trim()) return
     send(content.trim(), {
       minimaxApiKey: minimaxApiKey || license?.minimaxApiKey,
+      deepseekApiKey,
       model: chatModel,
       mascotName,
       aiTone,

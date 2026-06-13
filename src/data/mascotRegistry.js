@@ -12,6 +12,7 @@ export const MASCOTS = [
   {
     id: 8,
     name: 'Gato Naranja',
+    icon: '🐱',
     geometry: 'cat',
     color: '#f97316',
     modelPath: '/orange_cat.glb',
@@ -21,6 +22,46 @@ export const MASCOTS = [
     // and nudge it down slightly so it sits centered in the viewport.
     modelRotationY: Math.PI,
     modelOffsetY: -0.35,
+  },
+  {
+    id: 9,
+    name: 'Mago',
+    icon: '🧙',
+    geometry: 'cat',
+    color: '#a78bfa',
+    modelPath: '/mage.glb',
+  },
+  {
+    id: 10,
+    name: 'Mago Ancestral',
+    icon: '🧙‍♂️',
+    geometry: 'cat',
+    color: '#818cf8',
+    modelPath: '/mage_elder.glb',
+  },
+  {
+    id: 11,
+    name: 'Zorro Mago',
+    icon: '🦊',
+    geometry: 'cat',
+    color: '#fb923c',
+    modelPath: '/mage_fox.glb',
+  },
+  {
+    id: 12,
+    name: 'Lagarto Mago',
+    icon: '🦎',
+    geometry: 'cat',
+    color: '#34d399',
+    modelPath: '/lizard_mage.glb',
+  },
+  {
+    id: 13,
+    name: 'Perro Globo',
+    icon: '🐶',
+    geometry: 'cat',
+    color: '#f472b6',
+    modelPath: '/balloon_dog.glb',
   },
 ]
 

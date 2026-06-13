@@ -43,14 +43,22 @@ export default function EpubReaderPage() {
       </header>
 
       <div className="relative flex-1">
-        <ReactReader
-          url={book.file}
-          location={location}
-          locationChanged={handleLocationChanged}
-          getRendition={(rendition) => {
-            rendition.themes.fontSize('100%')
-          }}
-        />
+        {book.type === 'pdf' ? (
+          <iframe
+            src={book.file}
+            title={book.title}
+            className="h-full w-full border-0 bg-white"
+          />
+        ) : (
+          <ReactReader
+            url={book.file}
+            location={location}
+            locationChanged={handleLocationChanged}
+            getRendition={(rendition) => {
+              rendition.themes.fontSize('100%')
+            }}
+          />
+        )}
       </div>
     </div>
   )

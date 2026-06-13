@@ -1,10 +1,16 @@
 import { create } from 'zustand'
 
 const CHAT_MODELS = [
-  { id: 'abab6.5s-chat', label: 'MiniMax abab6.5s-chat (rápido)' },
-  { id: 'abab6.5g-chat', label: 'MiniMax abab6.5g-chat (creativo)' },
-  { id: 'abab6.5t-chat', label: 'MiniMax abab6.5t-chat (balanceado)' },
+  { id: 'abab6.5s-chat', label: 'MiniMax abab6.5s-chat (rápido)', provider: 'minimax' },
+  { id: 'abab6.5g-chat', label: 'MiniMax abab6.5g-chat (creativo)', provider: 'minimax' },
+  { id: 'abab6.5t-chat', label: 'MiniMax abab6.5t-chat (balanceado)', provider: 'minimax' },
+  { id: 'deepseek-chat', label: 'DeepSeek Chat (rápido)', provider: 'deepseek' },
+  { id: 'deepseek-reasoner', label: 'DeepSeek Reasoner (razonamiento)', provider: 'deepseek' },
 ]
+
+export function getModelProvider(modelId) {
+  return CHAT_MODELS.find((m) => m.id === modelId)?.provider ?? 'minimax'
+}
 
 // "Cómo se comporta la IA": tono/personalidad de las respuestas.
 const AI_TONES = [
@@ -31,6 +37,7 @@ const DEFAULT_MAX_TOKENS = 500
 export const useSettingsStore = create((set) => ({
   mascotName: '',
   minimaxApiKey: '',
+  deepseekApiKey: '',
   chatModel: CHAT_MODELS[0].id,
   aiTone: AI_TONES[0].id,
   aiVerbosity: AI_VERBOSITY[1].id,
@@ -40,6 +47,7 @@ export const useSettingsStore = create((set) => ({
 
   setMascotName: (mascotName) => set({ mascotName }),
   setMinimaxApiKey: (minimaxApiKey) => set({ minimaxApiKey }),
+  setDeepseekApiKey: (deepseekApiKey) => set({ deepseekApiKey }),
   setChatModel: (chatModel) => set({ chatModel }),
   setAiTone: (aiTone) => set({ aiTone }),
   setAiVerbosity: (aiVerbosity) => set({ aiVerbosity }),
@@ -51,6 +59,7 @@ export const useSettingsStore = create((set) => ({
     set({
       mascotName: settings?.mascotName ?? '',
       minimaxApiKey: settings?.minimaxApiKey ?? '',
+      deepseekApiKey: settings?.deepseekApiKey ?? '',
       chatModel: settings?.chatModel ?? CHAT_MODELS[0].id,
       aiTone: settings?.aiTone ?? AI_TONES[0].id,
       aiVerbosity: settings?.aiVerbosity ?? AI_VERBOSITY[1].id,

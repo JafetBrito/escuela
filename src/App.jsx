@@ -18,6 +18,7 @@ const LearningInterface = lazy(() => import('./components/learning/LearningInter
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
+const VRPage = lazy(() => import('./components/vr/VRPage'))
 
 function RouteFallback() {
   return (
@@ -92,6 +93,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <EpubReaderPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vr"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage />
               </Suspense>
             </ProtectedRoute>
           }

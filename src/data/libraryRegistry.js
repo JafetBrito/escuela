@@ -1,8 +1,9 @@
-// Catálogo de la Biblioteca. Cada libro es un archivo .epub colocado en
-// public/epub/, organizado por la misma categoría usada en el Dashboard
-// (ver src/data/categoryMeta.js). Para agregar un libro:
-//   1. Copia el archivo .epub a public/epub/
-//   2. Agrega una entrada aquí con su "file" apuntando a "/epub/tu-archivo.epub"
+// Catálogo de la Biblioteca. Cada libro es un archivo .epub o .pdf colocado
+// en public/epub/ o public/pdf/, organizado por la misma categoría usada en
+// el Dashboard (ver src/data/categoryMeta.js). Para agregar un libro:
+//   1. Copia el archivo a public/epub/ (.epub) o public/pdf/ (.pdf)
+//   2. Agrega una entrada aquí con "file" apuntando a "/epub/tu-archivo.epub"
+//      o "/pdf/tu-archivo.pdf", y "type: 'epub'" o "type: 'pdf'"
 // Si "file" es null, el libro se muestra como "Próximamente".
 export const LIBRARY_BOOKS = [
   {
@@ -13,6 +14,7 @@ export const LIBRARY_BOOKS = [
     icon: '📘',
     color: '#2dd4bf',
     description: 'Manual de bienvenida: cómo usar la plataforma, tu mascota y tus misiones.',
+    type: 'epub',
     file: null,
   },
   {
@@ -23,6 +25,7 @@ export const LIBRARY_BOOKS = [
     icon: '🧠',
     color: '#98ca3f',
     description: 'Lecturas complementarias del curso de NotebookLM.',
+    type: 'epub',
     file: null,
   },
   {
@@ -33,6 +36,7 @@ export const LIBRARY_BOOKS = [
     icon: '⚡',
     color: '#fbbf24',
     description: 'Técnicas para organizar tu tiempo y mantener la constancia.',
+    type: 'epub',
     file: null,
   },
   {
@@ -43,17 +47,19 @@ export const LIBRARY_BOOKS = [
     icon: '🎨',
     color: '#f472b6',
     description: 'Color, tipografía y composición explicados de forma simple.',
+    type: 'epub',
     file: null,
   },
   {
-    id: 'ingles-basico',
-    title: 'Vocabulario técnico en inglés',
-    author: 'Oliver School',
+    id: 'la-odisea',
+    title: 'La Odisea',
+    author: 'Homero',
     category: 'Idiomas',
     icon: '🗣️',
     color: '#38bdf8',
-    description: 'Palabras y frases en inglés frecuentes en tecnología.',
-    file: null,
+    description: 'Clásico de la literatura griega, traducido al español. Ideal para practicar lectura.',
+    type: 'epub',
+    file: '/epub/la-odisea.epub',
   },
   {
     id: 'logica-de-programacion',
@@ -63,7 +69,19 @@ export const LIBRARY_BOOKS = [
     icon: '💻',
     color: '#fb923c',
     description: 'Introducción a resolver problemas pensando como programador.',
+    type: 'epub',
     file: null,
+  },
+  {
+    id: 'linux-bible',
+    title: 'Linux Bible (2026)',
+    author: 'Christopher Negus',
+    category: 'Programación',
+    icon: '🐧',
+    color: '#fb923c',
+    description: 'Guía completa de Linux: terminal, administración de sistemas y más.',
+    type: 'pdf',
+    file: '/pdf/linux-bible-11-2026.pdf',
   },
 ]
 

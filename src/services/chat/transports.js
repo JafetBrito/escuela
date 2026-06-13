@@ -1,5 +1,6 @@
 import { minimaxChatCompletion } from './minimaxClient'
-import { AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
+import { deepseekChatCompletion } from './deepseekClient'
+import { AI_TONES, AI_VERBOSITY, getModelProvider } from '../../stores/useSettingsStore'
 
 // ChatTransport interface:
 //   sendMessage({ mode: 'text' | 'voice', content, context }) -> Promise<{ role, content }>
@@ -29,13 +30,16 @@ function buildSystemPrompt({ mascotName, module, aiTone, aiVerbosity, customInst
 
 export const minimaxTextTransport = {
   async sendMessage({ content, context = {} }) {
-    const { minimaxApiKey, model, history = [], temperature, maxTokens } = context
+    const { minimaxApiKey, deepseekApiKey, model, history = [], temperature, maxTokens } = context
+    const provider = getModelProvider(model)
+    const apiKey = provider === 'deepseek' ? deepseekApiKey : minimaxApiKey
 
-    // No real key (mock/demo license) -> canned response, no network call.
-    if (!minimaxApiKey || minimaxApiKey.startsWith('mx-mock')) {
+    // No real key (mock/demo license, or empty) -> canned response, no network call.
+    if (!apiKey || apiKey.startsWith('mx-mock')) {
+      const providerLabel = provider === 'deepseek' ? 'DeepSeek' : 'Minimax'
       return {
         role: 'assistant',
-        content: `(demo) Recibí: "${content}". Conecta tu Minimax API key en Ajustes para respuestas reales.`,
+        content: `(demo) Recibí: "${content}". Conecta tu ${providerLabel} API key en Ajustes para respuestas reales.`,
       }
     }
 
@@ -45,8 +49,9 @@ export const minimaxTextTransport = {
       { role: 'user', content },
     ]
 
-    const reply = await minimaxChatCompletion({
-      apiKey: minimaxApiKey,
+    const completionFn = provider === 'deepseek' ? deepseekChatCompletion : minimaxChatCompletion
+    const reply = await completionFn({
+      apiKey,
       messages,
       ...(model ? { model } : {}),
       ...(temperature != null ? { temperature } : {}),

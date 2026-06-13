@@ -18,7 +18,7 @@ import { useLibraryStore } from '../../stores/useLibraryStore'
 //     onboardingCompleted, inventory, activeItems, gallery, coins,
 //     purchasedItems, chatHistory, lastSaved }
 export function buildProgressSnapshot() {
-  const license = useAuthStore.getState().license
+  const { license, googleUser } = useAuthStore.getState()
   const { selectedMascotId, selectedSkinId, memory } = useMascotStore.getState()
   const { progress, onboardingCompleted } = useProgressStore.getState()
   const { items: inventory } = useInventoryStore.getState()
@@ -32,6 +32,7 @@ export function buildProgressSnapshot() {
   const {
     mascotName,
     minimaxApiKey,
+    deepseekApiKey,
     chatModel,
     aiTone,
     aiVerbosity,
@@ -42,11 +43,13 @@ export function buildProgressSnapshot() {
 
   return {
     license,
+    googleUser,
     selectedMascotId,
     selectedSkinId,
     settings: {
       mascotName,
       minimaxApiKey,
+      deepseekApiKey,
       chatModel,
       aiTone,
       aiVerbosity,
@@ -76,6 +79,9 @@ export function applyProgressSnapshot(snapshot) {
 
   if (snapshot.license) {
     useAuthStore.getState().unlock(snapshot.license)
+  }
+  if (snapshot.googleUser) {
+    useAuthStore.getState().loadGoogleUser(snapshot.googleUser)
   }
 
   if (typeof snapshot.selectedMascotId === 'number') {
