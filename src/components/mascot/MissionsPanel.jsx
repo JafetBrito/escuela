@@ -1,0 +1,114 @@
+import { useEffect, useState } from 'react'
+import { getCourseData } from '../../data/courseRegistry'
+import ModuleQuiz from '../learning/ModuleQuiz'
+import ModuleCompleteModal from '../learning/ModuleCompleteModal'
+import { useProgressStore, EMPTY_OBJECT } from '../../stores/useProgressStore'
+import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
+import { getModuleMissions } from '../../data/missionsRegistry'
+
+export default function MissionsPanel({ courseId, module, className = '' }) {
+  const courseData = getCourseData(courseId)
+  const moduleMissions = useProgressStore((s) => s.progress[courseId]?.moduleMissions ?? EMPTY_OBJECT)
+  const completeMission = useProgressStore((s) => s.completeMission)
+  const setSelectedModule = useProgressStore((s) => s.setSelectedModule)
+  const isModuleUnlocked = useProgressStore((s) => s.isModuleUnlocked)
+  const activeItems = useItemEffectsStore((s) => s.activeItems)
+
+  const [showComplete, setShowComplete] = useState(false)
+
+  const missions = getModuleMissions(module)
+  const done = moduleMissions[module.id] ?? {}
+  const allDone = missions.every((m) => done[m.id])
+  const nextModule = courseData.modules.find((m) => m.order === module.order + 1)
+
+  // "Activa un objeto de tu inventario" mission: complete as soon as any
+  // interactive objeto is active while viewing this class.
+  useEffect(() => {
+    if (done.item) return
+    if (Object.values(activeItems).some(Boolean)) {
+      completeMission(courseId, module.id, 'item')
+    }
+  }, [activeItems, done.item, courseId, module.id, completeMission])
+
+  useEffect(() => {
+    setShowComplete(false)
+  }, [module.id])
+
+  const handleNext = () => {
+    setShowComplete(true)
+  }
+
+  const handleContinue = () => {
+    if (nextModule && isModuleUnlocked(courseId, nextModule.id)) {
+      setSelectedModule(courseId, nextModule.id)
+    }
+    setShowComplete(false)
+  }
+
+  return (
+    <div className={`flex flex-col gap-3 ${className}`}>
+      <p className="text-sm text-text-muted">
+        Completa estas misiones hablando con tu mascota y usando tus objetos para avanzar a la
+        siguiente clase.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        {missions.map((mission) => {
+          const isDone = !!done[mission.id]
+          return (
+            <div
+              key={mission.id}
+              className={`rounded-lg border p-3 ${
+                isDone ? 'border-primary/40 bg-primary/5' : 'border-border bg-background'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                <span className="text-lg">{isDone ? '✅' : mission.icon}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${isDone ? 'text-primary' : 'text-text'}`}>
+                    {mission.label}
+                  </p>
+                  {mission.type === 'quiz' && !isDone && (
+                    <ModuleQuiz courseId={courseId} module={module} className="mt-2" />
+                  )}
+                  {mission.type === 'chat' && !isDone && (
+                    <p className="mt-1 text-xs text-text-muted">
+                      Abre el Chat de tu mascota y envíale un mensaje.
+                    </p>
+                  )}
+                  {mission.type === 'item' && !isDone && (
+                    <p className="mt-1 text-xs text-text-muted">
+                      Abre Objetos y activa cualquiera con función.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <p className="text-sm text-text-muted">
+          {allDone ? '✓ Misiones completadas' : 'Completa las misiones para avanzar.'}
+        </p>
+        <button
+          onClick={handleNext}
+          disabled={!allDone}
+          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Siguiente clase
+        </button>
+      </div>
+
+      {showComplete && (
+        <ModuleCompleteModal
+          completedModule={module}
+          nextModule={nextModule}
+          onContinue={handleContinue}
+          onClose={() => setShowComplete(false)}
+        />
+      )}
+    </div>
+  )
+}

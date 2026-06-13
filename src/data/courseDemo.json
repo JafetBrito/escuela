@@ -1,0 +1,55 @@
+{
+  "courseId": "course-demo",
+  "title": "Curso Demo: Primeros pasos",
+  "description": "Un curso corto de 2 clases para probar la plataforma: misiones, mascota, monedas y la pantalla de fin de curso.",
+  "modules": [
+    {
+      "id": 1,
+      "title": "Bienvenida al Curso Demo",
+      "order": 1,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Una clase de prueba para conocer la interfaz: video, misiones, recursos y tu mascota.",
+      "exercises": [
+        { "id": "demo-1-1", "type": "challenge", "prompt": "Escribe una palabra que describa cómo te sientes probando esta plataforma.", "solution": "" }
+      ],
+      "resources": [
+        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+      ],
+      "quiz": {
+        "question": "¿Para qué sirve este curso demo?",
+        "options": [
+          "Para vender publicidad",
+          "Para probar la plataforma con un curso corto de 2 clases",
+          "Para sustituir el curso de NotebookLM",
+          "No tiene ningún propósito"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 2,
+      "title": "Última clase: cierre del curso",
+      "order": 2,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "La última clase del curso demo. Al completar sus misiones verás la pantalla de curso terminado.",
+      "exercises": [
+        { "id": "demo-2-1", "type": "challenge", "prompt": "Anota una cosa que te gustaría ver en un curso futuro.", "solution": "" }
+      ],
+      "resources": [
+        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+      ],
+      "quiz": {
+        "question": "Al terminar este curso, tu mascota debería...",
+        "options": [
+          "Borrar tu progreso",
+          "Darte una medalla de curso completado",
+          "Bloquear tu cuenta",
+          "Nada en especial"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    }
+  ]
+}

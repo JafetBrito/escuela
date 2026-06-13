@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #273449;
+  --color-border: #334155;
+  --color-primary: #98ca3f;
+  --color-primary-hover: #86b336;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-danger: #ef4444;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* "Reina Nefertiti" objeto: desert theme with gold tones and a subtle
+   hieroglyph pattern, toggled via [data-theme="desert"] on <html>. */
+:root[data-theme='desert'] {
+  --color-background: #2b1c0e;
+  --color-surface: #3f2a14;
+  --color-surface-hover: #4f361c;
+  --color-border: #7a5226;
+  --color-primary: #e0b03c;
+  --color-primary-hover: #c89530;
+  --color-text: #fdf3df;
+  --color-text-muted: #cdaa7d;
+  --color-danger: #d1573b;
+}
+
+:root[data-theme='desert'] body {
+  background-image:
+    radial-gradient(circle at top right, rgba(224, 176, 60, 0.12), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Ctext x='10' y='40' font-size='32' fill='%23e0b03c' opacity='0.07'%3E%F0%93%82%80%3C/text%3E%3Ctext x='90' y='90' font-size='32' fill='%23e0b03c' opacity='0.07'%3E%F0%93%83%8F%3C/text%3E%3Ctext x='20' y='140' font-size='32' fill='%23e0b03c' opacity='0.07'%3E%F0%93%86%A3%3C/text%3E%3C/svg%3E");
+  background-attachment: fixed;
+  background-size: auto, 160px 160px;
+}
+
+:root[data-theme='desert'] {
+  --font-sans: "Georgia", "Times New Roman", serif;
+}
+
+/* Floating Egyptian symbols overlay shown while Reina Nefertiti is active. */
+@keyframes nefertiti-drift {
+  0% {
+    transform: translateY(110vh) rotate(-8deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.25;
+  }
+  90% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(-10vh) rotate(8deg);
+    opacity: 0;
+  }
+}
+
+.nefertiti-float {
+  top: 0;
+  animation-name: nefertiti-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}

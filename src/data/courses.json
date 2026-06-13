@@ -1,0 +1,101 @@
+[
+  {
+    "id": "course-001",
+    "title": "Domina Google NotebookLM",
+    "description": "Aprende a usar Google NotebookLM como tu asistente de investigación y estudio, módulo por módulo, con retos y tu mascota IA como guía.",
+    "icon": "🧠",
+    "color": "#98ca3f",
+    "category": "Inteligencia Artificial",
+    "locked": false
+  },
+  {
+    "id": "course-002",
+    "title": "Automatiza tu estudio con IA",
+    "description": "Crea flujos de trabajo, prompts y automatizaciones con IA para estudiar más rápido. Próximamente.",
+    "icon": "🤖",
+    "color": "#60a5fa",
+    "category": "Inteligencia Artificial",
+    "locked": true
+  },
+  {
+    "id": "course-003",
+    "title": "Prompt Engineering desde cero",
+    "description": "Domina el arte de escribir prompts efectivos para sacarle el máximo provecho a cualquier IA. Próximamente.",
+    "icon": "✨",
+    "color": "#a78bfa",
+    "category": "Inteligencia Artificial",
+    "locked": true
+  },
+  {
+    "id": "course-004",
+    "title": "Gestión del tiempo para estudiantes",
+    "description": "Técnicas y herramientas para organizar tu estudio, evitar la procrastinación y avanzar cada día. Próximamente.",
+    "icon": "⏰",
+    "color": "#fbbf24",
+    "category": "Productividad",
+    "locked": true
+  },
+  {
+    "id": "course-005",
+    "title": "Notion para estudiantes",
+    "description": "Organiza apuntes, tareas y proyectos en un solo lugar con Notion. Próximamente.",
+    "icon": "🗂️",
+    "color": "#f472b6",
+    "category": "Productividad",
+    "locked": true
+  },
+  {
+    "id": "course-006",
+    "title": "Fundamentos de diseño UI",
+    "description": "Aprende los principios básicos de color, tipografía y composición para diseñar interfaces atractivas. Próximamente.",
+    "icon": "🎨",
+    "color": "#34d399",
+    "category": "Diseño",
+    "locked": true
+  },
+  {
+    "id": "course-007",
+    "title": "Diseño con Figma",
+    "description": "Crea prototipos y diseños profesionales usando Figma desde cero. Próximamente.",
+    "icon": "🖌️",
+    "color": "#f87171",
+    "category": "Diseño",
+    "locked": true
+  },
+  {
+    "id": "course-008",
+    "title": "Inglés para programadores",
+    "description": "Vocabulario y frases técnicas en inglés que todo desarrollador necesita conocer. Próximamente.",
+    "icon": "🗣️",
+    "color": "#38bdf8",
+    "category": "Idiomas",
+    "locked": true
+  },
+  {
+    "id": "course-009",
+    "title": "Lógica de programación",
+    "description": "Aprende a pensar como programador resolviendo problemas paso a paso. Próximamente.",
+    "icon": "🧩",
+    "color": "#fb923c",
+    "category": "Programación",
+    "locked": true
+  },
+  {
+    "id": "course-010",
+    "title": "Introducción a Python",
+    "description": "Tu primer lenguaje de programación, explicado de forma simple y práctica. Próximamente.",
+    "icon": "🐍",
+    "color": "#facc15",
+    "category": "Programación",
+    "locked": true
+  },
+  {
+    "id": "course-demo",
+    "title": "Curso Demo: Primeros pasos",
+    "description": "Un curso corto de 2 clases para probar la plataforma de punta a punta, incluida la pantalla de fin de curso.",
+    "icon": "🧪",
+    "color": "#2dd4bf",
+    "category": "Pruebas",
+    "locked": false
+  }
+]
