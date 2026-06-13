@@ -16,6 +16,8 @@ import ProtectedRoute from './components/shared/ProtectedRoute'
 // mascot's home.
 const LearningInterface = lazy(() => import('./components/learning/LearningInterface'))
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
+const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
+const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 
 function RouteFallback() {
   return (
@@ -71,6 +73,26 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ChatsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/biblioteca"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <LibraryPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/biblioteca/:bookId"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <EpubReaderPage />
+              </Suspense>
             </ProtectedRoute>
           }
         />

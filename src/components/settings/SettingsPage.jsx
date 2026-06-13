@@ -3,13 +3,12 @@ import AppTopBar from '../shared/AppTopBar'
 import ProgressSync from '../learning/ProgressSync'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import LevelBadge from '../shared/LevelBadge'
-import { useChatHistoryStore, todayKey } from '../../stores/useChatHistoryStore'
+import { useChatHistoryStore } from '../../stores/useChatHistoryStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, CHAT_MODELS, AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
 import { getMascotById } from '../../data/mascotRegistry'
-import { downloadProgress } from '../../services/persistence/jsonFile'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
@@ -39,10 +38,6 @@ export default function SettingsPage() {
 
   const displayName = settingsMascotName || mascot.name
   const historyDays = Object.keys(chatHistory).sort((a, b) => b.localeCompare(a))
-
-  const handleExportDay = (day) => {
-    downloadProgress(chatHistory[day], `chat-${displayName.toLowerCase()}-${day}.json`)
-  }
 
   const accessLabel =
     license?.type === 'full'

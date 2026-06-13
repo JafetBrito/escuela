@@ -10,6 +10,7 @@ import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useShopStore } from '../../stores/useShopStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
+import { useLibraryStore } from '../../stores/useLibraryStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -27,6 +28,7 @@ export function buildProgressSnapshot() {
   const { purchased: purchasedItems } = useShopStore.getState()
   const { history: chatHistory } = useChatHistoryStore.getState()
   const { xp } = useLevelStore.getState()
+  const { lastLocations: libraryLocations } = useLibraryStore.getState()
   const {
     mascotName,
     minimaxApiKey,
@@ -62,6 +64,7 @@ export function buildProgressSnapshot() {
     purchasedItems,
     chatHistory,
     xp,
+    libraryLocations,
     lastSaved: new Date().toISOString(),
   }
 }
@@ -99,4 +102,5 @@ export function applyProgressSnapshot(snapshot) {
   useShopStore.getState().loadPurchased(snapshot.purchasedItems ?? [])
   useChatHistoryStore.getState().loadHistory(snapshot.chatHistory ?? {})
   useLevelStore.getState().loadXp(snapshot.xp)
+  useLibraryStore.getState().loadLastLocations(snapshot.libraryLocations ?? {})
 }
