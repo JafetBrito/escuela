@@ -15,20 +15,46 @@ function pickEmotion(text = '') {
   return rule?.emoji ?? '🙂'
 }
 
-// Floating emoji + speech bubble shown above the mascot model, simulating
-// emotions/reactions tied to the chat conversation.
+// Pre-written flavor lines the mascot says on its own from time to time.
+// These are NOT tied to the chat conversation — just small bits of life so
+// the model doesn't feel static while it sits in its house.
+const IDLE_PHRASES = [
+  '¡Sigue así, vas muy bien! 🐾',
+  '¿Ya revisaste tus misiones de hoy?',
+  'Recuerda guardar tu progreso desde Ajustes.',
+  '¡Miau! Estoy listo cuando quieras estudiar.',
+  'Cada clase completada te da experiencia ✨',
+  '¿Sabías que puedes personalizarme en Aspecto?',
+  'No olvides visitar la Tienda, hay objetos nuevos.',
+  'Un pequeño descanso también ayuda a aprender mejor.',
+  '¡Vamos por el siguiente nivel!',
+  'Tu constancia es lo que más importa.',
+]
+
+// Floating emoji + occasional speech bubble shown above the mascot model.
+// The emoji reacts to the chat, but the bubble text is always a pre-written
+// idle phrase — it never repeats what's said in the chat panel.
 export default function MascotEmotionOverlay() {
   const messages = useChatStore((s) => s.messages)
   const isSending = useChatStore((s) => s.isSending)
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
-  const [showBubble, setShowBubble] = useState(false)
+
+  const [phrase, setPhrase] = useState(null)
 
   useEffect(() => {
-    if (!lastAssistant) return
-    setShowBubble(true)
-    const timer = setTimeout(() => setShowBubble(false), 7000)
-    return () => clearTimeout(timer)
-  }, [lastAssistant?.content])
+    const showRandomPhrase = () => {
+      const next = IDLE_PHRASES[Math.floor(Math.random() * IDLE_PHRASES.length)]
+      setPhrase(next)
+      setTimeout(() => setPhrase(null), 6000)
+    }
+
+    const firstTimer = setTimeout(showRandomPhrase, 4000)
+    const interval = setInterval(showRandomPhrase, 18000)
+    return () => {
+      clearTimeout(firstTimer)
+      clearInterval(interval)
+    }
+  }, [])
 
   const emoji = isSending ? '💭' : lastAssistant ? pickEmotion(lastAssistant.content) : '🙂'
 
@@ -41,11 +67,9 @@ export default function MascotEmotionOverlay() {
         {emoji}
       </div>
 
-      {showBubble && lastAssistant && (
+      {phrase && (
         <div className="absolute left-4 top-4 max-w-[75%] rounded-2xl rounded-bl-sm border border-primary/40 bg-surface/90 px-3 py-2 text-xs text-text shadow-lg backdrop-blur-sm transition-opacity">
-          {lastAssistant.content.length > 160
-            ? `${lastAssistant.content.slice(0, 160)}…`
-            : lastAssistant.content}
+          {phrase}
         </div>
       )}
     </div>

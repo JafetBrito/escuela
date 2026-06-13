@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ProgressSync from '../learning/ProgressSync'
 import CurrencyBadge from '../shared/CurrencyBadge'
@@ -255,35 +255,14 @@ export default function SettingsPage() {
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Chats</p>
             <p className="text-sm text-text-muted">
-              Cada día que conversas con {displayName} se guarda por separado y puedes
-              consultarlo o descargarlo después.
+              Cada día que conversas con {displayName} se guarda por separado. Consulta o
+              descarga tus conversaciones en la sección{' '}
+              <Link to="/chats" className="text-primary hover:underline">
+                Chats
+              </Link>{' '}
+              del menú
+              {historyDays.length > 0 && ` (${historyDays.length} ${historyDays.length === 1 ? 'día guardado' : 'días guardados'})`}.
             </p>
-
-            {historyDays.length === 0 ? (
-              <p className="text-sm text-text-muted">Todavía no hay chats guardados.</p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {historyDays.map((day) => (
-                  <li
-                    key={day}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-4 py-2.5"
-                  >
-                    <span className="text-sm font-medium text-text">
-                      {day} {day === todayKey() ? '(hoy)' : ''}
-                      <span className="ml-2 text-xs text-text-muted">
-                        {chatHistory[day].length} mensajes
-                      </span>
-                    </span>
-                    <button
-                      onClick={() => handleExportDay(day)}
-                      className="rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
-                    >
-                      💾 Descargar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
           </section>
         </div>
       </main>

@@ -5,6 +5,7 @@ import LevelBadge from './LevelBadge'
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/mascota', label: 'Mi mascota', icon: '🐾' },
+  { to: '/chats', label: 'Chats', icon: '💬' },
   { to: '/tienda', label: 'Tienda', icon: '🛒' },
   { to: '/logros', label: 'Logros', icon: '🏅' },
   { to: '/games', label: 'Games', icon: '🎮' },

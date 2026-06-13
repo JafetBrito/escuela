@@ -1,28 +1,8 @@
-import { useEffect, useRef } from 'react'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useShopStore } from '../../stores/useShopStore'
 import { getUnlockedItems, ITEM_RARITY } from '../../data/itemsRegistry'
 import { SHOP_ITEMS } from '../../data/shopRegistry'
-
-// Plays/pauses the radio's audio element to match the item's active state.
-function RadioPlayer({ item, isActive }) {
-  const audioRef = useRef(null)
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    if (isActive) {
-      audio.play().catch(() => {})
-    } else {
-      audio.pause()
-    }
-  }, [isActive])
-
-  return (
-    <audio ref={audioRef} src={item.audioSrc} loop className="mt-2 w-full" controls />
-  )
-}
 
 export default function ItemsPanel({ className = '' }) {
   const license = useAuthStore((s) => s.license)
@@ -74,10 +54,15 @@ export default function ItemsPanel({ className = '' }) {
                         : 'border border-border text-text-muted hover:border-primary/40 hover:text-text'
                     }`}
                   >
-                    {isActive ? '✓ Activado' : 'Activar'}
+                    {isActive
+                      ? item.kind === 'radio-player'
+                        ? '✓ Sonando'
+                        : '✓ Activado'
+                      : item.kind === 'radio-player'
+                        ? '📻 Encender radio'
+                        : 'Activar'}
                   </button>
                 )}
-                {item.kind === 'radio-player' && <RadioPlayer item={item} isActive={isActive} />}
               </div>
             </div>
           )

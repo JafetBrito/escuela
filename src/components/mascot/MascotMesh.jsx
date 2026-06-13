@@ -3,13 +3,14 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
-// Subtle idle bob only — no constant spinning. The mascot stays facing
-// forward so it reads as a calm, static character rather than a spinning toy.
-function useIdleFloat(ref, { speed = 1.2, amplitude = 0.08 } = {}) {
+// Gentle idle bob + sway so the mascot feels alive without being a spinning
+// toy: it bobs up and down and slowly rocks side to side.
+function useIdleFloat(ref, { speed = 1.2, amplitude = 0.08, baseY = 0, sway = 0.18 } = {}) {
   useFrame(({ clock }) => {
     if (!ref.current) return
     const t = clock.getElapsedTime()
-    ref.current.position.y = Math.sin(t * speed) * amplitude
+    ref.current.position.y = baseY + Math.sin(t * speed) * amplitude
+    ref.current.rotation.y = Math.sin(t * speed * 0.4) * sway
   })
 }
 
@@ -62,11 +63,12 @@ function CatMesh({ color }) {
 // Loads a real GLTF/GLB model when the mascot defines `modelPath` (e.g.
 // public/orange_cat.glb -> modelPath: '/orange_cat.glb'). The model is
 // auto-centered and scaled to fit a ~2-unit-tall viewport regardless of the
-// units it was exported with.
-function GltfMesh({ modelPath }) {
+// units it was exported with. `modelRotationY`/`modelOffsetY` let a mascot
+// fine-tune which way it faces and how it sits vertically in frame.
+function GltfMesh({ modelPath, rotationY = 0, offsetY = 0 }) {
   const ref = useRef()
   const { scene } = useGLTF(modelPath)
-  useIdleFloat(ref)
+  useIdleFloat(ref, { baseY: offsetY })
 
   const model = useMemo(() => {
     const clone = scene.clone(true)
@@ -84,7 +86,11 @@ function GltfMesh({ modelPath }) {
     return clone
   }, [scene])
 
-  return <primitive ref={ref} object={model} />
+  return (
+    <group ref={ref} rotation={[0, rotationY, 0]}>
+      <primitive object={model} />
+    </group>
+  )
 }
 
 export default function MascotMesh({ mascot, skin }) {
@@ -95,7 +101,13 @@ export default function MascotMesh({ mascot, skin }) {
   const color = skin?.color ?? mascot.color
 
   if (mascot.modelPath) {
-    return <GltfMesh modelPath={mascot.modelPath} />
+    return (
+      <GltfMesh
+        modelPath={mascot.modelPath}
+        rotationY={mascot.modelRotationY ?? 0}
+        offsetY={mascot.modelOffsetY ?? 0}
+      />
+    )
   }
 
   if (mascot.geometry === 'cat') {

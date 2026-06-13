@@ -14,9 +14,10 @@ export default function MascotViewport({ className = '', showEmotions = false })
 
   return (
     <div className={`relative ${className}`}>
-      <Canvas camera={{ position: [0, 0, 3.5], fov: 45 }} gl={{ preserveDrawingBuffer: true }}>
-        <ambientLight intensity={0.6} />
+      <Canvas camera={{ position: [0, 0.4, 4.2], fov: 38 }} gl={{ preserveDrawingBuffer: true }}>
+        <ambientLight intensity={0.7} />
         <directionalLight position={[3, 3, 3]} intensity={1.2} />
+        <directionalLight position={[-3, 1, -2]} intensity={0.4} />
         <Suspense fallback={null}>
           <MascotMesh mascot={mascot} skin={skin} />
         </Suspense>

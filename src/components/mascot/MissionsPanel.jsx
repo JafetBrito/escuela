@@ -105,6 +105,7 @@ export default function MissionsPanel({ courseId, module, className = '' }) {
         <ModuleCompleteModal
           completedModule={module}
           nextModule={nextModule}
+          courseTitle={courseData.title}
           onContinue={handleContinue}
           onClose={() => setShowComplete(false)}
         />

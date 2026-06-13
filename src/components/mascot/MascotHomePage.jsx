@@ -7,6 +7,7 @@ import GalleryPanel from './GalleryPanel'
 import Inventory from '../inventory/Inventory'
 import ChatPanel from '../chat/ChatPanel'
 import CurrencyBadge from '../shared/CurrencyBadge'
+import XpBar from '../shared/XpBar'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -48,6 +49,9 @@ export default function MascotHomePage() {
 
           <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-surface to-background">
             <MascotViewport className="h-64 w-full md:h-80" showEmotions />
+            <div className="border-t border-border bg-surface px-4 py-3">
+              <XpBar />
+            </div>
           </div>
 
           <nav className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1">

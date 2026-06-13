@@ -1,49 +1,182 @@
 {
   "courseId": "course-demo",
-  "title": "Curso Demo: Primeros pasos",
-  "description": "Un curso corto de 2 clases para probar la plataforma: misiones, mascota, monedas y la pantalla de fin de curso.",
+  "title": "Curso Demo: Cómo usar Oliver School",
+  "description": "5 clases cortas que te enseñan a usar la plataforma de punta a punta: navegación, tu mascota, misiones, objetos, tienda, chats y logros. Termínalo para ver la pantalla de fin de curso.",
   "modules": [
     {
       "id": 1,
-      "title": "Bienvenida al Curso Demo",
+      "title": "Presentación: bienvenido a Oliver School",
       "order": 1,
       "videoId": "dQw4w9WgXcQ",
-      "description": "Una clase de prueba para conocer la interfaz: video, misiones, recursos y tu mascota.",
+      "description": "Un recorrido por la plataforma: qué es Oliver School, qué encontrarás en el Dashboard y cómo moverte por el menú principal (Mascota, Chats, Tienda, Logros, Games y Ajustes).",
       "exercises": [
-        { "id": "demo-1-1", "type": "challenge", "prompt": "Escribe una palabra que describa cómo te sientes probando esta plataforma.", "solution": "" }
+        {
+          "id": "demo-1-1",
+          "type": "challenge",
+          "prompt": "Abre el menú principal y entra a cada sección al menos una vez (Dashboard, Mi mascota, Chats, Tienda, Logros, Games, Ajustes). Cuando termines, escribe aquí cuál sección te llamó más la atención y por qué.",
+          "solution": ""
+        },
+        {
+          "id": "demo-1-2",
+          "type": "challenge",
+          "prompt": "En el Dashboard verás este curso demo junto a otros cursos organizados por categoría. Escribe el nombre de otro curso que veas en el roadmap y su categoría.",
+          "solution": ""
+        }
       ],
       "resources": [
         { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
       ],
       "quiz": {
-        "question": "¿Para qué sirve este curso demo?",
+        "question": "¿Cuál de estas opciones NO aparece en el menú principal de la plataforma?",
         "options": [
-          "Para vender publicidad",
-          "Para probar la plataforma con un curso corto de 2 clases",
-          "Para sustituir el curso de NotebookLM",
-          "No tiene ningún propósito"
+          "Mi mascota",
+          "Tienda",
+          "Logros",
+          "Configuración del servidor"
+        ],
+        "correctIndex": 3
+      },
+      "comments": []
+    },
+    {
+      "id": 2,
+      "title": "Tu mascota: chat, nivel y experiencia",
+      "order": 2,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Conoce a tu mascota 3D: cómo hablarle por el Chat, cómo sube de nivel tu experiencia (XP) y dónde ver la barra de experiencia y tu nivel actual.",
+      "exercises": [
+        {
+          "id": "demo-2-1",
+          "type": "challenge",
+          "prompt": "Ve a \"Mi mascota\" y mira la barra de experiencia y el nivel debajo del modelo 3D. Escribe en qué nivel estás ahora y cuánta experiencia te falta para el siguiente nivel.",
+          "solution": ""
+        },
+        {
+          "id": "demo-2-2",
+          "type": "challenge",
+          "prompt": "Abre el Chat de tu mascota y pregúntale algo sobre esta clase (por ejemplo \"¿qué es la barra de experiencia?\"). Escribe aquí la pregunta que le hiciste.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+      ],
+      "quiz": {
+        "question": "¿Dónde puedes ver tu nivel y tu barra de experiencia (XP)?",
+        "options": [
+          "Solo en la Tienda",
+          "Debajo del modelo 3D de tu mascota",
+          "No se puede ver en ninguna parte",
+          "Solo al cerrar sesión"
         ],
         "correctIndex": 1
       },
       "comments": []
     },
     {
-      "id": 2,
-      "title": "Última clase: cierre del curso",
-      "order": 2,
+      "id": 3,
+      "title": "Misiones y Objetos: gana monedas y úsalos",
+      "order": 3,
       "videoId": "dQw4w9WgXcQ",
-      "description": "La última clase del curso demo. Al completar sus misiones verás la pantalla de curso terminado.",
+      "description": "Cada clase tiene misiones: responder el reto, hablar con tu mascota y activar un objeto de tu inventario. Completarlas te da monedas y experiencia. Aprende también a usar tus Objetos, como la Radio.",
       "exercises": [
-        { "id": "demo-2-1", "type": "challenge", "prompt": "Anota una cosa que te gustaría ver en un curso futuro.", "solution": "" }
+        {
+          "id": "demo-3-1",
+          "type": "challenge",
+          "prompt": "Abre la pestaña \"Misiones\" de tu mascota en esta clase y completa las tres misiones (reto, chat y objeto). Escribe cuál fue la última misión que completaste.",
+          "solution": ""
+        },
+        {
+          "id": "demo-3-2",
+          "type": "challenge",
+          "prompt": "Ve a \"Objetos\" y activa cualquier objeto interactivo (por ejemplo la Radio, la Cámara o el Libro). Si activaste la Radio, deberías ver un mini reproductor flotante. Escribe qué objeto activaste y qué pasó.",
+          "solution": ""
+        }
       ],
       "resources": [
         { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
       ],
       "quiz": {
-        "question": "Al terminar este curso, tu mascota debería...",
+        "question": "¿Qué necesitas hacer para avanzar a la siguiente clase?",
+        "options": [
+          "Pagar una suscripción extra",
+          "Completar las misiones de la clase actual",
+          "Esperar 24 horas",
+          "Nada, todas las clases están siempre desbloqueadas"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 4,
+      "title": "Tienda, Chats y Logros: revisa tu progreso",
+      "order": 4,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Usa tus monedas en la Tienda para comprar objetos y mejoras para tu mascota. Revisa tus conversaciones pasadas en \"Chats\" y consulta tus medallas en \"Logros\".",
+      "exercises": [
+        {
+          "id": "demo-4-1",
+          "type": "challenge",
+          "prompt": "Entra a la Tienda y elige un objeto que te gustaría comprar más adelante (no necesitas comprarlo todavía). Escribe su nombre y su precio.",
+          "solution": ""
+        },
+        {
+          "id": "demo-4-2",
+          "type": "challenge",
+          "prompt": "Abre la sección \"Chats\" en el menú principal. Escribe cuántos días de conversaciones aparecen listados (puede ser 0 si recién empiezas).",
+          "solution": ""
+        },
+        {
+          "id": "demo-4-3",
+          "type": "challenge",
+          "prompt": "Abre \"Logros\" y describe qué verías ahí cuando termines un curso completo.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+      ],
+      "quiz": {
+        "question": "¿Qué encuentras en la sección \"Chats\" del menú principal?",
+        "options": [
+          "Tus conversaciones pasadas con tu mascota, organizadas por día",
+          "La lista de cursos disponibles",
+          "Tu inventario de objetos",
+          "Los ajustes de tu cuenta"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 5,
+      "title": "Última clase: repaso y cierre del curso",
+      "order": 5,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Repasamos todo lo aprendido: navegación, mascota, nivel y experiencia, misiones, objetos, tienda, chats y logros. Al completar las misiones de esta clase verás la pantalla de fin de curso con tu medalla.",
+      "exercises": [
+        {
+          "id": "demo-5-1",
+          "type": "challenge",
+          "prompt": "Escribe un resumen corto (2 o 3 líneas) de los pasos que seguirías para empezar un curso nuevo en la plataforma, desde el Dashboard hasta completar la primera clase.",
+          "solution": ""
+        },
+        {
+          "id": "demo-5-2",
+          "type": "challenge",
+          "prompt": "¿Qué fue lo que más te gustó de la plataforma en este recorrido? Escríbelo aquí.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+      ],
+      "quiz": {
+        "question": "Al completar todas las clases de un curso, tu mascota debería...",
         "options": [
           "Borrar tu progreso",
-          "Darte una medalla de curso completado",
+          "Darte una medalla de curso completado en Logros y un bono de experiencia",
           "Bloquear tu cuenta",
           "Nada en especial"
         ],

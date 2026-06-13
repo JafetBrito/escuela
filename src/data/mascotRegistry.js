@@ -17,6 +17,10 @@ export const MASCOTS = [
     modelPath: '/orange_cat.glb',
     modelSourceUrl:
       'https://sketchfab.com/3d-models/orange-cat-2b722183b60e4fcfbe3c2263536d2fa6',
+    // Faces away from the camera as exported, so we spin it to face forward
+    // and nudge it down slightly so it sits centered in the viewport.
+    modelRotationY: Math.PI,
+    modelOffsetY: -0.35,
   },
 ]
 
