@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import Logo from './Logo'
+import LevelBadge from './LevelBadge'
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -7,7 +8,6 @@ const LINKS = [
   { to: '/tienda', label: 'Tienda', icon: '🛒' },
   { to: '/logros', label: 'Logros', icon: '🏅' },
   { to: '/games', label: 'Games', icon: '🎮' },
-  { to: '/profile', label: 'Perfil', icon: '👤' },
   { to: '/ajustes', label: 'Ajustes', icon: '⚙️' },
 ]
 
@@ -33,23 +33,26 @@ export default function AppTopBar({ variant = 'full' }) {
           Volver al Dashboard
         </Link>
       ) : (
-        <nav className="flex items-center gap-1 overflow-x-auto text-sm">
-          {LINKS.map((link) => {
-            const active = location.pathname === link.to
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-                  active ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <span>{link.icon}</span>
-                {link.label}
-              </Link>
-            )
-          })}
-        </nav>
+        <>
+          <nav className="flex items-center gap-1 overflow-x-auto text-sm">
+            {LINKS.map((link) => {
+              const active = location.pathname === link.to
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                    active ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  <span>{link.icon}</span>
+                  {link.label}
+                </Link>
+              )
+            })}
+          </nav>
+          <LevelBadge className="shrink-0" />
+        </>
       )}
     </header>
   )

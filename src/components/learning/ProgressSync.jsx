@@ -7,8 +7,8 @@ export default function ProgressSync() {
   const [status, setStatus] = useState('')
 
   const handleSave = () => {
-    downloadProgress(buildProgressSnapshot(), 'cuenta.json')
-    setStatus('Cuenta guardada')
+    downloadProgress(buildProgressSnapshot(), 'mi-llave.key')
+    setStatus('Llave descargada')
     setTimeout(() => setStatus(''), 2000)
   }
 
@@ -31,15 +31,15 @@ export default function ProgressSync() {
     <div className="flex items-center gap-2 text-sm">
       <button
         onClick={handleSave}
-        className="rounded-lg border border-border px-3 py-1.5 text-text-muted hover:border-primary/50 hover:text-text"
+        className="rounded-lg border border-primary px-3 py-1.5 font-semibold text-primary transition-colors hover:bg-primary/10"
       >
-        Guardar cuenta
+        💾 Descargar llave actualizada
       </button>
       <button
         onClick={() => fileInputRef.current?.click()}
         className="rounded-lg border border-border px-3 py-1.5 text-text-muted hover:border-primary/50 hover:text-text"
       >
-        Cargar cuenta
+        📂 Cargar otra cuenta
       </button>
       <input
         ref={fileInputRef}

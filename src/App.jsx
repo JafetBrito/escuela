@@ -4,7 +4,6 @@ import LandingPage from './components/landing/LandingPage'
 import CreateAccountPage from './components/checkout/CreateAccountPage'
 import PortalPage from './components/portal/PortalPage'
 import DashboardPage from './components/dashboard/DashboardPage'
-import ProfilePage from './components/profile/ProfilePage'
 import ShopPage from './components/shop/ShopPage'
 import SettingsPage from './components/settings/SettingsPage'
 import GamesPage from './components/games/GamesPage'
@@ -47,14 +46,6 @@ export default function App() {
               <Suspense fallback={<RouteFallback />}>
                 <MascotHomePage />
               </Suspense>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
             </ProtectedRoute>
           }
         />

@@ -2,6 +2,14 @@ import { create } from 'zustand'
 import { getCourseData } from '../data/courseRegistry'
 import { getModuleMissions, MISSION_TYPES } from '../data/missionsRegistry'
 import { useCurrencyStore } from './useCurrencyStore'
+import { useLevelStore } from './useLevelStore'
+import { isCourseCompleted } from '../data/achievementsRegistry'
+
+// XP awarded for each "tarea" (mission), for finishing a module, and for
+// completing an entire course. Mirrors the mission reward map but in XP.
+const MISSION_XP = { quiz: 50, chat: 20, item: 20 }
+const MODULE_COMPLETE_XP = 100
+const COURSE_COMPLETE_XP = 500
 
 const emptyCourseState = () => ({
   selectedModuleId: null,
@@ -56,6 +64,9 @@ export const useProgressStore = create((set, get) => ({
       const reward = MISSION_TYPES[missionId]?.reward ?? 0
       if (reward > 0) useCurrencyStore.getState().earnCoins(reward)
 
+      const xpReward = MISSION_XP[missionId] ?? 0
+      if (xpReward > 0) useLevelStore.getState().addXp(xpReward)
+
       const updatedMissions = { ...current, [missionId]: true }
       const courseData = getCourseData(courseId)
       const moduleData = courseData.modules.find((m) => m.id === moduleId)
@@ -71,6 +82,11 @@ export const useProgressStore = create((set, get) => ({
               p.moduleId === moduleId ? { ...p, completed: true } : p,
             )
           : [...moduleProgress, { moduleId, completed: true, exerciseAnswers: {}, notes: '' }]
+
+        useLevelStore.getState().addXp(MODULE_COMPLETE_XP)
+        if (isCourseCompleted(courseData, moduleProgress)) {
+          useLevelStore.getState().addXp(COURSE_COMPLETE_XP)
+        }
       }
 
       return {

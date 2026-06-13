@@ -14,10 +14,7 @@ export const MASCOTS = [
     name: 'Gato Naranja',
     geometry: 'cat',
     color: '#f97316',
-    // To use a real 3D model: download a .glb (respecting its license),
-    // place it at public/models/orange-cat.glb, and set modelPath below to
-    // '/models/orange-cat.glb'. MascotMesh will load it automatically.
-    modelPath: null,
+    modelPath: '/orange_cat.glb',
     modelSourceUrl:
       'https://sketchfab.com/3d-models/orange-cat-2b722183b60e4fcfbe3c2263536d2fa6',
   },

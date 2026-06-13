@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
+import * as THREE from 'three'
 
 // Subtle idle bob only — no constant spinning. The mascot stays facing
 // forward so it reads as a calm, static character rather than a spinning toy.
@@ -59,13 +60,31 @@ function CatMesh({ color }) {
 }
 
 // Loads a real GLTF/GLB model when the mascot defines `modelPath` (e.g.
-// public/models/orange-cat.glb -> modelPath: '/models/orange-cat.glb').
+// public/orange_cat.glb -> modelPath: '/orange_cat.glb'). The model is
+// auto-centered and scaled to fit a ~2-unit-tall viewport regardless of the
+// units it was exported with.
 function GltfMesh({ modelPath }) {
   const ref = useRef()
   const { scene } = useGLTF(modelPath)
   useIdleFloat(ref)
 
-  return <primitive ref={ref} object={scene} />
+  const model = useMemo(() => {
+    const clone = scene.clone(true)
+    const box = new THREE.Box3().setFromObject(clone)
+    const size = new THREE.Vector3()
+    const center = new THREE.Vector3()
+    box.getSize(size)
+    box.getCenter(center)
+
+    const maxDimension = Math.max(size.x, size.y, size.z) || 1
+    const scale = 2 / maxDimension
+    clone.scale.setScalar(scale)
+    clone.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
+
+    return clone
+  }, [scene])
+
+  return <primitive ref={ref} object={model} />
 }
 
 export default function MascotMesh({ mascot, skin }) {

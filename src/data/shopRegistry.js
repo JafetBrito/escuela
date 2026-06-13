@@ -108,6 +108,17 @@ export const SHOP_ITEMS = [
     interactive: true,
     kind: 'light-theme',
   },
+  {
+    id: 'radio',
+    name: 'Radio de OLIVER SCHOOL',
+    icon: '📻',
+    rarity: 'rare',
+    price: 5000,
+    description: 'Sintoniza la radio del programa mientras estudias.',
+    interactive: true,
+    kind: 'radio-player',
+    audioSrc: '/audio/radio-oliver.mp3',
+  },
 ]
 
 export function getShopItemById(id) {

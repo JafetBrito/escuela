@@ -1,5 +1,3 @@
-import ProgressSync from './ProgressSync'
-
 export default function TopBar({ courseTitle, moduleTitle, progressPct }) {
   return (
     <header className="flex flex-col gap-3 border-b border-border px-6 py-4 md:flex-row md:items-center md:justify-between">
@@ -9,7 +7,6 @@ export default function TopBar({ courseTitle, moduleTitle, progressPct }) {
         </p>
       </div>
       <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-4">
-        <ProgressSync />
         <div className="flex items-center gap-3">
           <div className="h-2 w-40 rounded-full bg-surface-hover">
             <div

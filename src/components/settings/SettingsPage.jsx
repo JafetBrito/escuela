@@ -1,16 +1,24 @@
+import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
-import { useChatStore } from '../../stores/useChatStore'
+import ProgressSync from '../learning/ProgressSync'
+import CurrencyBadge from '../shared/CurrencyBadge'
+import LevelBadge from '../shared/LevelBadge'
 import { useChatHistoryStore, todayKey } from '../../stores/useChatHistoryStore'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, CHAT_MODELS, AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { downloadProgress } from '../../services/persistence/jsonFile'
 
 export default function SettingsPage() {
+  const navigate = useNavigate()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
-  const messages = useChatStore((s) => s.messages)
   const chatHistory = useChatHistoryStore((s) => s.history)
+  const license = useAuthStore((s) => s.license)
+  const lock = useAuthStore((s) => s.lock)
+  const coins = useCurrencyStore((s) => s.coins)
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
@@ -36,9 +44,14 @@ export default function SettingsPage() {
     downloadProgress(chatHistory[day], `chat-${displayName.toLowerCase()}-${day}.json`)
   }
 
-  const handleExportChat = () => {
-    const date = new Date().toISOString().slice(0, 10)
-    downloadProgress(messages, `chat-${displayName.toLowerCase()}-${date}.json`)
+  const accessLabel =
+    license?.type === 'full'
+      ? 'Completo (todos los cursos)'
+      : `Un curso (${license?.courseId ?? '—'})`
+
+  const handleLogout = () => {
+    lock()
+    navigate('/')
   }
 
   return (
@@ -53,6 +66,52 @@ export default function SettingsPage() {
               Configura tu mascota, tu IA y tu cuenta.
             </p>
           </div>
+
+          <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
+            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Cuenta</p>
+            <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+              <div>
+                <p className="text-text-muted">Licencia</p>
+                <p className="font-mono text-text">{license?.licenseId ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-text-muted">Plan</p>
+                <p className="text-text">{license?.role ?? 'estudiante'}</p>
+              </div>
+              <div>
+                <p className="text-text-muted">Activado</p>
+                <p className="text-text">
+                  {license?.issuedAt ? new Date(license.issuedAt).toLocaleDateString() : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-text-muted">Acceso a cursos</p>
+                <p className="text-text">{accessLabel}</p>
+              </div>
+              <div>
+                <p className="text-text-muted">Monedas y nivel</p>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <CurrencyBadge amount={coins} />
+                  <LevelBadge />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <ProgressSync />
+              <button
+                onClick={handleLogout}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-danger hover:text-danger"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+            <p className="text-xs text-text-muted">
+              "Descargar llave" guarda un archivo con tu licencia y todo tu progreso (monedas,
+              nivel, cursos, chats). Como todavía no hay base de datos, usa ese archivo para
+              seguir donde lo dejaste en otro navegador o para probar con distintos usuarios.
+            </p>
+          </section>
 
           <section className="flex flex-col gap-6 rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
@@ -194,25 +253,7 @@ export default function SettingsPage() {
           </section>
 
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
-            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-              Conversación con tu IA
-            </p>
-            <p className="text-sm text-text-muted">
-              Descarga tu chat actual con {displayName} como archivo JSON para guardarlo.
-            </p>
-            <button
-              onClick={handleExportChat}
-              disabled={messages.length === 0}
-              className="self-start rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              💾 Guardar conversación
-            </button>
-          </section>
-
-          <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
-            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-              Historial de chats por día
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Chats</p>
             <p className="text-sm text-text-muted">
               Cada día que conversas con {displayName} se guarda por separado y puedes
               consultarlo o descargarlo después.
