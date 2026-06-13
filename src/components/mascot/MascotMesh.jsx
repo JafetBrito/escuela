@@ -68,22 +68,25 @@ function GltfMesh({ modelPath }) {
   return <primitive ref={ref} object={scene} />
 }
 
-export default function MascotMesh({ mascot }) {
+export default function MascotMesh({ mascot, skin }) {
   const meshRef = useRef()
   useIdleFloat(meshRef)
+
+  // "Aspecto" only re-skins the color palette — it never swaps the model.
+  const color = skin?.color ?? mascot.color
 
   if (mascot.modelPath) {
     return <GltfMesh modelPath={mascot.modelPath} />
   }
 
   if (mascot.geometry === 'cat') {
-    return <CatMesh color={mascot.color} />
+    return <CatMesh color={color} />
   }
 
   return (
     <mesh ref={meshRef}>
       {GEOMETRIES[mascot.geometry] ?? GEOMETRIES.box}
-      <meshStandardMaterial color={mascot.color} />
+      <meshStandardMaterial color={color} />
     </mesh>
   )
 }

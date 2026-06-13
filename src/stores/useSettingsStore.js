@@ -6,21 +6,42 @@ const CHAT_MODELS = [
   { id: 'abab6.5t-chat', label: 'MiniMax abab6.5t-chat (balanceado)' },
 ]
 
-export { CHAT_MODELS }
+// "Cómo se comporta la IA": tono/personalidad de las respuestas.
+const AI_TONES = [
+  { id: 'amigable', label: 'Amigable', prompt: 'Responde de forma cercana, cálida y amigable.' },
+  { id: 'profesional', label: 'Profesional', prompt: 'Responde de forma profesional, clara y formal.' },
+  { id: 'motivador', label: 'Motivador', prompt: 'Responde con entusiasmo, animando al estudiante a seguir aprendiendo.' },
+  { id: 'directo', label: 'Directo', prompt: 'Responde de forma directa y concisa, sin rodeos.' },
+]
+
+// Nivel de detalle de las respuestas.
+const AI_VERBOSITY = [
+  { id: 'breve', label: 'Breve', prompt: 'Mantén tus respuestas muy cortas, de 1 a 2 frases.' },
+  { id: 'normal', label: 'Normal', prompt: 'Responde con una extensión moderada.' },
+  { id: 'detallado', label: 'Detallado', prompt: 'Da respuestas detalladas y con ejemplos cuando ayuden.' },
+]
+
+export { CHAT_MODELS, AI_TONES, AI_VERBOSITY }
 
 export const useSettingsStore = create((set) => ({
   mascotName: '',
   minimaxApiKey: '',
   chatModel: CHAT_MODELS[0].id,
+  aiTone: AI_TONES[0].id,
+  aiVerbosity: AI_VERBOSITY[1].id,
 
   setMascotName: (mascotName) => set({ mascotName }),
   setMinimaxApiKey: (minimaxApiKey) => set({ minimaxApiKey }),
   setChatModel: (chatModel) => set({ chatModel }),
+  setAiTone: (aiTone) => set({ aiTone }),
+  setAiVerbosity: (aiVerbosity) => set({ aiVerbosity }),
 
   loadSettings: (settings) =>
     set({
       mascotName: settings?.mascotName ?? '',
       minimaxApiKey: settings?.minimaxApiKey ?? '',
       chatModel: settings?.chatModel ?? CHAT_MODELS[0].id,
+      aiTone: settings?.aiTone ?? AI_TONES[0].id,
+      aiVerbosity: settings?.aiVerbosity ?? AI_VERBOSITY[1].id,
     }),
 }))

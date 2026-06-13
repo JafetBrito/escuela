@@ -1,4 +1,5 @@
 import { minimaxChatCompletion } from './minimaxClient'
+import { AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
 
 // ChatTransport interface:
 //   sendMessage({ mode: 'text' | 'voice', content, context }) -> Promise<{ role, content }>
@@ -7,14 +8,20 @@ import { minimaxChatCompletion } from './minimaxClient'
 //   {
 //     minimaxApiKey: string,        // from the user's license file
 //     mascotName: string,
+//     aiTone: string,               // id from AI_TONES
+//     aiVerbosity: string,          // id from AI_VERBOSITY
 //     module: { title, description } | undefined,
 //     history: { role: 'user' | 'assistant', content: string }[],
 //   }
 
-function buildSystemPrompt({ mascotName, module }) {
-  const base = `Eres ${mascotName ?? 'un compañero'}, una mascota virtual 3D que acompaña a un estudiante dentro de un curso interactivo. Responde de forma breve, amigable y motivadora, en español.`
-  if (!module) return base
-  return `${base} El estudiante está en la clase "${module.title}": ${module.description ?? ''}`.trim()
+function buildSystemPrompt({ mascotName, module, aiTone, aiVerbosity }) {
+  const tone = AI_TONES.find((t) => t.id === aiTone) ?? AI_TONES[0]
+  const verbosity = AI_VERBOSITY.find((v) => v.id === aiVerbosity) ?? AI_VERBOSITY[1]
+  let base = `Eres ${mascotName ?? 'un compañero'}, una mascota virtual 3D que acompaña a un estudiante dentro de un curso interactivo. ${tone.prompt} ${verbosity.prompt} Responde siempre en español.`
+  if (module) {
+    base = `${base} El estudiante está en la clase "${module.title}": ${module.description ?? ''}`.trim()
+  }
+  return base
 }
 
 export const minimaxTextTransport = {
@@ -25,7 +32,7 @@ export const minimaxTextTransport = {
     if (!minimaxApiKey || minimaxApiKey.startsWith('mx-mock')) {
       return {
         role: 'assistant',
-        content: `(demo) Recibí: "${content}". Conecta tu Minimax API key en Mi mascota → Configuración para respuestas reales.`,
+        content: `(demo) Recibí: "${content}". Conecta tu Minimax API key en Ajustes para respuestas reales.`,
       }
     }
 

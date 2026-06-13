@@ -21,9 +21,9 @@ export default function NoteModal({ item, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="tech-panel flex w-full max-w-lg flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <p className="text-base font-bold text-text">
+          <p className="tech-label text-sm">
             {item.type === 'link' ? '🔗 Link' : '📝 Nota'}
             {item.moduleTitle ? ` — ${item.moduleTitle}` : ' — General'}
           </p>
@@ -38,7 +38,7 @@ export default function NoteModal({ item, onClose }) {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://…"
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+              className="tech-input rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
             />
           )}
           <textarea

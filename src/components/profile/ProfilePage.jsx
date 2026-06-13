@@ -4,6 +4,7 @@ import AchievementsPanel from '../mascot/AchievementsPanel'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
+import CurrencyBadge from '../shared/CurrencyBadge'
 import { getMascotById } from '../../data/mascotRegistry'
 
 export default function ProfilePage() {
@@ -60,10 +61,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-text-muted">Monedas</p>
-                <p className="flex items-center gap-1 text-text">
-                  <span>🪙</span>
-                  {coins}
-                </p>
+                <CurrencyBadge amount={coins} className="mt-1" />
               </div>
             </div>
             <button

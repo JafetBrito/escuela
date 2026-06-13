@@ -37,9 +37,18 @@ export default function GalleryPanel() {
                 ✕
               </button>
             </div>
-            <p className="text-xs text-text-muted">
-              {new Date(shot.createdAt).toLocaleString()}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-text-muted">
+                {new Date(shot.createdAt).toLocaleString()}
+              </p>
+              <a
+                href={shot.dataUrl}
+                download={`${(shot.label || 'captura').trim().replace(/\s+/g, '-')}.png`}
+                className="shrink-0 rounded-lg border border-primary px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+              >
+                ⬇️ Descargar
+              </a>
+            </div>
           </div>
         ))}
       </div>

@@ -16,19 +16,20 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 //     purchasedItems, lastSaved }
 export function buildProgressSnapshot() {
   const license = useAuthStore.getState().license
-  const { selectedMascotId, memory } = useMascotStore.getState()
+  const { selectedMascotId, selectedSkinId, memory } = useMascotStore.getState()
   const { progress, onboardingCompleted } = useProgressStore.getState()
   const { items: inventory } = useInventoryStore.getState()
   const { activeItems } = useItemEffectsStore.getState()
   const { shots: gallery } = useGalleryStore.getState()
   const { coins } = useCurrencyStore.getState()
   const { purchased: purchasedItems } = useShopStore.getState()
-  const { mascotName, minimaxApiKey, chatModel } = useSettingsStore.getState()
+  const { mascotName, minimaxApiKey, chatModel, aiTone, aiVerbosity } = useSettingsStore.getState()
 
   return {
     license,
     selectedMascotId,
-    settings: { mascotName, minimaxApiKey, chatModel },
+    selectedSkinId,
+    settings: { mascotName, minimaxApiKey, chatModel, aiTone, aiVerbosity },
     mascotMemory: memory,
     progress,
     onboardingCompleted,
@@ -53,6 +54,7 @@ export function applyProgressSnapshot(snapshot) {
   if (typeof snapshot.selectedMascotId === 'number') {
     useMascotStore.getState().selectMascot(snapshot.selectedMascotId)
   }
+  useMascotStore.getState().loadSkin(snapshot.selectedSkinId)
   if (snapshot.mascotMemory) {
     useMascotStore.getState().loadMemory(snapshot.mascotMemory)
     useChatStore.getState().loadMessages(snapshot.mascotMemory.conversationHistory ?? [])

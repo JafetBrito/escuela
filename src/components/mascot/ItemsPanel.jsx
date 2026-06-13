@@ -1,10 +1,16 @@
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
+import { useShopStore } from '../../stores/useShopStore'
 import { getUnlockedItems, ITEM_RARITY } from '../../data/itemsRegistry'
+import { SHOP_ITEMS } from '../../data/shopRegistry'
 
 export default function ItemsPanel({ className = '' }) {
   const license = useAuthStore((s) => s.license)
-  const items = getUnlockedItems(license)
+  const purchased = useShopStore((s) => s.purchased)
+  const items = [
+    ...getUnlockedItems(license),
+    ...SHOP_ITEMS.filter((item) => item.interactive && purchased.includes(item.id)),
+  ]
   const activeItems = useItemEffectsStore((s) => s.activeItems)
   const toggleItem = useItemEffectsStore((s) => s.toggleItem)
 

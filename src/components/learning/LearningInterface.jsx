@@ -54,9 +54,6 @@ export default function LearningInterface() {
 
         <MascotCompanion courseId={courseId} module={currentModule} />
         <WelcomeModal courseId={courseId} />
-        <ThemeController />
-        {cameraActive && <CameraButton />}
-        {focusBoxActive && <FocusBoxModal />}
       </div>
     </SecurityWrapper>
   )

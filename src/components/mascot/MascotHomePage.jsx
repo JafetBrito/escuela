@@ -2,17 +2,22 @@ import { useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotViewport from './MascotViewport'
 import ItemsPanel from './ItemsPanel'
-import MascotSelector from './MascotSelector'
+import SkinSelector from './SkinSelector'
+import GalleryPanel from './GalleryPanel'
 import Inventory from '../inventory/Inventory'
+import ChatPanel from '../chat/ChatPanel'
+import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
-import { useSettingsStore, CHAT_MODELS } from '../../stores/useSettingsStore'
+import { useCurrencyStore } from '../../stores/useCurrencyStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
 import { getMascotById } from '../../data/mascotRegistry'
 
 const TABS = [
   { id: 'home', label: 'Inicio', icon: '🏡' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
   { id: 'notes', label: 'Notas', icon: '📝' },
-  { id: 'settings', label: 'Configuración', icon: '⚙️' },
+  { id: 'appearance', label: 'Aspecto', icon: '🎨' },
+  { id: 'gallery', label: 'Galería', icon: '🖼️' },
 ]
 
 export default function MascotHomePage() {
@@ -21,11 +26,7 @@ export default function MascotHomePage() {
   const mascot = getMascotById(selectedMascotId)
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
-  const setMascotName = useSettingsStore((s) => s.setMascotName)
-  const minimaxApiKey = useSettingsStore((s) => s.minimaxApiKey)
-  const setMinimaxApiKey = useSettingsStore((s) => s.setMinimaxApiKey)
-  const chatModel = useSettingsStore((s) => s.chatModel)
-  const setChatModel = useSettingsStore((s) => s.setChatModel)
+  const coins = useCurrencyStore((s) => s.coins)
 
   const displayName = settingsMascotName || mascot.name
 
@@ -35,15 +36,18 @@ export default function MascotHomePage() {
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-bold">La casa de {displayName}</h1>
-            <p className="mt-1 text-sm text-text-muted">
-              Aquí vive tu mascota junto con todos los objetos que has desbloqueado.
-            </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">La casa de {displayName}</h1>
+              <p className="mt-1 text-sm text-text-muted">
+                Aquí vive tu mascota junto con todos los objetos que has desbloqueado.
+              </p>
+            </div>
+            <CurrencyBadge amount={coins} />
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-surface to-background">
-            <MascotViewport className="h-64 w-full md:h-80" />
+            <MascotViewport className="h-64 w-full md:h-80" showEmotions />
           </div>
 
           <nav className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1">
@@ -66,9 +70,9 @@ export default function MascotHomePage() {
           {tab === 'home' && (
             <section className="flex flex-col gap-3">
               <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                Objetos de {displayName}
+                Chat con {displayName}
               </p>
-              <ItemsPanel />
+              <ChatPanel className="h-[28rem]" />
             </section>
           )}
 
@@ -82,74 +86,35 @@ export default function MascotHomePage() {
           )}
 
           {tab === 'notes' && (
-            <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
-              <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                Tus notas
-              </p>
+            <section className="tech-panel flex flex-col gap-3 p-5">
+              <p className="tech-label">// Notas y enlaces guardados</p>
               <Inventory />
             </section>
           )}
 
-          {tab === 'settings' && (
+          {tab === 'appearance' && (
             <section className="flex flex-col gap-6 rounded-xl border border-border bg-surface p-5">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Nombre de tu mascota
-                </p>
-                <input
-                  type="text"
-                  value={settingsMascotName}
-                  onChange={(e) => setMascotName(e.target.value)}
-                  placeholder={mascot.name}
-                  className="mt-2 w-full max-w-sm rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Modelo 3D
+                  Aspecto de tu mascota
                 </p>
                 <p className="mt-1 text-sm text-text-muted">
-                  Elige el aspecto de tu mascota. Se aplica de inmediato.
+                  Elige un atuendo para {displayName}. Esto solo cambia su apariencia, no su
+                  modelo.
                 </p>
-                <div className="mt-2">
-                  <MascotSelector />
+                <div className="mt-3">
+                  <SkinSelector />
                 </div>
               </div>
+            </section>
+          )}
 
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Minimax API key
-                </p>
-                <p className="mt-1 text-sm text-text-muted">
-                  Tu mascota usa esta clave para responder en el chat. Si la dejas vacía verás
-                  respuestas de demostración.
-                </p>
-                <input
-                  type="text"
-                  value={minimaxApiKey}
-                  onChange={(e) => setMinimaxApiKey(e.target.value)}
-                  placeholder="mx-..."
-                  className="mt-2 w-full max-w-sm rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-text outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Modelo de chat
-                </p>
-                <select
-                  value={chatModel}
-                  onChange={(e) => setChatModel(e.target.value)}
-                  className="mt-2 w-full max-w-sm rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
-                >
-                  {CHAT_MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {tab === 'gallery' && (
+            <section className="flex flex-col gap-3">
+              <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+                Galería de fotos
+              </p>
+              <GalleryPanel />
             </section>
           )}
         </div>

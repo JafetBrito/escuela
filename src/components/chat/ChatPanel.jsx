@@ -22,6 +22,8 @@ export default function ChatPanel({ className = '', module, courseId }) {
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const minimaxApiKey = useSettingsStore((s) => s.minimaxApiKey)
   const chatModel = useSettingsStore((s) => s.chatModel)
+  const aiTone = useSettingsStore((s) => s.aiTone)
+  const aiVerbosity = useSettingsStore((s) => s.aiVerbosity)
   const mascotName = settingsMascotName || getMascotById(selectedMascotId).name
 
   const sendMessage = (content) => {
@@ -30,6 +32,8 @@ export default function ChatPanel({ className = '', module, courseId }) {
       minimaxApiKey: minimaxApiKey || license?.minimaxApiKey,
       model: chatModel,
       mascotName,
+      aiTone,
+      aiVerbosity,
       module: module
         ? { title: module.title, description: module.description }
         : undefined,
@@ -45,8 +49,11 @@ export default function ChatPanel({ className = '', module, courseId }) {
   }
 
   const handleSummary = () => {
-    if (!module) return
-    sendMessage(`Hazme un resumen breve y claro de la clase "${module.title}": ${module.description}`)
+    if (module) {
+      sendMessage(`Hazme un resumen breve y claro de la clase "${module.title}": ${module.description}`)
+    } else {
+      sendMessage('Hazme un resumen breve de lo que hemos hablado hasta ahora y de mi progreso.')
+    }
   }
 
   return (
@@ -87,14 +94,14 @@ export default function ChatPanel({ className = '', module, courseId }) {
         )}
       </div>
 
-      {summaryLensActive && module && (
+      {summaryLensActive && (
         <div className="border-t border-border px-3 pt-2">
           <button
             onClick={handleSummary}
             disabled={isSending}
             className="w-full rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-50"
           >
-            🔍 Generar resumen de esta clase
+            🔍 Generar resumen {module ? 'de esta clase' : 'de mi progreso'}
           </button>
         </div>
       )}

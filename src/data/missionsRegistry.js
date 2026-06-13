@@ -5,17 +5,17 @@ export const MISSION_TYPES = {
   quiz: {
     icon: '🧩',
     label: 'Responde el reto de conocimiento de esta clase',
-    reward: 30,
+    reward: 3000,
   },
   chat: {
     icon: '💬',
     label: 'Pregúntale algo a tu mascota sobre esta clase',
-    reward: 15,
+    reward: 1500,
   },
   item: {
     icon: '🎒',
     label: 'Activa un objeto de tu inventario',
-    reward: 15,
+    reward: 1500,
   },
 }
 

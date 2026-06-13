@@ -51,6 +51,19 @@ body {
   --font-sans: "Georgia", "Times New Roman", serif;
 }
 
+/* "Tema Claro" objeto: light theme purchasable in the Tienda. */
+:root[data-theme='light'] {
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-primary: #4f8a10;
+  --color-primary-hover: #3f6f0c;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-danger: #dc2626;
+}
+
 /* Floating Egyptian symbols overlay shown while Reina Nefertiti is active. */
 @keyframes nefertiti-drift {
   0% {
@@ -74,4 +87,53 @@ body {
   animation-name: nefertiti-drift;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+}
+
+/* "Future tech" styling for the Notas / inventory panels: subtle grid,
+   glowing accent borders and a monospace HUD feel. */
+.tech-panel {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  border-radius: 0.75rem;
+  background-color: var(--color-surface);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-primary) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 6%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 12%, transparent) inset;
+}
+
+.tech-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 45%);
+}
+
+.tech-card {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+  border-radius: 0.6rem;
+  background-color: color-mix(in srgb, var(--color-background) 85%, var(--color-primary) 4%);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.tech-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 16px -4px color-mix(in srgb, var(--color-primary) 70%, transparent);
+  transform: translateY(-1px);
+}
+
+.tech-label {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  color: var(--color-primary);
+}
+
+.tech-input {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
 }

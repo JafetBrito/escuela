@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 export const useMascotStore = create((set) => ({
   selectedMascotId: 8,
+  selectedSkinId: 'default',
   memory: {
     conversationHistory: [],
     personalityFlags: {},
@@ -9,6 +10,7 @@ export const useMascotStore = create((set) => ({
   },
 
   selectMascot: (id) => set({ selectedMascotId: id }),
+  selectSkin: (id) => set({ selectedSkinId: id }),
 
   appendMessage: (message) =>
     set((state) => ({
@@ -24,4 +26,6 @@ export const useMascotStore = create((set) => ({
     })),
 
   loadMemory: (memory) => set({ memory }),
+
+  loadSkin: (selectedSkinId) => set({ selectedSkinId: selectedSkinId ?? 'default' }),
 }))

@@ -1,22 +1,21 @@
 import { Link, useLocation } from 'react-router-dom'
 import Logo from './Logo'
-import NotesPopover from './NotesPopover'
-import { useCurrencyStore } from '../../stores/useCurrencyStore'
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/mascota', label: 'Mi mascota', icon: '🐾' },
   { to: '/tienda', label: 'Tienda', icon: '🛒' },
+  { to: '/games', label: 'Games', icon: '🎮' },
   { to: '/profile', label: 'Perfil', icon: '👤' },
+  { to: '/ajustes', label: 'Ajustes', icon: '⚙️' },
 ]
 
 // Persistent navigation bar for the protected app.
 // variant="full"   -> dashboard/mascot/profile/etc (default)
-// variant="course" -> inside a course: just back-to-dashboard + coins, to
-//                      avoid duplicating the mascot menu options.
+// variant="course" -> inside a course: just back-to-dashboard, to avoid
+//                      duplicating the mascot menu options.
 export default function AppTopBar({ variant = 'full' }) {
   const location = useLocation()
-  const coins = useCurrencyStore((s) => s.coins)
 
   return (
     <header className="flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-2.5 md:px-6">
@@ -49,14 +48,8 @@ export default function AppTopBar({ variant = 'full' }) {
               </Link>
             )
           })}
-          <NotesPopover />
         </nav>
       )}
-
-      <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold text-text">
-        <span>🪙</span>
-        {coins}
-      </div>
     </header>
   )
 }

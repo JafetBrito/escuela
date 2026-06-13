@@ -6,6 +6,8 @@ import PortalPage from './components/portal/PortalPage'
 import DashboardPage from './components/dashboard/DashboardPage'
 import ProfilePage from './components/profile/ProfilePage'
 import ShopPage from './components/shop/ShopPage'
+import SettingsPage from './components/settings/SettingsPage'
+import GamesPage from './components/games/GamesPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 
 // Lazy-loaded: pulls in Three.js / React Three Fiber, kept out of the main
@@ -60,6 +62,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ShopPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ajustes"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/games"
+          element={
+            <ProtectedRoute>
+              <GamesPage />
             </ProtectedRoute>
           }
         />
