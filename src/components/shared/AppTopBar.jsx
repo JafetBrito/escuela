@@ -5,6 +5,7 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/mascota', label: 'Mi mascota', icon: '🐾' },
   { to: '/tienda', label: 'Tienda', icon: '🛒' },
+  { to: '/logros', label: 'Logros', icon: '🏅' },
   { to: '/games', label: 'Games', icon: '🎮' },
   { to: '/profile', label: 'Perfil', icon: '👤' },
   { to: '/ajustes', label: 'Ajustes', icon: '⚙️' },

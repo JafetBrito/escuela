@@ -8,7 +8,13 @@
 const MINIMAX_API_URL = 'https://api.minimax.chat/v1/text/chatcompletion_v2'
 const DEFAULT_MODEL = 'abab6.5s-chat'
 
-export async function minimaxChatCompletion({ apiKey, messages, model = DEFAULT_MODEL }) {
+export async function minimaxChatCompletion({
+  apiKey,
+  messages,
+  model = DEFAULT_MODEL,
+  temperature,
+  maxTokens,
+}) {
   if (!apiKey) {
     throw new Error('Missing Minimax API key')
   }
@@ -19,7 +25,12 @@ export async function minimaxChatCompletion({ apiKey, messages, model = DEFAULT_
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({
+      model,
+      messages,
+      ...(temperature != null ? { temperature } : {}),
+      ...(maxTokens != null ? { tokens_to_generate: maxTokens } : {}),
+    }),
   })
 
   if (!response.ok) {

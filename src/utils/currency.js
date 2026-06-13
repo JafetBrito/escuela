@@ -15,8 +15,8 @@ export function splitCurrency(copper = 0) {
 export function formatCurrency(copper = 0) {
   const { gold, silver, bronze } = splitCurrency(copper)
   const parts = []
-  if (gold > 0) parts.push(`${gold}o`)
-  if (silver > 0 || gold > 0) parts.push(`${silver}p`)
-  parts.push(`${bronze}c`)
+  if (gold > 0) parts.push(`${gold}🥇`)
+  if (silver > 0 || gold > 0) parts.push(`${silver}🥈`)
+  parts.push(`${bronze}🥉`)
   return parts.join(' ')
 }

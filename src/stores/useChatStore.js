@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { getTransport } from '../services/chat/transports'
 import { useMascotStore } from './useMascotStore'
+import { useChatHistoryStore } from './useChatHistoryStore'
 
 // Pre-populated example conversation so new users see how the mascot chat
 // works before they send their first message.
@@ -55,6 +56,7 @@ export const useChatStore = create((set, get) => ({
         isSending: false,
       }))
     }
+    useChatHistoryStore.getState().saveToday(get().messages)
   },
 
   loadMessages: (messages) => set({ messages, started: messages.length > 0 }),

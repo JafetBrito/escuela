@@ -24,6 +24,9 @@ export default function ChatPanel({ className = '', module, courseId }) {
   const chatModel = useSettingsStore((s) => s.chatModel)
   const aiTone = useSettingsStore((s) => s.aiTone)
   const aiVerbosity = useSettingsStore((s) => s.aiVerbosity)
+  const temperature = useSettingsStore((s) => s.temperature)
+  const maxTokens = useSettingsStore((s) => s.maxTokens)
+  const customInstructions = useSettingsStore((s) => s.customInstructions)
   const mascotName = settingsMascotName || getMascotById(selectedMascotId).name
 
   const sendMessage = (content) => {
@@ -34,6 +37,9 @@ export default function ChatPanel({ className = '', module, courseId }) {
       mascotName,
       aiTone,
       aiVerbosity,
+      temperature,
+      maxTokens,
+      customInstructions,
       module: module
         ? { title: module.title, description: module.description }
         : undefined,

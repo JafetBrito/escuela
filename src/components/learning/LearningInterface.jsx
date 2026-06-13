@@ -4,6 +4,7 @@ import TopBar from './TopBar'
 import ModuleList from './ModuleList'
 import ModuleResources from './ModuleResources'
 import VideoPlayer from '../video/VideoPlayer'
+import VerticalVideo from '../video/VerticalVideo'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import SecurityWrapper from '../shared/SecurityWrapper'
@@ -45,7 +46,12 @@ export default function LearningInterface() {
 
         <div className="grid flex-1 gap-4 p-4 pb-24 md:grid-cols-[1fr_260px]">
           <div className="flex flex-col gap-4">
-            <VideoPlayer videoId={currentModule.videoId} className="w-full" />
+            <div className="hidden md:block">
+              <VideoPlayer videoId={currentModule.videoId} className="w-full" />
+            </div>
+            <div className="md:hidden">
+              <VerticalVideo module={currentModule} />
+            </div>
             <ModuleResources module={currentModule} className="min-h-[200px]" />
           </div>
 

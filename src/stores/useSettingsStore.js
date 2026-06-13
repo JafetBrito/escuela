@@ -23,18 +23,29 @@ const AI_VERBOSITY = [
 
 export { CHAT_MODELS, AI_TONES, AI_VERBOSITY }
 
+// Valores por defecto para la configuración avanzada de la IA, usados hasta
+// que se conecte una API real.
+const DEFAULT_TEMPERATURE = 0.7
+const DEFAULT_MAX_TOKENS = 500
+
 export const useSettingsStore = create((set) => ({
   mascotName: '',
   minimaxApiKey: '',
   chatModel: CHAT_MODELS[0].id,
   aiTone: AI_TONES[0].id,
   aiVerbosity: AI_VERBOSITY[1].id,
+  temperature: DEFAULT_TEMPERATURE,
+  maxTokens: DEFAULT_MAX_TOKENS,
+  customInstructions: '',
 
   setMascotName: (mascotName) => set({ mascotName }),
   setMinimaxApiKey: (minimaxApiKey) => set({ minimaxApiKey }),
   setChatModel: (chatModel) => set({ chatModel }),
   setAiTone: (aiTone) => set({ aiTone }),
   setAiVerbosity: (aiVerbosity) => set({ aiVerbosity }),
+  setTemperature: (temperature) => set({ temperature }),
+  setMaxTokens: (maxTokens) => set({ maxTokens }),
+  setCustomInstructions: (customInstructions) => set({ customInstructions }),
 
   loadSettings: (settings) =>
     set({
@@ -43,5 +54,8 @@ export const useSettingsStore = create((set) => ({
       chatModel: settings?.chatModel ?? CHAT_MODELS[0].id,
       aiTone: settings?.aiTone ?? AI_TONES[0].id,
       aiVerbosity: settings?.aiVerbosity ?? AI_VERBOSITY[1].id,
+      temperature: settings?.temperature ?? DEFAULT_TEMPERATURE,
+      maxTokens: settings?.maxTokens ?? DEFAULT_MAX_TOKENS,
+      customInstructions: settings?.customInstructions ?? '',
     }),
 }))

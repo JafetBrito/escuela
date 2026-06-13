@@ -14,19 +14,22 @@ import { AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
 //     history: { role: 'user' | 'assistant', content: string }[],
 //   }
 
-function buildSystemPrompt({ mascotName, module, aiTone, aiVerbosity }) {
+function buildSystemPrompt({ mascotName, module, aiTone, aiVerbosity, customInstructions }) {
   const tone = AI_TONES.find((t) => t.id === aiTone) ?? AI_TONES[0]
   const verbosity = AI_VERBOSITY.find((v) => v.id === aiVerbosity) ?? AI_VERBOSITY[1]
   let base = `Eres ${mascotName ?? 'un compañero'}, una mascota virtual 3D que acompaña a un estudiante dentro de un curso interactivo. ${tone.prompt} ${verbosity.prompt} Responde siempre en español.`
   if (module) {
     base = `${base} El estudiante está en la clase "${module.title}": ${module.description ?? ''}`.trim()
   }
+  if (customInstructions?.trim()) {
+    base = `${base} Instrucciones adicionales del usuario: ${customInstructions.trim()}`
+  }
   return base
 }
 
 export const minimaxTextTransport = {
   async sendMessage({ content, context = {} }) {
-    const { minimaxApiKey, model, history = [] } = context
+    const { minimaxApiKey, model, history = [], temperature, maxTokens } = context
 
     // No real key (mock/demo license) -> canned response, no network call.
     if (!minimaxApiKey || minimaxApiKey.startsWith('mx-mock')) {
@@ -42,7 +45,13 @@ export const minimaxTextTransport = {
       { role: 'user', content },
     ]
 
-    const reply = await minimaxChatCompletion({ apiKey: minimaxApiKey, messages, ...(model ? { model } : {}) })
+    const reply = await minimaxChatCompletion({
+      apiKey: minimaxApiKey,
+      messages,
+      ...(model ? { model } : {}),
+      ...(temperature != null ? { temperature } : {}),
+      ...(maxTokens != null ? { maxTokens } : {}),
+    })
     return { role: 'assistant', content: reply }
   },
 }

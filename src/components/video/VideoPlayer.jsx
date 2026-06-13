@@ -12,7 +12,7 @@ function formatTime(seconds) {
 // (controls:0, disablekb:1, modestbranding:1, rel:0), iframe is
 // pointer-events:none and sits under a transparent overlay so all
 // interaction goes through CustomControls via the IFrame API.
-export default function VideoPlayer({ videoId, className = '' }) {
+export default function VideoPlayer({ videoId, className = '', aspectClassName = 'aspect-video' }) {
   const containerId = useId().replace(/:/g, '')
   const playerRef = useRef(null)
   const progressTimerRef = useRef(null)
@@ -89,7 +89,7 @@ export default function VideoPlayer({ videoId, className = '' }) {
 
   return (
     <div className={`relative overflow-hidden rounded-xl border border-border bg-black ${className}`}>
-      <div className="pointer-events-none aspect-video w-full">
+      <div className={`pointer-events-none w-full ${aspectClassName}`}>
         <div id={containerId} className="h-full w-full" />
       </div>
 
