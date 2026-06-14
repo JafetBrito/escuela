@@ -7,6 +7,8 @@ const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/mascota', label: 'Mi mascota', icon: '🐾' },
   { to: '/chats', label: 'Chats', icon: '💬' },
+  { to: '/misiones', label: 'Misiones', icon: '📜' },
+  { to: '/notas', label: 'Notas', icon: '📝' },
   { to: '/biblioteca', label: 'Biblioteca', icon: '📚' },
   { to: '/tienda', label: 'Tienda', icon: '🛒' },
   { to: '/logros', label: 'Logros', icon: '🏅' },

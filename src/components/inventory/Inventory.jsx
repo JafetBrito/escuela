@@ -1,17 +1,22 @@
 import { useState } from 'react'
 import { useInventoryStore } from '../../stores/useInventoryStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
+import { isNotionConfigured, pushNoteToNotion } from '../../services/notion/notionClient'
 import NoteModal from './NoteModal'
 
 export default function Inventory({ className = '', moduleId, moduleTitle }) {
   const items = useInventoryStore((s) => s.items)
   const addItem = useInventoryStore((s) => s.addItem)
   const removeItem = useInventoryStore((s) => s.removeItem)
+  const notionApiKey = useSettingsStore((s) => s.notionApiKey)
+  const notionDatabaseId = useSettingsStore((s) => s.notionDatabaseId)
 
   const [type, setType] = useState('note')
   const [scope, setScope] = useState(moduleId ? 'module' : 'general')
   const [text, setText] = useState('')
   const [url, setUrl] = useState('')
   const [activeItem, setActiveItem] = useState(null)
+  const [notionStatus, setNotionStatus] = useState({})
 
   const handleAdd = (e) => {
     e.preventDefault()
@@ -31,6 +36,22 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
   const moduleItems = moduleId ? items.filter((i) => i.moduleId === moduleId) : []
   const generalItems = items.filter((i) => !i.moduleId)
 
+  const handleSendToNotion = async (e, item) => {
+    e.stopPropagation()
+    if (!isNotionConfigured({ notionApiKey, notionDatabaseId })) {
+      setNotionStatus((s) => ({ ...s, [item.id]: 'Configura tu integración de Notion en Ajustes' }))
+      setTimeout(() => setNotionStatus((s) => ({ ...s, [item.id]: null })), 4000)
+      return
+    }
+    setNotionStatus((s) => ({ ...s, [item.id]: 'Enviando…' }))
+    const result = await pushNoteToNotion({ notionApiKey, notionDatabaseId }, item)
+    setNotionStatus((s) => ({
+      ...s,
+      [item.id]: result.ok ? 'Enviado a Notion ✅' : `Error: ${result.error}`,
+    }))
+    setTimeout(() => setNotionStatus((s) => ({ ...s, [item.id]: null })), 4000)
+  }
+
   const renderItem = (item) => (
     <div
       key={item.id}
@@ -45,18 +66,31 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
           )}
           {item.text && <p className="truncate text-text">{item.text}</p>}
           {!item.text && !item.url && <p className="text-text-muted italic">(vacío)</p>}
+          {notionStatus[item.id] && (
+            <p className="mt-1 text-xs text-text-muted">{notionStatus[item.id]}</p>
+          )}
         </div>
       </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          removeItem(item.id)
-        }}
-        className="shrink-0 text-text-muted transition-colors hover:text-danger"
-        aria-label="Eliminar"
-      >
-        ✕
-      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          onClick={(e) => handleSendToNotion(e, item)}
+          className="text-text-muted transition-colors hover:text-primary"
+          aria-label="Enviar a Notion"
+          title="Enviar a Notion"
+        >
+          📓
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            removeItem(item.id)
+          }}
+          className="text-text-muted transition-colors hover:text-danger"
+          aria-label="Eliminar"
+        >
+          ✕
+        </button>
+      </div>
     </div>
   )
 

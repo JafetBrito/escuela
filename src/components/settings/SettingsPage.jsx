@@ -58,6 +58,10 @@ export default function SettingsPage() {
   const setMaxTokens = useSettingsStore((s) => s.setMaxTokens)
   const customInstructions = useSettingsStore((s) => s.customInstructions)
   const setCustomInstructions = useSettingsStore((s) => s.setCustomInstructions)
+  const notionApiKey = useSettingsStore((s) => s.notionApiKey)
+  const setNotionApiKey = useSettingsStore((s) => s.setNotionApiKey)
+  const notionDatabaseId = useSettingsStore((s) => s.notionDatabaseId)
+  const setNotionDatabaseId = useSettingsStore((s) => s.setNotionDatabaseId)
   const purchased = useShopStore((s) => s.purchased)
 
   const ownedPrompts = SHOP_ITEMS.filter(
@@ -413,6 +417,43 @@ export default function SettingsPage() {
               </div>
             </section>
           )}
+
+          <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5">
+            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+              Integración con Notion
+            </p>
+            <p className="text-sm text-text-muted">
+              Pega tu integration token y el ID de tu base de datos de Notion para enviar tus
+              notas desde{' '}
+              <Link to="/notas" className="text-primary hover:underline">
+                Notas
+              </Link>
+              . Si el navegador bloquea la conexión por CORS, copia tus notas manualmente por
+              ahora.
+            </p>
+
+            <div>
+              <p className="text-sm font-semibold text-text">Notion API Key</p>
+              <input
+                type="text"
+                value={notionApiKey}
+                onChange={(e) => setNotionApiKey(e.target.value)}
+                placeholder="secret_..."
+                className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-text outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-text">Notion Database ID</p>
+              <input
+                type="text"
+                value={notionDatabaseId}
+                onChange={(e) => setNotionDatabaseId(e.target.value)}
+                placeholder="32 caracteres, lo encuentras en la URL de tu base de datos"
+                className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-text outline-none focus:border-primary"
+              />
+            </div>
+          </section>
 
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Chats</p>

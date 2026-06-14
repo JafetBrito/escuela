@@ -23,6 +23,8 @@ const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 const VRPage = lazy(() => import('./components/vr/VRPage'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
+const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
+const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 
 function RouteFallback() {
   return (
@@ -105,6 +107,26 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <EpubReaderPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/misiones"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <MissionsBoardPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notas"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <NotesPage />
               </Suspense>
             </ProtectedRoute>
           }

@@ -1,12 +1,71 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { getCourseData } from '../../data/courseRegistry'
 import ModuleQuiz from '../learning/ModuleQuiz'
 import ModuleCompleteModal from '../learning/ModuleCompleteModal'
+import GlobalMissionCard from '../missions/GlobalMissionCard'
 import { useProgressStore, EMPTY_OBJECT } from '../../stores/useProgressStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getModuleMissions } from '../../data/missionsRegistry'
+import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
+import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
+import { useMissionState } from '../../stores/useMissionState'
+
+// Compact list of accepted "misiones generales" (catálogo fijo, ver
+// /misiones), shared by the course and no-course views.
+function GlobalMissionsSection() {
+  const accepted = useGlobalMissionsStore((s) => s.accepted)
+  const claimed = useGlobalMissionsStore((s) => s.claimed)
+  const claimReward = useGlobalMissionsStore((s) => s.claimReward)
+  const missionState = useMissionState()
+
+  const acceptedMissions = GLOBAL_MISSIONS.filter((m) => accepted.includes(m.id))
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+        🗒️ Misiones generales
+      </p>
+      {acceptedMissions.length === 0 ? (
+        <p className="text-sm text-text-muted">
+          Visita{' '}
+          <Link to="/misiones" className="text-primary hover:underline">
+            Misiones 📜
+          </Link>{' '}
+          en el menú para aceptar nuevas.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {acceptedMissions.map((mission) => (
+            <GlobalMissionCard
+              key={mission.id}
+              mission={mission}
+              accepted
+              completed={mission.check(missionState)}
+              claimed={claimed.includes(mission.id)}
+              onClaim={claimReward}
+              compact
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function MissionsPanel({ courseId, module, className = '' }) {
+  if (!module) {
+    return (
+      <div className={`flex flex-col gap-3 ${className}`}>
+        <GlobalMissionsSection />
+      </div>
+    )
+  }
+
+  return <ModuleMissionsPanel courseId={courseId} module={module} className={className} />
+}
+
+function ModuleMissionsPanel({ courseId, module, className = '' }) {
   const courseData = getCourseData(courseId)
   const moduleMissions = useProgressStore((s) => s.progress[courseId]?.moduleMissions ?? EMPTY_OBJECT)
   const completeMission = useProgressStore((s) => s.completeMission)
@@ -47,10 +106,14 @@ export default function MissionsPanel({ courseId, module, className = '' }) {
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      <p className="text-sm text-text-muted">
-        Completa estas misiones hablando con tu mascota y usando tus objetos para avanzar a la
-        siguiente clase.
-      </p>
+      <GlobalMissionsSection />
+
+      <div className="mt-1 border-t border-border pt-3">
+        <p className="text-sm text-text-muted">
+          Completa estas misiones hablando con tu mascota y usando tus objetos para avanzar a la
+          siguiente clase.
+        </p>
+      </div>
 
       <div className="flex flex-col gap-3">
         {missions.map((mission) => {

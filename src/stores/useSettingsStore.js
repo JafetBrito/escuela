@@ -48,6 +48,8 @@ export const useSettingsStore = create((set) => ({
   temperature: DEFAULT_TEMPERATURE,
   maxTokens: DEFAULT_MAX_TOKENS,
   customInstructions: DEFAULT_CUSTOM_INSTRUCTIONS,
+  notionApiKey: '',
+  notionDatabaseId: '',
 
   setMascotName: (mascotName) => set({ mascotName }),
   setMinimaxApiKey: (minimaxApiKey) => set({ minimaxApiKey }),
@@ -58,6 +60,8 @@ export const useSettingsStore = create((set) => ({
   setTemperature: (temperature) => set({ temperature }),
   setMaxTokens: (maxTokens) => set({ maxTokens }),
   setCustomInstructions: (customInstructions) => set({ customInstructions }),
+  setNotionApiKey: (notionApiKey) => set({ notionApiKey }),
+  setNotionDatabaseId: (notionDatabaseId) => set({ notionDatabaseId }),
 
   loadSettings: (settings) =>
     set({
@@ -70,5 +74,7 @@ export const useSettingsStore = create((set) => ({
       temperature: settings?.temperature ?? DEFAULT_TEMPERATURE,
       maxTokens: settings?.maxTokens ?? DEFAULT_MAX_TOKENS,
       customInstructions: settings?.customInstructions || DEFAULT_CUSTOM_INSTRUCTIONS,
+      notionApiKey: settings?.notionApiKey ?? '',
+      notionDatabaseId: settings?.notionDatabaseId ?? '',
     }),
 }))

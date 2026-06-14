@@ -1,25 +1,32 @@
 import { useState } from 'react'
 import MascotViewport from './MascotViewport'
-import ChatPanel from '../chat/ChatPanel'
+import ChatTab from './ChatTab'
 import ItemsPanel from './ItemsPanel'
 import MissionsPanel from './MissionsPanel'
 import NotesPanel from './NotesPanel'
 import GalleryPanel from './GalleryPanel'
 import BooksPanel from './BooksPanel'
+import AppearancePanel from './AppearancePanel'
+import LevelBadge from '../shared/LevelBadge'
+import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useCurrencyStore } from '../../stores/useCurrencyStore'
+import { useShopStore } from '../../stores/useShopStore'
 import { getMascotById } from '../../data/mascotRegistry'
 
-const MENU = [
+const BASE_MENU = [
   { id: 'chat', label: 'Chat', icon: '💬' },
   { id: 'missions', label: 'Misiones', icon: '🎯' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
   { id: 'books', label: 'Libros', icon: '📚' },
   { id: 'notes', label: 'Notas', icon: '📝' },
+  { id: 'appearance', label: 'Aspecto', icon: '🎨' },
   { id: 'gallery', label: 'Galería', icon: '🖼️' },
 ]
 
-// Shown instead of Misiones/Notas when the companion is opened outside a
-// course (e.g. from VR, Biblioteca, Games) and has no module to attach to.
+// Shown instead of Notas when the companion is opened outside a course (e.g.
+// from VR, Biblioteca, Games) and has no module to attach to.
 function EmptyPanelMessage({ text }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-sm text-text-muted">
@@ -30,30 +37,46 @@ function EmptyPanelMessage({ text }) {
 }
 
 // Floating "Clippy"-style companion: a small mascot bubble anchored to the
-// corner, with a large popover menu (Chat / Misiones / Objetos / Notas / Galería).
+// corner, with a large popover menu (Chat / Misiones / Objetos / Libros /
+// Notas / Aspecto / Galería).
 export default function MascotCompanion({ courseId, module }) {
   const [open, setOpen] = useState(false)
   const [panel, setPanel] = useState('chat')
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
+  const settingsMascotName = useSettingsStore((s) => s.mascotName)
+  const coins = useCurrencyStore((s) => s.coins)
+  const hasCamera = useShopStore((s) => s.purchased.includes('camara'))
+
+  const displayName = settingsMascotName || mascot.name
+  const menu = hasCamera ? BASE_MENU : BASE_MENU.filter((item) => item.id !== 'gallery')
 
   return (
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {open && (
         <div className="flex h-[80vh] w-[95vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <p className="text-base font-bold text-text">{mascot.name}</p>
-            <button
-              onClick={() => setOpen(false)}
-              className="text-text-muted hover:text-text"
-              aria-label="Cerrar"
-            >
-              ✕
-            </button>
+          <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold text-text">{displayName}</p>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-text-muted hover:text-text"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <LevelBadge />
+              <CurrencyBadge amount={coins} />
+            </div>
           </div>
 
-          <div className="grid grid-cols-6 border-b border-border text-sm">
-            {MENU.map((item) => (
+          <div
+            className="grid border-b border-border text-sm"
+            style={{ gridTemplateColumns: `repeat(${menu.length}, minmax(0, 1fr))` }}
+          >
+            {menu.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setPanel(item.id)}
@@ -70,23 +93,17 @@ export default function MascotCompanion({ courseId, module }) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {panel === 'chat' && (
-              <ChatPanel courseId={courseId} module={module} className="h-full border-0" />
-            )}
-            {panel === 'missions' &&
-              (module ? (
-                <MissionsPanel courseId={courseId} module={module} />
-              ) : (
-                <EmptyPanelMessage text="Abre esta sección desde una clase para ver sus misiones." />
-              ))}
+            {panel === 'chat' && <ChatTab courseId={courseId} module={module} className="h-full" />}
+            {panel === 'missions' && <MissionsPanel courseId={courseId} module={module} />}
             {panel === 'items' && <ItemsPanel />}
             {panel === 'books' && <BooksPanel />}
             {panel === 'notes' &&
               (module ? (
                 <NotesPanel courseId={courseId} module={module} />
               ) : (
-                <EmptyPanelMessage text="Abre esta sección desde una clase para tomar notas de ese módulo." />
+                <EmptyPanelMessage text="Abre esta sección desde una clase para tomar notas de ese módulo, o visita Notas en el menú principal." />
               ))}
+            {panel === 'appearance' && <AppearancePanel />}
             {panel === 'gallery' && <GalleryPanel />}
           </div>
         </div>

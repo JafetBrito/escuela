@@ -14,6 +14,7 @@ import { useLevelStore } from '../../stores/useLevelStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { useGamesStore } from '../../stores/useGamesStore'
 import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
+import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -32,8 +33,10 @@ export function buildProgressSnapshot() {
   const { purchased: purchasedItems } = useShopStore.getState()
   const { history: chatHistory } = useChatHistoryStore.getState()
   const { xp } = useLevelStore.getState()
-  const { lastLocations: libraryLocations } = useLibraryStore.getState()
+  const { lastLocations: libraryLocations, openedBooks } = useLibraryStore.getState()
   const { positions: popupPositions } = usePopupPositionStore.getState()
+  const { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed } =
+    useGlobalMissionsStore.getState()
   const {
     mascotName,
     minimaxApiKey,
@@ -44,6 +47,8 @@ export function buildProgressSnapshot() {
     temperature,
     maxTokens,
     customInstructions,
+    notionApiKey,
+    notionDatabaseId,
   } = useSettingsStore.getState()
 
   return {
@@ -61,6 +66,8 @@ export function buildProgressSnapshot() {
       temperature,
       maxTokens,
       customInstructions,
+      notionApiKey,
+      notionDatabaseId,
     },
     mascotMemory: memory,
     progress,
@@ -74,7 +81,9 @@ export function buildProgressSnapshot() {
     chatHistory,
     xp,
     libraryLocations,
+    openedBooks,
     popupPositions,
+    globalMissions: { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed },
     lastSaved: new Date().toISOString(),
   }
 }
@@ -117,5 +126,7 @@ export function applyProgressSnapshot(snapshot) {
   useChatHistoryStore.getState().loadHistory(snapshot.chatHistory ?? {})
   useLevelStore.getState().loadXp(snapshot.xp)
   useLibraryStore.getState().loadLastLocations(snapshot.libraryLocations ?? {})
+  useLibraryStore.getState().loadOpenedBooks(snapshot.openedBooks ?? [])
   usePopupPositionStore.getState().loadPositions(snapshot.popupPositions ?? {})
+  useGlobalMissionsStore.getState().loadGlobalMissions(snapshot.globalMissions ?? {})
 }

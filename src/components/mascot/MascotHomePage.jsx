@@ -3,19 +3,19 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotViewport from './MascotViewport'
 import ItemsPanel from './ItemsPanel'
 import BooksPanel from './BooksPanel'
-import SkinSelector from './SkinSelector'
-import MascotSelector from './MascotSelector'
 import GalleryPanel from './GalleryPanel'
+import AppearancePanel from './AppearancePanel'
 import Inventory from '../inventory/Inventory'
-import ChatPanel from '../chat/ChatPanel'
+import ChatTab from './ChatTab'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import XpBar from '../shared/XpBar'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useShopStore } from '../../stores/useShopStore'
 import { getMascotById } from '../../data/mascotRegistry'
 
-const TABS = [
+const BASE_TABS = [
   { id: 'home', label: 'Inicio', icon: '🏡' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
   { id: 'books', label: 'Libros', icon: '📚' },
@@ -31,6 +31,9 @@ export default function MascotHomePage() {
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const coins = useCurrencyStore((s) => s.coins)
+  const hasCamera = useShopStore((s) => s.purchased.includes('camara'))
+
+  const TABS = hasCamera ? BASE_TABS : BASE_TABS.filter((t) => t.id !== 'gallery')
 
   const displayName = settingsMascotName || mascot.name
 
@@ -79,7 +82,7 @@ export default function MascotHomePage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
                 Chat con {displayName}
               </p>
-              <ChatPanel className="h-[28rem]" />
+              <ChatTab className="h-[28rem]" />
             </section>
           )}
 
@@ -110,30 +113,7 @@ export default function MascotHomePage() {
 
           {tab === 'appearance' && (
             <section className="flex flex-col gap-6 rounded-xl border border-border bg-surface p-5">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Modelo de tu mascota
-                </p>
-                <p className="mt-1 text-sm text-text-muted">
-                  Elige el personaje 3D que te acompañará.
-                </p>
-                <div className="mt-3">
-                  <MascotSelector />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Aspecto de tu mascota
-                </p>
-                <p className="mt-1 text-sm text-text-muted">
-                  Elige un atuendo para {displayName}. Esto solo cambia su apariencia, no su
-                  modelo.
-                </p>
-                <div className="mt-3">
-                  <SkinSelector />
-                </div>
-              </div>
+              <AppearancePanel />
             </section>
           )}
 
