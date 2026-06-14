@@ -6,6 +6,7 @@ import Inventory from '../inventory/Inventory'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { isNotionConfigured, fetchNotionPages } from '../../services/notion/notionClient'
+import PageVideoModal from '../shared/PageVideoModal'
 
 function NotionSection() {
   const notionApiKey = useSettingsStore((s) => s.notionApiKey)
@@ -113,6 +114,7 @@ export default function NotesPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="notas" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-3xl flex-col gap-6">

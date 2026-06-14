@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useCurrencyStore } from './useCurrencyStore'
+import { useMascotStore } from './useMascotStore'
 import { getShopItemById } from '../data/shopRegistry'
 
 // Cosmetic items purchased with coins. `buyItem` returns false if the item
@@ -18,6 +19,9 @@ export const useShopStore = create((set, get) => ({
     if (!ok) return false
 
     set((state) => ({ purchased: [...state.purchased, itemId] }))
+    if (typeof item.mascotId === 'number') {
+      useMascotStore.getState().unlockMascot(item.mascotId)
+    }
     return true
   },
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ProgressSync from '../learning/ProgressSync'
 import MascotCompanion from '../mascot/MascotCompanion'
+import PageVideoModal from '../shared/PageVideoModal'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import LevelBadge from '../shared/LevelBadge'
 import { useChatHistoryStore } from '../../stores/useChatHistoryStore'
@@ -115,6 +116,7 @@ export default function SettingsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="ajustes" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">

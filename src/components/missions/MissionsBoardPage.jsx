@@ -1,9 +1,13 @@
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import PageVideoModal from '../shared/PageVideoModal'
+import NpcViewport from '../mascot/NpcViewport'
 import GlobalMissionCard from './GlobalMissionCard'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
+
+const MAGE_MASCOT_ID = 9
 
 export default function MissionsBoardPage() {
   const accepted = useGlobalMissionsStore((s) => s.accepted)
@@ -12,25 +16,48 @@ export default function MissionsBoardPage() {
   const claimReward = useGlobalMissionsStore((s) => s.claimReward)
   const missionState = useMissionState()
 
+  const completedCount = GLOBAL_MISSIONS.filter((m) => m.check(missionState)).length
+  const claimedCount = claimed.length
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="misiones" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-3xl flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-bold">📜 Misiones</h1>
-            <p className="mt-1 text-sm text-text-muted">
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-8 shadow-lg">
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📜 Misiones</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">
               Acepta misiones generales y cúmplelas explorando la plataforma. Su progreso
               también aparece en el menú de tu mascota.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+                📋 {accepted.length} aceptadas
+              </span>
+              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+                ✅ {completedCount}/{GLOBAL_MISSIONS.length} completadas
+              </span>
+              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+                🎁 {claimedCount} recompensas reclamadas
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4">
-            <span className="text-4xl">🧙</span>
-            <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-text">
-              ¡Bienvenido, aventurero! Estas son las misiones disponibles hoy. Acéptalas y
-              cúmplelas para ganar monedas y experiencia. 🪙✨
+          <div className="flex items-stretch gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4">
+            <NpcViewport
+              mascotId={MAGE_MASCOT_ID}
+              className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-violet-500/10 to-transparent"
+            />
+            <div className="flex flex-col justify-center gap-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-violet-500">
+                🧙 Maestro de Misiones
+              </p>
+              <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-text">
+                ¡Bienvenido, aventurero! Estas son las misiones disponibles hoy. Acéptalas y
+                cúmplelas para ganar monedas y experiencia. 🪙✨
+              </div>
             </div>
           </div>
 

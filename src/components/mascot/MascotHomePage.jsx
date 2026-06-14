@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
+import PageVideoModal from '../shared/PageVideoModal'
 import MascotViewport from './MascotViewport'
 import ItemsPanel from './ItemsPanel'
 import BooksPanel from './BooksPanel'
@@ -40,6 +41,7 @@ export default function MascotHomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="mascota" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-6">

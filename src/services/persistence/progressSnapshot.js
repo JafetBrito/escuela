@@ -24,7 +24,7 @@ import { useAchievementsStore } from '../../stores/useAchievementsStore'
 //     purchasedItems, chatHistory, lastSaved }
 export function buildProgressSnapshot() {
   const { license, googleUser } = useAuthStore.getState()
-  const { selectedMascotId, selectedSkinId, memory } = useMascotStore.getState()
+  const { selectedMascotId, selectedSkinId, unlockedMascots, memory } = useMascotStore.getState()
   const { progress, onboardingCompleted } = useProgressStore.getState()
   const { items: inventory } = useInventoryStore.getState()
   const { activeItems } = useItemEffectsStore.getState()
@@ -58,6 +58,7 @@ export function buildProgressSnapshot() {
     googleUser,
     selectedMascotId,
     selectedSkinId,
+    unlockedMascots,
     settings: {
       mascotName,
       minimaxApiKey,
@@ -107,6 +108,7 @@ export function applyProgressSnapshot(snapshot) {
     useMascotStore.getState().selectMascot(snapshot.selectedMascotId)
   }
   useMascotStore.getState().loadSkin(snapshot.selectedSkinId)
+  useMascotStore.getState().loadUnlockedMascots(snapshot.unlockedMascots)
   if (snapshot.mascotMemory) {
     useMascotStore.getState().loadMemory(snapshot.mascotMemory)
     useChatStore.getState().loadMessages(snapshot.mascotMemory.conversationHistory ?? [])

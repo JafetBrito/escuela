@@ -1,13 +1,15 @@
 import { useMemo } from 'react'
 import AppTopBar from '../shared/AppTopBar'
-import CurrencyBadge from '../shared/CurrencyBadge'
 import MascotCompanion from '../mascot/MascotCompanion'
+import PageVideoModal from '../shared/PageVideoModal'
+import NpcViewport from '../mascot/NpcViewport'
 import { SHOP_ITEMS, SHOP_CATEGORIES, ITEM_RARITY } from '../../data/shopRegistry'
 import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { formatCurrency } from '../../utils/currency'
 
 const CATEGORY_ORDER = Object.keys(SHOP_CATEGORIES)
+const MAGE_MASCOT_ID = 9
 
 export default function ShopPage() {
   const coins = useCurrencyStore((s) => s.coins)
@@ -32,25 +34,24 @@ export default function ShopPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="tienda" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold">Tienda</h1>
-              <p className="mt-1 text-sm text-text-muted">
-                Gasta las monedas que ganas completando misiones en objetos para tu mascota.
-              </p>
-            </div>
-            <CurrencyBadge amount={coins} />
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-emerald-600 px-6 py-8 shadow-lg">
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">🛒 Tienda</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">
+              Gasta las monedas que ganas completando misiones en objetos para tu mascota.
+            </p>
           </div>
 
-          <div className="mt-6 flex items-center gap-4 rounded-2xl border border-border bg-surface p-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background text-4xl">
-              🧞
-            </div>
-            <div>
-              <p className="font-bold text-text">Zafir, el comerciante</p>
+          <div className="mt-6 flex items-stretch gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-5">
+            <NpcViewport
+              mascotId={MAGE_MASCOT_ID}
+              className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-emerald-500/10 to-transparent"
+            />
+            <div className="flex flex-col justify-center">
+              <p className="font-bold text-text">Zafir, el comerciante mágico</p>
               <p className="text-sm text-text-muted">
                 "¡Bienvenido de nuevo! Tengo objetos nuevos recién forjados, cada uno con sus
                 propias características. Échales un vistazo."

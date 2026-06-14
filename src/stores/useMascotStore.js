@@ -3,6 +3,9 @@ import { create } from 'zustand'
 export const useMascotStore = create((set) => ({
   selectedMascotId: 8,
   selectedSkinId: 'default',
+  // Mascot models the user can choose from in "Aspecto". The rest live in
+  // la Tienda until purchased.
+  unlockedMascots: [8],
   memory: {
     conversationHistory: [],
     personalityFlags: {},
@@ -12,6 +15,16 @@ export const useMascotStore = create((set) => ({
 
   selectMascot: (id) => set({ selectedMascotId: id }),
   selectSkin: (id) => set({ selectedSkinId: id }),
+
+  unlockMascot: (id) =>
+    set((state) =>
+      state.unlockedMascots.includes(id)
+        ? state
+        : { unlockedMascots: [...state.unlockedMascots, id] },
+    ),
+
+  loadUnlockedMascots: (unlockedMascots) =>
+    set({ unlockedMascots: unlockedMascots?.length ? unlockedMascots : [8] }),
 
   appendMessage: (message) =>
     set((state) => ({

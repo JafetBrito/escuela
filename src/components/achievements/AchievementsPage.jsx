@@ -1,11 +1,13 @@
 import AppTopBar from '../shared/AppTopBar'
 import AchievementsPanel from '../mascot/AchievementsPanel'
 import MascotCompanion from '../mascot/MascotCompanion'
+import PageVideoModal from '../shared/PageVideoModal'
 
 export default function AchievementsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="logros" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-3xl">

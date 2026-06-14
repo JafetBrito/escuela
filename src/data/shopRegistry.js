@@ -14,12 +14,63 @@ function randomStat(label, min, max, suffix = '') {
 // Biblioteca agrupa libros). "prompt" son personalidades de IA bloqueadas
 // hasta que se compran; una vez compradas se pueden activar desde Ajustes.
 export const SHOP_CATEGORIES = {
+  mascotas: { label: 'Mascotas', icon: '🐾' },
   cosmeticos: { label: 'Cosméticos', icon: '✨' },
   objetos: { label: 'Objetos interactivos', icon: '🧰' },
   prompts: { label: 'Personalidades de IA', icon: '🧠' },
 }
 
 export const SHOP_ITEMS = [
+  {
+    id: 'mascota-mago',
+    name: 'Mago',
+    icon: '🧙',
+    rarity: 'rare',
+    category: 'mascotas',
+    price: 8000,
+    description: 'Desbloquea al Mago como modelo 3D para tu mascota.',
+    mascotId: 9,
+  },
+  {
+    id: 'mascota-mago-ancestral',
+    name: 'Mago Ancestral',
+    icon: '🧙‍♂️',
+    rarity: 'epic',
+    category: 'mascotas',
+    price: 18000,
+    description: 'Desbloquea al Mago Ancestral como modelo 3D para tu mascota.',
+    mascotId: 10,
+  },
+  {
+    id: 'mascota-zorro-mago',
+    name: 'Zorro Mago',
+    icon: '🦊',
+    rarity: 'epic',
+    category: 'mascotas',
+    price: 18000,
+    description: 'Desbloquea al Zorro Mago como modelo 3D para tu mascota.',
+    mascotId: 11,
+  },
+  {
+    id: 'mascota-lagarto-mago',
+    name: 'Lagarto Mago',
+    icon: '🦎',
+    rarity: 'epic',
+    category: 'mascotas',
+    price: 18000,
+    description: 'Desbloquea al Lagarto Mago como modelo 3D para tu mascota.',
+    mascotId: 12,
+  },
+  {
+    id: 'mascota-perro-globo',
+    name: 'Perro Globo',
+    icon: '🐶',
+    rarity: 'legendary',
+    category: 'mascotas',
+    price: 35000,
+    description: 'Desbloquea al Perro Globo como modelo 3D para tu mascota.',
+    mascotId: 13,
+  },
   {
     id: 'gafas-sol',
     name: 'Gafas de Sol',

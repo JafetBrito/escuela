@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import PageVideoModal from '../shared/PageVideoModal'
 import { useChatHistoryStore, todayKey } from '../../stores/useChatHistoryStore'
 import { useChatStore } from '../../stores/useChatStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -55,24 +56,45 @@ export default function ChatsPage() {
     downloadProgress(allMessages, `chat-${displayName.toLowerCase()}-${day}.json`)
   }
 
+  const totalSessions = days.reduce((sum, day) => sum + conversations[day].length, 0)
+  const totalMessages = days.reduce(
+    (sum, day) => sum + conversations[day].reduce((s, session) => s + session.messages.length, 0),
+    0,
+  )
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="chats" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-3xl flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-bold">Chats</h1>
-            <p className="mt-1 text-sm text-text-muted">
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 px-6 py-8 shadow-lg">
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">💬 Chats</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">
               Cada clase es una conversación nueva con {displayName}. Aquí puedes revisar las
               anteriores, organizadas por día.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+                📅 {days.length} día{days.length === 1 ? '' : 's'}
+              </span>
+              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+                💬 {totalSessions} chat{totalSessions === 1 ? '' : 's'}
+              </span>
+              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+                ✉️ {totalMessages} mensajes
+              </span>
+            </div>
           </div>
 
           {days.length === 0 ? (
-            <div className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">
-              Todavía no hay chats guardados. Habla con {displayName} desde "Mi mascota" para
-              empezar.
+            <div className="tech-panel rounded-2xl p-6 text-center text-sm text-text-muted">
+              <p className="text-3xl">🗨️</p>
+              <p className="mt-2">
+                Todavía no hay chats guardados. Habla con {displayName} desde "Mi mascota" para
+                empezar.
+              </p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">

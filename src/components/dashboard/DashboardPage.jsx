@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import PageVideoModal from '../shared/PageVideoModal'
 import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="dashboard" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-6xl">

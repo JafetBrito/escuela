@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import AppTopBar from '../shared/AppTopBar'
+import PageVideoModal from '../shared/PageVideoModal'
 import MascotMesh from '../mascot/MascotMesh'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -287,6 +288,7 @@ export default function VRPage() {
   return (
     <div className="flex h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="vr" />
 
       <div
         className="relative flex-1"

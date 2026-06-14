@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
-import CurrencyBadge from '../shared/CurrencyBadge'
+import PageVideoModal from '../shared/PageVideoModal'
 import { LIBRARY_BOOKS, isBookPurchasable } from '../../data/libraryRegistry'
 import { CATEGORY_META, getCategoryMeta } from '../../data/categoryMeta'
 import { useShopStore } from '../../stores/useShopStore'
@@ -32,19 +32,17 @@ export default function LibraryPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
+      <PageVideoModal pageKey="biblioteca" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold">📚 Librería</h1>
-              <p className="mt-1 text-sm text-text-muted">
-                Libros organizados por categoría. Pasa el cursor sobre cada libro para ver su
-                descripción. Algunos están sellados hasta que los compras con tus monedas — los
-                demás se abren en una ventana emergente, sin salir de esta página.
-              </p>
-            </div>
-            <CurrencyBadge amount={coins} />
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-rose-500 to-orange-500 px-6 py-8 shadow-lg">
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📚 Librería</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">
+              Libros organizados por categoría. Pasa el cursor sobre cada libro para ver su
+              descripción. Algunos están sellados hasta que los compras con tus monedas — los
+              demás se abren en una ventana emergente, sin salir de esta página.
+            </p>
           </div>
 
           {categories.map(([category, books]) => {
