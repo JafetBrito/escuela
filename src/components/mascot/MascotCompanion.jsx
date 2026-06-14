@@ -25,17 +25,6 @@ const BASE_MENU = [
   { id: 'gallery', label: 'Galería', icon: '🖼️' },
 ]
 
-// Shown instead of Notas when the companion is opened outside a course (e.g.
-// from VR, Biblioteca, Games) and has no module to attach to.
-function EmptyPanelMessage({ text }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-sm text-text-muted">
-      <p className="text-3xl">📚</p>
-      <p>{text}</p>
-    </div>
-  )
-}
-
 // Floating "Clippy"-style companion: a small mascot bubble anchored to the
 // corner, with a large popover menu (Chat / Misiones / Objetos / Libros /
 // Notas / Aspecto / Galería).
@@ -97,12 +86,7 @@ export default function MascotCompanion({ courseId, module }) {
             {panel === 'missions' && <MissionsPanel courseId={courseId} module={module} />}
             {panel === 'items' && <ItemsPanel />}
             {panel === 'books' && <BooksPanel />}
-            {panel === 'notes' &&
-              (module ? (
-                <NotesPanel courseId={courseId} module={module} />
-              ) : (
-                <EmptyPanelMessage text="Abre esta sección desde una clase para tomar notas de ese módulo, o visita Notas en el menú principal." />
-              ))}
+            {panel === 'notes' && <NotesPanel courseId={courseId} module={module} />}
             {panel === 'appearance' && <AppearancePanel />}
             {panel === 'gallery' && <GalleryPanel />}
           </div>

@@ -12,6 +12,8 @@ import GamePlayerPage from './components/games/GamePlayerPage'
 import ChatsPage from './components/chats/ChatsPage'
 import AchievementsPage from './components/achievements/AchievementsPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
+import AchievementWatcher from './components/achievements/AchievementWatcher'
+import AchievementToast from './components/achievements/AchievementToast'
 import { useLibraryStore } from './stores/useLibraryStore'
 
 // Lazy-loaded: pulls in Three.js / React Three Fiber, kept out of the main
@@ -39,6 +41,8 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <AchievementWatcher />
+      <AchievementToast />
       {openBookId && (
         <Suspense fallback={null}>
           <BookReaderModal />

@@ -15,6 +15,7 @@ import { useLibraryStore } from '../../stores/useLibraryStore'
 import { useGamesStore } from '../../stores/useGamesStore'
 import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
+import { useAchievementsStore } from '../../stores/useAchievementsStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -37,6 +38,7 @@ export function buildProgressSnapshot() {
   const { positions: popupPositions } = usePopupPositionStore.getState()
   const { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed } =
     useGlobalMissionsStore.getState()
+  const { unlocked: unlockedAchievements } = useAchievementsStore.getState()
   const {
     mascotName,
     minimaxApiKey,
@@ -84,6 +86,7 @@ export function buildProgressSnapshot() {
     openedBooks,
     popupPositions,
     globalMissions: { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed },
+    unlockedAchievements,
     lastSaved: new Date().toISOString(),
   }
 }
@@ -129,4 +132,5 @@ export function applyProgressSnapshot(snapshot) {
   useLibraryStore.getState().loadOpenedBooks(snapshot.openedBooks ?? [])
   usePopupPositionStore.getState().loadPositions(snapshot.popupPositions ?? {})
   useGlobalMissionsStore.getState().loadGlobalMissions(snapshot.globalMissions ?? {})
+  useAchievementsStore.getState().loadUnlocked(snapshot.unlockedAchievements ?? [])
 }

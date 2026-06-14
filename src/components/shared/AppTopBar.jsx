@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Logo from './Logo'
-import LevelBadge from './LevelBadge'
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -9,7 +8,7 @@ const LINKS = [
   { to: '/chats', label: 'Chats', icon: '💬' },
   { to: '/misiones', label: 'Misiones', icon: '📜' },
   { to: '/notas', label: 'Notas', icon: '📝' },
-  { to: '/biblioteca', label: 'Biblioteca', icon: '📚' },
+  { to: '/biblioteca', label: 'Librería', icon: '📚' },
   { to: '/tienda', label: 'Tienda', icon: '🛒' },
   { to: '/logros', label: 'Logros', icon: '🏅' },
   { to: '/games', label: 'Games', icon: '🎮' },
@@ -61,7 +60,6 @@ export default function AppTopBar({ variant = 'full' }) {
           </nav>
 
           <div className="flex items-center gap-2 md:hidden">
-            <LevelBadge className="shrink-0" />
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
@@ -72,8 +70,6 @@ export default function AppTopBar({ variant = 'full' }) {
               {menuOpen ? '✕' : '☰'}
             </button>
           </div>
-
-          <LevelBadge className="hidden shrink-0 md:flex" />
 
           {menuOpen && (
             <nav className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-surface p-3 shadow-lg md:hidden">

@@ -37,7 +37,7 @@ export default function LibraryPage() {
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">📚 Biblioteca</h1>
+              <h1 className="text-2xl font-bold">📚 Librería</h1>
               <p className="mt-1 text-sm text-text-muted">
                 Libros organizados por categoría. Pasa el cursor sobre cada libro para ver su
                 descripción. Algunos están sellados hasta que los compras con tus monedas — los
