@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
@@ -13,8 +13,13 @@ import { generateMockLicense } from '../../services/crypto/keyCrypto'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useSettingsStore, CHAT_MODELS } from '../../stores/useSettingsStore'
+import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/googleAuth'
 
 const PURCHASABLE_COURSES = courses.filter((c) => hasCourseData(c.id))
+
+// Solo se muestran las mascotas con un modelo 3D real (.glb) — las geometrías
+// primitivas (cubo, esfera, etc.) eran placeholders y ya no se usan.
+const SELECTABLE_MASCOTS = MASCOTS.filter((m) => m.modelPath)
 
 const STEPS = ['Tu llave', 'Tu mascota', 'Configuración', 'Listo']
 
@@ -25,6 +30,7 @@ export default function CreateAccountPage() {
   const presetCourse = PURCHASABLE_COURSES.find((c) => c.id === presetCourseId)
 
   const unlock = useAuthStore((s) => s.unlock)
+  const registerWithGoogle = useAuthStore((s) => s.registerWithGoogle)
   const selectMascot = useMascotStore((s) => s.selectMascot)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
   const setMinimaxApiKey = useSettingsStore((s) => s.setMinimaxApiKey)
@@ -33,14 +39,28 @@ export default function CreateAccountPage() {
   const [step, setStep] = useState(0)
   const [keyType, setKeyType] = useState(presetCourse ? 'single' : 'full')
   const [courseId, setCourseId] = useState(presetCourse?.id ?? PURCHASABLE_COURSES[0]?.id)
-  const [mascotId, setMascotId] = useState(8)
+  const [mascotId, setMascotId] = useState(SELECTABLE_MASCOTS[0]?.id ?? 8)
   const [petName, setPetName] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [chatModel, setChatModelLocal] = useState(CHAT_MODELS[0].id)
   const [status, setStatus] = useState('idle') // idle | processing | done
+  const [googleError, setGoogleError] = useState('')
+  const googleButtonRef = useRef(null)
 
   const mascot = getMascotById(mascotId)
   const price = keyType === 'full' ? 99 : 49
+
+  useEffect(() => {
+    if (!googleButtonRef.current) return
+    renderGoogleButton(
+      googleButtonRef.current,
+      (googleUser) => {
+        registerWithGoogle(googleUser)
+        navigate('/dashboard')
+      },
+      (err) => setGoogleError(err.message),
+    )
+  }, [registerWithGoogle, navigate])
 
   const handleCreate = (e) => {
     e.preventDefault()
@@ -108,6 +128,28 @@ export default function CreateAccountPage() {
               </div>
             ))}
           </div>
+
+          {step === 0 && (
+            <div className="mb-4 flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center">
+              <p className="text-sm text-text-muted">
+                ¿Solo quieres probar gratis? Regístrate con Google y entra directo al curso demo.
+              </p>
+              <div ref={googleButtonRef} />
+              {!isGoogleAuthConfigured() && (
+                <p className="text-xs text-text-muted">
+                  El registro con Google aún no está configurado en este sitio.
+                </p>
+              )}
+              {googleError && isGoogleAuthConfigured() && (
+                <p className="text-xs text-danger">{googleError}</p>
+              )}
+              <div className="mt-1 flex w-full items-center gap-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs uppercase tracking-wide text-text-muted">o compra tu llave</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+            </div>
+          )}
 
           <Card className="overflow-hidden border-2">
             {step === 0 && (
@@ -200,7 +242,7 @@ export default function CreateAccountPage() {
                 </div>
 
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                  {MASCOTS.map((m) => (
+                  {SELECTABLE_MASCOTS.map((m) => (
                     <button
                       key={m.id}
                       onClick={() => setMascotId(m.id)}

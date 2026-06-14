@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getShopItemById } from '../../data/shopRegistry'
+import { useDraggablePopup } from '../../hooks/useDraggablePopup'
 
 // Floating mini-player for the "Radio de OLIVER SCHOOL" objeto. Stays mounted
 // and keeps playing across routes (mascota, tienda, dentro de un curso, etc.)
@@ -13,6 +14,7 @@ export default function RadioMiniPlayer() {
   const audioRef = useRef(null)
   const [playing, setPlaying] = useState(true)
   const [expanded, setExpanded] = useState(true)
+  const { elRef, style, onPointerDown } = useDraggablePopup('radio')
 
   useEffect(() => {
     const audio = audioRef.current
@@ -27,11 +29,20 @@ export default function RadioMiniPlayer() {
   if (!item) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6">
+    <div ref={elRef} className="fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6" style={style}>
       <audio ref={audioRef} src={item.audioSrc} loop autoPlay />
 
       {expanded ? (
         <div className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-surface px-4 py-3 shadow-lg backdrop-blur-sm">
+          <button
+            onPointerDown={onPointerDown}
+            className="flex h-9 w-6 cursor-grab items-center justify-center text-text-muted active:cursor-grabbing"
+            style={{ touchAction: 'none' }}
+            aria-label="Mover reproductor"
+            title="Arrastrar para mover"
+          >
+            ⠿
+          </button>
           <span className="text-2xl">{item.icon}</span>
           <div className="flex flex-col">
             <p className="text-sm font-semibold text-text">{item.name}</p>
@@ -67,9 +78,11 @@ export default function RadioMiniPlayer() {
       ) : (
         <button
           onClick={() => setExpanded(true)}
-          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-surface text-2xl shadow-lg transition-transform hover:scale-105"
+          onPointerDown={onPointerDown}
+          style={{ touchAction: 'none' }}
+          className="flex h-12 w-12 cursor-grab items-center justify-center rounded-full border-2 border-primary bg-surface text-2xl shadow-lg transition-transform active:cursor-grabbing hover:scale-105"
           aria-label="Abrir reproductor de radio"
-          title="Abrir reproductor de radio"
+          title="Abrir reproductor de radio (arrastra para mover)"
         >
           {item.icon}
         </button>

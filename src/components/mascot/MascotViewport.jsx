@@ -3,13 +3,19 @@ import { Canvas } from '@react-three/fiber'
 import MascotMesh from './MascotMesh'
 import MascotEmotionOverlay from './MascotEmotionOverlay'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
+
+// Mientras el objeto "Reina Nefertiti" está activo, la mascota toma
+// temporalmente la apariencia de este modelo (además del tema dorado).
+const NEFERTITI_MASCOT_ID = 10 // Mago Ancestral (mage_elder.glb)
 
 export default function MascotViewport({ className = '', showEmotions = false }) {
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const selectedSkinId = useMascotStore((s) => s.selectedSkinId)
-  const mascot = getMascotById(selectedMascotId)
+  const nefertitiActive = useItemEffectsStore((s) => !!s.activeItems['reina-nefertiti'])
+  const mascot = getMascotById(nefertitiActive ? NEFERTITI_MASCOT_ID : selectedMascotId)
   const skin = getSkinById(selectedSkinId)
 
   return (

@@ -12,6 +12,7 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { useGamesStore } from '../../stores/useGamesStore'
+import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -30,6 +31,7 @@ export function buildProgressSnapshot() {
   const { history: chatHistory } = useChatHistoryStore.getState()
   const { xp } = useLevelStore.getState()
   const { lastLocations: libraryLocations } = useLibraryStore.getState()
+  const { positions: popupPositions } = usePopupPositionStore.getState()
   const {
     mascotName,
     minimaxApiKey,
@@ -69,6 +71,7 @@ export function buildProgressSnapshot() {
     chatHistory,
     xp,
     libraryLocations,
+    popupPositions,
     lastSaved: new Date().toISOString(),
   }
 }
@@ -110,4 +113,5 @@ export function applyProgressSnapshot(snapshot) {
   useChatHistoryStore.getState().loadHistory(snapshot.chatHistory ?? {})
   useLevelStore.getState().loadXp(snapshot.xp)
   useLibraryStore.getState().loadLastLocations(snapshot.libraryLocations ?? {})
+  usePopupPositionStore.getState().loadPositions(snapshot.popupPositions ?? {})
 }

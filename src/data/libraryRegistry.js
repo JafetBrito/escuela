@@ -60,6 +60,7 @@ export const LIBRARY_BOOKS = [
     description: 'Clásico de la literatura griega, traducido al español. Ideal para practicar lectura.',
     type: 'epub',
     file: '/epub/la-odisea.epub',
+    price: 2000,
   },
   {
     id: 'logica-de-programacion',
@@ -82,9 +83,16 @@ export const LIBRARY_BOOKS = [
     description: 'Guía completa de Linux: terminal, administración de sistemas y más.',
     type: 'pdf',
     file: '/pdf/linux-bible-11-2026.pdf',
+    price: 8000,
   },
 ]
 
 export function getBookById(id) {
   return LIBRARY_BOOKS.find((b) => b.id === id)
+}
+
+// A book is purchasable once its file exists; "Próximamente" books (file:
+// null) have no price and can't be bought yet.
+export function isBookPurchasable(book) {
+  return !!book.file && typeof book.price === 'number'
 }

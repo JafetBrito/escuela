@@ -21,5 +21,17 @@ export const useShopStore = create((set, get) => ({
     return true
   },
 
+  // Generic purchase for things that live outside SHOP_ITEMS but share the
+  // same coins + "purchased" tracking (e.g. Biblioteca books).
+  buyGeneric: (id, price) => {
+    if (get().purchased.includes(id)) return false
+
+    const ok = useCurrencyStore.getState().spendCoins(price)
+    if (!ok) return false
+
+    set((state) => ({ purchased: [...state.purchased, id] }))
+    return true
+  },
+
   loadPurchased: (purchased) => set({ purchased: purchased ?? [] }),
 }))

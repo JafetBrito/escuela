@@ -10,6 +10,8 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, CHAT_MODELS, AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
+import { useShopStore } from '../../stores/useShopStore'
+import { SHOP_ITEMS } from '../../data/shopRegistry'
 import { getMascotById } from '../../data/mascotRegistry'
 import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
 import { saveLocalSnapshot } from '../../services/persistence/localStore'
@@ -43,6 +45,11 @@ export default function SettingsPage() {
   const setMaxTokens = useSettingsStore((s) => s.setMaxTokens)
   const customInstructions = useSettingsStore((s) => s.customInstructions)
   const setCustomInstructions = useSettingsStore((s) => s.setCustomInstructions)
+  const purchased = useShopStore((s) => s.purchased)
+
+  const ownedPrompts = SHOP_ITEMS.filter(
+    (item) => item.kind === 'ai-prompt' && purchased.includes(item.id),
+  )
 
   const displayName = settingsMascotName || mascot.name
   const historyDays = Object.keys(chatHistory).sort((a, b) => b.localeCompare(a))
@@ -308,6 +315,42 @@ export default function SettingsPage() {
               )}
             </div>
           </section>
+
+          {ownedPrompts.length > 0 && (
+            <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
+              <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+                🧠 Personalidades de IA compradas
+              </p>
+              <p className="text-sm text-text-muted">
+                Aplica una personalidad comprada en la Tienda como instrucciones personalizadas de
+                tu mascota. Puedes editarlas después arriba, en "Instrucciones personalizadas".
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {ownedPrompts.map((item) => {
+                  const active = customInstructions.trim() === item.promptText.trim()
+                  return (
+                    <div key={item.id} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3">
+                      <p className="flex items-center gap-2 text-sm font-bold text-text">
+                        <span className="text-lg">{item.icon}</span> {item.name}
+                      </p>
+                      <p className="text-xs text-text-muted">{item.description}</p>
+                      <button
+                        onClick={() => setCustomInstructions(item.promptText)}
+                        disabled={active}
+                        className={`mt-1 self-start rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          active
+                            ? 'cursor-default bg-primary/20 text-primary'
+                            : 'border border-border text-text-muted hover:border-primary/40 hover:text-text'
+                        }`}
+                      >
+                        {active ? '✓ Activa' : 'Usar esta personalidad'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
 
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Chats</p>
