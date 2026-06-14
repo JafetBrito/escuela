@@ -1,31 +1,37 @@
 import { useShopStore } from '../../stores/useShopStore'
-import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { LIBRARY_BOOKS, isBookPurchasable } from '../../data/libraryRegistry'
-import { formatCurrency } from '../../utils/currency'
 
 // Lets the user open any unlocked book in the global reader popup from
 // wherever they are, without going through the Biblioteca page.
 export default function BooksPanel() {
   const purchased = useShopStore((s) => s.purchased)
-  const buyGeneric = useShopStore((s) => s.buyGeneric)
-  const coins = useCurrencyStore((s) => s.coins)
   const openBook = useLibraryStore((s) => s.openBook)
+
+  // Only show books the user can actually open: not "coming soon" and, if
+  // they have a price, already purchased.
+  const availableBooks = LIBRARY_BOOKS.filter((book) => {
+    if (!book.file) return false
+    const purchasable = isBookPurchasable(book)
+    const owned = purchased.includes(book.id)
+    return !purchasable || owned
+  })
 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-text-muted">
         Tus libros de la Biblioteca. Ábrelos en este mismo pop-up desde cualquier parte de la
-        plataforma.
+        plataforma. Los que aún no has comprado aparecen en la Biblioteca.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {LIBRARY_BOOKS.map((book) => {
-          const purchasable = isBookPurchasable(book)
-          const owned = purchased.includes(book.id)
-          const locked = purchasable && !owned
-          const comingSoon = !book.file
+      {availableBooks.length === 0 && (
+        <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-text-muted">
+          Todavía no tienes libros disponibles. Visita la Biblioteca para conseguir algunos.
+        </p>
+      )}
 
+      <div className="grid gap-3 sm:grid-cols-2">
+        {availableBooks.map((book) => {
           return (
             <div
               key={book.id}
@@ -40,30 +46,12 @@ export default function BooksPanel() {
               <div className="flex flex-1 flex-col gap-1 overflow-hidden">
                 <p className="truncate font-bold text-text">{book.title}</p>
                 <p className="truncate text-xs text-text-muted">{book.author}</p>
-                {comingSoon ? (
-                  <span className="mt-1 self-start rounded-lg border border-border px-3 py-1 text-xs font-semibold text-text-muted">
-                    🔒 Próximamente
-                  </span>
-                ) : locked ? (
-                  <button
-                    onClick={() => buyGeneric(book.id, book.price)}
-                    disabled={coins < book.price}
-                    className={`mt-1 self-start rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                      coins >= book.price
-                        ? 'bg-primary text-background hover:bg-primary-hover'
-                        : 'cursor-not-allowed border border-border text-text-muted'
-                    }`}
-                  >
-                    🔒 Comprar · {formatCurrency(book.price)}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openBook(book.id)}
-                    className="mt-1 self-start rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-background transition-colors hover:bg-primary-hover"
-                  >
-                    📖 Leer
-                  </button>
-                )}
+                <button
+                  onClick={() => openBook(book.id)}
+                  className="mt-1 self-start rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-background transition-colors hover:bg-primary-hover"
+                >
+                  📖 Leer
+                </button>
               </div>
 
               {/* Hover description, same idea as the Biblioteca cards */}
