@@ -63,6 +63,11 @@ export const useAuthStore = create((set, get) => ({
       if (cloudIsNewer) {
         applyProgressSnapshot(profile.snapshot)
       }
+    } else if (profile) {
+      // Brand-new account that's never synced to the cloud yet — start fresh
+      // instead of inheriting whatever was left in this browser's local
+      // storage from previous sessions/accounts.
+      applyProgressSnapshot({})
     }
   },
 

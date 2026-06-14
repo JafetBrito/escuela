@@ -25,50 +25,6 @@ export const ITEMS = [
     description: 'Otorgada al iniciar tu primer curso. Mantiene viva tu racha de aprendizaje.',
     unlockedFor: () => true,
   },
-  {
-    id: 'lente-resumen',
-    name: 'Lente de Resumen',
-    icon: '🔍',
-    rarity: 'rare',
-    description:
-      'Actívala y pídele a tu mascota un resumen exprés de la clase actual con un solo clic, directo en el chat.',
-    unlockedFor: () => true,
-    interactive: true,
-    kind: 'summary-lens',
-  },
-  {
-    id: 'caja-tdah',
-    name: 'Caja del TDAH',
-    icon: '🧩',
-    rarity: 'epic',
-    description:
-      'Una pausa visual para recentrar tu atención. Actívala para abrir tu espacio de enfoque con tarjetas guía.',
-    unlockedFor: () => true,
-    interactive: true,
-    kind: 'focus-box',
-  },
-  {
-    id: 'reina-nefertiti',
-    name: 'Reina Nefertiti',
-    icon: '👑',
-    rarity: 'epic',
-    description:
-      'Transforma la apariencia de toda la plataforma con una piel egipcia, dorada y con jeroglíficos.',
-    unlockedFor: () => true,
-    interactive: true,
-    kind: 'desert-theme',
-  },
-  {
-    id: 'camara',
-    name: 'Cámara',
-    icon: '📸',
-    rarity: 'rare',
-    description:
-      'Actívala para tomar capturas de pantalla de tu progreso, etiquetarlas y guardarlas en tu galería.',
-    unlockedFor: () => true,
-    interactive: true,
-    kind: 'camera',
-  },
 ]
 
 export function getUnlockedItems(license) {
