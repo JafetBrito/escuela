@@ -35,11 +35,7 @@ export default function DashboardPage() {
 
   const handleSelect = (course) => {
     if (course.locked) return
-    if (hasAccessToCourse(course.id)) {
-      navigate(`/learn/${course.id}`)
-    } else {
-      navigate(`/crear-cuenta?course=${course.id}`)
-    }
+    navigate(`/learn/${course.id}`)
   }
 
   return (
@@ -125,7 +121,7 @@ export default function DashboardPage() {
                             )}
                             {!course.locked && !owned && (
                               <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
-                                🔑 Comprar acceso
+                                🔑 2 clases gratis
                               </span>
                             )}
                             {!course.locked && owned && pct === 100 && (
@@ -157,7 +153,7 @@ export default function DashboardPage() {
                               className="self-start rounded-lg px-4 py-2 text-sm font-semibold text-background"
                               style={{ backgroundColor: meta.accent }}
                             >
-                              {owned ? (pct ? 'Continuar curso' : 'Empezar curso') : 'Obtener llave'}
+                              {owned ? (pct ? 'Continuar curso' : 'Empezar curso') : 'Probar gratis'}
                             </span>
                           )}
                         </button>

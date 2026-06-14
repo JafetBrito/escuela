@@ -7,6 +7,7 @@ export const useMascotStore = create((set) => ({
     conversationHistory: [],
     personalityFlags: {},
     placementTest: null,
+    studyPlans: {},
   },
 
   selectMascot: (id) => set({ selectedMascotId: id }),
@@ -25,7 +26,33 @@ export const useMascotStore = create((set) => ({
       memory: { ...state.memory, placementTest: results },
     })),
 
-  loadMemory: (memory) => set({ memory }),
+  // Saves the AI-generated study plan for a course so the welcome flow never
+  // has to generate (or show) it again once completed.
+  setStudyPlan: (courseId, plan) =>
+    set((state) => ({
+      memory: {
+        ...state.memory,
+        studyPlans: { ...state.memory.studyPlans, [courseId]: plan },
+      },
+    })),
+
+  // Clears the live conversation transcript — used when starting a fresh
+  // chat for a new class, while the previous one stays in Chats history.
+  clearConversation: () =>
+    set((state) => ({
+      memory: { ...state.memory, conversationHistory: [] },
+    })),
+
+  loadMemory: (memory) =>
+    set({
+      memory: {
+        conversationHistory: [],
+        personalityFlags: {},
+        placementTest: null,
+        studyPlans: {},
+        ...memory,
+      },
+    }),
 
   loadSkin: (selectedSkinId) => set({ selectedSkinId: selectedSkinId ?? 'default' }),
 }))

@@ -15,6 +15,12 @@ import { SHOP_ITEMS } from '../../data/shopRegistry'
 import { getMascotById } from '../../data/mascotRegistry'
 import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
 import { saveLocalSnapshot } from '../../services/persistence/localStore'
+import { isSupabaseConfigured } from '../../services/supabase/client'
+
+const ROLE_LABELS = {
+  admin: 'Administrador',
+  student: 'Alumno',
+}
 
 export default function SettingsPage() {
   const navigate = useNavigate()
@@ -25,7 +31,14 @@ export default function SettingsPage() {
   const license = useAuthStore((s) => s.license)
   const googleUser = useAuthStore((s) => s.googleUser)
   const lock = useAuthStore((s) => s.lock)
+  const session = useAuthStore((s) => s.session)
+  const profile = useAuthStore((s) => s.profile)
+  const signOut = useAuthStore((s) => s.signOut)
+  const updatePassword = useAuthStore((s) => s.updatePassword)
   const coins = useCurrencyStore((s) => s.coins)
+
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordStatus, setPasswordStatus] = useState('')
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
@@ -58,11 +71,35 @@ export default function SettingsPage() {
     ? license.type === 'full'
       ? 'Completo (todos los cursos)'
       : `Un curso (${license?.courseId ?? '—'})`
-    : 'Curso demo (regístrate o compra una llave para más)'
+    : 'Todos los cursos · primeras 2 clases gratis'
 
-  const handleLogout = () => {
-    lock()
+  const supabaseReady = isSupabaseConfigured()
+  const isEmailProvider = session?.user?.app_metadata?.provider === 'email'
+  const roleLabel = profile
+    ? `${ROLE_LABELS[profile.role] ?? 'Alumno'} (${license ? 'con llave' : 'sin llave'})`
+    : null
+
+  const handleLogout = async () => {
+    if (supabaseReady) {
+      await signOut()
+    } else {
+      lock()
+    }
     navigate('/')
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPasswordStatus('')
+    try {
+      await updatePassword(newPassword)
+      setPasswordStatus('Contraseña actualizada')
+      setNewPassword('')
+    } catch (err) {
+      setPasswordStatus(err.message)
+    } finally {
+      setTimeout(() => setPasswordStatus(''), 3000)
+    }
   }
 
   const handleSaveAi = () => {
@@ -87,22 +124,26 @@ export default function SettingsPage() {
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Cuenta</p>
 
-            {googleUser && (
+            {(session || googleUser) && (
               <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
-                {googleUser.picture && (
+                {(profile?.avatar_url || googleUser?.picture) && (
                   <img
-                    src={googleUser.picture}
-                    alt={googleUser.name}
+                    src={profile?.avatar_url || googleUser?.picture}
+                    alt=""
                     className="h-10 w-10 rounded-full"
                   />
                 )}
                 <div>
-                  <p className="text-sm font-semibold text-text">{googleUser.name}</p>
-                  <p className="text-xs text-text-muted">{googleUser.email}</p>
+                  <p className="text-sm font-semibold text-text">
+                    {profile?.display_name || googleUser?.name || 'Tu cuenta'}
+                  </p>
+                  <p className="text-xs text-text-muted">{session?.user?.email || googleUser?.email}</p>
                 </div>
-                <span className="ml-auto rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
-                  Conectado con Google
-                </span>
+                {roleLabel && (
+                  <span className="ml-auto rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
+                    {roleLabel}
+                  </span>
+                )}
               </div>
             )}
 
@@ -110,16 +151,6 @@ export default function SettingsPage() {
               <div>
                 <p className="text-text-muted">Licencia</p>
                 <p className="font-mono text-text">{license?.licenseId ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-text-muted">Plan</p>
-                <p className="text-text">{license?.role ?? 'estudiante'}</p>
-              </div>
-              <div>
-                <p className="text-text-muted">Activado</p>
-                <p className="text-text">
-                  {license?.issuedAt ? new Date(license.issuedAt).toLocaleDateString() : '—'}
-                </p>
               </div>
               <div>
                 <p className="text-text-muted">Acceso a cursos</p>
@@ -136,6 +167,12 @@ export default function SettingsPage() {
 
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <ProgressSync />
+              <Link
+                to="/unlock"
+                className="rounded-lg border border-primary/30 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10"
+              >
+                🔑 Canjear otra llave
+              </Link>
               <button
                 onClick={handleLogout}
                 className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-danger hover:text-danger"
@@ -143,10 +180,35 @@ export default function SettingsPage() {
                 Cerrar sesión
               </button>
             </div>
+
+            {isEmailProvider && (
+              <form onSubmit={handleChangePassword} className="mt-2 flex flex-wrap items-end gap-2">
+                <label className="flex flex-col gap-1 text-sm">
+                  Cambiar contraseña
+                  <input
+                    type="password"
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Nueva contraseña"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-text outline-none focus:border-primary"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={newPassword.length < 6}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-primary hover:text-text disabled:opacity-60"
+                >
+                  Actualizar
+                </button>
+                {passwordStatus && <span className="text-sm text-primary">{passwordStatus}</span>}
+              </form>
+            )}
+
             <p className="text-xs text-text-muted">
-              "Descargar llave" guarda un archivo con tu licencia y todo tu progreso (monedas,
-              nivel, cursos, chats). Como todavía no hay base de datos, usa ese archivo para
-              seguir donde lo dejaste en otro navegador o para probar con distintos usuarios.
+              {supabaseReady
+                ? 'Tu progreso, mascota y configuración se guardan en tu cuenta y se sincronizan entre dispositivos.'
+                : '"Descargar llave" guarda un archivo con tu licencia y todo tu progreso (monedas, nivel, cursos, chats). Úsalo para seguir donde lo dejaste en otro navegador o para probar con distintos usuarios.'}
             </p>
           </section>
 

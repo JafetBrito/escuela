@@ -5,6 +5,7 @@ import { useChatStore } from '../../stores/useChatStore'
 import { useChatHistoryStore } from '../../stores/useChatHistoryStore'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
+import { useCollectionStore } from '../../stores/useCollectionStore'
 import { useGalleryStore } from '../../stores/useGalleryStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useShopStore } from '../../stores/useShopStore'
@@ -14,6 +15,7 @@ import { useLibraryStore } from '../../stores/useLibraryStore'
 import { useGamesStore } from '../../stores/useGamesStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
+import { supabase, isSupabaseConfigured } from '../supabase/client'
 
 const STORES = [
   useAuthStore,
@@ -23,6 +25,7 @@ const STORES = [
   useChatHistoryStore,
   useInventoryStore,
   useItemEffectsStore,
+  useCollectionStore,
   useGalleryStore,
   useCurrencyStore,
   useShopStore,
@@ -42,6 +45,25 @@ export function hydrateFromLocalStorage() {
   }
 }
 
+// Pushes the current snapshot to profiles.snapshot so progress, mascot,
+// settings and coins follow the user across devices. Debounced separately
+// from the local save since it's a network call.
+let cloudSaveTimer = null
+function scheduleCloudSave() {
+  if (!isSupabaseConfigured()) return
+  const { user } = useAuthStore.getState()
+  if (!user) return
+
+  if (cloudSaveTimer) clearTimeout(cloudSaveTimer)
+  cloudSaveTimer = setTimeout(async () => {
+    const snapshot = buildProgressSnapshot()
+    await supabase
+      .from('profiles')
+      .update({ snapshot, updated_at: new Date().toISOString() })
+      .eq('id', user.id)
+  }, 3000)
+}
+
 // Keeps the saved account snapshot in sync with every store change
 // (mission/module completions, purchases, chat messages, settings, etc.).
 let saveTimer = null
@@ -51,6 +73,7 @@ export function startAutoSave() {
     saveTimer = setTimeout(() => {
       saveLocalSnapshot(buildProgressSnapshot())
     }, 500)
+    scheduleCloudSave()
   }
 
   STORES.forEach((store) => store.subscribe(scheduleSave))

@@ -3,11 +3,18 @@ import { getCourseData } from '../data/courseRegistry'
 import { getModuleMissions, MISSION_TYPES } from '../data/missionsRegistry'
 import { useCurrencyStore } from './useCurrencyStore'
 import { useLevelStore } from './useLevelStore'
+import { useCollectionStore } from './useCollectionStore'
+import { useAuthStore } from './useAuthStore'
 import { isCourseCompleted } from '../data/achievementsRegistry'
+
+// Any user (with or without an account) can try the first 2 classes of
+// every course for free. Classes 3+ require a license for that course
+// (see useAuthStore.hasAccessToCourse).
+const FREE_MODULE_ORDER_LIMIT = 2
 
 // XP awarded for each "tarea" (mission), for finishing a module, and for
 // completing an entire course. Mirrors the mission reward map but in XP.
-const MISSION_XP = { quiz: 50, chat: 20, item: 20 }
+const MISSION_XP = { quiz: 50, chat: 20, item: 20, fun: 30 }
 const MODULE_COMPLETE_XP = 100
 const COURSE_COMPLETE_XP = 500
 
@@ -61,15 +68,22 @@ export const useProgressStore = create((set, get) => ({
       const current = courseState.moduleMissions[moduleId] ?? {}
       if (current[missionId]) return {}
 
-      const reward = MISSION_TYPES[missionId]?.reward ?? 0
-      if (reward > 0) useCurrencyStore.getState().earnCoins(reward)
-
-      const xpReward = MISSION_XP[missionId] ?? 0
-      if (xpReward > 0) useLevelStore.getState().addXp(xpReward)
-
-      const updatedMissions = { ...current, [missionId]: true }
       const courseData = getCourseData(courseId)
       const moduleData = courseData.modules.find((m) => m.id === moduleId)
+      const missionDef = moduleData
+        ? getModuleMissions(moduleData).find((m) => m.id === missionId)
+        : null
+
+      const reward = missionDef?.reward ?? MISSION_TYPES[missionId]?.reward ?? 0
+      if (reward > 0) useCurrencyStore.getState().earnCoins(reward)
+
+      const xpReward = MISSION_XP[missionId] ?? MISSION_XP[missionDef?.type] ?? 0
+      if (xpReward > 0) useLevelStore.getState().addXp(xpReward)
+
+      const itemReward = missionDef?.itemReward ?? MISSION_TYPES[missionId]?.itemReward
+      if (itemReward) useCollectionStore.getState().addItem(itemReward)
+
+      const updatedMissions = { ...current, [missionId]: true }
       const allDone = moduleData
         ? getModuleMissions(moduleData).every((m) => updatedMissions[m.id])
         : false
@@ -103,10 +117,19 @@ export const useProgressStore = create((set, get) => ({
 
   // Modules unlock sequentially: the first module is always open, module N
   // requires module N-1's quiz to be passed (moduleProgress[].completed === true).
+  // On top of that, classes beyond FREE_MODULE_ORDER_LIMIT require a license
+  // for this course (hasAccessToCourse).
   isModuleUnlocked: (courseId, id) => {
     const courseData = getCourseData(courseId)
     const targetModule = courseData.modules.find((m) => m.id === id)
     if (!targetModule) return false
+
+    if (
+      targetModule.order > FREE_MODULE_ORDER_LIMIT &&
+      !useAuthStore.getState().hasAccessToCourse(courseId)
+    ) {
+      return false
+    }
 
     const firstOrder = Math.min(...courseData.modules.map((m) => m.order))
     if (targetModule.order === firstOrder) return true

@@ -1,6 +1,7 @@
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { useCollectionStore } from '../../stores/useCollectionStore'
 import { getUnlockedItems, ITEM_RARITY } from '../../data/itemsRegistry'
 import { SHOP_ITEMS } from '../../data/shopRegistry'
 
@@ -13,6 +14,7 @@ export default function ItemsPanel({ className = '' }) {
   ]
   const activeItems = useItemEffectsStore((s) => s.activeItems)
   const toggleItem = useItemEffectsStore((s) => s.toggleItem)
+  const collectionItems = useCollectionStore((s) => s.items)
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
@@ -68,6 +70,42 @@ export default function ItemsPanel({ className = '' }) {
           )
         })}
       </div>
+
+      {collectionItems.length > 0 && (
+        <>
+          <p className="mt-2 text-sm text-text-muted">
+            Objetos que has ganado completando misiones de tus clases:
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {collectionItems.map((item) => {
+              const rarity = ITEM_RARITY[item.rarity] ?? ITEM_RARITY.common
+              return (
+                <div
+                  key={item.id}
+                  className="flex gap-3 rounded-xl border-2 bg-background p-3"
+                  style={{ borderColor: rarity.color }}
+                >
+                  <div
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg text-3xl"
+                    style={{ backgroundColor: `${rarity.color}22`, border: `1px solid ${rarity.color}` }}
+                  >
+                    {item.icon}
+                  </div>
+                  <div className="flex flex-1 flex-col gap-1">
+                    <p className="font-bold" style={{ color: rarity.color }}>
+                      {item.name}
+                    </p>
+                    <p className="text-xs uppercase tracking-wide" style={{ color: rarity.color }}>
+                      {rarity.label}
+                    </p>
+                    <p className="text-sm text-text-muted">{item.description}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -25,8 +25,9 @@ export default function AppTopBar({ variant = 'full' }) {
 
   return (
     <header className="relative flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-2.5 md:px-6">
-      <Link to="/dashboard" className="shrink-0" onClick={() => setMenuOpen(false)}>
+      <Link to="/dashboard" className="flex shrink-0 items-center gap-1.5" onClick={() => setMenuOpen(false)}>
         <Logo />
+        <span aria-hidden="true">🐱</span>
       </Link>
 
       {variant === 'course' ? (

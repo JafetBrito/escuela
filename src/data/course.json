@@ -1,27 +1,104 @@
 {
   "courseId": "course-001",
   "title": "Curso: Domina Google NotebookLM",
-  "description": "Aprende a usar Google NotebookLM como tu asistente de investigación y estudio, módulo por módulo, con retos y tu mascota IA como guía.",
-  "aiInstructions": "Este curso enseña Google NotebookLM paso a paso: qué es, cómo crear notebooks, subir y organizar fuentes, generar resúmenes, mapas mentales, Audio Overview y otras funciones. Cuando el estudiante pregunte sobre estos temas, explica usando los nombres reales de las funciones de NotebookLM (Fuentes, Chat, Audio Overview, Notas, Studio, etc.) y relaciona la respuesta con el módulo correspondiente del curso. Si el estudiante pide ayuda con un reto o quiz de un módulo, guíalo con pistas en lugar de dar la respuesta directa de inmediato.",
+  "description": "Aprende a usar Google NotebookLM como tu asistente de investigación y estudio, en 5 clases con retos divertidos y tu mascota IA como guía.",
+  "aiInstructions": "Este curso enseña Google NotebookLM en 5 clases: 1) Introducción a NotebookLM, 2) Ciclo de aprendizaje, 3) Flujos de trabajo con IA, 4) Arquitectura de IA aplicada al estudio, y 5) De caos a maestría con NotebookLM. Cuando el estudiante pregunte sobre estos temas, explica usando los nombres reales de las funciones de NotebookLM (Fuentes, Chat, Audio Overview, Notas, Studio, etc.) y relaciona la respuesta con la clase correspondiente. Si el estudiante pide ayuda con una misión o quiz, guíalo con pistas en lugar de dar la respuesta directa de inmediato. Al completar las 5 clases, el estudiante recibe una medalla en Logros.",
+  "welcome": {
+    "topicIntro": "Google NotebookLM es un asistente de IA que trabaja únicamente con las fuentes que tú le entregas (documentos, links, videos, audios) y te ayuda a resumir, organizar y entender tu propio material de estudio. En este curso lo vas a dominar en 5 clases cortas, con misiones y retos divertidos en cada una.",
+    "requirements": [
+      "Una cuenta de Google (gratis) para entrar a notebooklm.google.com",
+      "Conexión a internet estable",
+      "Algún material propio para practicar (apuntes, PDFs, links, videos) — opcional pero recomendado",
+      "Unos 20-30 minutos por clase, sin prisa"
+    ]
+  },
   "modules": [
     {
       "id": 1,
-      "title": "Bienvenida a NotebookLM",
+      "title": "Introducción a NotebookLM",
       "order": 1,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Qué es NotebookLM, para qué sirve y qué vas a construir en este curso.",
+      "videoId": "7tJqUUxwqTY",
+      "description": "Descubre qué es Google NotebookLM, para qué sirve y cómo puede convertirse en tu asistente de estudio personal.",
       "exercises": [
-        { "id": "1-1", "type": "challenge", "prompt": "Escribe en una frase qué problema te gustaría resolver usando NotebookLM (por ejemplo, organizar apuntes de clase).", "solution": "" }
+        {
+          "id": "1-1",
+          "type": "challenge",
+          "prompt": "🕵️ Misión: explorador de NotebookLM. Después de ver el video, escribe 3 cosas nuevas que descubriste sobre NotebookLM y que no sabías antes.",
+          "solution": ""
+        },
+        {
+          "id": "1-2",
+          "type": "challenge",
+          "prompt": "⚡ Reto exprés: en una sola frase, explica con tus propias palabras qué problema te ayudaría a resolver NotebookLM en tu día a día como estudiante.",
+          "solution": ""
+        }
+      ],
+      "missions": {
+        "chat": {
+          "label": "Pregúntale a tu mascota: ¿en qué se diferencia NotebookLM de un buscador normal?",
+          "hint": "Escríbele esa pregunta en el Chat. Te explicará por qué NotebookLM responde SOLO con base en las fuentes que tú subes, y no con todo internet."
+        },
+        "item": {
+          "label": "Activa la Lente de Resumen 🔍 y pide un resumen exprés de esta clase",
+          "hint": "Ve a Objetos, activa la Lente de Resumen y luego usa el botón de resumen que aparece en el Chat."
+        }
+      },
+      "funMissions": [
+        {
+          "id": "fun-1",
+          "icon": "🕵️",
+          "title": "Explorador de NotebookLM",
+          "prompt": "Después de ver el video, escribe en el Chat 3 cosas nuevas que descubriste sobre NotebookLM que no sabías antes.",
+          "reward": 1000,
+          "item": {
+            "id": "lupa-explorador",
+            "name": "Lupa del Explorador",
+            "icon": "🔍",
+            "rarity": "common",
+            "description": "La conseguiste explorando NotebookLM por primera vez en la Clase 1."
+          }
+        },
+        {
+          "id": "fun-2",
+          "icon": "⚡",
+          "title": "Reto exprés: tu problema real",
+          "prompt": "En una sola frase, cuéntale a tu mascota qué problema de tu día a día como estudiante crees que NotebookLM te ayudaría a resolver.",
+          "reward": 1000,
+          "item": {
+            "id": "chispa-de-idea",
+            "name": "Chispa de Idea",
+            "icon": "💡",
+            "rarity": "common",
+            "description": "Apareció cuando conectaste NotebookLM con un problema real en la Clase 1."
+          }
+        },
+        {
+          "id": "fun-3",
+          "icon": "🗂️",
+          "title": "Misión Fuentes",
+          "prompt": "Dile a tu mascota qué tipo de 'fuente' (documento, video, sitio web, audio) usarías primero si empezaras hoy a usar NotebookLM, y por qué.",
+          "reward": 1000,
+          "item": {
+            "id": "carpeta-de-fuentes",
+            "name": "Carpeta de Fuentes",
+            "icon": "🗂️",
+            "rarity": "rare",
+            "description": "Tu primera carpeta de fuentes organizada, ganada en la Clase 1."
+          }
+        }
       ],
       "resources": [
         { "label": "Sitio oficial de NotebookLM", "url": "https://notebooklm.google/", "type": "link" },
-        { "label": "Centro de ayuda de NotebookLM", "url": "https://support.google.com/notebooklm", "type": "link" }
+        { "label": "Centro de ayuda de NotebookLM", "url": "https://support.google.com/notebooklm", "type": "link" },
+        { "label": "Primeros pasos con NotebookLM", "url": "https://support.google.com/notebooklm/answer/14276468", "type": "link" },
+        { "label": "Preguntas frecuentes de NotebookLM", "url": "https://support.google.com/notebooklm/answer/14278184", "type": "link" },
+        { "label": "Novedades de NotebookLM (blog)", "url": "https://blog.google/technology/ai/notebooklm/", "type": "link" }
       ],
       "quiz": {
-        "question": "¿Qué es Google NotebookLM principalmente?",
+        "question": "Según la introducción, ¿qué es Google NotebookLM principalmente?",
         "options": [
           "Un editor de fotos",
-          "Un asistente de investigación basado en IA que trabaja sobre tus propias fuentes",
+          "Un asistente de IA que trabaja sobre las fuentes que tú le das",
           "Una hoja de cálculo en la nube",
           "Un reproductor de video"
         ],
@@ -31,265 +108,141 @@
     },
     {
       "id": 2,
-      "title": "Crea tu primer notebook",
+      "title": "El ciclo de aprendizaje",
       "order": 2,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo crear un notebook nuevo, ponerle nombre y entender la interfaz principal.",
+      "videoId": "tEffZKSGoCQ",
+      "description": "Conoce el ciclo de aprendizaje (explorar, organizar, repasar y aplicar) y cómo NotebookLM te acompaña en cada etapa.",
       "exercises": [
-        { "id": "2-1", "type": "challenge", "prompt": "Anota el nombre que le darías a tu primer notebook y el tema principal que cubrirá.", "solution": "" }
+        {
+          "id": "2-1",
+          "type": "challenge",
+          "prompt": "🔄 Misión: dibuja tu ciclo. Elige un tema que estés estudiando y describe cómo se vería tu ciclo de aprendizaje en 4 pasos (explorar, organizar, repasar, aplicar).",
+          "solution": ""
+        },
+        {
+          "id": "2-2",
+          "type": "challenge",
+          "prompt": "🎯 Reto exprés: ¿en qué paso del ciclo de aprendizaje crees que NotebookLM te ahorra más tiempo? Justifica tu respuesta en 1-2 líneas.",
+          "solution": ""
+        }
       ],
       "resources": [
         { "label": "Guía: primeros pasos en NotebookLM", "url": "https://support.google.com/notebooklm", "type": "link" }
       ],
       "quiz": {
-        "question": "¿Qué necesitas hacer primero para empezar a trabajar en NotebookLM?",
+        "question": "Según el video, ¿cuál es el propósito de un ciclo de aprendizaje?",
         "options": [
-          "Crear un notebook nuevo",
-          "Comprar una licencia",
-          "Instalar una extensión de navegador obligatoria",
-          "Configurar un servidor propio"
+          "Memorizar todo de una sola vez sin repasar",
+          "Repetir un proceso de explorar, organizar, repasar y aplicar para que el conocimiento se quede contigo",
+          "Eliminar la necesidad de practicar",
+          "Estudiar solo un día antes del examen"
         ],
-        "correctIndex": 0
+        "correctIndex": 1
       },
       "comments": []
     },
     {
       "id": 3,
-      "title": "Sube y organiza tus fuentes",
+      "title": "Flujos de trabajo con IA",
       "order": 3,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Tipos de fuentes admitidas (PDF, Google Docs, sitios web, audio) y buenas prácticas para organizarlas.",
+      "videoId": "WLfnZJ8zOfo",
+      "description": "Aprende a encadenar herramientas de IA en un flujo de trabajo: desde subir tus fuentes hasta generar resúmenes, guías y Audio Overviews.",
       "exercises": [
-        { "id": "3-1", "type": "challenge", "prompt": "Haz una lista de 3 documentos o páginas que te gustaría subir como fuentes para tu notebook.", "solution": "" }
+        {
+          "id": "3-1",
+          "type": "challenge",
+          "prompt": "🛠️ Misión: arma tu flujo. Diseña un flujo de trabajo con IA de 3 a 5 pasos para preparar un examen, usando NotebookLM en al menos uno de los pasos.",
+          "solution": ""
+        },
+        {
+          "id": "3-2",
+          "type": "challenge",
+          "prompt": "🚀 Reto exprés: nombra una tarea repetitiva de tus estudios que podrías automatizar o acelerar con un flujo de IA.",
+          "solution": ""
+        }
       ],
       "resources": [
         { "label": "Tipos de fuentes compatibles", "url": "https://support.google.com/notebooklm", "type": "link" }
       ],
       "quiz": {
-        "question": "¿Cuál de estas NO es un tipo de fuente típico que puedes agregar a un notebook?",
+        "question": "¿Qué describe mejor un 'flujo de trabajo con IA'?",
         "options": [
-          "Un archivo PDF",
-          "Un documento de Google Docs",
-          "Una página web",
-          "Un disco duro físico completo"
+          "Usar una sola herramienta de IA una sola vez",
+          "Una serie de pasos donde varias herramientas (o funciones) de IA se conectan para lograr un resultado",
+          "Borrar todas las fuentes antes de empezar",
+          "Esperar a que la IA trabaje sin darle ninguna información"
         ],
-        "correctIndex": 3
+        "correctIndex": 1
       },
       "comments": []
     },
     {
       "id": 4,
-      "title": "Resumen automático y panorama general",
+      "title": "Arquitectura de IA para tu estudio",
       "order": 4,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo NotebookLM genera un resumen y panorama general de tus fuentes apenas las subes.",
+      "videoId": "7tJqUUxwqTY",
+      "description": "Entiende, a un nivel general, cómo está organizada una arquitectura de IA (fuentes, modelo, memoria, salida) y cómo se refleja eso en NotebookLM.",
       "exercises": [
-        { "id": "4-1", "type": "challenge", "prompt": "Describe qué esperarías encontrar en el resumen automático de un conjunto de apuntes de clase.", "solution": "" }
+        {
+          "id": "4-1",
+          "type": "challenge",
+          "prompt": "🏗️ Misión: arquitecto por un día. Dibuja o describe en texto un diagrama simple con las piezas principales de una arquitectura de IA aplicada a tu estudio (tus fuentes, la IA, y lo que obtienes como resultado).",
+          "solution": ""
+        },
+        {
+          "id": "4-2",
+          "type": "challenge",
+          "prompt": "🧩 Reto exprés: ¿qué pasaría si le diéras a NotebookLM fuentes desordenadas o de mala calidad? Escribe en 1-2 líneas cómo crees que afectaría sus respuestas.",
+          "solution": ""
+        }
       ],
       "resources": [
         { "label": "Cómo funcionan los resúmenes", "url": "https://support.google.com/notebooklm", "type": "link" }
       ],
       "quiz": {
-        "question": "¿Qué genera NotebookLM automáticamente al subir tus fuentes?",
+        "question": "En una arquitectura de IA aplicada al estudio, ¿por qué son tan importantes las fuentes que subes?",
         "options": [
-          "Un resumen y panorama general del contenido",
-          "Una factura de compra",
-          "Un video editado",
-          "Una traducción impresa"
+          "No importan, la IA siempre responde igual sin importar la entrada",
+          "Porque la calidad de las respuestas depende directamente de la calidad de las fuentes que le das",
+          "Porque ocupan espacio en disco y nada más",
+          "Porque reemplazan completamente al modelo de IA"
         ],
-        "correctIndex": 0
+        "correctIndex": 1
       },
       "comments": []
     },
     {
       "id": 5,
-      "title": "Chat con tus fuentes",
+      "title": "NotebookLM: de caos a maestría",
       "order": 5,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo hacerle preguntas a NotebookLM y obtener respuestas basadas únicamente en tus documentos.",
+      "videoId": "Xyqbx2Z8ruo",
+      "description": "Cierre del curso: cómo pasar de tener apuntes y fuentes desordenadas a tener un sistema de estudio organizado y dominado con NotebookLM.",
       "exercises": [
-        { "id": "5-1", "type": "challenge", "prompt": "Escribe una pregunta que le harías a NotebookLM sobre tus propias fuentes.", "solution": "" }
-      ],
-      "resources": [
-        { "label": "Preguntas y respuestas sobre tus fuentes", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "Cuando le preguntas algo a NotebookLM, ¿en qué basa sus respuestas?",
-        "options": [
-          "En internet en general, sin relación con tus archivos",
-          "En las fuentes que tú subiste al notebook",
-          "Solo en su entrenamiento previo, ignorando tus archivos",
-          "En un dado al azar"
-        ],
-        "correctIndex": 1
-      },
-      "comments": []
-    },
-    {
-      "id": 6,
-      "title": "Citas y verificación de información",
-      "order": 6,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo NotebookLM cita la fuente exacta de cada respuesta para que puedas verificarla.",
-      "exercises": [
-        { "id": "6-1", "type": "challenge", "prompt": "Explica por qué es importante poder verificar de dónde viene una respuesta generada por IA.", "solution": "" }
-      ],
-      "resources": [
-        { "label": "Citas y referencias en NotebookLM", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "¿Para qué sirven las citas que muestra NotebookLM junto a sus respuestas?",
-        "options": [
-          "Para decorar la respuesta",
-          "Para que verifiques el pasaje exacto de la fuente que la respalda",
-          "Para borrar la fuente original",
-          "No tienen ninguna función"
-        ],
-        "correctIndex": 1
-      },
-      "comments": []
-    },
-    {
-      "id": 7,
-      "title": "Audio Overview: tu propio podcast",
-      "order": 7,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo generar un 'Audio Overview', una conversación tipo podcast basada en tus fuentes.",
-      "exercises": [
-        { "id": "7-1", "type": "challenge", "prompt": "¿Para qué tema de tus apuntes te gustaría generar un Audio Overview?", "solution": "" }
-      ],
-      "resources": [
-        { "label": "Audio Overviews en NotebookLM", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "¿Qué es un 'Audio Overview' en NotebookLM?",
-        "options": [
-          "Una conversación tipo podcast generada a partir de tus fuentes",
-          "Un archivo de video",
-          "Una imagen generada por IA",
-          "Un correo automático"
-        ],
-        "correctIndex": 0
-      },
-      "comments": []
-    },
-    {
-      "id": 8,
-      "title": "Guías de estudio y preguntas frecuentes",
-      "order": 8,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Generación de guías de estudio, FAQs y líneas de tiempo a partir de tus fuentes.",
-      "exercises": [
-        { "id": "8-1", "type": "challenge", "prompt": "Anota 2 preguntas frecuentes que esperarías que NotebookLM genere sobre tu material.", "solution": "" }
-      ],
-      "resources": [
-        { "label": "Guías de estudio automáticas", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "Además de resúmenes, ¿qué otro tipo de contenido puede generar NotebookLM a partir de tus fuentes?",
-        "options": [
-          "Guías de estudio y preguntas frecuentes",
-          "Contratos legales firmados",
-          "Tickets de soporte",
-          "Backups de bases de datos"
-        ],
-        "correctIndex": 0
-      },
-      "comments": []
-    },
-    {
-      "id": 9,
-      "title": "Notas guardadas y organización del conocimiento",
-      "order": 9,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo guardar respuestas e ideas como notas dentro del notebook para construir tu propia base de conocimiento.",
-      "exercises": [
-        { "id": "9-1", "type": "challenge", "prompt": "Agrega una nota propia en la sección de 'Notas' de esta clase con una idea que quieras recordar.", "solution": "" }
-      ],
-      "resources": [
-        { "label": "Notas guardadas en NotebookLM", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "¿Para qué sirve guardar una respuesta como 'nota' dentro de tu notebook?",
-        "options": [
-          "Para eliminar la fuente original",
-          "Para construir tu propia base de conocimiento a partir de hallazgos importantes",
-          "Para enviarla automáticamente por correo",
-          "No tiene ninguna utilidad"
-        ],
-        "correctIndex": 1
-      },
-      "comments": []
-    },
-    {
-      "id": 10,
-      "title": "Caso de uso: investigación académica",
-      "order": 10,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Ejemplo práctico: usar NotebookLM para organizar papers, tesis y bibliografía de un proyecto de investigación.",
-      "exercises": [
-        { "id": "10-1", "type": "challenge", "prompt": "Describe brevemente un proyecto de investigación o tarea académica donde usarías NotebookLM.", "solution": "" }
-      ],
-      "resources": [
-        { "label": "NotebookLM para investigación", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "En un proyecto de investigación, ¿qué ventaja principal aporta NotebookLM?",
-        "options": [
-          "Escribe la tesis completa sin supervisión",
-          "Te permite consultar y comparar muchas fuentes académicas de forma centralizada",
-          "Reemplaza a tu tutor académico",
-          "Elimina la necesidad de citar fuentes"
-        ],
-        "correctIndex": 1
-      },
-      "comments": []
-    },
-    {
-      "id": 11,
-      "title": "Caso de uso: productividad en equipo",
-      "order": 11,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cómo equipos pueden compartir un notebook con documentación interna para responder preguntas rápidamente.",
-      "exercises": [
-        { "id": "11-1", "type": "challenge", "prompt": "Piensa en un equipo (trabajo, escuela, proyecto) y describe qué documentos compartirían en un notebook común.", "solution": "" }
-      ],
-      "resources": [
-        { "label": "Casos de uso de productividad", "url": "https://support.google.com/notebooklm", "type": "link" }
-      ],
-      "quiz": {
-        "question": "¿Qué beneficio obtiene un equipo al centralizar su documentación en un notebook compartido?",
-        "options": [
-          "Todos pueden hacer preguntas y obtener respuestas basadas en la misma documentación",
-          "Los archivos se duplican automáticamente sin control",
-          "Se elimina la necesidad de cualquier documentación",
-          "Solo una persona puede usarlo a la vez, sin excepción"
-        ],
-        "correctIndex": 0
-      },
-      "comments": []
-    },
-    {
-      "id": 12,
-      "title": "Proyecto final: tu propio notebook de curso",
-      "order": 12,
-      "videoId": "dQw4w9WgXcQ",
-      "description": "Cierre del curso: arma tu propio notebook con tus materiales y usa lo aprendido en los módulos anteriores.",
-      "exercises": [
-        { "id": "12-1", "type": "challenge", "prompt": "Resume en 3 pasos cómo construirás tu primer notebook real usando lo que aprendiste en este curso.", "solution": "" }
+        {
+          "id": "5-1",
+          "type": "challenge",
+          "prompt": "🏆 Misión final: el gran cambio. Piensa en tus apuntes o materiales actuales (el 'caos'). Describe en 3 pasos cómo los organizarías en NotebookLM para llegar a la 'maestría'.",
+          "solution": ""
+        },
+        {
+          "id": "5-2",
+          "type": "challenge",
+          "prompt": "🎉 Reto exprés: ¿cuál fue tu aprendizaje favorito de todo el curso? Escríbelo en 1-2 líneas para guardarlo en tu memoria de mascota.",
+          "solution": ""
+        }
       ],
       "resources": [
         { "label": "Resumen general de NotebookLM", "url": "https://notebooklm.google/", "type": "link" }
       ],
       "quiz": {
-        "question": "¿Cuál es un buen primer paso para tu propio notebook real, según lo visto en el curso?",
+        "question": "Según esta clase, ¿qué marca la diferencia entre 'caos' y 'maestría' al estudiar con NotebookLM?",
         "options": [
-          "Subir tus fuentes y dejar que NotebookLM genere un panorama general",
-          "Borrar todas tus fuentes antes de empezar",
-          "Evitar hacerle preguntas al notebook",
-          "Compartir tu contraseña con NotebookLM"
+          "Tener más fuentes sin organizar, sin importar el orden",
+          "Organizar tus fuentes y usar de forma constante las herramientas de NotebookLM (resúmenes, chat, Audio Overview, notas) como parte de tu sistema de estudio",
+          "Dejar de usar NotebookLM después de la primera clase",
+          "Memorizar todo sin usar ninguna herramienta"
         ],
-        "correctIndex": 0
+        "correctIndex": 1
       },
       "comments": []
     }

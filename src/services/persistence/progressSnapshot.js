@@ -5,6 +5,7 @@ import { useChatStore } from '../../stores/useChatStore'
 import { useChatHistoryStore } from '../../stores/useChatHistoryStore'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
+import { useCollectionStore } from '../../stores/useCollectionStore'
 import { useGalleryStore } from '../../stores/useGalleryStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useShopStore } from '../../stores/useShopStore'
@@ -25,6 +26,7 @@ export function buildProgressSnapshot() {
   const { progress, onboardingCompleted } = useProgressStore.getState()
   const { items: inventory } = useInventoryStore.getState()
   const { activeItems } = useItemEffectsStore.getState()
+  const { items: collectionItems } = useCollectionStore.getState()
   const { shots: gallery } = useGalleryStore.getState()
   const { coins } = useCurrencyStore.getState()
   const { purchased: purchasedItems } = useShopStore.getState()
@@ -65,6 +67,7 @@ export function buildProgressSnapshot() {
     onboardingCompleted,
     inventory,
     activeItems,
+    collectionItems,
     gallery,
     coins,
     purchasedItems,
@@ -107,6 +110,7 @@ export function applyProgressSnapshot(snapshot) {
 
   useInventoryStore.getState().loadItems(snapshot.inventory ?? [])
   useItemEffectsStore.getState().loadActiveItems(snapshot.activeItems ?? {})
+  useCollectionStore.getState().loadItems(snapshot.collectionItems ?? [])
   useGalleryStore.getState().loadShots(snapshot.gallery ?? [])
   useCurrencyStore.getState().loadCoins(snapshot.coins)
   useShopStore.getState().loadPurchased(snapshot.purchasedItems ?? [])

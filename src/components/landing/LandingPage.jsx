@@ -1,10 +1,17 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, Suspense } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Canvas } from '@react-three/fiber'
 import Button from '../shared/Button'
 import Logo from '../shared/Logo'
+import MascotMesh from '../mascot/MascotMesh'
+import WelcomeVideoModal from './WelcomeVideoModal'
 import courses from '../../data/courses.json'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { getMascotById } from '../../data/mascotRegistry'
 import { CATEGORY_META, getCategoryMeta } from '../../data/categoryMeta'
+import { isSupabaseConfigured } from '../../services/supabase/client'
+
+const ORANGE_CAT = getMascotById(8)
 
 const STEPS = [
   {
@@ -58,7 +65,16 @@ const FEATURES = [
 ]
 
 export default function LandingPage() {
+  const navigate = useNavigate()
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
+  const session = useAuthStore((s) => s.session)
+  const signOut = useAuthStore((s) => s.signOut)
+  const loggedIn = isSupabaseConfigured() ? Boolean(session) : isUnlocked
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   const categories = useMemo(() => {
     const groups = new Map()
@@ -83,14 +99,28 @@ export default function LandingPage() {
     <div className="min-h-screen overflow-x-hidden bg-background text-text">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 md:px-12">
-          <Logo />
+          <Link to="/" className="flex items-center gap-1.5">
+            <Logo />
+            <span aria-hidden="true">🐱</span>
+          </Link>
           <div className="flex items-center gap-3">
-            <Link to="/unlock">
-              <Button variant="ghost">Ya tengo mi llave</Button>
-            </Link>
-            <Link to="/crear-cuenta" className="hidden sm:block">
-              <Button>Crear cuenta</Button>
-            </Link>
+            {loggedIn ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost">Mi Dashboard</Button>
+                </Link>
+                <Button onClick={handleSignOut}>Cerrar sesión</Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost">Iniciar sesión</Button>
+                </Link>
+                <Link to="/crear-cuenta" className="hidden sm:block">
+                  <Button>Crear cuenta</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -120,9 +150,9 @@ export default function LandingPage() {
               cursos, o una llave para el curso que más te interese.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
-              <Link to={isUnlocked ? '/dashboard' : '/crear-cuenta'}>
+              <Link to={loggedIn ? '/dashboard' : '/crear-cuenta'}>
                 <Button className="px-8 py-4 text-lg shadow-lg shadow-primary/20">
-                  {isUnlocked ? 'Ir a mi Dashboard' : 'Registrarme gratis'}
+                  {loggedIn ? 'Ir a mi Dashboard' : 'Registrarme gratis'}
                 </Button>
               </Link>
               <Link to="/unlock">
@@ -131,9 +161,10 @@ export default function LandingPage() {
                 </Button>
               </Link>
             </div>
-            {!isUnlocked && (
+            {!loggedIn && (
               <p className="text-sm text-text-muted">
-                Regístrate con Google y prueba gratis el curso demo de la plataforma — sin tarjeta.
+                Crea tu cuenta gratis y entra a todos los cursos — prueba las primeras 2 clases
+                de cada uno sin tarjeta.
               </p>
             )}
 
@@ -241,14 +272,23 @@ export default function LandingPage() {
             <h2 className="text-2xl font-extrabold md:text-3xl">
               Tu mascota IA ya te está esperando 🐾
             </h2>
+            <div className="mx-auto mt-4 h-48 w-48 overflow-hidden rounded-2xl border border-border bg-background/40">
+              <Canvas camera={{ position: [0, 0, 3.5], fov: 45 }}>
+                <ambientLight intensity={0.6} />
+                <directionalLight position={[3, 3, 3]} intensity={1.2} />
+                <Suspense fallback={null}>
+                  <MascotMesh mascot={ORANGE_CAT} />
+                </Suspense>
+              </Canvas>
+            </div>
             <p className="mx-auto mt-3 max-w-xl text-text-muted">
-              Crea tu cuenta gratis con Google y entra al curso demo, o consigue tu llave para
-              desbloquear toda la plataforma.
+              Crea tu cuenta gratis y entra a todos los cursos — las primeras 2 clases de cada
+              uno son gratis. Consigue tu llave cuando quieras desbloquear el resto.
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link to="/crear-cuenta">
+              <Link to={loggedIn ? '/dashboard' : '/crear-cuenta'}>
                 <Button className="px-8 py-4 text-lg shadow-lg shadow-primary/20">
-                  Crear mi cuenta
+                  {loggedIn ? 'Ir a mi Dashboard' : 'Crear mi cuenta'}
                 </Button>
               </Link>
               <Link to="/unlock">
@@ -264,6 +304,8 @@ export default function LandingPage() {
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted md:px-12">
         © {new Date().getFullYear()} oliver.escuela — Una escuela, muchos cursos por explorar.
       </footer>
+
+      <WelcomeVideoModal />
     </div>
   )
 }

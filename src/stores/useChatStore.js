@@ -37,7 +37,17 @@ export const useChatStore = create((set, get) => ({
         isSending: false,
       }))
     }
-    useChatHistoryStore.getState().saveToday(get().messages)
+  },
+
+  // Starts a fresh conversation (e.g. when moving to a new class). The
+  // previous conversation, if any, is archived into Chats history.
+  startNewChat: (label) => {
+    const { messages } = get()
+    if (messages.length > 0) {
+      useChatHistoryStore.getState().archiveSession(messages, label)
+    }
+    useMascotStore.getState().clearConversation()
+    set({ messages: [], started: false })
   },
 
   loadMessages: (messages) => set({ messages, started: messages.length > 0 }),

@@ -7,73 +7,90 @@ import Card from '../shared/Card'
 import Logo from '../shared/Logo'
 import MascotMesh from '../mascot/MascotMesh'
 import { MASCOTS, getMascotById } from '../../data/mascotRegistry'
-import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
-import courses from '../../data/courses.json'
-import { generateMockLicense } from '../../services/crypto/keyCrypto'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useSettingsStore, CHAT_MODELS } from '../../stores/useSettingsStore'
+import { isSupabaseConfigured } from '../../services/supabase/client'
 import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/googleAuth'
 
-const PURCHASABLE_COURSES = courses.filter((c) => hasCourseData(c.id))
+const FACEBOOK_ENABLED = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true'
 
 // Solo se muestran las mascotas con un modelo 3D real (.glb) — las geometrías
 // primitivas (cubo, esfera, etc.) eran placeholders y ya no se usan.
 const SELECTABLE_MASCOTS = MASCOTS.filter((m) => m.modelPath)
 
-const STEPS = ['Tu llave', 'Tu mascota', 'Configuración', 'Listo']
+const STEPS = ['Tu cuenta', 'Tu mascota', 'Configuración', 'Listo']
 
 export default function CreateAccountPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const presetCourseId = params.get('course')
-  const presetCourse = PURCHASABLE_COURSES.find((c) => c.id === presetCourseId)
 
-  const unlock = useAuthStore((s) => s.unlock)
+  const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail)
+  const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth)
   const registerWithGoogle = useAuthStore((s) => s.registerWithGoogle)
+  const session = useAuthStore((s) => s.session)
   const selectMascot = useMascotStore((s) => s.selectMascot)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
   const setMinimaxApiKey = useSettingsStore((s) => s.setMinimaxApiKey)
   const setChatModel = useSettingsStore((s) => s.setChatModel)
 
   const [step, setStep] = useState(0)
-  const [keyType, setKeyType] = useState(presetCourse ? 'single' : 'full')
-  const [courseId, setCourseId] = useState(presetCourse?.id ?? PURCHASABLE_COURSES[0]?.id)
   const [mascotId, setMascotId] = useState(SELECTABLE_MASCOTS[0]?.id ?? 8)
   const [petName, setPetName] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [chatModel, setChatModelLocal] = useState(CHAT_MODELS[0].id)
   const [status, setStatus] = useState('idle') // idle | processing | done
-  const [googleError, setGoogleError] = useState('')
+  const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const googleButtonRef = useRef(null)
 
   const mascot = getMascotById(mascotId)
-  const price = keyType === 'full' ? 99 : 49
+  const supabaseReady = isSupabaseConfigured()
 
+  // Local-mode fallback: lets people sign up with Google without Supabase.
   useEffect(() => {
-    if (!googleButtonRef.current) return
+    if (supabaseReady || !googleButtonRef.current) return
     renderGoogleButton(
       googleButtonRef.current,
       (googleUser) => {
         registerWithGoogle(googleUser)
-        navigate('/dashboard')
+        setStep(1)
       },
-      (err) => setGoogleError(err.message),
+      (err) => setError(err.message),
     )
-  }, [registerWithGoogle, navigate])
+  }, [supabaseReady, registerWithGoogle])
 
-  const handleCreate = (e) => {
+  const handleSignUp = async (e) => {
+    e.preventDefault()
+    setError('')
+    setStatus('processing')
+    try {
+      await signUpWithEmail(email, password, displayName)
+      setStep(1)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setStatus('idle')
+    }
+  }
+
+  const handleOAuth = async (provider) => {
+    setError('')
+    try {
+      await signInWithOAuth(provider)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleFinish = (e) => {
     e.preventDefault()
     setStatus('processing')
 
-    // MOCK: replace with Stripe Checkout redirect / payment intent flow.
     setTimeout(() => {
-      const license = generateMockLicense({
-        courseId: keyType === 'full' ? 'course-001' : courseId,
-        type: keyType,
-      })
-
-      unlock(license)
       selectMascot(mascotId)
       setMascotName(petName || mascot.name)
       if (apiKey) setMinimaxApiKey(apiKey)
@@ -81,7 +98,7 @@ export default function CreateAccountPage() {
 
       setStatus('done')
       setStep(3)
-    }, 900)
+    }, 500)
   }
 
   return (
@@ -92,8 +109,8 @@ export default function CreateAccountPage() {
         <Link to="/">
           <Logo />
         </Link>
-        <Link to="/unlock" className="text-sm text-text-muted hover:text-text">
-          Ya tengo mi llave →
+        <Link to="/login" className="text-sm text-text-muted hover:text-text">
+          ¿Ya tienes cuenta? Inicia sesión →
         </Link>
       </header>
 
@@ -104,8 +121,8 @@ export default function CreateAccountPage() {
               Crea tu cuenta <span className="text-primary">épica</span>
             </h1>
             <p className="mt-2 text-text-muted">
-              Elige tu llave, tu mascota IA y tu configuración. Todo queda guardado en una sola
-              cuenta.
+              Regístrate gratis, elige tu mascota IA y tu configuración. Entra a todos los
+              cursos y, sin llave, prueba las primeras 2 clases de cada uno.
             </p>
           </div>
 
@@ -129,99 +146,96 @@ export default function CreateAccountPage() {
             ))}
           </div>
 
-          {step === 0 && (
-            <div className="mb-4 flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center">
-              <p className="text-sm text-text-muted">
-                ¿Solo quieres probar gratis? Regístrate con Google y entra directo al curso demo.
-              </p>
-              <div ref={googleButtonRef} />
-              {!isGoogleAuthConfigured() && (
-                <p className="text-xs text-text-muted">
-                  El registro con Google aún no está configurado en este sitio.
-                </p>
-              )}
-              {googleError && isGoogleAuthConfigured() && (
-                <p className="text-xs text-danger">{googleError}</p>
-              )}
-              <div className="mt-1 flex w-full items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs uppercase tracking-wide text-text-muted">o compra tu llave</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-            </div>
-          )}
-
           <Card className="overflow-hidden border-2">
             {step === 0 && (
               <div className="flex flex-col gap-5">
-                <h2 className="text-xl font-bold">1. Elige tu llave</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <button
-                    onClick={() => setKeyType('full')}
-                    className={`flex flex-col gap-2 rounded-2xl border-2 p-5 text-left transition-colors ${
-                      keyType === 'full'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/40'
-                    }`}
-                  >
-                    <span className="text-3xl">🔑</span>
-                    <p className="text-lg font-bold">Llave maestra</p>
-                    <p className="text-sm text-text-muted">
-                      Acceso a todos los cursos disponibles, ahora y a futuro.
-                    </p>
-                    <p className="mt-2 text-2xl font-extrabold text-primary">$99 USD</p>
-                  </button>
+                <h2 className="text-xl font-bold">1. Crea tu cuenta</h2>
 
-                  <button
-                    onClick={() => setKeyType('single')}
-                    className={`flex flex-col gap-2 rounded-2xl border-2 p-5 text-left transition-colors ${
-                      keyType === 'single'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/40'
-                    }`}
-                  >
-                    <span className="text-3xl">🗝️</span>
-                    <p className="text-lg font-bold">Llave de un curso</p>
-                    <p className="text-sm text-text-muted">
-                      Acceso a un solo curso a tu elección.
-                    </p>
-                    <p className="mt-2 text-2xl font-extrabold text-primary">$49 USD</p>
-                  </button>
-                </div>
+                {supabaseReady ? (
+                  <>
+                    <form onSubmit={handleSignUp} className="flex flex-col gap-3">
+                      <label className="flex flex-col gap-1 text-sm">
+                        Nombre
+                        <input
+                          type="text"
+                          required
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          className="rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-sm">
+                        Correo
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-sm">
+                        Contraseña
+                        <input
+                          type="password"
+                          required
+                          minLength={6}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
+                        />
+                      </label>
+                      {session ? (
+                        <Button type="button" onClick={() => setStep(1)} className="mt-1">
+                          Ya tienes sesión, continuar →
+                        </Button>
+                      ) : (
+                        <Button type="submit" disabled={status === 'processing'} className="mt-1">
+                          {status === 'processing' ? 'Creando…' : 'Crear mi cuenta'}
+                        </Button>
+                      )}
+                    </form>
 
-                {keyType === 'single' && (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-semibold text-text-muted">Elige tu curso</p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {PURCHASABLE_COURSES.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => setCourseId(c.id)}
-                          className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
-                            courseId === c.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border hover:border-primary/40'
-                          }`}
-                        >
-                          <span
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl"
-                            style={{ backgroundColor: `${c.color}22`, border: `1px solid ${c.color}` }}
-                          >
-                            {c.icon}
-                          </span>
-                          <span>
-                            <span className="block text-sm font-semibold text-text">{c.title}</span>
-                            <span className="block text-xs text-text-muted">{c.category}</span>
-                          </span>
-                        </button>
-                      ))}
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs uppercase tracking-wide text-text-muted">o regístrate con</span>
+                      <div className="h-px flex-1 bg-border" />
                     </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Button variant="secondary" onClick={() => handleOAuth('google')}>
+                        🟢 Continuar con Google
+                      </Button>
+                      {FACEBOOK_ENABLED && (
+                        <Button variant="secondary" onClick={() => handleOAuth('facebook')}>
+                          🔵 Continuar con Facebook
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <p className="text-sm text-text-muted">
+                      Las cuentas en la nube aún no están configuradas en este sitio.
+                      Regístrate con Google para usar el modo local.
+                    </p>
+                    <div ref={googleButtonRef} />
+                    {!isGoogleAuthConfigured() && (
+                      <p className="text-xs text-text-muted">
+                        El registro con Google tampoco está configurado todavía.
+                      </p>
+                    )}
+                    <Button onClick={() => setStep(1)} className="mt-2">
+                      Continuar sin cuenta →
+                    </Button>
                   </div>
                 )}
 
-                <Button onClick={() => setStep(1)} className="mt-2 self-end">
-                  Continuar →
-                </Button>
+                {error && (
+                  <div className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+                    {error}
+                  </div>
+                )}
               </div>
             )}
 
@@ -282,8 +296,8 @@ export default function CreateAccountPage() {
             )}
 
             {step === 2 && (
-              <form onSubmit={handleCreate} className="flex flex-col gap-5">
-                <h2 className="text-xl font-bold">3. Configuración y pago</h2>
+              <form onSubmit={handleFinish} className="flex flex-col gap-5">
+                <h2 className="text-xl font-bold">3. Configuración de tu mascota</h2>
 
                 <label className="flex flex-col gap-1 text-sm">
                   Tu Minimax API key (opcional, puedes agregarla después)
@@ -312,24 +326,15 @@ export default function CreateAccountPage() {
                 </label>
 
                 <div className="rounded-xl border border-border bg-background p-4 text-sm">
-                  <p className="font-semibold text-text">Resumen de tu pedido</p>
+                  <p className="font-semibold text-text">Resumen</p>
                   <ul className="mt-2 space-y-1 text-text-muted">
-                    <li>
-                      Llave:{' '}
-                      <span className="text-text">
-                        {keyType === 'full'
-                          ? 'Maestra (todos los cursos)'
-                          : `Un curso · ${COURSES_DATA[courseId]?.title ?? courseId}`}
-                      </span>
-                    </li>
                     <li>
                       Mascota: <span className="text-text">{petName || mascot.name}</span>
                     </li>
+                    <li>
+                      Acceso: <span className="text-text">todos los cursos · primeras 2 clases gratis</span>
+                    </li>
                   </ul>
-                  <p className="mt-3 flex items-baseline gap-2">
-                    <span className="text-2xl font-extrabold text-primary">${price}</span>
-                    <span className="text-xs text-text-muted">USD · pago único (mock)</span>
-                  </p>
                 </div>
 
                 <div className="flex justify-between">
@@ -337,7 +342,7 @@ export default function CreateAccountPage() {
                     ← Atrás
                   </Button>
                   <Button type="submit" disabled={status === 'processing'}>
-                    {status === 'processing' ? 'Procesando pago…' : 'Pagar y crear mi cuenta'}
+                    {status === 'processing' ? 'Guardando…' : 'Crear mi cuenta'}
                   </Button>
                 </div>
               </form>
@@ -348,19 +353,21 @@ export default function CreateAccountPage() {
                 <span className="text-6xl">🎉</span>
                 <h2 className="text-2xl font-bold">¡Tu cuenta está lista!</h2>
                 <p className="max-w-md text-text-muted">
-                  {petName || mascot.name} ya te está esperando. Tu llave y tu configuración se
-                  guardaron en tu cuenta.
+                  {petName || mascot.name} ya te está esperando. Puedes entrar a cualquier
+                  curso y probar las primeras 2 clases gratis.
+                  {presetCourseId && ' '}
                 </p>
-                <Button onClick={() => navigate('/dashboard')} className="mt-2">
-                  Entrar al Dashboard →
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button onClick={() => navigate('/dashboard')} className="mt-2">
+                    Entrar al Dashboard →
+                  </Button>
+                  <Button variant="secondary" onClick={() => navigate('/unlock')} className="mt-2">
+                    🔑 Tengo una llave
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
-
-          <p className="mt-4 text-center text-xs text-text-muted">
-            Pasarela de pago simulada — se integrará con Stripe Checkout.
-          </p>
         </div>
       </main>
     </div>

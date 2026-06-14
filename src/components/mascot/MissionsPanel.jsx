@@ -68,18 +68,35 @@ export default function MissionsPanel({ courseId, module, className = '' }) {
                   <p className={`text-sm font-medium ${isDone ? 'text-primary' : 'text-text'}`}>
                     {mission.label}
                   </p>
+                  {!isDone && (mission.reward || mission.itemReward) && (
+                    <p className="mt-0.5 text-xs text-text-muted">
+                      Recompensa: {mission.reward ? `🪙 ${mission.reward}` : ''}
+                      {mission.itemReward ? ` · ${mission.itemReward.icon} ${mission.itemReward.name}` : ''}
+                    </p>
+                  )}
                   {mission.type === 'quiz' && !isDone && (
                     <ModuleQuiz courseId={courseId} module={module} className="mt-2" />
                   )}
                   {mission.type === 'chat' && !isDone && (
                     <p className="mt-1 text-xs text-text-muted">
-                      Abre el Chat de tu mascota y envíale un mensaje.
+                      {mission.hint ?? 'Abre el Chat de tu mascota y envíale un mensaje.'}
                     </p>
                   )}
                   {mission.type === 'item' && !isDone && (
                     <p className="mt-1 text-xs text-text-muted">
-                      Abre Objetos y activa cualquiera con función.
+                      {mission.hint ?? 'Abre Objetos y activa cualquiera con función.'}
                     </p>
+                  )}
+                  {mission.type === 'fun' && !isDone && (
+                    <div className="mt-2 flex flex-col gap-2">
+                      <p className="text-xs text-text-muted">{mission.hint}</p>
+                      <button
+                        onClick={() => completeMission(courseId, module.id, mission.id)}
+                        className="self-start rounded-lg border border-primary px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                      >
+                        Ya la cumplí ✅
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

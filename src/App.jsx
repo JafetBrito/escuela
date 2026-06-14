@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './components/landing/LandingPage'
 import CreateAccountPage from './components/checkout/CreateAccountPage'
+import LoginPage from './components/auth/LoginPage'
 import PortalPage from './components/portal/PortalPage'
 import DashboardPage from './components/dashboard/DashboardPage'
 import ShopPage from './components/shop/ShopPage'
@@ -35,6 +36,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/unlock" element={<PortalPage />} />
         <Route
           path="/dashboard"
