@@ -1,0 +1,10 @@
+# SPA fallback for Apache-based hosting (e.g. Hostinger): serve index.html
+# for any route that isn't a real file/folder, so React Router can handle it.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
