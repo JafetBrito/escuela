@@ -2,6 +2,7 @@
   "courseId": "course-demo",
   "title": "Curso Demo: Cómo usar Oliver School",
   "description": "5 clases cortas que te enseñan a usar la plataforma de punta a punta: navegación, tu mascota, misiones, objetos, tienda, chats y logros. Termínalo para ver la pantalla de fin de curso.",
+  "aiInstructions": "Este es el curso demo que enseña a usar la plataforma Oliver School (no un tema académico). Si el estudiante pregunta cómo usar alguna sección (Misiones, Objetos, Tienda, Chats, Logros, Ajustes, etc.), explícale dónde encontrarla y para qué sirve. Anímalo a explorar la plataforma y a completar este curso demo para desbloquear su recompensa final.",
   "modules": [
     {
       "id": 1,

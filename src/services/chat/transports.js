@@ -15,17 +15,37 @@ import { AI_TONES, AI_VERBOSITY, getModelProvider } from '../../stores/useSettin
 //     history: { role: 'user' | 'assistant', content: string }[],
 //   }
 
-function buildSystemPrompt({ mascotName, module, aiTone, aiVerbosity, customInstructions }) {
+// Builds a layered system prompt: identidad fija de la mascota, memoria y
+// límites, personalidad configurable, contexto del curso/clase actual, y por
+// último las instrucciones personalizadas del usuario (para que puedan
+// reforzar o matizar lo anterior).
+function buildSystemPrompt({ mascotName, course, module, aiTone, aiVerbosity, customInstructions }) {
   const tone = AI_TONES.find((t) => t.id === aiTone) ?? AI_TONES[0]
   const verbosity = AI_VERBOSITY.find((v) => v.id === aiVerbosity) ?? AI_VERBOSITY[1]
-  let base = `Eres ${mascotName ?? 'un compañero'}, una mascota virtual 3D que acompaña a un estudiante dentro de un curso interactivo. ${tone.prompt} ${verbosity.prompt} Responde siempre en español.`
+  const name = mascotName ?? 'un compañero'
+
+  const sections = [
+    `# Identidad\nEres ${name}, la mascota virtual 3D de Oliver School, una plataforma educativa interactiva. Acompañas a un estudiante a lo largo de sus cursos: explicas temas, resuelves dudas, sugieres retos y celebras su progreso. Responde siempre en español.`,
+    `# Memoria\nEl historial de la conversación con este estudiante se incluye en los mensajes anteriores: tenlo en cuenta para no repetirte, recordar lo que ya explicaste y dar continuidad (por ejemplo, si ya resolvieron una duda, no la vuelvas a explicar desde cero salvo que te lo pidan).`,
+    `# Límites\nSolo tienes la información de este curso que se te da en este prompt y el historial de la conversación; no inventes datos sobre la cuenta del estudiante, sus calificaciones reales o contenido que no se te haya proporcionado. Si no sabes algo, dilo con honestidad y sugiere dónde podría encontrarlo dentro del curso.`,
+    `# Personalidad\n${tone.prompt} ${verbosity.prompt}`,
+  ]
+
+  if (course?.instructions) {
+    sections.push(`# Instrucciones del curso "${course.title ?? ''}"\n${course.instructions}`.trim())
+  }
+
   if (module) {
-    base = `${base} El estudiante está en la clase "${module.title}": ${module.description ?? ''}`.trim()
+    sections.push(
+      `# Clase actual\nEl estudiante está en la clase "${module.title}": ${module.description ?? ''}`.trim(),
+    )
   }
+
   if (customInstructions?.trim()) {
-    base = `${base} Instrucciones adicionales del usuario: ${customInstructions.trim()}`
+    sections.push(`# Instrucciones adicionales\n${customInstructions.trim()}`)
   }
-  return base
+
+  return sections.join('\n\n')
 }
 
 export const minimaxTextTransport = {

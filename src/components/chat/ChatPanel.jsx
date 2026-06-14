@@ -8,6 +8,7 @@ import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { getMascotById } from '../../data/mascotRegistry'
+import { getCourseData } from '../../data/courseRegistry'
 
 export default function ChatPanel({ className = '', module, courseId }) {
   const [input, setInput] = useState('')
@@ -29,6 +30,7 @@ export default function ChatPanel({ className = '', module, courseId }) {
   const maxTokens = useSettingsStore((s) => s.maxTokens)
   const customInstructions = useSettingsStore((s) => s.customInstructions)
   const mascotName = settingsMascotName || getMascotById(selectedMascotId).name
+  const courseData = courseId ? getCourseData(courseId) : null
 
   const sendMessage = (content) => {
     if (!content.trim()) return
@@ -42,6 +44,9 @@ export default function ChatPanel({ className = '', module, courseId }) {
       temperature,
       maxTokens,
       customInstructions,
+      course: courseData
+        ? { title: courseData.title, instructions: courseData.aiInstructions }
+        : undefined,
       module: module
         ? { title: module.title, description: module.description }
         : undefined,

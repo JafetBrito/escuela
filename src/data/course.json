@@ -2,6 +2,7 @@
   "courseId": "course-001",
   "title": "Curso: Domina Google NotebookLM",
   "description": "Aprende a usar Google NotebookLM como tu asistente de investigación y estudio, módulo por módulo, con retos y tu mascota IA como guía.",
+  "aiInstructions": "Este curso enseña Google NotebookLM paso a paso: qué es, cómo crear notebooks, subir y organizar fuentes, generar resúmenes, mapas mentales, Audio Overview y otras funciones. Cuando el estudiante pregunte sobre estos temas, explica usando los nombres reales de las funciones de NotebookLM (Fuentes, Chat, Audio Overview, Notas, Studio, etc.) y relaciona la respuesta con el módulo correspondiente del curso. Si el estudiante pide ayuda con un reto o quiz de un módulo, guíalo con pistas en lugar de dar la respuesta directa de inmediato.",
   "modules": [
     {
       "id": 1,
