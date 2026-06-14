@@ -39,8 +39,8 @@ export default function LibraryPage() {
             <div>
               <h1 className="text-2xl font-bold">📚 Biblioteca</h1>
               <p className="mt-1 text-sm text-text-muted">
-                Estantes organizados por categoría. Algunos libros están sellados hasta que los
-                compras con tus monedas — los demás puedes leerlos directo desde el navegador.
+                Libros organizados por categoría. Algunos están sellados hasta que los compras con
+                tus monedas — los demás puedes leerlos directo desde el navegador.
               </p>
             </div>
             <CurrencyBadge amount={coins} />
@@ -64,98 +64,79 @@ export default function LibraryPage() {
                   </div>
                 </div>
 
-                {/* Estante: lomos de libro apoyados sobre una repisa de madera */}
-                <div className="relative mt-6 overflow-x-auto pb-6">
-                  <div className="flex min-w-max items-end gap-3 px-2 pb-5 pt-4">
-                    {books.map((book) => {
-                      const purchasable = isBookPurchasable(book)
-                      const owned = purchased.includes(book.id)
-                      const locked = purchasable && !owned
-                      const comingSoon = !book.file
+                <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {books.map((book) => {
+                    const purchasable = isBookPurchasable(book)
+                    const owned = purchased.includes(book.id)
+                    const locked = purchasable && !owned
+                    const comingSoon = !book.file
 
-                      const handleClick = () => {
-                        if (comingSoon) return
-                        if (locked) return
-                        navigate(`/biblioteca/${book.id}`)
-                      }
+                    const handleClick = () => {
+                      if (comingSoon || locked) return
+                      navigate(`/biblioteca/${book.id}`)
+                    }
 
-                      const handleBuy = (e) => {
-                        e.stopPropagation()
-                        buyGeneric(book.id, book.price)
-                      }
+                    const handleBuy = (e) => {
+                      e.stopPropagation()
+                      buyGeneric(book.id, book.price)
+                    }
 
-                      return (
-                        <button
-                          key={book.id}
-                          onClick={handleClick}
-                          disabled={comingSoon || locked}
-                          title={book.title}
-                          className={`group relative flex h-56 w-24 shrink-0 flex-col items-center justify-between rounded-t-md border-x border-t pb-3 pt-3 shadow-[0_6px_0_rgba(0,0,0,0.25)] transition-transform ${
-                            comingSoon
-                              ? 'cursor-default border-border bg-surface opacity-50'
-                              : locked
-                                ? 'cursor-default border-border bg-surface'
-                                : 'border-black/10 hover:-translate-y-1.5 hover:shadow-[0_10px_0_rgba(0,0,0,0.3)]'
-                          }`}
-                          style={!comingSoon && !locked ? { backgroundColor: book.color } : undefined}
-                        >
-                          <span className="text-2xl drop-shadow">{book.icon}</span>
+                    return (
+                      <button
+                        key={book.id}
+                        onClick={handleClick}
+                        disabled={comingSoon}
+                        title={book.title}
+                        className={`group relative flex aspect-[3/4] flex-col overflow-hidden rounded-2xl border border-black/10 text-left shadow-md transition-transform ${
+                          comingSoon ? 'cursor-default opacity-60' : 'hover:-translate-y-1.5 hover:shadow-xl'
+                        }`}
+                        style={{ background: `linear-gradient(160deg, ${book.color}, ${book.color}aa)` }}
+                      >
+                        <div className="flex flex-1 items-center justify-center text-5xl drop-shadow-md sm:text-6xl">
+                          {book.icon}
+                        </div>
 
-                          <span
-                            className={`flex-1 [writing-mode:vertical-rl] text-center text-xs font-bold leading-tight ${
-                              comingSoon || locked ? 'text-text-muted' : 'text-background'
-                            }`}
-                          >
+                        <div className="bg-black/45 px-2.5 py-2 backdrop-blur-sm">
+                          <p className="line-clamp-2 text-xs font-bold leading-tight text-white">
                             {book.title}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10px] text-white/70">{book.author}</p>
+                        </div>
+
+                        {comingSoon && (
+                          <span className="absolute right-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-text-muted">
+                            🔒 Próximamente
                           </span>
+                        )}
 
-                          {comingSoon && (
-                            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-text-muted">
-                              🔒 Próximamente
+                        {locked && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 p-3 text-center backdrop-blur-[1px]">
+                            <span className="text-3xl">🔒</span>
+                            <span className="text-xs font-bold text-white">
+                              {formatCurrency(book.price)}
                             </span>
-                          )}
-
-                          {locked && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-t-md bg-background/85 p-2 text-center backdrop-blur-sm">
-                              <span className="text-2xl">🔒</span>
-                              <span className="text-[11px] font-semibold text-text">
-                                {formatCurrency(book.price)}
-                              </span>
-                              <span
-                                onClick={handleBuy}
-                                role="button"
-                                className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
-                                  coins >= book.price
-                                    ? 'bg-primary text-background hover:bg-primary-hover'
-                                    : 'cursor-not-allowed bg-surface-hover text-text-muted'
-                                }`}
-                              >
-                                {coins >= book.price ? 'Comprar' : 'Sin monedas'}
-                              </span>
-                            </div>
-                          )}
-
-                          {!comingSoon && !locked && (
-                            <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-text opacity-0 transition-opacity group-hover:opacity-100">
-                              📖 Leer
+                            <span
+                              onClick={handleBuy}
+                              role="button"
+                              className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+                                coins >= book.price
+                                  ? 'bg-primary text-background hover:bg-primary-hover'
+                                  : 'cursor-not-allowed bg-surface-hover text-text-muted'
+                              }`}
+                            >
+                              {coins >= book.price ? 'Comprar' : 'Sin monedas'}
                             </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
+                          </div>
+                        )}
 
-                  {/* Repisa de madera */}
-                  <div className="h-3 rounded-sm bg-gradient-to-b from-[#9a623a] to-[#6b4423] shadow-md" />
-                  <div className="h-2 rounded-b-sm bg-[#4a2f18]" />
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-text-muted">
-                  {books.map((book) => (
-                    <span key={book.id} className="rounded-full border border-border px-2.5 py-1">
-                      {book.icon} {book.title} · {book.author}
-                    </span>
-                  ))}
+                        {!comingSoon && !locked && (
+                          <span className="absolute right-2 top-2 rounded-full bg-background/80 px-2 py-1 text-[11px] font-semibold text-text opacity-0 transition-opacity group-hover:opacity-100">
+                            📖 Leer
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </section>
             )
