@@ -1,6 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ProgressSync from '../learning/ProgressSync'
+import MascotCompanion from '../mascot/MascotCompanion'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import LevelBadge from '../shared/LevelBadge'
 import { useChatHistoryStore } from '../../stores/useChatHistoryStore'
@@ -300,6 +301,8 @@ export default function SettingsPage() {
           </section>
         </div>
       </main>
+
+      <MascotCompanion />
     </div>
   )
 }

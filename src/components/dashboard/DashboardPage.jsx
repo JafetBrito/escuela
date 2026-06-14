@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
+import MascotCompanion from '../mascot/MascotCompanion'
 import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
@@ -169,6 +170,8 @@ export default function DashboardPage() {
           })}
         </div>
       </main>
+
+      <MascotCompanion />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import AppTopBar from '../shared/AppTopBar'
 import AchievementsPanel from '../mascot/AchievementsPanel'
+import MascotCompanion from '../mascot/MascotCompanion'
 
 export default function AchievementsPage() {
   return (
@@ -16,6 +17,8 @@ export default function AchievementsPage() {
           <AchievementsPanel className="mt-6" />
         </div>
       </main>
+
+      <MascotCompanion />
     </div>
   )
 }

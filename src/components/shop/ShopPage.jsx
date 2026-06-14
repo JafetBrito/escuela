@@ -1,5 +1,6 @@
 import AppTopBar from '../shared/AppTopBar'
 import CurrencyBadge from '../shared/CurrencyBadge'
+import MascotCompanion from '../mascot/MascotCompanion'
 import { SHOP_ITEMS, ITEM_RARITY } from '../../data/shopRegistry'
 import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
@@ -97,6 +98,8 @@ export default function ShopPage() {
           </div>
         </div>
       </main>
+
+      <MascotCompanion />
     </div>
   )
 }

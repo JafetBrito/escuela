@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
+import MascotCompanion from '../mascot/MascotCompanion'
 import { useChatHistoryStore, todayKey } from '../../stores/useChatHistoryStore'
 import { useChatStore } from '../../stores/useChatStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -98,6 +99,8 @@ export default function ChatsPage() {
           )}
         </div>
       </main>
+
+      <MascotCompanion />
     </div>
   )
 }

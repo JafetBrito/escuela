@@ -7,6 +7,7 @@ import DashboardPage from './components/dashboard/DashboardPage'
 import ShopPage from './components/shop/ShopPage'
 import SettingsPage from './components/settings/SettingsPage'
 import GamesPage from './components/games/GamesPage'
+import GamePlayerPage from './components/games/GamePlayerPage'
 import ChatsPage from './components/chats/ChatsPage'
 import AchievementsPage from './components/achievements/AchievementsPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
@@ -112,6 +113,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <GamesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/games/:gameId"
+          element={
+            <ProtectedRoute>
+              <GamePlayerPage />
             </ProtectedRoute>
           }
         />

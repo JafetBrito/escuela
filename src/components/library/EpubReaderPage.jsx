@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ReactReader } from 'react-reader'
+import MascotCompanion from '../mascot/MascotCompanion'
 import { getBookById } from '../../data/libraryRegistry'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 
@@ -60,6 +61,8 @@ export default function EpubReaderPage() {
           />
         )}
       </div>
+
+      <MascotCompanion />
     </div>
   )
 }

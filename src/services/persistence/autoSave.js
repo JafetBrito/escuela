@@ -11,6 +11,7 @@ import { useShopStore } from '../../stores/useShopStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
+import { useGamesStore } from '../../stores/useGamesStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
 
@@ -28,6 +29,7 @@ const STORES = [
   useSettingsStore,
   useLevelStore,
   useLibraryStore,
+  useGamesStore,
 ]
 
 // Restores the user's account (license, progress, coins, settings, chat

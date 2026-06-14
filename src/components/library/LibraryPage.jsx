@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
+import MascotCompanion from '../mascot/MascotCompanion'
 import { LIBRARY_BOOKS } from '../../data/libraryRegistry'
 import { CATEGORY_META, getCategoryMeta } from '../../data/categoryMeta'
 
@@ -104,6 +105,8 @@ export default function LibraryPage() {
           })}
         </div>
       </main>
+
+      <MascotCompanion />
     </div>
   )
 }

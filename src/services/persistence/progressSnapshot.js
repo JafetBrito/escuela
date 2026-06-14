@@ -11,6 +11,7 @@ import { useShopStore } from '../../stores/useShopStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
+import { useGamesStore } from '../../stores/useGamesStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
