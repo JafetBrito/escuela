@@ -23,7 +23,17 @@ const WALK_TILT = 0.06
 // scenery, so a flat-grey export still reads as a colorful scene.
 const SCENERY_PALETTE = ['#c2703d', '#e8c477', '#9b5a3a', '#7d8597', '#3f9e7a', '#caa46c']
 
-// Tracks which movement keys (WASD + arrows) are currently held down.
+// Movement directions, shared by the keyboard listener and the on-screen
+// touch D-pad: both just flip the same keys on/off.
+const DIRECTION_KEYS = {
+  up: ['w', 'arrowup'],
+  down: ['s', 'arrowdown'],
+  left: ['a', 'arrowleft'],
+  right: ['d', 'arrowright'],
+}
+
+// Tracks which movement keys (WASD + arrows) are currently held down, from
+// either a physical keyboard or the on-screen touch D-pad.
 function useMovementKeys() {
   const keys = useRef({})
 
@@ -43,6 +53,48 @@ function useMovementKeys() {
   }, [])
 
   return keys
+}
+
+// On-screen D-pad for phones/tablets: holds the same key flags the keyboard
+// listener uses, so <Player> doesn't need to know where the input came from.
+function TouchControls({ keysRef }) {
+  const setKeys = (direction, value) => () => {
+    DIRECTION_KEYS[direction].forEach((key) => {
+      keysRef.current[key] = value
+    })
+  }
+
+  const Pad = ({ direction, label, className = '' }) => (
+    <button
+      type="button"
+      onPointerDown={setKeys(direction, true)}
+      onPointerUp={setKeys(direction, false)}
+      onPointerLeave={setKeys(direction, false)}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ touchAction: 'none' }}
+      className={`flex h-14 w-14 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30 ${className}`}
+      aria-label={direction}
+    >
+      {label}
+    </button>
+  )
+
+  return (
+    <div className="pointer-events-none absolute bottom-6 left-1/2 grid -translate-x-1/2 grid-cols-3 grid-rows-2 gap-1 sm:hidden">
+      <div className="pointer-events-auto col-start-2">
+        <Pad direction="up" label="⬆️" />
+      </div>
+      <div className="pointer-events-auto col-start-1 row-start-2">
+        <Pad direction="left" label="⬅️" />
+      </div>
+      <div className="pointer-events-auto col-start-2 row-start-2">
+        <Pad direction="down" label="⬇️" />
+      </div>
+      <div className="pointer-events-auto col-start-3 row-start-2">
+        <Pad direction="right" label="➡️" />
+      </div>
+    </div>
+  )
 }
 
 // Loads the VR background model, scales it to a roomy walkable footprint, and
@@ -66,8 +118,6 @@ function Scenery() {
     let paletteIndex = 0
     clone.traverse((child) => {
       if (!child.isMesh) return
-      child.castShadow = true
-      child.receiveShadow = true
 
       const material = child.material
       if (material && !material.map) {
@@ -84,8 +134,8 @@ function Scenery() {
   return <primitive object={model} />
 }
 
-// Your mascot, moved with WASD/arrow keys. It bobs and tilts while walking,
-// and the camera follows behind it.
+// Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
+// tilts while walking, and the camera follows behind it.
 function Player({ mascot, skin, keysRef }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -161,21 +211,22 @@ export default function VRPage() {
       <AppTopBar />
 
       <div className="relative flex-1">
-        <Canvas camera={{ position: [0, 1.6, 3.4], fov: 50 }} shadows>
+        <Canvas camera={{ position: [0, 1.6, 3.4], fov: 50 }}>
           <color attach="background" args={['#3b2a1f']} />
           <fog attach="fog" args={['#d98e4a', 12, 42]} />
-          <ambientLight intensity={0.55} color="#c9b8ff" />
-          <directionalLight position={[10, 15, 8]} intensity={1.4} color="#ffd9a0" castShadow />
-          <directionalLight position={[-8, 6, -10]} intensity={0.5} color="#5a7fd9" />
+          <ambientLight intensity={0.9} />
+          <directionalLight position={[10, 15, 8]} intensity={1} />
           <Suspense fallback={null}>
             <Scenery />
             <Player mascot={mascot} skin={skin} keysRef={keysRef} />
           </Suspense>
         </Canvas>
 
-        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur">
+        <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
           Muévete con <strong>W A S D</strong> o las flechas del teclado 🎮
         </div>
+
+        <TouchControls keysRef={keysRef} />
       </div>
 
       <MascotCompanion />
