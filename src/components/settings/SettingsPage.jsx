@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ProgressSync from '../learning/ProgressSync'
@@ -10,9 +11,12 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, CHAT_MODELS, AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
 import { getMascotById } from '../../data/mascotRegistry'
+import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
+import { saveLocalSnapshot } from '../../services/persistence/localStore'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const [saved, setSaved] = useState(false)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
   const chatHistory = useChatHistoryStore((s) => s.history)
@@ -52,6 +56,12 @@ export default function SettingsPage() {
   const handleLogout = () => {
     lock()
     navigate('/')
+  }
+
+  const handleSaveAi = () => {
+    saveLocalSnapshot(buildProgressSnapshot())
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   return (
@@ -280,10 +290,22 @@ export default function SettingsPage() {
               <textarea
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
-                rows={3}
+                rows={5}
                 placeholder="Ej: Siempre da ejemplos relacionados con diseño gráfico."
                 className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
               />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSaveAi}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+              >
+                Guardar y actualizar
+              </button>
+              {saved && (
+                <span className="text-sm text-primary">✅ Cambios guardados, ya puedes probar el chat</span>
+              )}
             </div>
           </section>
 

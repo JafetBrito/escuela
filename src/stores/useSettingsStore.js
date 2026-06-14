@@ -34,6 +34,10 @@ export { CHAT_MODELS, AI_TONES, AI_VERBOSITY }
 const DEFAULT_TEMPERATURE = 0.7
 const DEFAULT_MAX_TOKENS = 500
 
+// Prompt base de "tutor de Oliver School" que se añade al system prompt por
+// defecto. El usuario puede editarlo libremente desde Ajustes.
+export const DEFAULT_CUSTOM_INSTRUCTIONS = `Eres el tutor virtual de Oliver School. Tu prioridad es ayudar al estudiante a entender los temas del curso en el que está, no solo darle las respuestas: explica los conceptos paso a paso, con ejemplos sencillos y relacionándolos con lo que ya vio en clases anteriores cuando sea posible. Si te pide la respuesta de un ejercicio o examen, primero guíalo con preguntas o pistas para que llegue solo a la conclusión, y solo da la respuesta directa si insiste o si ya lo intentó. Anímalo cuando avance y motívalo a seguir aprendiendo. Si pregunta algo totalmente fuera del curso, respóndele brevemente y luego sugiérele volver al tema de la clase.`
+
 export const useSettingsStore = create((set) => ({
   mascotName: '',
   minimaxApiKey: '',
@@ -43,7 +47,7 @@ export const useSettingsStore = create((set) => ({
   aiVerbosity: AI_VERBOSITY[1].id,
   temperature: DEFAULT_TEMPERATURE,
   maxTokens: DEFAULT_MAX_TOKENS,
-  customInstructions: '',
+  customInstructions: DEFAULT_CUSTOM_INSTRUCTIONS,
 
   setMascotName: (mascotName) => set({ mascotName }),
   setMinimaxApiKey: (minimaxApiKey) => set({ minimaxApiKey }),
@@ -65,6 +69,6 @@ export const useSettingsStore = create((set) => ({
       aiVerbosity: settings?.aiVerbosity ?? AI_VERBOSITY[1].id,
       temperature: settings?.temperature ?? DEFAULT_TEMPERATURE,
       maxTokens: settings?.maxTokens ?? DEFAULT_MAX_TOKENS,
-      customInstructions: settings?.customInstructions ?? '',
+      customInstructions: settings?.customInstructions || DEFAULT_CUSTOM_INSTRUCTIONS,
     }),
 }))

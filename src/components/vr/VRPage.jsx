@@ -14,10 +14,21 @@ const TURN_SPEED = 8
 // MascotMesh normalizes models to ~2 units tall. The scenery footprint is
 // ~24 units wide, so we shrink the player to a human-ish scale that doesn't
 // dwarf the structure it's walking around.
-const PLAYER_SCALE = 0.45
+const PLAYER_SCALE = 0.3
 const WALK_CYCLE_SPEED = 9
 const WALK_BOB_HEIGHT = 0.07
 const WALK_TILT = 0.06
+
+// Camera orbit (mouse-drag controlled) around the player.
+const CAMERA_DISTANCE = 3.4
+const CAMERA_HEIGHT = 1.6
+const CAMERA_PITCH_MIN = -0.5
+const CAMERA_PITCH_MAX = 1.1
+const MOUSE_SENSITIVITY = 0.005
+
+// Jumping.
+const GRAVITY = -20
+const JUMP_SPEED = 7
 
 // Warm "ruinas al atardecer" palette applied to any untextured surface of the
 // scenery, so a flat-grey export still reads as a colorful scene.
@@ -58,10 +69,16 @@ function useMovementKeys() {
 // On-screen D-pad for phones/tablets: holds the same key flags the keyboard
 // listener uses, so <Player> doesn't need to know where the input came from.
 function TouchControls({ keysRef }) {
-  const setKeys = (direction, value) => () => {
+  const setKeys = (direction, value) => (e) => {
+    e.stopPropagation()
     DIRECTION_KEYS[direction].forEach((key) => {
       keysRef.current[key] = value
     })
+  }
+
+  const setJump = (value) => (e) => {
+    e.stopPropagation()
+    keysRef.current[' '] = value
   }
 
   const Pad = ({ direction, label, className = '' }) => (
@@ -80,20 +97,37 @@ function TouchControls({ keysRef }) {
   )
 
   return (
-    <div className="pointer-events-none absolute bottom-6 left-1/2 grid -translate-x-1/2 grid-cols-3 grid-rows-2 gap-1 sm:hidden">
-      <div className="pointer-events-auto col-start-2">
-        <Pad direction="up" label="⬆️" />
+    <>
+      <div className="pointer-events-none absolute bottom-6 left-1/2 grid -translate-x-1/2 grid-cols-3 grid-rows-2 gap-1 sm:hidden">
+        <div className="pointer-events-auto col-start-2">
+          <Pad direction="up" label="⬆️" />
+        </div>
+        <div className="pointer-events-auto col-start-1 row-start-2">
+          <Pad direction="left" label="⬅️" />
+        </div>
+        <div className="pointer-events-auto col-start-2 row-start-2">
+          <Pad direction="down" label="⬇️" />
+        </div>
+        <div className="pointer-events-auto col-start-3 row-start-2">
+          <Pad direction="right" label="➡️" />
+        </div>
       </div>
-      <div className="pointer-events-auto col-start-1 row-start-2">
-        <Pad direction="left" label="⬅️" />
+
+      <div className="pointer-events-none absolute bottom-6 right-4 sm:hidden">
+        <button
+          type="button"
+          onPointerDown={setJump(true)}
+          onPointerUp={setJump(false)}
+          onPointerLeave={setJump(false)}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ touchAction: 'none' }}
+          className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30"
+          aria-label="jump"
+        >
+          ⤴️
+        </button>
       </div>
-      <div className="pointer-events-auto col-start-2 row-start-2">
-        <Pad direction="down" label="⬇️" />
-      </div>
-      <div className="pointer-events-auto col-start-3 row-start-2">
-        <Pad direction="right" label="➡️" />
-      </div>
-    </div>
+    </>
   )
 }
 
@@ -135,13 +169,15 @@ function Scenery() {
 }
 
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
-// tilts while walking, and the camera follows behind it.
-function Player({ mascot, skin, keysRef }) {
+// tilts while walking, can jump, and the camera orbits around it based on
+// mouse/touch drag (cameraRef).
+function Player({ mascot, skin, keysRef, cameraRef }) {
   const group = useRef()
   const meshGroup = useRef()
   const { camera } = useThree()
   const cameraTarget = useRef(new THREE.Vector3())
   const walkCycle = useRef(0)
+  const velocityY = useRef(0)
 
   useFrame((_, delta) => {
     if (!group.current) return
@@ -169,6 +205,18 @@ function Player({ mascot, skin, keysRef }) {
       walkCycle.current = 0
     }
 
+    // Jump + gravity (group.position.y is the player's height off the ground).
+    const grounded = group.current.position.y <= 0
+    if (grounded && (keys[' '] || keys['spacebar'])) {
+      velocityY.current = JUMP_SPEED
+    }
+    velocityY.current += GRAVITY * delta
+    group.current.position.y += velocityY.current * delta
+    if (group.current.position.y < 0) {
+      group.current.position.y = 0
+      velocityY.current = 0
+    }
+
     if (meshGroup.current) {
       const bob = isMoving ? Math.abs(Math.sin(walkCycle.current)) * WALK_BOB_HEIGHT : 0
       const tilt = isMoving ? Math.sin(walkCycle.current) * WALK_TILT : 0
@@ -177,11 +225,14 @@ function Player({ mascot, skin, keysRef }) {
       meshGroup.current.rotation.x = isMoving ? WALK_TILT * 0.6 : 0
     }
 
-    const behind = new THREE.Vector3(0, 1.6, 3.4).applyAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      group.current.rotation.y,
+    // Camera orbits around the player based on mouse/touch drag (yaw + pitch).
+    const { yaw, pitch } = cameraRef.current
+    const offset = new THREE.Vector3(
+      CAMERA_DISTANCE * Math.sin(yaw) * Math.cos(pitch),
+      CAMERA_HEIGHT + CAMERA_DISTANCE * Math.sin(pitch),
+      CAMERA_DISTANCE * Math.cos(yaw) * Math.cos(pitch),
     )
-    cameraTarget.current.copy(group.current.position).add(behind)
+    cameraTarget.current.copy(group.current.position).add(offset)
     camera.position.lerp(cameraTarget.current, 0.06)
     camera.lookAt(
       group.current.position.x,
@@ -199,8 +250,35 @@ function Player({ mascot, skin, keysRef }) {
   )
 }
 
+// Tracks pointer drag (mouse or touch) to orbit the camera around the player.
+function useCameraDrag() {
+  const camera = useRef({ yaw: 0, pitch: 0 })
+  const drag = useRef(null)
+
+  const onPointerDown = (e) => {
+    drag.current = { x: e.clientX, y: e.clientY }
+  }
+  const onPointerMove = (e) => {
+    if (!drag.current) return
+    const dx = e.clientX - drag.current.x
+    const dy = e.clientY - drag.current.y
+    drag.current = { x: e.clientX, y: e.clientY }
+    camera.current.yaw -= dx * MOUSE_SENSITIVITY
+    camera.current.pitch = Math.min(
+      CAMERA_PITCH_MAX,
+      Math.max(CAMERA_PITCH_MIN, camera.current.pitch + dy * MOUSE_SENSITIVITY),
+    )
+  }
+  const onPointerUp = () => {
+    drag.current = null
+  }
+
+  return { camera, onPointerDown, onPointerMove, onPointerUp }
+}
+
 export default function VRPage() {
   const keysRef = useMovementKeys()
+  const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp } = useCameraDrag()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const selectedSkinId = useMascotStore((s) => s.selectedSkinId)
   const mascot = getMascotById(selectedMascotId)
@@ -210,7 +288,14 @@ export default function VRPage() {
     <div className="flex h-screen flex-col bg-background text-text">
       <AppTopBar />
 
-      <div className="relative flex-1">
+      <div
+        className="relative flex-1"
+        style={{ touchAction: 'none' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      >
         <Canvas camera={{ position: [0, 1.6, 3.4], fov: 50 }}>
           <color attach="background" args={['#3b2a1f']} />
           <fog attach="fog" args={['#d98e4a', 12, 42]} />
@@ -218,12 +303,13 @@ export default function VRPage() {
           <directionalLight position={[10, 15, 8]} intensity={1} />
           <Suspense fallback={null}>
             <Scenery />
-            <Player mascot={mascot} skin={skin} keysRef={keysRef} />
+            <Player mascot={mascot} skin={skin} keysRef={keysRef} cameraRef={cameraRef} />
           </Suspense>
         </Canvas>
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
-          Muévete con <strong>W A S D</strong> o las flechas del teclado 🎮
+          Muévete con <strong>W A S D</strong> o las flechas, <strong>espacio</strong> para saltar,
+          arrastra el ratón para mirar alrededor 🎮
         </div>
 
         <TouchControls keysRef={keysRef} />
