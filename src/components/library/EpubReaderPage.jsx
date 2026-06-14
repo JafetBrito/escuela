@@ -1,17 +1,12 @@
-import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ReactReader } from 'react-reader'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { getBookById } from '../../data/libraryRegistry'
-import { useLibraryStore } from '../../stores/useLibraryStore'
+import BookContent from './BookContent'
 
 export default function EpubReaderPage() {
   const { bookId } = useParams()
   const navigate = useNavigate()
   const book = getBookById(bookId)
-  const lastLocations = useLibraryStore((s) => s.lastLocations)
-  const setLastLocation = useLibraryStore((s) => s.setLastLocation)
-  const [location, setLocation] = useState(lastLocations[bookId] ?? null)
 
   if (!book || !book.file) {
     return (
@@ -23,11 +18,6 @@ export default function EpubReaderPage() {
         </Link>
       </div>
     )
-  }
-
-  const handleLocationChanged = (cfi) => {
-    setLocation(cfi)
-    setLastLocation(bookId, cfi)
   }
 
   return (
@@ -43,24 +33,7 @@ export default function EpubReaderPage() {
         <span className="w-24" aria-hidden="true" />
       </header>
 
-      <div className="relative flex-1">
-        {book.type === 'pdf' ? (
-          <iframe
-            src={book.file}
-            title={book.title}
-            className="h-full w-full border-0 bg-white"
-          />
-        ) : (
-          <ReactReader
-            url={book.file}
-            location={location}
-            locationChanged={handleLocationChanged}
-            getRendition={(rendition) => {
-              rendition.themes.fontSize('100%')
-            }}
-          />
-        )}
-      </div>
+      <BookContent book={book} className="flex-1" />
 
       <MascotCompanion />
     </div>

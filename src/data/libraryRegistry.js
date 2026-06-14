@@ -14,8 +14,34 @@ export const LIBRARY_BOOKS = [
     icon: '📘',
     color: '#2dd4bf',
     description: 'Manual de bienvenida: cómo usar la plataforma, tu mascota y tus misiones.',
-    type: 'epub',
-    file: null,
+    type: 'html',
+    file: 'inline',
+    content: [
+      {
+        title: '¿Qué es OLIVER SCHOOL?',
+        text: 'Una plataforma de cursos interactivos acompañada por una mascota virtual que te ayuda a aprender, te da misiones y te recompensa con monedas.',
+      },
+      {
+        title: 'Monedas',
+        text: 'Ganas oro, plata y cobre completando misiones (quizzes, chats y desbloqueando objetos). 100 cobre = 1 plata, 100 plata = 1 oro. Gástalas en la Tienda o en la Biblioteca.',
+      },
+      {
+        title: 'Objetos',
+        text: 'Algunos objetos son funcionales: actívalos desde "Objetos" en Mi mascota para desbloquear efectos como temas, cámara o un lector exprés de clases.',
+      },
+      {
+        title: 'Biblioteca',
+        text: 'Encuentra libros por categoría. Algunos están sellados hasta que los compras con tus monedas. Puedes abrirlos en este mismo pop-up desde la Biblioteca o desde "Libros" en el menú de tu mascota, sin salir de donde estés.',
+      },
+      {
+        title: 'Aspecto',
+        text: 'Desde la pestaña Aspecto puedes cambiar la ropa y los accesorios de tu mascota sin cambiar su modelo.',
+      },
+      {
+        title: 'Ajustes',
+        text: 'En Ajustes puedes configurar tu clave de Minimax, el modelo de IA y cómo se comporta tu mascota (tono y nivel de detalle).',
+      },
+    ],
   },
   {
     id: 'notebooklm-basico',

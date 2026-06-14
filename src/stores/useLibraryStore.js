@@ -5,8 +5,16 @@ import { create } from 'zustand'
 export const useLibraryStore = create((set) => ({
   lastLocations: {},
 
+  // Currently open book in the global reader popup (BookReaderModal), or
+  // null if closed. Letting any page open this via the store means books
+  // can be read from the Biblioteca, the mascot's "Libros" panel, etc.
+  openBookId: null,
+
   setLastLocation: (bookId, cfi) =>
     set((state) => ({ lastLocations: { ...state.lastLocations, [bookId]: cfi } })),
 
   loadLastLocations: (lastLocations) => set({ lastLocations: lastLocations ?? {} }),
+
+  openBook: (bookId) => set({ openBookId: bookId }),
+  closeBook: () => set({ openBookId: null }),
 }))

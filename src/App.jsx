@@ -12,6 +12,7 @@ import GamePlayerPage from './components/games/GamePlayerPage'
 import ChatsPage from './components/chats/ChatsPage'
 import AchievementsPage from './components/achievements/AchievementsPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
+import { useLibraryStore } from './stores/useLibraryStore'
 
 // Lazy-loaded: pulls in Three.js / React Three Fiber, kept out of the main
 // bundle since most visitors never reach the learning interface or the
@@ -21,6 +22,7 @@ const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 const VRPage = lazy(() => import('./components/vr/VRPage'))
+const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
 
 function RouteFallback() {
   return (
@@ -31,8 +33,15 @@ function RouteFallback() {
 }
 
 export default function App() {
+  const openBookId = useLibraryStore((s) => s.openBookId)
+
   return (
     <BrowserRouter>
+      {openBookId && (
+        <Suspense fallback={null}>
+          <BookReaderModal />
+        </Suspense>
+      )}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />

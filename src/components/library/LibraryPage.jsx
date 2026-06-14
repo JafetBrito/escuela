@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import CurrencyBadge from '../shared/CurrencyBadge'
@@ -7,15 +6,16 @@ import { LIBRARY_BOOKS, isBookPurchasable } from '../../data/libraryRegistry'
 import { CATEGORY_META, getCategoryMeta } from '../../data/categoryMeta'
 import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
+import { useLibraryStore } from '../../stores/useLibraryStore'
 import { formatCurrency } from '../../utils/currency'
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_META)
 
 export default function LibraryPage() {
-  const navigate = useNavigate()
   const purchased = useShopStore((s) => s.purchased)
   const buyGeneric = useShopStore((s) => s.buyGeneric)
   const coins = useCurrencyStore((s) => s.coins)
+  const openBook = useLibraryStore((s) => s.openBook)
 
   const categories = useMemo(() => {
     const groups = new Map()
@@ -39,8 +39,9 @@ export default function LibraryPage() {
             <div>
               <h1 className="text-2xl font-bold">📚 Biblioteca</h1>
               <p className="mt-1 text-sm text-text-muted">
-                Libros organizados por categoría. Algunos están sellados hasta que los compras con
-                tus monedas — los demás puedes leerlos directo desde el navegador.
+                Libros organizados por categoría. Pasa el cursor sobre cada libro para ver su
+                descripción. Algunos están sellados hasta que los compras con tus monedas — los
+                demás se abren en una ventana emergente, sin salir de esta página.
               </p>
             </div>
             <CurrencyBadge amount={coins} />
@@ -73,7 +74,7 @@ export default function LibraryPage() {
 
                     const handleClick = () => {
                       if (comingSoon || locked) return
-                      navigate(`/biblioteca/${book.id}`)
+                      openBook(book.id)
                     }
 
                     const handleBuy = (e) => {
@@ -96,7 +97,8 @@ export default function LibraryPage() {
                           {book.icon}
                         </div>
 
-                        <div className="bg-black/45 px-2.5 py-2 backdrop-blur-sm">
+                        {/* Always-visible title/author strip */}
+                        <div className="relative z-10 bg-black/45 px-2.5 py-2 backdrop-blur-sm">
                           <p className="line-clamp-2 text-xs font-bold leading-tight text-white">
                             {book.title}
                           </p>
@@ -104,17 +106,28 @@ export default function LibraryPage() {
                         </div>
 
                         {comingSoon && (
-                          <span className="absolute right-2 top-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-text-muted">
+                          <span className="absolute right-2 top-2 z-20 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-text-muted">
                             🔒 Próximamente
                           </span>
                         )}
 
                         {locked && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 p-3 text-center backdrop-blur-[1px]">
-                            <span className="text-3xl">🔒</span>
-                            <span className="text-xs font-bold text-white">
-                              {formatCurrency(book.price)}
-                            </span>
+                          <span className="absolute right-2 top-2 z-20 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-text-muted">
+                            🔒 {formatCurrency(book.price)}
+                          </span>
+                        )}
+
+                        {!comingSoon && !locked && (
+                          <span className="absolute right-2 top-2 z-20 rounded-full bg-background/80 px-2 py-1 text-[11px] font-semibold text-text opacity-0 transition-opacity group-hover:opacity-100">
+                            📖 Leer
+                          </span>
+                        )}
+
+                        {/* Hover overlay: description + contextual action */}
+                        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 bg-black/80 p-3 text-center opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+                          <p className="text-[11px] leading-snug text-white/90">{book.description}</p>
+
+                          {locked && (
                             <span
                               onClick={handleBuy}
                               role="button"
@@ -124,16 +137,16 @@ export default function LibraryPage() {
                                   : 'cursor-not-allowed bg-surface-hover text-text-muted'
                               }`}
                             >
-                              {coins >= book.price ? 'Comprar' : 'Sin monedas'}
+                              {coins >= book.price ? `Comprar · ${formatCurrency(book.price)}` : 'Sin monedas'}
                             </span>
-                          </div>
-                        )}
+                          )}
 
-                        {!comingSoon && !locked && (
-                          <span className="absolute right-2 top-2 rounded-full bg-background/80 px-2 py-1 text-[11px] font-semibold text-text opacity-0 transition-opacity group-hover:opacity-100">
-                            📖 Leer
-                          </span>
-                        )}
+                          {!comingSoon && !locked && (
+                            <span className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-background">
+                              📖 Leer
+                            </span>
+                          )}
+                        </div>
                       </button>
                     )
                   })}

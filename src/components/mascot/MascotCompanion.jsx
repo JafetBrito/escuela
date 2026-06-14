@@ -5,6 +5,7 @@ import ItemsPanel from './ItemsPanel'
 import MissionsPanel from './MissionsPanel'
 import NotesPanel from './NotesPanel'
 import GalleryPanel from './GalleryPanel'
+import BooksPanel from './BooksPanel'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 
@@ -12,6 +13,7 @@ const MENU = [
   { id: 'chat', label: 'Chat', icon: '💬' },
   { id: 'missions', label: 'Misiones', icon: '🎯' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
+  { id: 'books', label: 'Libros', icon: '📚' },
   { id: 'notes', label: 'Notas', icon: '📝' },
   { id: 'gallery', label: 'Galería', icon: '🖼️' },
 ]
@@ -50,7 +52,7 @@ export default function MascotCompanion({ courseId, module }) {
             </button>
           </div>
 
-          <div className="grid grid-cols-5 border-b border-border text-sm">
+          <div className="grid grid-cols-6 border-b border-border text-sm">
             {MENU.map((item) => (
               <button
                 key={item.id}
@@ -78,6 +80,7 @@ export default function MascotCompanion({ courseId, module }) {
                 <EmptyPanelMessage text="Abre esta sección desde una clase para ver sus misiones." />
               ))}
             {panel === 'items' && <ItemsPanel />}
+            {panel === 'books' && <BooksPanel />}
             {panel === 'notes' &&
               (module ? (
                 <NotesPanel courseId={courseId} module={module} />

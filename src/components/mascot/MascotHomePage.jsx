@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotViewport from './MascotViewport'
 import ItemsPanel from './ItemsPanel'
+import BooksPanel from './BooksPanel'
 import SkinSelector from './SkinSelector'
 import MascotSelector from './MascotSelector'
 import GalleryPanel from './GalleryPanel'
@@ -17,6 +18,7 @@ import { getMascotById } from '../../data/mascotRegistry'
 const TABS = [
   { id: 'home', label: 'Inicio', icon: '🏡' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
+  { id: 'books', label: 'Libros', icon: '📚' },
   { id: 'notes', label: 'Notas', icon: '📝' },
   { id: 'appearance', label: 'Aspecto', icon: '🎨' },
   { id: 'gallery', label: 'Galería', icon: '🖼️' },
@@ -87,6 +89,15 @@ export default function MascotHomePage() {
                 Objetos de {displayName}
               </p>
               <ItemsPanel />
+            </section>
+          )}
+
+          {tab === 'books' && (
+            <section className="flex flex-col gap-3">
+              <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+                Libros de {displayName}
+              </p>
+              <BooksPanel />
             </section>
           )}
 
