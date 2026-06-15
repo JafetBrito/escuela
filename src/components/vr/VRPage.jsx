@@ -15,7 +15,14 @@ const TURN_SPEED = 8
 // MascotMesh normalizes models to ~2 units tall. The scenery footprint is
 // ~24 units wide, so we shrink the player to a human-ish scale that doesn't
 // dwarf the structure it's walking around.
-const PLAYER_SCALE = 0.3
+const PLAYER_SCALE = 0.12
+const PLAYER_HEIGHT = PLAYER_SCALE * 2
+// How far ahead of/around the player we check for walls before letting them
+// move into something (in world units).
+const COLLISION_RADIUS = PLAYER_HEIGHT * 0.6
+// How high above the player's current position we start the downward ray
+// that finds the ground beneath them.
+const GROUND_RAY_HEIGHT = 10
 const WALK_CYCLE_SPEED = 9
 const WALK_BOB_HEIGHT = 0.07
 const WALK_TILT = 0.06
@@ -133,11 +140,13 @@ function TouchControls({ keysRef }) {
 }
 
 // Loads the VR background model, scales it to a roomy walkable footprint, and
-// tints any untextured surfaces so it doesn't look flat/grey.
-function Scenery() {
+// tints any untextured surfaces so it doesn't look flat/grey. The cloned
+// model is also handed to <Player> so it can raycast against the real
+// geometry for ground height and collisions.
+function useSceneryModel() {
   const { scene } = useGLTF('/fondo_azteca.glb')
 
-  const model = useMemo(() => {
+  return useMemo(() => {
     const clone = scene.clone(true)
     const box = new THREE.Box3().setFromObject(clone)
     const size = new THREE.Vector3()
@@ -165,24 +174,56 @@ function Scenery() {
 
     return clone
   }, [scene])
-
-  return <primitive object={model} />
 }
 
+// Casts a ray straight down from above the given x/z to find the scenery
+// height directly beneath the player. Falls back to y = 0 if nothing is hit
+// (e.g. the player walked off the edge of the model).
+function getGroundY(raycaster, scenery, x, z) {
+  raycaster.set(new THREE.Vector3(x, GROUND_RAY_HEIGHT, z), DOWN)
+  const hits = raycaster.intersectObject(scenery, true)
+  return hits.length > 0 ? hits[0].point.y : 0
+}
+
+// Casts a ray from the player's chest in a horizontal direction to check for
+// walls/objects in the way. Returns true if movement of `distance` along
+// `direction` would walk into something.
+function isBlocked(raycaster, scenery, origin, direction, distance) {
+  if (distance <= 0) return false
+  raycaster.set(origin, direction)
+  const hits = raycaster.intersectObject(scenery, true)
+  return hits.length > 0 && hits[0].distance < COLLISION_RADIUS + distance
+}
+
+const DOWN = new THREE.Vector3(0, -1, 0)
+const AXIS_X = new THREE.Vector3(1, 0, 0)
+const AXIS_Z = new THREE.Vector3(0, 0, 1)
+
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
-// tilts while walking, can jump, and the camera orbits around it based on
-// mouse/touch drag (cameraRef).
-function Player({ mascot, skin, keysRef, cameraRef }) {
+// tilts while walking, can jump, sits on the scenery's real ground height,
+// and can't walk through scenery geometry — all via raycasts against the
+// shared `scenery` model.
+function Player({ mascot, skin, scenery, keysRef, cameraRef }) {
   const group = useRef()
   const meshGroup = useRef()
   const { camera } = useThree()
   const cameraTarget = useRef(new THREE.Vector3())
   const walkCycle = useRef(0)
   const velocityY = useRef(0)
+  const raycaster = useMemo(() => new THREE.Raycaster(), [])
+  const initialized = useRef(false)
 
   useFrame((_, delta) => {
     if (!group.current) return
     const keys = keysRef.current
+    const pos = group.current.position
+
+    // Drop the player onto the real scenery surface the first time we run,
+    // instead of starting at the world origin (y = 0).
+    if (!initialized.current) {
+      pos.y = getGroundY(raycaster, scenery, pos.x, pos.z)
+      initialized.current = true
+    }
 
     const move = new THREE.Vector3()
     if (keys['w'] || keys['arrowup']) move.z -= 1
@@ -194,29 +235,52 @@ function Player({ mascot, skin, keysRef, cameraRef }) {
 
     if (isMoving) {
       move.normalize().multiplyScalar(MOVE_SPEED * delta)
-      group.current.position.add(move)
 
-      const targetAngle = Math.atan2(move.x, move.z)
-      let angleDiff = targetAngle - group.current.rotation.y
-      angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
-      group.current.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
+      // Chest-height origin for wall checks, at the player's current spot.
+      const chestY = pos.y + PLAYER_HEIGHT * 0.6
+      const originX = new THREE.Vector3(pos.x, chestY, pos.z)
+      const originZ = new THREE.Vector3(pos.x, chestY, pos.z)
 
-      walkCycle.current += delta * WALK_CYCLE_SPEED
+      // Resolve each axis separately so the player can slide along walls
+      // instead of getting stuck the moment one axis is blocked.
+      if (move.x !== 0) {
+        const dir = move.x > 0 ? AXIS_X : AXIS_X.clone().negate()
+        if (isBlocked(raycaster, scenery, originX, dir, Math.abs(move.x))) move.x = 0
+      }
+      if (move.z !== 0) {
+        const dir = move.z > 0 ? AXIS_Z : AXIS_Z.clone().negate()
+        if (isBlocked(raycaster, scenery, originZ, dir, Math.abs(move.z))) move.z = 0
+      }
+
+      if (move.lengthSq() > 0) {
+        pos.x += move.x
+        pos.z += move.z
+
+        const targetAngle = Math.atan2(move.x, move.z)
+        let angleDiff = targetAngle - group.current.rotation.y
+        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
+        group.current.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
+
+        walkCycle.current += delta * WALK_CYCLE_SPEED
+      } else {
+        walkCycle.current = 0
+      }
     } else {
       walkCycle.current = 0
     }
 
-    // Jump + gravity (group.position.y is the player's height off the ground).
-    const grounded = group.current.position.y <= 0
-    if (grounded && (keys[' '] || keys['spacebar'])) {
-      velocityY.current = JUMP_SPEED
+    // Jump + gravity, relative to the scenery's real ground height beneath
+    // the player's (possibly new) x/z position.
+    const groundY = getGroundY(raycaster, scenery, pos.x, pos.z)
+    if (pos.y <= groundY) {
+      pos.y = groundY
+      velocityY.current = 0
+      if (keys[' '] || keys['spacebar']) {
+        velocityY.current = JUMP_SPEED
+      }
     }
     velocityY.current += GRAVITY * delta
-    group.current.position.y += velocityY.current * delta
-    if (group.current.position.y < 0) {
-      group.current.position.y = 0
-      velocityY.current = 0
-    }
+    pos.y += velocityY.current * delta
 
     if (meshGroup.current) {
       const bob = isMoving ? Math.abs(Math.sin(walkCycle.current)) * WALK_BOB_HEIGHT : 0
@@ -248,6 +312,19 @@ function Player({ mascot, skin, keysRef, cameraRef }) {
         <MascotMesh mascot={mascot} skin={skin} />
       </group>
     </group>
+  )
+}
+
+// Loads the scenery once and renders it alongside the player, which needs
+// the same model instance to raycast against for ground height/collisions.
+function World({ mascot, skin, keysRef, cameraRef }) {
+  const scenery = useSceneryModel()
+
+  return (
+    <>
+      <primitive object={scenery} />
+      <Player mascot={mascot} skin={skin} scenery={scenery} keysRef={keysRef} cameraRef={cameraRef} />
+    </>
   )
 }
 
@@ -304,8 +381,7 @@ export default function VRPage() {
           <ambientLight intensity={0.9} />
           <directionalLight position={[10, 15, 8]} intensity={1} />
           <Suspense fallback={null}>
-            <Scenery />
-            <Player mascot={mascot} skin={skin} keysRef={keysRef} cameraRef={cameraRef} />
+            <World mascot={mascot} skin={skin} keysRef={keysRef} cameraRef={cameraRef} />
           </Suspense>
         </Canvas>
 
