@@ -1,6 +1,6 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { Html, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import AppTopBar from '../shared/AppTopBar'
 import PageVideoModal from '../shared/PageVideoModal'
@@ -9,6 +9,16 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
+import { VR_NPCS, getVrNpcById } from '../../data/vrNpcRegistry'
+import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
+import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
+import { useMissionState } from '../../stores/useMissionState'
+import { formatCurrency } from '../../utils/currency'
+
+// While we're designing/testing the world's NPCs and missions, swap the real
+// city model for a simple flat test ground with a few placeholder walls.
+// Flip this back to `false` to return to /fondo_azteca.glb.
+const USE_TEST_SCENERY = true
 
 const MOVE_SPEED = 4
 const TURN_SPEED = 8
@@ -43,6 +53,18 @@ const JUMP_SPEED = 7
 // Warm "ruinas al atardecer" palette applied to any untextured surface of the
 // scenery, so a flat-grey export still reads as a colorful scene.
 const SCENERY_PALETTE = ['#c2703d', '#e8c477', '#9b5a3a', '#7d8597', '#3f9e7a', '#caa46c']
+
+// Simple placeholder walls for the test ground, just to confirm collision
+// still works while we don't load the real city model.
+const TEST_WALLS = [
+  { position: [10, 0, -10], size: [2, 2, 6], color: '#b25a3a' },
+  { position: [-10, 0, -10], size: [4, 1.5, 2], color: '#7d8597' },
+  { position: [10, 0, 10], size: [3, 3, 3], color: '#3f9e7a' },
+  { position: [-10, 0, 10], size: [6, 1, 1], color: '#caa46c' },
+]
+
+// How close the player needs to be to an NPC for its mission card to appear.
+const INTERACT_RADIUS = 2.5
 
 // Movement directions, shared by the keyboard listener and the on-screen
 // touch D-pad: both just flip the same keys on/off.
@@ -184,6 +206,38 @@ function useSceneryModel() {
   }, [scene])
 }
 
+// Procedural stand-in for the city model: a flat circular ground plus a
+// handful of boxes to test collisions against, while NPCs/missions are being
+// designed. Returns the same shape as useSceneryModel so <Player> doesn't
+// care which one it's walking on.
+function useTestGround() {
+  return useMemo(() => {
+    const group = new THREE.Group()
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(24, 48),
+      new THREE.MeshStandardMaterial({ color: '#5a8f5a' }),
+    )
+    ground.rotation.x = -Math.PI / 2
+    group.add(ground)
+
+    const grid = new THREE.GridHelper(48, 24, '#3f6e3f', '#4f7f4f')
+    grid.position.y = 0.01
+    group.add(grid)
+
+    TEST_WALLS.forEach(({ position, size, color }) => {
+      const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(size[0], size[1], size[2]),
+        new THREE.MeshStandardMaterial({ color }),
+      )
+      wall.position.set(position[0], size[1] / 2, position[2])
+      group.add(wall)
+    })
+
+    return { model: group, groundRayHeight: 12 }
+  }, [])
+}
+
 // Casts a ray straight down from above the given x/z to find the scenery
 // height directly beneath the player. Falls back to y = 0 if nothing is hit
 // (e.g. the player walked off the edge of the model).
@@ -211,7 +265,7 @@ const AXIS_Z = new THREE.Vector3(0, 0, 1)
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
 // shared `scenery` model.
-function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef }) {
+function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, playerPositionRef }) {
   const group = useRef()
   const meshGroup = useRef()
   const { camera } = useThree()
@@ -225,6 +279,13 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef }) 
     if (!group.current) return
     const keys = keysRef.current
     const pos = group.current.position
+
+    // Shares the player's live position with NPC proximity checks (see
+    // <NpcProximityTracker>). `pos` is the same Vector3 instance every
+    // frame, mutated in place, so this only needs to run once.
+    if (playerPositionRef && !playerPositionRef.current) {
+      playerPositionRef.current = pos
+    }
 
     // Drop the player onto the real scenery surface the first time we run,
     // instead of starting at the world origin (y = 0).
@@ -324,9 +385,9 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef }) 
   )
 }
 
-// Loads the scenery once and renders it alongside the player, which needs
+// Loads the real city model and renders it alongside the player, which needs
 // the same model instance to raycast against for ground height/collisions.
-function World({ mascot, skin, keysRef, cameraRef }) {
+function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
   const { model, groundRayHeight } = useSceneryModel()
 
   return (
@@ -339,7 +400,107 @@ function World({ mascot, skin, keysRef, cameraRef }) {
         groundRayHeight={groundRayHeight}
         keysRef={keysRef}
         cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
       />
+    </>
+  )
+}
+
+// Same as <CityWorld>, but walking on the procedural test ground instead of
+// the real city model (see USE_TEST_SCENERY).
+function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
+  const { model, groundRayHeight } = useTestGround()
+
+  return (
+    <>
+      <primitive object={model} />
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+      />
+    </>
+  )
+}
+
+// A floating marker (post + head) with a name tag, standing in for a real
+// character model while NPCs are being designed.
+function VrNpc({ npc }) {
+  return (
+    <group position={npc.position}>
+      <mesh position={[0, 0.6, 0]}>
+        <cylinderGeometry args={[0.18, 0.24, 1.2, 12]} />
+        <meshStandardMaterial color={npc.color} />
+      </mesh>
+      <mesh position={[0, 1.35, 0]}>
+        <sphereGeometry args={[0.28, 16, 16]} />
+        <meshStandardMaterial color={npc.color} />
+      </mesh>
+      <Html position={[0, 2.1, 0]} center distanceFactor={10}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          {npc.emoji} {npc.name}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+// Watches the distance from the player to every NPC and reports the closest
+// one within INTERACT_RADIUS (or null) via `onNearbyChange`, so VRPage can
+// show its mission card outside the canvas.
+function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
+  const lastId = useRef(null)
+  const npcPositions = useMemo(
+    () => VR_NPCS.map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
+    [],
+  )
+
+  useFrame(() => {
+    const pos = playerPositionRef.current
+    if (!pos) return
+
+    let nearestId = null
+    let nearestDist = Infinity
+    for (const { id, vec } of npcPositions) {
+      const dist = pos.distanceTo(vec)
+      if (dist < nearestDist) {
+        nearestDist = dist
+        nearestId = id
+      }
+    }
+
+    const nearbyId = nearestDist <= INTERACT_RADIUS ? nearestId : null
+    if (nearbyId !== lastId.current) {
+      lastId.current = nearbyId
+      onNearbyChange(nearbyId)
+    }
+  })
+
+  return null
+}
+
+// Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
+// the player and the mission NPCs on top.
+function World({ mascot, skin, keysRef, cameraRef, playerPositionRef, onNearbyNpcChange }) {
+  const WorldGround = USE_TEST_SCENERY ? TestWorld : CityWorld
+
+  return (
+    <>
+      <WorldGround
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+      />
+      {VR_NPCS.map((npc) => (
+        <VrNpc key={npc.id} npc={npc} />
+      ))}
+      <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
   )
 }
@@ -410,6 +571,86 @@ function useCameraControls() {
   return { camera, onPointerDown, onPointerMove, onPointerUp, onWheel }
 }
 
+// Top-left tracker: lists the global missions the player has accepted (from
+// /misiones or from NPCs in this world) and their current status.
+function MissionTracker({ accepted, claimed, missionState }) {
+  if (accepted.length === 0) return null
+
+  return (
+    <div className="pointer-events-none absolute left-4 top-4 flex max-w-xs flex-col gap-1.5 rounded-xl bg-surface/90 p-3 text-xs text-text shadow-lg backdrop-blur">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-text-muted">📜 Misiones activas</p>
+      {accepted.map((id) => {
+        const mission = getGlobalMissionById(id)
+        if (!mission) return null
+        const isClaimed = claimed.includes(id)
+        const isCompleted = mission.check(missionState)
+        const status = isClaimed ? '✅' : isCompleted ? '🎁' : '🕓'
+        return (
+          <p key={id} className="flex items-center gap-1.5">
+            <span>{status}</span>
+            <span>{mission.icon}</span>
+            <span className="truncate">{mission.title}</span>
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
+// Bottom-center card shown when the player is standing near an NPC: their
+// dialogue plus the mission they're handing out, with the right action
+// button depending on accepted/completed/claimed state.
+function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onClaim }) {
+  const npc = getVrNpcById(npcId)
+  const mission = npc && getGlobalMissionById(npc.missionId)
+  if (!npc || !mission) return null
+
+  const isAccepted = accepted.includes(mission.id)
+  const isClaimed = claimed.includes(mission.id)
+  const isCompleted = mission.check(missionState)
+
+  return (
+    <div className="absolute bottom-24 left-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-border bg-surface/95 p-4 text-sm text-text shadow-xl backdrop-blur sm:bottom-20">
+      <p className="font-bold">
+        {npc.emoji} {npc.name}
+      </p>
+      <p className="mt-1 text-text-muted">"{npc.dialogue}"</p>
+      <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 py-2">
+        <p className="flex items-center gap-1.5 font-semibold">
+          <span>{mission.icon}</span>
+          <span>{mission.title}</span>
+        </p>
+        <p className="whitespace-nowrap text-xs text-text-muted">🪙 {formatCurrency(mission.reward)}</p>
+      </div>
+
+      <div className="mt-3">
+        {!isAccepted && (
+          <button
+            type="button"
+            onClick={() => onAccept(mission.id)}
+            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
+          >
+            📜 Aceptar misión
+          </button>
+        )}
+        {isAccepted && !isCompleted && (
+          <p className="text-center text-xs font-semibold text-text-muted">🕓 En progreso</p>
+        )}
+        {isAccepted && isCompleted && !isClaimed && (
+          <button
+            type="button"
+            onClick={() => onClaim(mission.id)}
+            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
+          >
+            🎁 Reclamar recompensa
+          </button>
+        )}
+        {isClaimed && <p className="text-center text-xs font-semibold text-text-muted">✅ Completada</p>}
+      </div>
+    </div>
+  )
+}
+
 export default function VRPage() {
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -417,6 +658,14 @@ export default function VRPage() {
   const selectedSkinId = useMascotStore((s) => s.selectedSkinId)
   const mascot = getMascotById(selectedMascotId)
   const skin = getSkinById(selectedSkinId)
+
+  const playerPositionRef = useRef(null)
+  const [nearbyNpcId, setNearbyNpcId] = useState(null)
+  const accepted = useGlobalMissionsStore((s) => s.accepted)
+  const claimed = useGlobalMissionsStore((s) => s.claimed)
+  const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
+  const claimReward = useGlobalMissionsStore((s) => s.claimReward)
+  const missionState = useMissionState()
 
   return (
     <div className="flex h-screen flex-col bg-background text-text">
@@ -438,9 +687,29 @@ export default function VRPage() {
           <ambientLight intensity={0.9} />
           <directionalLight position={[10, 15, 8]} intensity={1} />
           <Suspense fallback={null}>
-            <World mascot={mascot} skin={skin} keysRef={keysRef} cameraRef={cameraRef} />
+            <World
+              mascot={mascot}
+              skin={skin}
+              keysRef={keysRef}
+              cameraRef={cameraRef}
+              playerPositionRef={playerPositionRef}
+              onNearbyNpcChange={setNearbyNpcId}
+            />
           </Suspense>
         </Canvas>
+
+        <MissionTracker accepted={accepted} claimed={claimed} missionState={missionState} />
+
+        {nearbyNpcId && (
+          <NpcMissionCard
+            npcId={nearbyNpcId}
+            accepted={accepted}
+            claimed={claimed}
+            missionState={missionState}
+            onAccept={acceptMission}
+            onClaim={claimReward}
+          />
+        )}
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
           Muévete con <strong>W A S D</strong> o las flechas, <strong>espacio</strong> para saltar,
