@@ -47,12 +47,12 @@ const WALK_TILT = 0.06
 // mouse wheel or a two-finger pinch. Movement is relative to this camera, so
 // "forward" always means "away from the camera", like a typical 3rd-person
 // game.
-const CAMERA_DISTANCE = 4.5
-const CAMERA_HEIGHT = 1.6
+const CAMERA_DISTANCE = 5.5
+const CAMERA_HEIGHT = 2
 const CAMERA_PITCH_MIN = -0.5
 const CAMERA_PITCH_MAX = 1.1
 const MOUSE_SENSITIVITY = 0.005
-const ZOOM_MIN = 1.2
+const ZOOM_MIN = 1.8
 const ZOOM_MAX = 55
 const WHEEL_ZOOM_SPEED = 0.0065
 const PINCH_ZOOM_SPEED = 0.07
@@ -60,6 +60,19 @@ const PINCH_ZOOM_SPEED = 0.07
 // (per second, via exponential smoothing). Higher = snappier.
 const ZOOM_SMOOTHING = 6
 const CAMERA_SMOOTHING = 8
+// When a building/wall sits between the player and where the camera "wants"
+// to be, the camera is pulled in to just in front of it (minus this margin)
+// instead of clipping through — otherwise the player's own mascot (and any
+// NPCs behind it) end up hidden inside the campus geometry.
+const CAMERA_COLLISION_MARGIN = 0.35
+
+// Xbox/standard-gamepad support: left stick moves the same as WASD, right
+// stick looks around like a mouse drag, the A button jumps, and the
+// shoulder buttons (LB/RB) zoom in/out. Works on PC and consoles alike —
+// any browser gamepad exposed via the Gamepad API.
+const GAMEPAD_DEADZONE = 0.18
+const GAMEPAD_LOOK_SPEED = 2.2
+const GAMEPAD_ZOOM_SPEED = 12
 
 // Scale for NPC models (slightly bigger than the player so they stand out)
 // and for the background "wandering cats" that wander the test ground.
@@ -77,6 +90,13 @@ const SCENERY_PALETTE = ['#c2703d', '#e8c477', '#9b5a3a', '#7d8597', '#3f9e7a', 
 
 // Radius of the procedural campus ground (test scenery).
 const GROUND_RADIUS = 32
+
+// Each NPC's landmark building sits further from the plaza than the NPC
+// itself, scaled by this factor — kept generous so the building's footprint
+// (BUILDING_SIZE wide) never overlaps the NPC or the spot the player stands
+// to talk to them (which would otherwise hide everyone inside the wall).
+const NPC_BUILDING_OFFSET = 1.8
+const BUILDING_SIZE = 3.2
 
 // How close the player needs to be to an NPC to interact with them. Right-
 // clicking while inside this radius opens their mission card.
@@ -175,16 +195,41 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
 
 // On-screen D-pad for phones/tablets: holds the same key flags the keyboard
 // listener uses, so <Player> doesn't need to know where the input came from.
-function TouchControls({ keysRef }) {
+// Hidden while the world chat is open (the chat box covers this corner and
+// competes for taps). Each button captures its pointer on press so a finger
+// that drifts slightly off the button (very common on real touchscreens)
+// doesn't fire `pointerleave` and silently stop the movement — only
+// `pointerup`/`pointercancel` release it now.
+function TouchControls({ keysRef, chatOpen, onOpenChat }) {
+  if (chatOpen) return null
+
+  const releaseCapture = (e) => {
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+  }
+
   const setKeys = (direction, value) => (e) => {
+    e.preventDefault()
     e.stopPropagation()
+    if (value) {
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    } else {
+      releaseCapture(e)
+    }
     DIRECTION_KEYS[direction].forEach((key) => {
       keysRef.current[key] = value
     })
   }
 
   const setJump = (value) => (e) => {
+    e.preventDefault()
     e.stopPropagation()
+    if (value) {
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    } else {
+      releaseCapture(e)
+    }
     keysRef.current[' '] = value
   }
 
@@ -193,10 +238,10 @@ function TouchControls({ keysRef }) {
       type="button"
       onPointerDown={setKeys(direction, true)}
       onPointerUp={setKeys(direction, false)}
-      onPointerLeave={setKeys(direction, false)}
+      onPointerCancel={setKeys(direction, false)}
       onContextMenu={(e) => e.preventDefault()}
       style={{ touchAction: 'none' }}
-      className={`flex h-14 w-14 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30 ${className}`}
+      className={`flex h-16 w-16 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30 ${className}`}
       aria-label={direction}
     >
       {label}
@@ -220,18 +265,27 @@ function TouchControls({ keysRef }) {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-6 right-4 sm:hidden">
+      <div className="pointer-events-none absolute bottom-6 right-4 flex flex-col items-center gap-2 sm:hidden">
         <button
           type="button"
           onPointerDown={setJump(true)}
           onPointerUp={setJump(false)}
-          onPointerLeave={setJump(false)}
+          onPointerCancel={setJump(false)}
           onContextMenu={(e) => e.preventDefault()}
           style={{ touchAction: 'none' }}
           className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30"
           aria-label="jump"
         >
           ⤴️
+        </button>
+        <button
+          type="button"
+          onClick={onOpenChat}
+          onContextMenu={(e) => e.preventDefault()}
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface/80 text-xl text-text shadow-lg backdrop-blur active:bg-primary/30"
+          aria-label="chat"
+        >
+          💬
         </button>
       </div>
     </>
@@ -317,18 +371,18 @@ function useTestGround() {
       const [x, , z] = npc.position
       const buildingHeight = 2.6 + (i % 3) * 0.6
       const building = new THREE.Mesh(
-        new THREE.BoxGeometry(3.6, buildingHeight, 3.6),
+        new THREE.BoxGeometry(BUILDING_SIZE, buildingHeight, BUILDING_SIZE),
         new THREE.MeshStandardMaterial({ color: npc.color }),
       )
-      building.position.set(x * 1.3, buildingHeight / 2, z * 1.3)
+      building.position.set(x * NPC_BUILDING_OFFSET, buildingHeight / 2, z * NPC_BUILDING_OFFSET)
       group.add(building)
 
       // Small roof accent so the buildings don't look like plain boxes.
       const roof = new THREE.Mesh(
-        new THREE.ConeGeometry(2.8, 1.4, 4),
+        new THREE.ConeGeometry(2.5, 1.4, 4),
         new THREE.MeshStandardMaterial({ color: '#9b5a3a' }),
       )
-      roof.position.set(x * 1.3, buildingHeight + 0.7, z * 1.3)
+      roof.position.set(x * NPC_BUILDING_OFFSET, buildingHeight + 0.7, z * NPC_BUILDING_OFFSET)
       roof.rotation.y = Math.PI / 4
       group.add(roof)
     })
@@ -374,6 +428,42 @@ const DOWN = new THREE.Vector3(0, -1, 0)
 const AXIS_X = new THREE.Vector3(1, 0, 0)
 const AXIS_Z = new THREE.Vector3(0, 0, 1)
 
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
+// Polls the first connected gamepad (Xbox controller or anything else the
+// browser maps to the standard layout) and applies its right stick / bumpers
+// directly to the camera, returning the left stick as a movement input (or
+// null if no gamepad is connected). Called once per frame from <Player>.
+function applyGamepadInput(delta, cameraRef) {
+  if (typeof navigator === 'undefined' || !navigator.getGamepads) return null
+  const pads = navigator.getGamepads()
+  const pad = pads && (pads[0] || pads[1] || pads[2] || pads[3])
+  if (!pad || !pad.connected) return null
+
+  const axis = (v) => (Math.abs(v) < GAMEPAD_DEADZONE ? 0 : v)
+  const moveX = axis(pad.axes[0] ?? 0)
+  const moveY = axis(pad.axes[1] ?? 0)
+  const lookX = axis(pad.axes[2] ?? 0)
+  const lookY = axis(pad.axes[3] ?? 0)
+
+  const cam = cameraRef.current
+  if (lookX || lookY) {
+    cam.yaw -= lookX * GAMEPAD_LOOK_SPEED * delta
+    cam.pitch = clamp(cam.pitch + lookY * GAMEPAD_LOOK_SPEED * delta, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX)
+  }
+
+  // LB zooms in, RB zooms out.
+  if (pad.buttons[4]?.pressed) {
+    cam.targetDistance = clamp(cam.targetDistance - GAMEPAD_ZOOM_SPEED * delta, ZOOM_MIN, ZOOM_MAX)
+  }
+  if (pad.buttons[5]?.pressed) {
+    cam.targetDistance = clamp(cam.targetDistance + GAMEPAD_ZOOM_SPEED * delta, ZOOM_MIN, ZOOM_MAX)
+  }
+
+  // A button (index 0) jumps, same as space/the touch jump button.
+  return { moveX, moveY, jump: pad.buttons[0]?.pressed ?? false }
+}
+
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
@@ -408,6 +498,11 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
       initialized.current = true
     }
 
+    // Gamepad (Xbox controller etc.) input: right stick/bumpers are applied
+    // straight to the camera inside this helper; the left stick comes back
+    // as a movement vector we fold in below alongside WASD/touch.
+    const gamepad = applyGamepadInput(delta, cameraRef)
+
     // Movement is relative to the camera: "forward" is always away from the
     // camera and "right" is always to the player's screen-right, regardless
     // of which way the player model is currently facing. This is what makes
@@ -421,9 +516,14 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
     if (keys['s'] || keys['arrowdown']) input.sub(forward)
     if (keys['d'] || keys['arrowright']) input.add(right)
     if (keys['a'] || keys['arrowleft']) input.sub(right)
+    if (gamepad) {
+      input.addScaledVector(right, gamepad.moveX)
+      input.addScaledVector(forward, -gamepad.moveY)
+    }
 
-    const isMoving = input.lengthSq() > 0
-    if (isMoving) input.normalize().multiplyScalar(MOVE_SPEED)
+    const inputLength = input.length()
+    const isMoving = inputLength > 0.001
+    if (isMoving) input.normalize().multiplyScalar(MOVE_SPEED * Math.min(1, inputLength))
 
     // Smoothly accelerate/decelerate toward the target velocity instead of
     // snapping instantly to full speed (or to a dead stop).
@@ -479,7 +579,7 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
     if (pos.y <= groundY) {
       pos.y = groundY
       velocityY.current = 0
-      if (keys[' '] || keys['spacebar']) {
+      if (keys[' '] || keys['spacebar'] || gamepad?.jump) {
         velocityY.current = JUMP_SPEED
       }
     }
@@ -502,10 +602,28 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
     const cam = cameraRef.current
     cam.distance += (cam.targetDistance - cam.distance) * Math.min(1, ZOOM_SMOOTHING * delta)
     const { pitch, distance } = cam
+
+    // If a building/wall sits between the player and the desired camera
+    // spot, pull the camera in to just short of it instead of letting it
+    // clip through — otherwise the player's mascot (and any NPC behind it)
+    // would be hidden inside the campus geometry.
+    const camDir = new THREE.Vector3(
+      Math.sin(yaw) * Math.cos(pitch),
+      Math.sin(pitch),
+      Math.cos(yaw) * Math.cos(pitch),
+    )
+    const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + CAMERA_HEIGHT * 0.3, pos.z)
+    raycaster.set(camOrigin, camDir)
+    const camHits = raycaster.intersectObject(scenery, true)
+    const effectiveDistance =
+      camHits.length > 0 && camHits[0].distance < distance
+        ? Math.max(camHits[0].distance - CAMERA_COLLISION_MARGIN, ZOOM_MIN * 0.5)
+        : distance
+
     const offset = new THREE.Vector3(
-      distance * Math.sin(yaw) * Math.cos(pitch),
-      CAMERA_HEIGHT + distance * Math.sin(pitch),
-      distance * Math.cos(yaw) * Math.cos(pitch),
+      effectiveDistance * Math.sin(yaw) * Math.cos(pitch),
+      CAMERA_HEIGHT + effectiveDistance * Math.sin(pitch),
+      effectiveDistance * Math.cos(yaw) * Math.cos(pitch),
     )
     cameraTarget.current.copy(group.current.position).add(offset)
     camera.position.lerp(cameraTarget.current, 1 - Math.exp(-CAMERA_SMOOTHING * delta))
@@ -773,8 +891,6 @@ function World({
   )
 }
 
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
-
 // Tracks pointer drag (mouse or touch) to orbit the camera around the player,
 // and zoom (mouse wheel, or a two-finger pinch on touch devices).
 function useCameraControls() {
@@ -947,10 +1063,10 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             return (
               <g key={npc.id}>
                 <rect
-                  x={x * 1.3 - 1.8}
-                  y={z * 1.3 - 1.8}
-                  width="3.6"
-                  height="3.6"
+                  x={x * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
+                  y={z * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
+                  width={BUILDING_SIZE}
+                  height={BUILDING_SIZE}
                   fill={npc.color}
                   opacity="0.55"
                 />
@@ -1169,7 +1285,7 @@ export default function VRPage() {
           zoom 🎮
         </div>
 
-        <TouchControls keysRef={keysRef} />
+        <TouchControls keysRef={keysRef} chatOpen={chatOpen} onOpenChat={() => setChatOpen(true)} />
       </div>
 
       <MascotCompanion />
