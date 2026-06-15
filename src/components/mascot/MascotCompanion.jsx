@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import MascotViewport from './MascotViewport'
 import ChatTab from './ChatTab'
 import ItemsPanel from './ItemsPanel'
@@ -10,6 +9,7 @@ import AppearancePanel from './AppearancePanel'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useShopStore } from '../../stores/useShopStore'
@@ -29,8 +29,11 @@ const BASE_MENU = [
 // corner, with a large popover menu (Chat / Misiones / Objetos / Libros /
 // Notas / Aspecto / Galería).
 export default function MascotCompanion({ courseId, module }) {
-  const [open, setOpen] = useState(false)
-  const [panel, setPanel] = useState('chat')
+  const open = useMascotCompanionStore((s) => s.open)
+  const setOpen = useMascotCompanionStore((s) => s.setOpen)
+  const toggleOpen = useMascotCompanionStore((s) => s.toggleOpen)
+  const panel = useMascotCompanionStore((s) => s.panel)
+  const setPanel = useMascotCompanionStore((s) => s.setPanel)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
@@ -94,7 +97,7 @@ export default function MascotCompanion({ courseId, module }) {
       )}
 
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         className="h-20 w-20 overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
         aria-label="Abrir mascota"
       >
