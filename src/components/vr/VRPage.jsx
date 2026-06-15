@@ -20,19 +20,21 @@ const PLAYER_HEIGHT = PLAYER_SCALE * 2
 // How far ahead of/around the player we check for walls before letting them
 // move into something (in world units).
 const COLLISION_RADIUS = PLAYER_HEIGHT * 0.6
-// How high above the player's current position we start the downward ray
-// that finds the ground beneath them.
-const GROUND_RAY_HEIGHT = 10
 const WALK_CYCLE_SPEED = 9
 const WALK_BOB_HEIGHT = 0.07
 const WALK_TILT = 0.06
 
-// Camera orbit (mouse-drag controlled) around the player.
+// Camera orbit (mouse-drag controlled) around the player, zoomable with the
+// mouse wheel or a two-finger pinch.
 const CAMERA_DISTANCE = 3.4
 const CAMERA_HEIGHT = 1.6
 const CAMERA_PITCH_MIN = -0.5
 const CAMERA_PITCH_MAX = 1.1
 const MOUSE_SENSITIVITY = 0.005
+const ZOOM_MIN = 1.5
+const ZOOM_MAX = 18
+const WHEEL_ZOOM_SPEED = 0.0025
+const PINCH_ZOOM_SPEED = 0.02
 
 // Jumping.
 const GRAVITY = -20
@@ -172,15 +174,21 @@ function useSceneryModel() {
       }
     })
 
-    return clone
+    // After the repositioning above, the model's floor sits at y = 0 and its
+    // tallest point sits at size.y * scale. Ground rays need to start above
+    // that, otherwise they can start "inside" a tall building and miss its
+    // roof entirely.
+    const groundRayHeight = size.y * scale + 5
+
+    return { model: clone, groundRayHeight }
   }, [scene])
 }
 
 // Casts a ray straight down from above the given x/z to find the scenery
 // height directly beneath the player. Falls back to y = 0 if nothing is hit
 // (e.g. the player walked off the edge of the model).
-function getGroundY(raycaster, scenery, x, z) {
-  raycaster.set(new THREE.Vector3(x, GROUND_RAY_HEIGHT, z), DOWN)
+function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
+  raycaster.set(new THREE.Vector3(x, groundRayHeight, z), DOWN)
   const hits = raycaster.intersectObject(scenery, true)
   return hits.length > 0 ? hits[0].point.y : 0
 }
@@ -203,7 +211,7 @@ const AXIS_Z = new THREE.Vector3(0, 0, 1)
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
 // shared `scenery` model.
-function Player({ mascot, skin, scenery, keysRef, cameraRef }) {
+function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef }) {
   const group = useRef()
   const meshGroup = useRef()
   const { camera } = useThree()
@@ -221,7 +229,7 @@ function Player({ mascot, skin, scenery, keysRef, cameraRef }) {
     // Drop the player onto the real scenery surface the first time we run,
     // instead of starting at the world origin (y = 0).
     if (!initialized.current) {
-      pos.y = getGroundY(raycaster, scenery, pos.x, pos.z)
+      pos.y = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
       initialized.current = true
     }
 
@@ -271,7 +279,7 @@ function Player({ mascot, skin, scenery, keysRef, cameraRef }) {
 
     // Jump + gravity, relative to the scenery's real ground height beneath
     // the player's (possibly new) x/z position.
-    const groundY = getGroundY(raycaster, scenery, pos.x, pos.z)
+    const groundY = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
     if (pos.y <= groundY) {
       pos.y = groundY
       velocityY.current = 0
@@ -290,12 +298,13 @@ function Player({ mascot, skin, scenery, keysRef, cameraRef }) {
       meshGroup.current.rotation.x = isMoving ? WALK_TILT * 0.6 : 0
     }
 
-    // Camera orbits around the player based on mouse/touch drag (yaw + pitch).
-    const { yaw, pitch } = cameraRef.current
+    // Camera orbits around the player based on mouse/touch drag (yaw + pitch)
+    // and zooms in/out with the mouse wheel or a two-finger pinch (distance).
+    const { yaw, pitch, distance } = cameraRef.current
     const offset = new THREE.Vector3(
-      CAMERA_DISTANCE * Math.sin(yaw) * Math.cos(pitch),
-      CAMERA_HEIGHT + CAMERA_DISTANCE * Math.sin(pitch),
-      CAMERA_DISTANCE * Math.cos(yaw) * Math.cos(pitch),
+      distance * Math.sin(yaw) * Math.cos(pitch),
+      CAMERA_HEIGHT + distance * Math.sin(pitch),
+      distance * Math.cos(yaw) * Math.cos(pitch),
     )
     cameraTarget.current.copy(group.current.position).add(offset)
     camera.position.lerp(cameraTarget.current, 0.06)
@@ -318,45 +327,92 @@ function Player({ mascot, skin, scenery, keysRef, cameraRef }) {
 // Loads the scenery once and renders it alongside the player, which needs
 // the same model instance to raycast against for ground height/collisions.
 function World({ mascot, skin, keysRef, cameraRef }) {
-  const scenery = useSceneryModel()
+  const { model, groundRayHeight } = useSceneryModel()
 
   return (
     <>
-      <primitive object={scenery} />
-      <Player mascot={mascot} skin={skin} scenery={scenery} keysRef={keysRef} cameraRef={cameraRef} />
+      <primitive object={model} />
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+      />
     </>
   )
 }
 
-// Tracks pointer drag (mouse or touch) to orbit the camera around the player.
-function useCameraDrag() {
-  const camera = useRef({ yaw: 0, pitch: 0 })
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
+// Tracks pointer drag (mouse or touch) to orbit the camera around the player,
+// and zoom (mouse wheel, or a two-finger pinch on touch devices).
+function useCameraControls() {
+  const camera = useRef({ yaw: 0, pitch: 0, distance: CAMERA_DISTANCE })
   const drag = useRef(null)
+  const pointers = useRef(new Map())
+  const pinchDistance = useRef(null)
 
   const onPointerDown = (e) => {
-    drag.current = { x: e.clientX, y: e.clientY }
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointers.current.size === 1) {
+      drag.current = { x: e.clientX, y: e.clientY }
+    } else {
+      drag.current = null
+      pinchDistance.current = null
+    }
   }
   const onPointerMove = (e) => {
+    if (!pointers.current.has(e.pointerId)) return
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    if (pointers.current.size >= 2) {
+      const [a, b] = Array.from(pointers.current.values())
+      const dist = Math.hypot(a.x - b.x, a.y - b.y)
+      if (pinchDistance.current != null) {
+        const delta = pinchDistance.current - dist
+        camera.current.distance = clamp(
+          camera.current.distance + delta * PINCH_ZOOM_SPEED,
+          ZOOM_MIN,
+          ZOOM_MAX,
+        )
+      }
+      pinchDistance.current = dist
+      return
+    }
+
     if (!drag.current) return
     const dx = e.clientX - drag.current.x
     const dy = e.clientY - drag.current.y
     drag.current = { x: e.clientX, y: e.clientY }
     camera.current.yaw -= dx * MOUSE_SENSITIVITY
-    camera.current.pitch = Math.min(
+    camera.current.pitch = clamp(
+      camera.current.pitch + dy * MOUSE_SENSITIVITY,
+      CAMERA_PITCH_MIN,
       CAMERA_PITCH_MAX,
-      Math.max(CAMERA_PITCH_MIN, camera.current.pitch + dy * MOUSE_SENSITIVITY),
     )
   }
-  const onPointerUp = () => {
-    drag.current = null
+  const onPointerUp = (e) => {
+    pointers.current.delete(e.pointerId)
+    pinchDistance.current = null
+    const remaining = Array.from(pointers.current.values())
+    drag.current = remaining.length === 1 ? { x: remaining[0].x, y: remaining[0].y } : null
+  }
+  const onWheel = (e) => {
+    camera.current.distance = clamp(
+      camera.current.distance + e.deltaY * WHEEL_ZOOM_SPEED * camera.current.distance,
+      ZOOM_MIN,
+      ZOOM_MAX,
+    )
   }
 
-  return { camera, onPointerDown, onPointerMove, onPointerUp }
+  return { camera, onPointerDown, onPointerMove, onPointerUp, onWheel }
 }
 
 export default function VRPage() {
   const keysRef = useMovementKeys()
-  const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp } = useCameraDrag()
+  const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const selectedSkinId = useMascotStore((s) => s.selectedSkinId)
   const mascot = getMascotById(selectedMascotId)
@@ -374,6 +430,7 @@ export default function VRPage() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
+        onWheel={onWheel}
       >
         <Canvas camera={{ position: [0, 1.6, 3.4], fov: 50 }}>
           <color attach="background" args={['#3b2a1f']} />
