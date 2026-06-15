@@ -16,6 +16,8 @@ import { useMissionState } from '../../stores/useMissionState'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
+import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
 
 // While we're designing/testing the world's NPCs and missions, swap the real
@@ -376,7 +378,7 @@ const AXIS_Z = new THREE.Vector3(0, 0, 1)
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
 // shared `scenery` model.
-function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, playerPositionRef }) {
+function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, playerPositionRef, playerRotationRef }) {
   const group = useRef()
   const meshGroup = useRef()
   const { camera } = useThree()
@@ -512,6 +514,12 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
       group.current.position.y + 0.6,
       group.current.position.z,
     )
+
+    // Shares the player's facing direction with the multiplayer broadcast
+    // (see useVrMultiplayer), same pattern as playerPositionRef above.
+    if (playerRotationRef) {
+      playerRotationRef.current = group.current.rotation.y
+    }
   })
 
   return (
@@ -525,7 +533,7 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
 
 // Loads the real city model and renders it alongside the player, which needs
 // the same model instance to raycast against for ground height/collisions.
-function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
+function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef }) {
   const { model, groundRayHeight } = useSceneryModel()
 
   return (
@@ -539,6 +547,7 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
         keysRef={keysRef}
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
       />
     </>
   )
@@ -546,7 +555,7 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
 
 // Same as <CityWorld>, but walking on the procedural test ground instead of
 // the real city model (see USE_TEST_SCENERY).
-function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
+function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef }) {
   const { model, groundRayHeight } = useTestGround()
 
   return (
@@ -560,6 +569,7 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
         keysRef={keysRef}
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
       />
     </>
   )
@@ -636,6 +646,63 @@ function WanderingCat({ path }) {
   )
 }
 
+// One other player sharing this VR session. Its position/rotation come from
+// `transformsRef` (a Map of id -> latest broadcast {x,y,z,ry}, updated by
+// useVrMultiplayer outside of React), and are lerped toward each frame so
+// remote movement looks smooth despite the ~120ms network tick. Metadata
+// (name/mascot/skin) comes from useVrPresenceStore and only changes on
+// join/rename, so it's safe to read via a normal hook.
+function RemotePlayerMesh({ id, transformsRef }) {
+  const group = useRef()
+  const player = useVrPresenceStore((s) => s.players[id])
+  const mascot = getMascotById(player?.mascotId) || getMascotById(8)
+  const skin = getSkinById(player?.skinId)
+
+  useFrame((_, delta) => {
+    const node = group.current
+    const target = transformsRef.current.get(id)
+    if (!node || !target) return
+
+    const lerpFactor = Math.min(1, 10 * delta)
+    node.position.x += (target.x - node.position.x) * lerpFactor
+    node.position.y += (target.y - node.position.y) * lerpFactor
+    node.position.z += (target.z - node.position.z) * lerpFactor
+
+    let angleDiff = target.ry - node.rotation.y
+    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
+    node.rotation.y += angleDiff * lerpFactor
+  })
+
+  return (
+    <group ref={group}>
+      <group scale={PLAYER_SCALE}>
+        <MascotMesh mascot={mascot} skin={skin} />
+      </group>
+      <Html position={[0, PLAYER_HEIGHT + 0.5, 0]} center distanceFactor={10}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          {player?.name || 'Viajero'}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+// Renders every other player currently in the VR session. The roster (who's
+// here) comes from useVrPresenceStore (zustand, low-churn); their live
+// transforms come from `transformsRef` (a plain Map, high-churn) so position
+// updates don't cause this list to re-render.
+function RemotePlayers({ transformsRef }) {
+  const playerIds = useVrPresenceStore((s) => Object.keys(s.players))
+
+  return (
+    <>
+      {playerIds.map((id) => (
+        <RemotePlayerMesh key={id} id={id} transformsRef={transformsRef} />
+      ))}
+    </>
+  )
+}
+
 // Watches the distance from the player to every NPC and reports the closest
 // one within INTERACT_RADIUS (or null) via `onNearbyChange`, so VRPage can
 // show its mission card outside the canvas.
@@ -672,7 +739,16 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
 // the player and the mission NPCs on top.
-function World({ mascot, skin, keysRef, cameraRef, playerPositionRef, onNearbyNpcChange }) {
+function World({
+  mascot,
+  skin,
+  keysRef,
+  cameraRef,
+  playerPositionRef,
+  playerRotationRef,
+  remoteTransformsRef,
+  onNearbyNpcChange,
+}) {
   const WorldGround = USE_TEST_SCENERY ? TestWorld : CityWorld
 
   return (
@@ -683,6 +759,7 @@ function World({ mascot, skin, keysRef, cameraRef, playerPositionRef, onNearbyNp
         keysRef={keysRef}
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
       />
       {VR_NPCS.map((npc) => (
         <VrNpc key={npc.id} npc={npc} />
@@ -690,6 +767,7 @@ function World({ mascot, skin, keysRef, cameraRef, playerPositionRef, onNearbyNp
       {WANDER_CAT_PATHS.map((path, i) => (
         <WanderingCat key={i} path={path} />
       ))}
+      <RemotePlayers transformsRef={remoteTransformsRef} />
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
   )
@@ -896,7 +974,7 @@ function WorldMap({ open, onClose, playerPositionRef }) {
 // Local "world chat" the player can type into, independent from the per-NPC
 // AI chats. Toggled with Enter, closed with Escape. Messages are local-only
 // for now (see useWorldChatStore for the multiplayer note).
-function WorldChat({ open, onClose, authorName }) {
+function WorldChat({ open, onClose, authorName, onSend }) {
   const messages = useWorldChatStore((s) => s.messages)
   const sendMessage = useWorldChatStore((s) => s.sendMessage)
   const [text, setText] = useState('')
@@ -912,6 +990,7 @@ function WorldChat({ open, onClose, authorName }) {
     e.preventDefault()
     if (text.trim()) {
       sendMessage(authorName, text)
+      onSend?.(authorName, text)
       setText('')
     }
     onClose()
@@ -969,6 +1048,18 @@ export default function VRPage() {
   const chatAuthor = settingsMascotName || mascot.name
 
   const playerPositionRef = useRef(null)
+  const playerRotationRef = useRef(0)
+  const playerId = useRef(crypto.randomUUID()).current
+  const connected = useVrPresenceStore((s) => s.connected)
+  const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
+  const { remoteTransformsRef, sendChatMessage } = useVrMultiplayer({
+    playerId,
+    name: chatAuthor,
+    mascotId: mascot.id,
+    skinId: skin.id,
+    positionRef: playerPositionRef,
+    rotationRef: playerRotationRef,
+  })
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [mapOpen, setMapOpen] = useState(false)
@@ -1026,6 +1117,8 @@ export default function VRPage() {
               keysRef={keysRef}
               cameraRef={cameraRef}
               playerPositionRef={playerPositionRef}
+              playerRotationRef={playerRotationRef}
+              remoteTransformsRef={remoteTransformsRef}
               onNearbyNpcChange={setNearbyNpcId}
             />
           </Suspense>
@@ -1050,7 +1143,24 @@ export default function VRPage() {
         )}
 
         <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
-        <WorldChat open={chatOpen} onClose={() => setChatOpen(false)} authorName={chatAuthor} />
+        <WorldChat
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          authorName={chatAuthor}
+          onSend={sendChatMessage}
+        />
+
+        <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
+          {isVrRealtimeAvailable() ? (
+            connected ? (
+              <span>🟢 Conectado · {remotePlayerCount} {remotePlayerCount === 1 ? 'jugador' : 'jugadores'} más</span>
+            ) : (
+              <span>🟡 Conectando…</span>
+            )
+          ) : (
+            <span>⚪ Modo sin conexión</span>
+          )}
+        </div>
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
           <strong>W A S D</strong> o flechas para moverte, <strong>espacio</strong> para saltar,{' '}
