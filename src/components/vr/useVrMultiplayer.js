@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../../services/supabase/client'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
@@ -24,16 +24,18 @@ export function isVrRealtimeAvailable() {
 // Returns `{ remoteTransformsRef, sendChatMessage }`. When Realtime isn't
 // configured, this is a no-op: the store stays disconnected/empty and
 // sendChatMessage does nothing, so the world plays fine single-player.
-export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef, rotationRef }) {
+export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, positionRef, rotationRef }) {
   const remoteTransformsRef = useRef(new Map())
   const channelRef = useRef(null)
+  const joinedAtRef = useRef(Date.now())
+  const [kicked, setKicked] = useState(false)
   const setConnected = useVrPresenceStore((s) => s.setConnected)
   const setPlayers = useVrPresenceStore((s) => s.setPlayers)
   const reset = useVrPresenceStore((s) => s.reset)
   const receiveMessage = useWorldChatStore((s) => s.receiveMessage)
 
   useEffect(() => {
-    if (!isVrRealtimeAvailable()) return
+    if (!isVrRealtimeAvailable() || kicked) return
 
     const channel = supabase.channel(VR_CHANNEL, {
       config: { presence: { key: playerId }, broadcast: { self: false } },
@@ -42,6 +44,22 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef
 
     channel.on('presence', { event: 'sync' }, () => {
       const state = channel.presenceState()
+
+      // Single-session-per-account: if the same logged-in account is present
+      // more than once (e.g. opened in a second browser tab/window), the
+      // session with the OLDER `joinedAt` disconnects itself so only the
+      // newest one stays connected.
+      if (accountId) {
+        for (const [id, presences] of Object.entries(state)) {
+          if (id === playerId) continue
+          const meta = presences[0]
+          if (meta?.accountId === accountId && (meta.joinedAt ?? 0) > joinedAtRef.current) {
+            setKicked(true)
+            return
+          }
+        }
+      }
+
       const players = {}
       for (const [id, presences] of Object.entries(state)) {
         if (id === playerId) continue
@@ -66,13 +84,16 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef
       // Whispers carry a `target` player id and are only shown to that
       // player; global messages have no `target` and go to everyone.
       if (payload.target && payload.target !== playerId) return
-      receiveMessage(payload.author, payload.text, payload.target ? { whisperFrom: payload.author } : {})
+      receiveMessage(payload.author, payload.text, {
+        authorId: payload.id,
+        whisperFrom: payload.target ? payload.author : null,
+      })
     })
 
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnected(true)
-        channel.track({ name, mascotId, skinId })
+        channel.track({ name, mascotId, skinId, accountId, joinedAt: joinedAtRef.current })
       }
     })
 
@@ -86,15 +107,15 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef
     // Only (re)connect when the player's identity changes — name/mascot/skin
     // updates are pushed via the effect below instead of reconnecting.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerId])
+  }, [playerId, kicked])
 
   // Re-broadcast presence whenever the player's displayed name/mascot/skin
   // changes (e.g. they swap mascots in the Aspecto panel mid-session).
   useEffect(() => {
     const channel = channelRef.current
     if (!channel) return
-    channel.track({ name, mascotId, skinId })
-  }, [name, mascotId, skinId])
+    channel.track({ name, mascotId, skinId, accountId, joinedAt: joinedAtRef.current })
+  }, [name, mascotId, skinId, accountId])
 
   // Broadcast this player's position/rotation at a fixed interval. Reads
   // straight from the refs (mutated every frame by <Player>) so this effect
@@ -135,5 +156,5 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef
     })
   }
 
-  return { remoteTransformsRef, sendChatMessage }
+  return { remoteTransformsRef, sendChatMessage, kicked }
 }

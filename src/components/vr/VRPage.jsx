@@ -9,13 +9,14 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
-import { VR_NPCS, getVrNpcById } from '../../data/vrNpcRegistry'
+import { VR_NPCS, getVrNpcById, OLIVER_NPC, EINSTEIN_NPC } from '../../data/vrNpcRegistry'
 import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
-import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useSettingsStore, getModelProvider } from '../../stores/useSettingsStore'
+import { sendNpcMessage } from '../../services/chat/npcTransport'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
@@ -28,12 +29,20 @@ import { formatCurrency } from '../../utils/currency'
 // Flip this back to `false` to return to /fondo_azteca.glb.
 const USE_TEST_SCENERY = true
 
-// Temporary "stable core" mode: skips the 13 mission NPCs, wandering cats,
+// Temporary "stable core" mode: skips most mission NPCs, wandering cats,
 // and the mission UI entirely, leaving just the campus ground, the player,
 // multiplayer presence and world chat. Lets us confirm the core
 // movement/connection/chat loop works on its own while the NPC/mission
 // side is reworked separately. Flip back to `false` once that's done.
 const SIMPLE_MODE = true
+
+// While SIMPLE_MODE is on, only these mission NPCs (and their mission UI)
+// are rendered, so we can test the mission flow end-to-end without loading
+// every NPC's GLTF model.
+const ACTIVE_VR_NPC_IDS = ['mago-misiones']
+const ACTIVE_VR_NPCS = SIMPLE_MODE
+  ? VR_NPCS.filter((npc) => ACTIVE_VR_NPC_IDS.includes(npc.id))
+  : VR_NPCS
 
 const MOVE_SPEED = 5.5
 const TURN_SPEED = 10
@@ -61,19 +70,23 @@ const WALK_TILT = 0.06
 
 // How long a Habbo-style speech bubble stays floating above a player's head
 // after they send a world chat message, in milliseconds.
-const CHAT_BUBBLE_DURATION = 5000
+const CHAT_BUBBLE_DURATION = 10000
+
+// Max number of speech bubbles stacked above a single head at once — if a
+// player (or NPC) says several things within CHAT_BUBBLE_DURATION, the
+// newest bubbles stack above the older ones instead of replacing them.
+const MAX_STACKED_BUBBLES = 3
+// Vertical spacing between stacked bubbles, in world units.
+const BUBBLE_STACK_SPACING = 0.85
 
 // Camera orbit (mouse-drag controlled) around the player, zoomable with the
 // mouse wheel or a two-finger pinch. Movement is relative to this camera, so
 // "forward" always means "away from the camera", like a typical 3rd-person
 // game.
+// Fallback default for useCameraControls's initial distance, before the
+// player's saved cameraDistance setting loads from useVrSettingsStore.
 const CAMERA_DISTANCE = 6.5
-const CAMERA_HEIGHT = 2.4
-const CAMERA_PITCH_MIN = -0.6
-const CAMERA_PITCH_MAX = 0.95
 const MOUSE_SENSITIVITY = 0.005
-const ZOOM_MIN = 1.5
-const ZOOM_MAX = 40
 const WHEEL_ZOOM_SPEED = 0.0065
 const PINCH_ZOOM_SPEED = 0.07
 // How quickly the camera distance/position glide toward their target values
@@ -94,6 +107,16 @@ const CAMERA_COLLISION_MARGIN = 0.35
 const FIRST_PERSON_EYE_HEIGHT = 0.62
 const FIRST_PERSON_PITCH_MIN = -1.3
 const FIRST_PERSON_PITCH_MAX = 1.3
+
+// First-person allows a much wider up/down look range than the 3rd-person
+// orbit camera (see FIRST_PERSON_* constants above). Third-person's range
+// comes from useVrSettingsStore so each player can tune how far they can
+// look up/down for their own setup.
+function getPitchRange(cameraMode) {
+  if (cameraMode === 'first') return [FIRST_PERSON_PITCH_MIN, FIRST_PERSON_PITCH_MAX]
+  const { pitchMin, pitchMax } = useVrSettingsStore.getState()
+  return [pitchMin, pitchMax]
+}
 
 // Xbox/standard-gamepad support: left stick moves the same as WASD, right
 // stick looks around like a mouse drag, the A button jumps, and the
@@ -125,8 +148,29 @@ const JUMP_SPEED = 7
 // scenery, so a flat-grey export still reads as a colorful scene.
 const SCENERY_PALETTE = ['#c2703d', '#e8c477', '#9b5a3a', '#7d8597', '#3f9e7a', '#caa46c']
 
-// Radius of the procedural campus ground (test scenery).
-const GROUND_RADIUS = 32
+// Radius of the procedural campus ground (test scenery). Bigger than the
+// landmark buildings need, so the campus reads as a real open campus with
+// room to walk between zones instead of a cramped plaza.
+const GROUND_RADIUS = 40
+
+// Decorative tree positions scattered around the campus (trunk + foliage,
+// see useTestGround) — placed in the open gaps between the NPC zones so they
+// don't overlap any landmark building or the paved paths leading to them.
+const TREE_POSITIONS = [
+  [9, -19], [-9, 19], [19, 9], [-19, -9],
+  [19, -9], [-19, 9], [9, 19], [-9, -19],
+  [3, -8], [-3, 8],
+]
+
+// Lamp post positions ringing the central plaza, just outside its paved
+// edge, so the spawn area reads as a lit town square at night/dusk.
+const LAMP_POSITIONS = [
+  [4.5, 4.5], [-4.5, 4.5], [4.5, -4.5], [-4.5, -4.5],
+]
+
+// How many paving stones lead from the plaza out to each NPC's landmark
+// building, evenly spaced along the straight line between them.
+const PATH_STEPS = 5
 
 // Each NPC's landmark building sits further from the plaza than the NPC
 // itself, scaled by this factor — kept generous so the building's footprint
@@ -138,6 +182,21 @@ const BUILDING_SIZE = 3.2
 // How close the player needs to be to an NPC to interact with them. Right-
 // clicking while inside this radius opens their mission card.
 const INTERACT_RADIUS = 2.5
+
+// How close the player needs to be to a world portal (campus <-> Room) to
+// interact with it by pressing E.
+const PORTAL_INTERACT_RADIUS = 2.2
+
+// Where the portal to the player's private Room sits in the campus — just
+// off the plaza, in an open gap between the wandering-cat loops and the
+// NPC zones, so it's easy to find from spawn but doesn't block anything.
+const ROOM_PORTAL_POSITION = [-3, 0, -3]
+
+// The player's private "Room": a small enclosed space (just the player, no
+// NPCs/multiplayer — see roomMode), with an exit portal back to the campus.
+const ROOM_SIZE = 14
+const ROOM_HEIGHT = 4
+const ROOM_EXIT_PORTAL_POSITION = [0, 0, -ROOM_SIZE / 2 + 2]
 
 // Patrol loops for the background "wandering cats" that bring the campus
 // plaza to life. Each path is a list of [x, y, z] waypoints the cat walks
@@ -466,6 +525,59 @@ function useTestGround() {
       group.add(roof)
     })
 
+    // Paved stepping-stone paths leading from the plaza out to each NPC's
+    // landmark building, so the campus reads as connected zones instead of
+    // floating buildings on open grass.
+    const pathMaterial = new THREE.MeshStandardMaterial({ color: '#b08968' })
+    VR_NPCS.forEach((npc) => {
+      const [x, , z] = npc.position
+      for (let s = 1; s <= PATH_STEPS; s += 1) {
+        const t = s / (PATH_STEPS + 1)
+        const stone = new THREE.Mesh(new THREE.CircleGeometry(1.1, 16), pathMaterial)
+        stone.rotation.x = -Math.PI / 2
+        stone.position.set(x * t, 0.015, z * t)
+        stone.userData.isFloor = true
+        group.add(stone)
+      }
+    })
+
+    // Trees: a simple trunk + cone of "foliage" scattered around the campus,
+    // reusing the same two geometries/materials for every tree to keep the
+    // draw count low.
+    const trunkGeometry = new THREE.CylinderGeometry(0.18, 0.22, 1.4, 8)
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: '#6b4226' })
+    const foliageGeometry = new THREE.ConeGeometry(1.1, 2.2, 8)
+    const foliageMaterial = new THREE.MeshStandardMaterial({ color: '#3f6e3f' })
+    TREE_POSITIONS.forEach(([x, z]) => {
+      const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial)
+      trunk.position.set(x, 0.7, z)
+      group.add(trunk)
+
+      const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial)
+      foliage.position.set(x, 2.1, z)
+      group.add(foliage)
+    })
+
+    // Lamp posts ringing the plaza: a thin pole topped with a glowing sphere
+    // (emissive material, no extra dynamic lights, to stay GPU-cheap).
+    const poleGeometry = new THREE.CylinderGeometry(0.07, 0.07, 2.4, 8)
+    const poleMaterial = new THREE.MeshStandardMaterial({ color: '#3a3a3a' })
+    const bulbGeometry = new THREE.SphereGeometry(0.22, 12, 12)
+    const bulbMaterial = new THREE.MeshStandardMaterial({
+      color: '#ffe9a8',
+      emissive: '#ffe9a8',
+      emissiveIntensity: 1.2,
+    })
+    LAMP_POSITIONS.forEach(([x, z]) => {
+      const pole = new THREE.Mesh(poleGeometry, poleMaterial)
+      pole.position.set(x, 1.2, z)
+      group.add(pole)
+
+      const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial)
+      bulb.position.set(x, 2.5, z)
+      group.add(bulb)
+    })
+
     // Low ring wall around the edge of the plaza so the player can't wander
     // off the campus into empty space.
     const wallSegments = 24
@@ -544,51 +656,99 @@ function applyGamepadInput(delta, cameraRef) {
 
   const cam = cameraRef.current
   if (lookX || lookY) {
+    const [pitchMin, pitchMax] = getPitchRange(useVrSettingsStore.getState().cameraMode)
     cam.yaw -= lookX * GAMEPAD_LOOK_SPEED * delta
-    cam.pitch = clamp(cam.pitch + lookY * GAMEPAD_LOOK_SPEED * delta, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX)
+    cam.pitch = clamp(cam.pitch + lookY * GAMEPAD_LOOK_SPEED * delta, pitchMin, pitchMax)
   }
 
   // LB zooms in, RB zooms out.
-  if (pad.buttons[4]?.pressed) {
-    cam.targetDistance = clamp(cam.targetDistance - GAMEPAD_ZOOM_SPEED * delta, ZOOM_MIN, ZOOM_MAX)
-  }
-  if (pad.buttons[5]?.pressed) {
-    cam.targetDistance = clamp(cam.targetDistance + GAMEPAD_ZOOM_SPEED * delta, ZOOM_MIN, ZOOM_MAX)
+  if (pad.buttons[4]?.pressed || pad.buttons[5]?.pressed) {
+    const { zoomMin, zoomMax } = useVrSettingsStore.getState()
+    if (pad.buttons[4]?.pressed) {
+      cam.targetDistance = clamp(cam.targetDistance - GAMEPAD_ZOOM_SPEED * delta, zoomMin, zoomMax)
+    }
+    if (pad.buttons[5]?.pressed) {
+      cam.targetDistance = clamp(cam.targetDistance + GAMEPAD_ZOOM_SPEED * delta, zoomMin, zoomMax)
+    }
   }
 
   // A button (index 0) jumps, same as space/the touch jump button.
   return { moveX, moveY, jump: pad.buttons[0]?.pressed ?? false }
 }
 
-// Watches the world chat log for the latest message sent by `authorName` and
-// returns it for a few seconds so the player can render it as a floating
-// speech bubble above their head, Habbo-style. Returns null once the bubble
-// has expired or no message has been sent yet.
-function useChatBubble(authorName) {
+// Deterministically turns a player/connection id into a pastel HSL color, so
+// each player's chat bubble has a consistent, distinguishable color.
+function colorFromId(id) {
+  if (!id) return '#ffffff'
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  }
+  const hue = hash % 360
+  return `hsl(${hue}, 85%, 88%)`
+}
+
+// Watches the world chat log for the latest message sent by the connection
+// identified by `matchId` (the local player's `playerId`, or a remote
+// player's presence id) and returns the (up to MAX_STACKED_BUBBLES) most
+// recent ones so they can be rendered as floating speech bubbles stacked
+// above their head, Habbo-style. Each bubble expires independently after
+// CHAT_BUBBLE_DURATION, so several messages sent in quick succession stack
+// instead of replacing each other.
+// Matching by connection id (instead of display name) avoids bubbles
+// appearing above the wrong avatar when two players share a display name.
+function useChatBubbles(matchId) {
   const messages = useWorldChatStore((s) => s.messages)
-  const [bubble, setBubble] = useState(null)
+  const [bubbles, setBubbles] = useState([])
   const shownIdRef = useRef(null)
 
   useEffect(() => {
     const last = messages[messages.length - 1]
-    if (!last || last.system || last.author !== authorName || last.id === shownIdRef.current) return
+    if (
+      !last ||
+      !matchId ||
+      last.system ||
+      last.whisperTo ||
+      last.whisperFrom ||
+      last.authorId !== matchId ||
+      last.id === shownIdRef.current
+    ) {
+      return
+    }
     shownIdRef.current = last.id
-    setBubble({ id: last.id, text: last.text })
+    setBubbles((current) => [...current, { id: last.id, text: last.text }].slice(-MAX_STACKED_BUBBLES))
     const timer = setTimeout(() => {
-      setBubble((current) => (current?.id === last.id ? null : current))
+      setBubbles((current) => current.filter((b) => b.id !== last.id))
     }, CHAT_BUBBLE_DURATION)
     return () => clearTimeout(timer)
-  }, [messages, authorName])
+  }, [messages, matchId])
 
-  return bubble
+  return bubbles
+}
+
+// Renders a stack of speech bubbles above a head, oldest on top and newest
+// closest to the head, each offset by BUBBLE_STACK_SPACING.
+function BubbleStack({ bubbles, baseY, color }) {
+  return bubbles.map((b, i) => (
+    <ChatBubble
+      key={b.id}
+      text={b.text}
+      y={baseY + (bubbles.length - 1 - i) * BUBBLE_STACK_SPACING}
+      color={color}
+    />
+  ))
 }
 
 // Habbo-style floating speech bubble shown above a player's head for a few
-// seconds after they send a world chat message.
-function ChatBubble({ text, y }) {
+// seconds after they send a world chat message. `color` tints the bubble so
+// each player's speech is visually distinct.
+function ChatBubble({ text, y, color = '#ffffff' }) {
   return (
     <Html position={[0, y, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-      <div className="max-w-[10rem] -translate-y-2 rounded-2xl rounded-bl-sm bg-white px-2.5 py-1 text-center text-[0.7rem] font-medium text-gray-900 shadow-lg">
+      <div
+        className="max-w-[18rem] -translate-y-2 whitespace-normal break-words rounded-2xl rounded-bl-sm px-3 py-1.5 text-center text-[0.7rem] font-medium leading-snug text-gray-900 shadow-lg"
+        style={{ backgroundColor: color }}
+      >
         {text}
       </div>
     </Html>
@@ -609,6 +769,7 @@ function Player({
   playerPositionRef,
   playerRotationRef,
   authorName,
+  playerId,
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -621,6 +782,16 @@ function Player({
   const initialized = useRef(false)
   const camCollisionDistance = useRef(Infinity)
   const camCollisionFrame = useRef(0)
+  const cameraMode = useVrSettingsStore((s) => s.cameraMode)
+  const fov = useVrSettingsStore((s) => s.fov)
+
+  // Applies the player's FOV setting (used by both first- and third-person
+  // modes) whenever it changes, instead of the Canvas's hardcoded default.
+  useEffect(() => {
+    if (camera.fov === fov) return
+    camera.fov = fov
+    camera.updateProjectionMatrix()
+  }, [camera, fov])
 
   useFrame((_, delta) => {
     if (!group.current) return
@@ -744,48 +915,80 @@ function Player({
     // smoothing so it feels consistent regardless of frame rate.
     const cam = cameraRef.current
     cam.distance += (cam.targetDistance - cam.distance) * Math.min(1, ZOOM_SMOOTHING * delta)
+    // Re-clamp every frame (not just on input) so switching camera mode from
+    // the "📷 Cámara" menu immediately respects the new mode's pitch range,
+    // even without the player touching the mouse again.
+    const [pitchMin, pitchMax] = getPitchRange(cameraMode)
+    cam.pitch = clamp(cam.pitch, pitchMin, pitchMax)
     const { pitch, distance } = cam
+    const { cameraHeight, zoomMin } = useVrSettingsStore.getState()
 
-    // If a building/wall sits between the player and the desired camera
-    // spot, pull the camera in to just short of it instead of letting it
-    // clip through — otherwise the player's mascot (and any NPC behind it)
-    // would be hidden inside the campus geometry.
-    const camDir = new THREE.Vector3(
-      Math.sin(yaw) * Math.cos(pitch),
-      Math.sin(pitch),
-      Math.cos(yaw) * Math.cos(pitch),
-    )
-    // This raycast walks the entire scenery hierarchy (ground, walls, every
-    // NPC building/roof), so it's only re-cast every few frames — the
-    // camera-pull-in result barely changes frame-to-frame and the cached
-    // value is reused in between to keep the render loop cheap.
-    camCollisionFrame.current += 1
-    if (camCollisionFrame.current % 3 === 0) {
-      const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + CAMERA_HEIGHT * 0.3, pos.z)
-      raycaster.set(camOrigin, camDir)
-      // Ignore the flat ground/plaza here — they shouldn't pull the camera in
-      // when looking down or zooming out, only real obstacles (walls,
-      // buildings) should.
-      const camHits = raycaster.intersectObject(scenery, true).filter((hit) => !hit.object.userData?.isFloor)
-      camCollisionDistance.current = camHits.length > 0 ? camHits[0].distance : Infinity
+    if (cameraMode === 'first') {
+      // First-person: the camera sits at the player's eye height and looks
+      // exactly where yaw/pitch point — no orbit distance, no wall pull-in,
+      // and the player's own model is hidden so it doesn't block the view.
+      if (meshGroup.current) meshGroup.current.visible = false
+      cameraTarget.current.set(pos.x, pos.y + FIRST_PERSON_EYE_HEIGHT, pos.z)
+      camera.position.copy(cameraTarget.current)
+      const lookDir = new THREE.Vector3(
+        -Math.sin(yaw) * Math.cos(pitch),
+        -Math.sin(pitch),
+        -Math.cos(yaw) * Math.cos(pitch),
+      )
+      camera.lookAt(
+        cameraTarget.current.x + lookDir.x,
+        cameraTarget.current.y + lookDir.y,
+        cameraTarget.current.z + lookDir.z,
+      )
+    } else {
+      if (meshGroup.current) meshGroup.current.visible = true
+
+      // If a building/wall sits between the player and the desired camera
+      // spot, pull the camera in to just short of it instead of letting it
+      // clip through — otherwise the player's mascot (and any NPC behind it)
+      // would be hidden inside the campus geometry.
+      const camDir = new THREE.Vector3(
+        Math.sin(yaw) * Math.cos(pitch),
+        Math.sin(pitch),
+        Math.cos(yaw) * Math.cos(pitch),
+      )
+      // This raycast walks the entire scenery hierarchy (ground, walls, every
+      // NPC building/roof), so it's only re-cast every few frames — the
+      // camera-pull-in result barely changes frame-to-frame and the cached
+      // value is reused in between to keep the render loop cheap.
+      camCollisionFrame.current += 1
+      if (camCollisionFrame.current % 3 === 0) {
+        const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + cameraHeight * 0.3, pos.z)
+        raycaster.set(camOrigin, camDir)
+        // Ignore the flat ground/plaza here — they shouldn't pull the camera in
+        // when looking down or zooming out, only real obstacles (walls,
+        // buildings) should.
+        const camHits = raycaster.intersectObject(scenery, true).filter((hit) => !hit.object.userData?.isFloor)
+        camCollisionDistance.current = camHits.length > 0 ? camHits[0].distance : Infinity
+      }
+      const effectiveDistance =
+        camCollisionDistance.current < distance
+          ? Math.max(camCollisionDistance.current - CAMERA_COLLISION_MARGIN, zoomMin * 0.5)
+          : distance
+
+      const offset = new THREE.Vector3(
+        effectiveDistance * Math.sin(yaw) * Math.cos(pitch),
+        cameraHeight + effectiveDistance * Math.sin(pitch),
+        effectiveDistance * Math.cos(yaw) * Math.cos(pitch),
+      )
+      cameraTarget.current.copy(group.current.position).add(offset)
+      camera.position.lerp(cameraTarget.current, 1 - Math.exp(-CAMERA_SMOOTHING * delta))
+      // Looking up (pitch > 0) lifts the look-at target too, so tilting up
+      // while zoomed out actually frames building tops instead of just
+      // moving the camera further away while still aiming near the player's
+      // feet.
+      const lookLift = Math.max(0, pitch) * effectiveDistance * 0.6
+      camera.lookAt(
+        group.current.position.x,
+        group.current.position.y + 0.6 + lookLift,
+        group.current.position.z,
+      )
     }
-    const effectiveDistance =
-      camCollisionDistance.current < distance
-        ? Math.max(camCollisionDistance.current - CAMERA_COLLISION_MARGIN, ZOOM_MIN * 0.5)
-        : distance
-
-    const offset = new THREE.Vector3(
-      effectiveDistance * Math.sin(yaw) * Math.cos(pitch),
-      CAMERA_HEIGHT + effectiveDistance * Math.sin(pitch),
-      effectiveDistance * Math.cos(yaw) * Math.cos(pitch),
-    )
-    cameraTarget.current.copy(group.current.position).add(offset)
-    camera.position.lerp(cameraTarget.current, 1 - Math.exp(-CAMERA_SMOOTHING * delta))
-    camera.lookAt(
-      group.current.position.x,
-      group.current.position.y + 0.6,
-      group.current.position.z,
-    )
 
     // Shares the player's facing direction with the multiplayer broadcast
     // (see useVrMultiplayer), same pattern as playerPositionRef above.
@@ -794,21 +997,21 @@ function Player({
     }
   })
 
-  const bubble = useChatBubble(authorName)
+  const bubbles = useChatBubbles(playerId)
 
   return (
     <group ref={group}>
       <group ref={meshGroup} scale={PLAYER_SCALE}>
         <MascotMesh mascot={mascot} skin={skin} />
       </group>
-      {bubble && <ChatBubble text={bubble.text} y={PLAYER_HEIGHT + 1.1} />}
+      <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(playerId)} />
     </group>
   )
 }
 
 // Loads the real city model and renders it alongside the player, which needs
 // the same model instance to raycast against for ground height/collisions.
-function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName }) {
+function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
   const { model, groundRayHeight } = useSceneryModel()
 
   return (
@@ -824,6 +1027,7 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
         authorName={authorName}
+        playerId={playerId}
       />
     </>
   )
@@ -831,7 +1035,7 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 
 // Same as <CityWorld>, but walking on the procedural test ground instead of
 // the real city model (see USE_TEST_SCENERY).
-function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName }) {
+function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
   const { model, groundRayHeight } = useTestGround()
 
   return (
@@ -847,6 +1051,7 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
         authorName={authorName}
+        playerId={playerId}
       />
     </>
   )
@@ -907,6 +1112,82 @@ function VrNpc({ npc, playerPositionRef }) {
   )
 }
 
+// Generic "always-present" idle NPC (independent of SIMPLE_MODE/missions)
+// that stands at `config.position` and periodically says something as a
+// floating speech bubble — used for Oliver, Albert Einstein, and any future
+// "NPC of the week".
+//
+// When the account has a real DeepSeek/Minimax API key configured (see
+// useSettingsStore), each line is generated live via sendNpcMessage using
+// `config.aiPrompt` as the NPC's personality, so it feels "alive". If no key
+// is configured, the API call errors, or `config.aiPrompt` is missing, it
+// falls back to cycling through `config.lines`.
+function IdleNpc({ config }) {
+  const mascot = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
+  const [bubbles, setBubbles] = useState([])
+  const lineIndexRef = useRef(0)
+  const bubbleIdRef = useRef(1)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const nextLine = async () => {
+      if (config.aiPrompt) {
+        const { minimaxApiKey, deepseekApiKey, chatModel } = useSettingsStore.getState()
+        const provider = getModelProvider(chatModel)
+        const apiKey = provider === 'deepseek' ? deepseekApiKey : minimaxApiKey
+        if (apiKey && !apiKey.startsWith('mx-mock')) {
+          try {
+            const reply = await sendNpcMessage({
+              npcPrompt: config.aiPrompt,
+              content:
+                'Comenta algo breve, espontáneo y en personaje para los estudiantes que pasan cerca (una sola frase corta).',
+            })
+            if (reply) return reply.trim()
+          } catch {
+            // Fall back to a static line below on any API error.
+          }
+        }
+      }
+      const text = config.lines[lineIndexRef.current % config.lines.length]
+      lineIndexRef.current += 1
+      return text
+    }
+
+    const tick = async () => {
+      const text = await nextLine()
+      if (cancelled) return
+      const id = bubbleIdRef.current++
+      setBubbles((current) => [...current, { id, text }].slice(-MAX_STACKED_BUBBLES))
+      setTimeout(() => {
+        if (cancelled) return
+        setBubbles((current) => current.filter((b) => b.id !== id))
+      }, CHAT_BUBBLE_DURATION)
+    }
+
+    tick()
+    const interval = setInterval(tick, config.intervalMs)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [config])
+
+  return (
+    <group position={config.position}>
+      <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
+        <MascotMesh mascot={mascot} />
+      </group>
+      <Html position={[0, PLAYER_HEIGHT + 0.5, 0]} center distanceFactor={10}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          {config.emoji} {config.name}
+        </div>
+      </Html>
+      <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={config.bubbleColor} />
+    </group>
+  )
+}
+
 // Background "wandering cat" that walks a fixed patrol loop, just to give
 // the test ground some life. Purely decorative — no collision, no missions.
 function WanderingCat({ path }) {
@@ -959,7 +1240,7 @@ function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
   const mascot = getMascotById(player?.mascotId) || getMascotById(8)
   const skin = getSkinById(player?.skinId)
 
-  const bubble = useChatBubble(player?.name)
+  const bubbles = useChatBubbles(id)
 
   useFrame((_, delta) => {
     const node = group.current
@@ -993,7 +1274,7 @@ function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
           {player?.name || 'Viajero'}
         </button>
       </Html>
-      {bubble && <ChatBubble text={bubble.text} y={PLAYER_HEIGHT + 1.1} />}
+      <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(id)} />
     </group>
   )
 }
@@ -1027,7 +1308,7 @@ function RemotePlayers({ transformsRef, onSelectPlayer }) {
 function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
   const lastId = useRef(null)
   const npcPositions = useMemo(
-    () => VR_NPCS.map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
+    () => ACTIVE_VR_NPCS.map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
     [],
   )
 
@@ -1067,6 +1348,7 @@ function World({
   remoteTransformsRef,
   onNearbyNpcChange,
   authorName,
+  playerId,
   onSelectPlayer,
 }) {
   const WorldGround = USE_TEST_SCENERY ? TestWorld : CityWorld
@@ -1081,15 +1363,17 @@ function World({
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
         authorName={authorName}
+        playerId={playerId}
       />
-      {!SIMPLE_MODE &&
-        VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />)}
+      <IdleNpc config={OLIVER_NPC} />
+      <IdleNpc config={EINSTEIN_NPC} />
+      {ACTIVE_VR_NPCS.map((npc) => (
+        <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />
+      ))}
       {!SIMPLE_MODE &&
         WANDER_CAT_PATHS.map((path, i) => <WanderingCat key={i} path={path} />)}
       <RemotePlayers transformsRef={remoteTransformsRef} onSelectPlayer={onSelectPlayer} />
-      {!SIMPLE_MODE && (
-        <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
-      )}
+      <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
   )
 }
@@ -1097,7 +1381,8 @@ function World({
 // Tracks pointer drag (mouse or touch) to orbit the camera around the player,
 // and zoom (mouse wheel, or a two-finger pinch on touch devices).
 function useCameraControls() {
-  const camera = useRef({ yaw: 0, pitch: 0, distance: CAMERA_DISTANCE, targetDistance: CAMERA_DISTANCE })
+  const initialDistance = useVrSettingsStore.getState().cameraDistance ?? CAMERA_DISTANCE
+  const camera = useRef({ yaw: 0, pitch: 0, distance: initialDistance, targetDistance: initialDistance })
   const drag = useRef(null)
   const pointers = useRef(new Map())
   const pinchDistance = useRef(null)
@@ -1120,10 +1405,11 @@ function useCameraControls() {
       const dist = Math.hypot(a.x - b.x, a.y - b.y)
       if (pinchDistance.current != null) {
         const delta = pinchDistance.current - dist
+        const { zoomMin, zoomMax } = useVrSettingsStore.getState()
         camera.current.targetDistance = clamp(
           camera.current.targetDistance + delta * PINCH_ZOOM_SPEED,
-          ZOOM_MIN,
-          ZOOM_MAX,
+          zoomMin,
+          zoomMax,
         )
       }
       pinchDistance.current = dist
@@ -1134,11 +1420,14 @@ function useCameraControls() {
     const dx = e.clientX - drag.current.x
     const dy = e.clientY - drag.current.y
     drag.current = { x: e.clientX, y: e.clientY }
-    camera.current.yaw -= dx * MOUSE_SENSITIVITY
+    const { cameraMode, mouseSensitivity, invertY } = useVrSettingsStore.getState()
+    const [pitchMin, pitchMax] = getPitchRange(cameraMode)
+    const sensitivity = MOUSE_SENSITIVITY * mouseSensitivity
+    camera.current.yaw -= dx * sensitivity
     camera.current.pitch = clamp(
-      camera.current.pitch + dy * MOUSE_SENSITIVITY,
-      CAMERA_PITCH_MIN,
-      CAMERA_PITCH_MAX,
+      camera.current.pitch + dy * sensitivity * (invertY ? -1 : 1),
+      pitchMin,
+      pitchMax,
     )
   }
   const onPointerUp = (e) => {
@@ -1148,10 +1437,11 @@ function useCameraControls() {
     drag.current = remaining.length === 1 ? { x: remaining[0].x, y: remaining[0].y } : null
   }
   const onWheel = (e) => {
+    const { zoomMin, zoomMax } = useVrSettingsStore.getState()
     camera.current.targetDistance = clamp(
       camera.current.targetDistance + e.deltaY * WHEEL_ZOOM_SPEED * camera.current.targetDistance,
-      ZOOM_MIN,
-      ZOOM_MAX,
+      zoomMin,
+      zoomMax,
     )
   }
 
@@ -1251,6 +1541,223 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
   )
 }
 
+// Camera/control settings menu, opened from the "📷 Cámara" button in the
+// top-right of the VR page. Lets the player switch between 3rd/1st person
+// and tune mouse sensitivity / vertical inversion — all persisted via
+// useVrSettingsStore + progressSnapshot.
+function CameraSettingsMenu() {
+  const [open, setOpen] = useState(false)
+  const cameraMode = useVrSettingsStore((s) => s.cameraMode)
+  const setCameraMode = useVrSettingsStore((s) => s.setCameraMode)
+  const mouseSensitivity = useVrSettingsStore((s) => s.mouseSensitivity)
+  const setMouseSensitivity = useVrSettingsStore((s) => s.setMouseSensitivity)
+  const invertY = useVrSettingsStore((s) => s.invertY)
+  const setInvertY = useVrSettingsStore((s) => s.setInvertY)
+  const cameraDistance = useVrSettingsStore((s) => s.cameraDistance)
+  const setCameraDistance = useVrSettingsStore((s) => s.setCameraDistance)
+  const cameraHeight = useVrSettingsStore((s) => s.cameraHeight)
+  const setCameraHeight = useVrSettingsStore((s) => s.setCameraHeight)
+  const zoomMin = useVrSettingsStore((s) => s.zoomMin)
+  const setZoomMin = useVrSettingsStore((s) => s.setZoomMin)
+  const zoomMax = useVrSettingsStore((s) => s.zoomMax)
+  const setZoomMax = useVrSettingsStore((s) => s.setZoomMax)
+  const pitchMin = useVrSettingsStore((s) => s.pitchMin)
+  const setPitchMin = useVrSettingsStore((s) => s.setPitchMin)
+  const pitchMax = useVrSettingsStore((s) => s.pitchMax)
+  const setPitchMax = useVrSettingsStore((s) => s.setPitchMax)
+  const fov = useVrSettingsStore((s) => s.fov)
+  const setFov = useVrSettingsStore((s) => s.setFov)
+
+  return (
+    <div className="absolute right-4 top-14 z-20 flex flex-col items-end gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-full bg-surface/90 px-3 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-primary/30"
+      >
+        📷 Cámara
+      </button>
+      {open && (
+        <div className="w-64 rounded-xl border border-border bg-surface/95 p-3 text-sm text-text shadow-xl backdrop-blur">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-semibold">Cámara y controles</p>
+            <button type="button" onClick={() => setOpen(false)} className="text-text-muted hover:text-text" aria-label="Cerrar">
+              ✕
+            </button>
+          </div>
+
+          <p className="mb-1 text-xs font-semibold text-text-muted">Tipo de cámara</p>
+          <div className="mb-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setCameraMode('third')}
+              className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${
+                cameraMode === 'third'
+                  ? 'bg-primary text-background'
+                  : 'border border-border text-text-muted hover:text-text'
+              }`}
+            >
+              🎥 3ra persona
+            </button>
+            <button
+              type="button"
+              onClick={() => setCameraMode('first')}
+              className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${
+                cameraMode === 'first'
+                  ? 'bg-primary text-background'
+                  : 'border border-border text-text-muted hover:text-text'
+              }`}
+            >
+              👁️ 1ra persona
+            </button>
+          </div>
+
+          <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-mouse-sensitivity">
+            Sensibilidad del mouse: {mouseSensitivity.toFixed(1)}x
+          </label>
+          <input
+            id="vr-mouse-sensitivity"
+            type="range"
+            min="0.3"
+            max="2.5"
+            step="0.1"
+            value={mouseSensitivity}
+            onChange={(e) => setMouseSensitivity(Number(e.target.value))}
+            className="mb-3 w-full accent-primary"
+          />
+
+          <label className="flex items-center gap-2 text-xs font-semibold text-text-muted">
+            <input
+              type="checkbox"
+              checked={invertY}
+              onChange={(e) => setInvertY(e.target.checked)}
+              className="accent-primary"
+            />
+            Invertir vista vertical
+          </label>
+
+          <label className="mb-1 mt-3 block text-xs font-semibold text-text-muted" htmlFor="vr-fov">
+            Campo de visión (FOV): {fov}°
+          </label>
+          <input
+            id="vr-fov"
+            type="range"
+            min="40"
+            max="100"
+            step="1"
+            value={fov}
+            onChange={(e) => setFov(Number(e.target.value))}
+            className="mb-3 w-full accent-primary"
+          />
+
+          {cameraMode === 'third' && (
+            <div className="mt-1 border-t border-border pt-3">
+              <p className="mb-2 text-xs font-semibold text-text-muted">
+                Ajustes de cámara en 3ra persona
+              </p>
+
+              <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-cam-distance">
+                Distancia: {cameraDistance.toFixed(1)}
+              </label>
+              <input
+                id="vr-cam-distance"
+                type="range"
+                min="2"
+                max="15"
+                step="0.5"
+                value={cameraDistance}
+                onChange={(e) => setCameraDistance(Number(e.target.value))}
+                className="mb-3 w-full accent-primary"
+              />
+
+              <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-cam-height">
+                Altura: {cameraHeight.toFixed(1)}
+              </label>
+              <input
+                id="vr-cam-height"
+                type="range"
+                min="0.5"
+                max="6"
+                step="0.1"
+                value={cameraHeight}
+                onChange={(e) => setCameraHeight(Number(e.target.value))}
+                className="mb-3 w-full accent-primary"
+              />
+
+              <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-zoom-min">
+                Zoom mínimo (más cerca): {zoomMin.toFixed(1)}
+              </label>
+              <input
+                id="vr-zoom-min"
+                type="range"
+                min="0.5"
+                max="5"
+                step="0.1"
+                value={zoomMin}
+                onChange={(e) => setZoomMin(Math.min(Number(e.target.value), zoomMax - 0.5))}
+                className="mb-3 w-full accent-primary"
+              />
+
+              <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-zoom-max">
+                Zoom máximo (más lejos): {zoomMax.toFixed(0)}
+              </label>
+              <input
+                id="vr-zoom-max"
+                type="range"
+                min="10"
+                max="80"
+                step="1"
+                value={zoomMax}
+                onChange={(e) => setZoomMax(Math.max(Number(e.target.value), zoomMin + 0.5))}
+                className="mb-3 w-full accent-primary"
+              />
+
+              <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-pitch-min">
+                Límite al mirar hacia abajo: {pitchMin.toFixed(2)}
+              </label>
+              <input
+                id="vr-pitch-min"
+                type="range"
+                min="-1.2"
+                max="0"
+                step="0.05"
+                value={pitchMin}
+                onChange={(e) => setPitchMin(Math.min(Number(e.target.value), pitchMax - 0.05))}
+                className="mb-3 w-full accent-primary"
+              />
+
+              <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-pitch-max">
+                Límite al mirar hacia arriba: {pitchMax.toFixed(2)}
+              </label>
+              <input
+                id="vr-pitch-max"
+                type="range"
+                min="0"
+                max="1.4"
+                step="0.05"
+                value={pitchMax}
+                onChange={(e) => setPitchMax(Math.max(Number(e.target.value), pitchMin + 0.05))}
+                className="mb-3 w-full accent-primary"
+              />
+
+              <p className="text-xs text-text-muted">
+                💡 Sube "Límite al mirar hacia arriba" y aleja el zoom para ver los techos de los
+                edificios. Sube el "Zoom mínimo" si quieres acercarte más a tu personaje.
+              </p>
+            </div>
+          )}
+
+          {cameraMode === 'first' && (
+            <p className="mt-3 text-xs text-text-muted">
+              👁️ Modo primera persona: arrastra para mirar alrededor, W A S D para moverte.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Top-down overview of the campus: the plaza, every NPC's zone, and a live
 // marker for the player's position. Opened/closed with the M key.
 function WorldMap({ open, onClose, playerPositionRef }) {
@@ -1336,14 +1843,14 @@ function ChatLine({ message }) {
   }
   if (message.whisperFrom) {
     return (
-      <p className="text-fuchsia-400">
+      <p className="italic text-fuchsia-400">
         <span className="font-semibold">🔒 Susurro de {message.whisperFrom}:</span> {message.text}
       </p>
     )
   }
   if (message.whisperTo) {
     return (
-      <p className="text-fuchsia-400">
+      <p className="italic text-fuchsia-400">
         <span className="font-semibold">🔒 Susurro a {message.whisperTo}:</span> {message.text}
       </p>
     )
@@ -1360,13 +1867,16 @@ function ChatLine({ message }) {
 // C opens the input box, Escape (or sending a message) closes it again.
 // Messages broadcast over Realtime via useVrMultiplayer (see onSend).
 // Supports whispers via "/w <nombre> <mensaje>".
-function WorldChat({ open, onClose, onOpen, authorName, onSend, prefill }) {
+function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefill }) {
   const messages = useWorldChatStore((s) => s.messages)
   const sendMessage = useWorldChatStore((s) => s.sendMessage)
   const addSystemMessage = useWorldChatStore((s) => s.addSystemMessage)
   const players = useVrPresenceStore((s) => s.players)
   const [text, setText] = useState('')
+  const [tab, setTab] = useState('general')
   const inputRef = useRef(null)
+  const lastSeenWhisperIdRef = useRef(null)
+  const [hasUnreadWhisper, setHasUnreadWhisper] = useState(false)
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
@@ -1377,8 +1887,35 @@ function WorldChat({ open, onClose, onOpen, authorName, onSend, prefill }) {
   useEffect(() => {
     if (!prefill) return
     setText(prefill.text)
+    setTab('whispers')
     inputRef.current?.focus()
   }, [prefill])
+
+  // General chat (everyone) vs. private whispers (sent/received), shown in
+  // separate tabs — WoW-style — so whispers don't get lost in global chat.
+  const generalMessages = useMemo(
+    () => messages.filter((m) => !m.whisperFrom && !m.whisperTo),
+    [messages],
+  )
+  const whisperMessages = useMemo(
+    () => messages.filter((m) => m.whisperFrom || m.whisperTo),
+    [messages],
+  )
+
+  // Flag the "Susurros" tab with a dot when a new whisper arrives while
+  // the player is looking at the general tab.
+  useEffect(() => {
+    const last = whisperMessages[whisperMessages.length - 1]
+    if (!last) return
+    if (tab === 'whispers') {
+      lastSeenWhisperIdRef.current = last.id
+      setHasUnreadWhisper(false)
+      return
+    }
+    if (last.id !== lastSeenWhisperIdRef.current && last.whisperFrom) {
+      setHasUnreadWhisper(true)
+    }
+  }, [whisperMessages, tab])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -1395,13 +1932,14 @@ function WorldChat({ open, onClose, onOpen, authorName, onSend, prefill }) {
         )
         if (targetEntry) {
           const [targetId] = targetEntry
-          sendMessage(authorName, body, { whisperTo: targetName })
+          sendMessage(authorName, body, { authorId: playerId, whisperTo: targetName })
           onSend?.(authorName, body, targetId)
+          setTab('whispers')
         } else {
           addSystemMessage(`No se encontró a "${targetName}" en el mundo.`)
         }
       } else {
-        sendMessage(authorName, trimmed)
+        sendMessage(authorName, trimmed, { authorId: playerId })
         onSend?.(authorName, trimmed)
       }
       setText('')
@@ -1417,13 +1955,40 @@ function WorldChat({ open, onClose, onOpen, authorName, onSend, prefill }) {
     }
   }
 
+  const visibleMessages = tab === 'whispers' ? whisperMessages : generalMessages
+
   return (
     <div className="absolute bottom-20 left-4 z-20 w-72 max-w-[calc(100%-2rem)] rounded-xl border border-border bg-surface/90 p-3 text-sm shadow-xl backdrop-blur sm:bottom-24">
-      <div className="mb-2 flex max-h-32 flex-col gap-1 overflow-y-auto text-xs">
-        {messages.length > 0 ? (
-          messages.slice(-8).map((m) => <ChatLine key={m.id} message={m} />)
+      <div className="mb-2 flex gap-1 text-xs">
+        <button
+          type="button"
+          onClick={() => setTab('general')}
+          className={`flex-1 rounded-lg px-2 py-1 font-semibold transition-colors ${
+            tab === 'general' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'
+          }`}
+        >
+          General
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('whispers')}
+          className={`relative flex-1 rounded-lg px-2 py-1 font-semibold transition-colors ${
+            tab === 'whispers' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'
+          }`}
+        >
+          Susurros
+          {hasUnreadWhisper && (
+            <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-fuchsia-400" />
+          )}
+        </button>
+      </div>
+      <div className="mb-2 flex max-h-40 flex-col gap-1 overflow-y-auto text-xs">
+        {visibleMessages.length > 0 ? (
+          visibleMessages.slice(-12).map((m) => <ChatLine key={m.id} message={m} />)
         ) : (
-          <p className="text-text-muted">El chat global aparecerá aquí.</p>
+          <p className="text-text-muted">
+            {tab === 'whispers' ? 'Tus susurros aparecerán aquí.' : 'El chat global aparecerá aquí.'}
+          </p>
         )}
       </div>
       {open ? (
@@ -1470,7 +2035,11 @@ export default function VRPage() {
   // mascot's own name/nickname if neither is set (offline/local-only mode).
   const profile = useAuthStore((s) => s.profile)
   const session = useAuthStore((s) => s.session)
-  const accountName = profile?.display_name || session?.user?.email?.split('@')[0]
+  const accountName =
+    profile?.display_name ||
+    session?.user?.user_metadata?.name ||
+    session?.user?.user_metadata?.full_name ||
+    session?.user?.email?.split('@')[0]
   const chatAuthor = accountName || settingsMascotName || mascot.name
 
   const playerPositionRef = useRef(null)
@@ -1478,11 +2047,12 @@ export default function VRPage() {
   const playerId = useRef(crypto.randomUUID()).current
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
-  const { remoteTransformsRef, sendChatMessage } = useVrMultiplayer({
+  const { remoteTransformsRef, sendChatMessage, kicked } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
     mascotId: mascot.id,
     skinId: skin.id,
+    accountId: session?.user?.id ?? null,
     positionRef: playerPositionRef,
     rotationRef: playerRotationRef,
   })
@@ -1591,29 +2161,29 @@ export default function VRPage() {
               remoteTransformsRef={remoteTransformsRef}
               onNearbyNpcChange={setNearbyNpcId}
               authorName={chatAuthor}
+              playerId={playerId}
               onSelectPlayer={setSelectedPlayer}
             />
           </Suspense>
         </Canvas>
 
-        {!SIMPLE_MODE &&
-          (activeNpcId ? (
-            <NpcMissionCard
-              npcId={activeNpcId}
-              accepted={accepted}
-              claimed={claimed}
-              missionState={missionState}
-              onAccept={acceptMission}
-              onClaim={claimReward}
-              onClose={() => setActiveNpcId(null)}
-            />
-          ) : (
-            nearbyNpcId && (
-              <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
-                {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
-              </div>
-            )
-          ))}
+        {activeNpcId ? (
+          <NpcMissionCard
+            npcId={activeNpcId}
+            accepted={accepted}
+            claimed={claimed}
+            missionState={missionState}
+            onAccept={acceptMission}
+            onClaim={claimReward}
+            onClose={() => setActiveNpcId(null)}
+          />
+        ) : (
+          nearbyNpcId && (
+            <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
+              {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
+            </div>
+          )
+        )}
 
         <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
         <WorldChat
@@ -1621,6 +2191,7 @@ export default function VRPage() {
           onClose={() => setChatOpen(false)}
           onOpen={() => setChatOpen(true)}
           authorName={chatAuthor}
+          playerId={playerId}
           onSend={sendChatMessage}
           prefill={chatPrefill}
         />
@@ -1645,6 +2216,8 @@ export default function VRPage() {
           />
         )}
 
+        <CameraSettingsMenu />
+
         <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
           {isVrRealtimeAvailable() ? (
             connected ? (
@@ -1665,6 +2238,26 @@ export default function VRPage() {
         </div>
 
         <TouchControls keysRef={keysRef} chatOpen={chatOpen} onOpenChat={() => setChatOpen(true)} />
+
+        {kicked && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4 text-center">
+            <div className="max-w-sm rounded-2xl bg-surface p-6 shadow-2xl">
+              <p className="mb-2 text-3xl">🔌</p>
+              <p className="mb-2 text-base font-bold text-text">Sesión desconectada</p>
+              <p className="mb-4 text-sm text-text-muted">
+                Tu cuenta se conectó al Campus desde otra ventana o pestaña. Solo se permite una
+                sesión activa por cuenta, así que esta se desconectó.
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
+              >
+                Recargar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <MascotCompanion hideViewport />

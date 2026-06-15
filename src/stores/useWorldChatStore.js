@@ -33,6 +33,7 @@ export const useWorldChatStore = create((set) => ({
         {
           id: crypto.randomUUID(),
           author,
+          authorId: opts.authorId ?? null,
           text: trimmed,
           ts: Date.now(),
           whisperTo: opts.whisperTo ?? null,
@@ -50,6 +51,7 @@ export const useWorldChatStore = create((set) => ({
         {
           id: crypto.randomUUID(),
           author,
+          authorId: opts.authorId ?? null,
           text: trimmed,
           ts: Date.now(),
           whisperFrom: opts.whisperFrom ?? null,

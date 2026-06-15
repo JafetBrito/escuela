@@ -42,7 +42,18 @@ export function buildProgressSnapshot() {
     useGlobalMissionsStore.getState()
   const { unlocked: unlockedAchievements } = useAchievementsStore.getState()
   const { friends } = useFriendsStore.getState()
-  const { cameraMode, mouseSensitivity, invertY } = useVrSettingsStore.getState()
+  const {
+    cameraMode,
+    mouseSensitivity,
+    invertY,
+    cameraDistance,
+    cameraHeight,
+    zoomMin,
+    zoomMax,
+    pitchMin,
+    pitchMax,
+    fov,
+  } = useVrSettingsStore.getState()
   const {
     mascotName,
     minimaxApiKey,
@@ -93,7 +104,18 @@ export function buildProgressSnapshot() {
     globalMissions: { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed },
     unlockedAchievements,
     friends,
-    vrSettings: { cameraMode, mouseSensitivity, invertY },
+    vrSettings: {
+      cameraMode,
+      mouseSensitivity,
+      invertY,
+      cameraDistance,
+      cameraHeight,
+      zoomMin,
+      zoomMax,
+      pitchMin,
+      pitchMax,
+      fov,
+    },
     lastSaved: new Date().toISOString(),
   }
 }
