@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNpcChatStore } from '../../stores/useNpcChatStore'
 
+const EMPTY_MESSAGES = []
+
 // Compact "talk to the NPC" chat box, shared by the Tienda (Zafir) and
 // Misiones (el Maestro de Misiones) NPCs. Each NPC has its own fixed system
 // prompt and its own message history.
 export default function NpcChatPanel({ npcId, npcName, npcPrompt, className = '' }) {
-  const messages = useNpcChatStore((s) => s.messagesByNpc[npcId] ?? [])
+  const messages = useNpcChatStore((s) => s.messagesByNpc[npcId] ?? EMPTY_MESSAGES)
   const isSending = useNpcChatStore((s) => s.sendingByNpc[npcId])
   const send = useNpcChatStore((s) => s.send)
   const [text, setText] = useState('')
