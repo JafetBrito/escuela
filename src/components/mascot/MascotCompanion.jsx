@@ -6,6 +6,7 @@ import NotesPanel from './NotesPanel'
 import GalleryPanel from './GalleryPanel'
 import BooksPanel from './BooksPanel'
 import AppearancePanel from './AppearancePanel'
+import FriendsPanel from './FriendsPanel'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -22,6 +23,7 @@ const BASE_MENU = [
   { id: 'books', label: 'Libros', icon: '📚' },
   { id: 'notes', label: 'Notas', icon: '📝' },
   { id: 'appearance', label: 'Aspecto', icon: '🎨' },
+  { id: 'friends', label: 'Amigos', icon: '👥' },
   { id: 'gallery', label: 'Galería', icon: '🖼️' },
 ]
 
@@ -91,6 +93,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             {panel === 'books' && <BooksPanel />}
             {panel === 'notes' && <NotesPanel courseId={courseId} module={module} />}
             {panel === 'appearance' && <AppearancePanel />}
+            {panel === 'friends' && <FriendsPanel />}
             {panel === 'gallery' && <GalleryPanel />}
           </div>
         </div>

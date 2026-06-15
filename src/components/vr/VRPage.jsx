@@ -17,6 +17,9 @@ import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
+import { useFriendsStore } from '../../stores/useFriendsStore'
+import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
 
@@ -43,6 +46,12 @@ const MOVE_ACCEL = 18
 // dwarf the structure it's walking around.
 const PLAYER_SCALE = 0.12
 const PLAYER_HEIGHT = PLAYER_SCALE * 2
+// MascotMesh centers every model on its own bounding box and normalizes it
+// to ~2 units tall, so before any outer scale is applied its feet sit at
+// y = -1 (half of that 2-unit height) instead of y = 0. Every mascot/NPC
+// group below is lifted by `scale * MODEL_HALF_HEIGHT` so feet land exactly
+// on the ground ray hit instead of sinking halfway into the floor.
+const MODEL_HALF_HEIGHT = 1
 // How far ahead of/around the player we check for walls before letting them
 // move into something (in world units).
 const COLLISION_RADIUS = PLAYER_HEIGHT * 0.6
@@ -50,17 +59,21 @@ const WALK_CYCLE_SPEED = 9
 const WALK_BOB_HEIGHT = 0.07
 const WALK_TILT = 0.06
 
+// How long a Habbo-style speech bubble stays floating above a player's head
+// after they send a world chat message, in milliseconds.
+const CHAT_BUBBLE_DURATION = 5000
+
 // Camera orbit (mouse-drag controlled) around the player, zoomable with the
 // mouse wheel or a two-finger pinch. Movement is relative to this camera, so
 // "forward" always means "away from the camera", like a typical 3rd-person
 // game.
-const CAMERA_DISTANCE = 5.5
-const CAMERA_HEIGHT = 2
-const CAMERA_PITCH_MIN = -0.5
-const CAMERA_PITCH_MAX = 1.1
+const CAMERA_DISTANCE = 6.5
+const CAMERA_HEIGHT = 2.4
+const CAMERA_PITCH_MIN = -0.6
+const CAMERA_PITCH_MAX = 0.95
 const MOUSE_SENSITIVITY = 0.005
-const ZOOM_MIN = 1.8
-const ZOOM_MAX = 55
+const ZOOM_MIN = 1.5
+const ZOOM_MAX = 40
 const WHEEL_ZOOM_SPEED = 0.0065
 const PINCH_ZOOM_SPEED = 0.07
 // How quickly the camera distance/position glide toward their target values
@@ -72,6 +85,15 @@ const CAMERA_SMOOTHING = 8
 // instead of clipping through — otherwise the player's own mascot (and any
 // NPCs behind it) end up hidden inside the campus geometry.
 const CAMERA_COLLISION_MARGIN = 0.35
+
+// First-person mode ("👁️ 1ra persona" in the camera menu): the camera sits
+// at the player's eye height and looks exactly where yaw/pitch point, with
+// no orbit distance/collision pull-in. It allows a much wider pitch range
+// than the 3rd-person orbit since there's no risk of clipping into the
+// player's own model.
+const FIRST_PERSON_EYE_HEIGHT = 0.62
+const FIRST_PERSON_PITCH_MIN = -1.3
+const FIRST_PERSON_PITCH_MAX = 1.3
 
 // Xbox/standard-gamepad support: left stick moves the same as WASD, right
 // stick looks around like a mouse drag, the A button jumps, and the
@@ -147,7 +169,7 @@ const DIRECTION_KEYS = {
 
 // True if the event target is a text input/textarea (or contenteditable),
 // i.e. the player is typing into the world chat — movement keys and world
-// shortcuts (M/C/B/Enter) should be ignored while that's happening.
+// shortcuts (M/P/B/C) should be ignored while that's happening.
 function isTypingTarget(target) {
   return !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
 }
@@ -176,8 +198,8 @@ function useMovementKeys() {
   return keys
 }
 
-// World shortcuts that are NOT character movement: M toggles the map, C
-// opens the character menu, B opens the inventory, and Enter toggles the
+// World shortcuts that are NOT character movement: M toggles the map, P
+// opens the character menu, B opens the inventory, and C toggles the
 // world chat input. All ignored while the player is typing in the chat box.
 function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onToggleChat }) {
   useEffect(() => {
@@ -188,15 +210,21 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
       }
       switch (e.key.toLowerCase()) {
         case 'm':
+          e.preventDefault()
           onToggleMap()
           break
-        case 'c':
+        case 'p':
+          e.preventDefault()
           onOpenCharacter()
           break
         case 'b':
+          e.preventDefault()
           onOpenInventory()
           break
-        case 'enter':
+        case 'c':
+          // Without this, the same keystroke that opens the chat input also
+          // lands inside it once it's focused, prefilling the box with "c".
+          e.preventDefault()
           onToggleChat(true)
           break
         default:
@@ -208,6 +236,29 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
   }, [onToggleMap, onOpenCharacter, onOpenInventory, onToggleChat])
 }
 
+// True for touch/coarse-pointer devices (phones, tablets, consoles with a
+// touchscreen), regardless of viewport width — a `sm:hidden` width check
+// alone hides the D-pad on larger phones in landscape or on tablets, which
+// is what made movement "not work" on those devices (the controls were
+// simply invisible, not broken).
+function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window),
+  )
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(pointer: coarse)')
+    const update = () => setIsTouch(mq.matches || 'ontouchstart' in window)
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  return isTouch
+}
+
 // On-screen D-pad for phones/tablets: holds the same key flags the keyboard
 // listener uses, so <Player> doesn't need to know where the input came from.
 // Hidden while the world chat is open (the chat box covers this corner and
@@ -216,7 +267,8 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
 // doesn't fire `pointerleave` and silently stop the movement — only
 // `pointerup`/`pointercancel` release it now.
 function TouchControls({ keysRef, chatOpen, onOpenChat }) {
-  if (chatOpen) return null
+  const isTouch = useIsTouchDevice()
+  if (!isTouch || chatOpen) return null
 
   const releaseCapture = (e) => {
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
@@ -265,7 +317,7 @@ function TouchControls({ keysRef, chatOpen, onOpenChat }) {
 
   return (
     <>
-      <div className="pointer-events-none absolute bottom-6 left-1/2 grid -translate-x-1/2 grid-cols-3 grid-rows-2 gap-1 sm:hidden">
+      <div className="pointer-events-none absolute bottom-6 left-1/2 grid -translate-x-1/2 grid-cols-3 grid-rows-2 gap-1">
         <div className="pointer-events-auto col-start-2">
           <Pad direction="up" label="⬆️" />
         </div>
@@ -280,7 +332,7 @@ function TouchControls({ keysRef, chatOpen, onOpenChat }) {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-6 right-4 flex flex-col items-center gap-2 sm:hidden">
+      <div className="pointer-events-none absolute bottom-6 right-4 flex flex-col items-center gap-2">
         <button
           type="button"
           onPointerDown={setJump(true)}
@@ -364,10 +416,21 @@ function useTestGround() {
       new THREE.MeshStandardMaterial({ color: '#5a8f5a' }),
     )
     ground.rotation.x = -Math.PI / 2
+    // Flat floor meshes shouldn't count as "obstacles" for the camera
+    // collision raycast below — otherwise looking down (negative pitch) or
+    // zooming out always hits the floor a couple of units away and the
+    // camera gets stuck close to the player.
+    ground.userData.isFloor = true
     group.add(ground)
 
     const grid = new THREE.GridHelper(GROUND_RADIUS * 2, GROUND_RADIUS, '#3f6e3f', '#4f7f4f')
     grid.position.y = 0.01
+    // GridHelper is made of THREE.Line segments, which use a large default
+    // raycast threshold (1 world unit). Without disabling this, the
+    // horizontal collision rays in <Player> hit the grid lines almost
+    // immediately at chest height and the player can never move — only
+    // jump (which doesn't use this raycast).
+    grid.raycast = () => {}
     group.add(grid)
 
     // Paved central plaza, so the spawn point reads as a town square rather
@@ -378,6 +441,7 @@ function useTestGround() {
     )
     plaza.rotation.x = -Math.PI / 2
     plaza.position.y = 0.02
+    plaza.userData.isFloor = true
     group.add(plaza)
 
     // One landmark "building" behind each NPC, positioned further from the
@@ -452,14 +516,31 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 function applyGamepadInput(delta, cameraRef) {
   if (typeof navigator === 'undefined' || !navigator.getGamepads) return null
   const pads = navigator.getGamepads()
-  const pad = pads && (pads[0] || pads[1] || pads[2] || pads[3])
-  if (!pad || !pad.connected) return null
+  if (!pads) return null
+  let pad = null
+  for (let i = 0; i < pads.length; i += 1) {
+    if (pads[i]?.connected) {
+      pad = pads[i]
+      break
+    }
+  }
+  if (!pad) return null
 
   const axis = (v) => (Math.abs(v) < GAMEPAD_DEADZONE ? 0 : v)
-  const moveX = axis(pad.axes[0] ?? 0)
-  const moveY = axis(pad.axes[1] ?? 0)
+  let moveX = axis(pad.axes[0] ?? 0)
+  let moveY = axis(pad.axes[1] ?? 0)
   const lookX = axis(pad.axes[2] ?? 0)
   const lookY = axis(pad.axes[3] ?? 0)
+
+  // Fall back to the D-pad (buttons 12-15) when the analog stick is centered
+  // — some controllers/browsers report the D-pad as buttons rather than a
+  // hat axis, so this lets movement work even if the left stick doesn't.
+  if (!moveX && !moveY) {
+    if (pad.buttons[14]?.pressed) moveX -= 1
+    if (pad.buttons[15]?.pressed) moveX += 1
+    if (pad.buttons[12]?.pressed) moveY -= 1
+    if (pad.buttons[13]?.pressed) moveY += 1
+  }
 
   const cam = cameraRef.current
   if (lookX || lookY) {
@@ -479,11 +560,56 @@ function applyGamepadInput(delta, cameraRef) {
   return { moveX, moveY, jump: pad.buttons[0]?.pressed ?? false }
 }
 
+// Watches the world chat log for the latest message sent by `authorName` and
+// returns it for a few seconds so the player can render it as a floating
+// speech bubble above their head, Habbo-style. Returns null once the bubble
+// has expired or no message has been sent yet.
+function useChatBubble(authorName) {
+  const messages = useWorldChatStore((s) => s.messages)
+  const [bubble, setBubble] = useState(null)
+  const shownIdRef = useRef(null)
+
+  useEffect(() => {
+    const last = messages[messages.length - 1]
+    if (!last || last.system || last.author !== authorName || last.id === shownIdRef.current) return
+    shownIdRef.current = last.id
+    setBubble({ id: last.id, text: last.text })
+    const timer = setTimeout(() => {
+      setBubble((current) => (current?.id === last.id ? null : current))
+    }, CHAT_BUBBLE_DURATION)
+    return () => clearTimeout(timer)
+  }, [messages, authorName])
+
+  return bubble
+}
+
+// Habbo-style floating speech bubble shown above a player's head for a few
+// seconds after they send a world chat message.
+function ChatBubble({ text, y }) {
+  return (
+    <Html position={[0, y, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+      <div className="max-w-[10rem] -translate-y-2 rounded-2xl rounded-bl-sm bg-white px-2.5 py-1 text-center text-[0.7rem] font-medium text-gray-900 shadow-lg">
+        {text}
+      </div>
+    </Html>
+  )
+}
+
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
 // shared `scenery` model.
-function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, playerPositionRef, playerRotationRef }) {
+function Player({
+  mascot,
+  skin,
+  scenery,
+  groundRayHeight,
+  keysRef,
+  cameraRef,
+  playerPositionRef,
+  playerRotationRef,
+  authorName,
+}) {
   const group = useRef()
   const meshGroup = useRef()
   const { camera } = useThree()
@@ -606,7 +732,7 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
     if (meshGroup.current) {
       const bob = isMoving ? Math.abs(Math.sin(walkCycle.current)) * WALK_BOB_HEIGHT : 0
       const tilt = isMoving ? Math.sin(walkCycle.current) * WALK_TILT : 0
-      meshGroup.current.position.y = bob
+      meshGroup.current.position.y = bob + PLAYER_SCALE * MODEL_HALF_HEIGHT
       meshGroup.current.rotation.z = tilt
       meshGroup.current.rotation.x = isMoving ? WALK_TILT * 0.6 : 0
     }
@@ -637,7 +763,10 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
     if (camCollisionFrame.current % 3 === 0) {
       const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + CAMERA_HEIGHT * 0.3, pos.z)
       raycaster.set(camOrigin, camDir)
-      const camHits = raycaster.intersectObject(scenery, true)
+      // Ignore the flat ground/plaza here — they shouldn't pull the camera in
+      // when looking down or zooming out, only real obstacles (walls,
+      // buildings) should.
+      const camHits = raycaster.intersectObject(scenery, true).filter((hit) => !hit.object.userData?.isFloor)
       camCollisionDistance.current = camHits.length > 0 ? camHits[0].distance : Infinity
     }
     const effectiveDistance =
@@ -665,18 +794,21 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
     }
   })
 
+  const bubble = useChatBubble(authorName)
+
   return (
     <group ref={group}>
       <group ref={meshGroup} scale={PLAYER_SCALE}>
         <MascotMesh mascot={mascot} skin={skin} />
       </group>
+      {bubble && <ChatBubble text={bubble.text} y={PLAYER_HEIGHT + 1.1} />}
     </group>
   )
 }
 
 // Loads the real city model and renders it alongside the player, which needs
 // the same model instance to raycast against for ground height/collisions.
-function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef }) {
+function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName }) {
   const { model, groundRayHeight } = useSceneryModel()
 
   return (
@@ -691,6 +823,7 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
+        authorName={authorName}
       />
     </>
   )
@@ -698,7 +831,7 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 
 // Same as <CityWorld>, but walking on the procedural test ground instead of
 // the real city model (see USE_TEST_SCENERY).
-function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef }) {
+function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName }) {
   const { model, groundRayHeight } = useTestGround()
 
   return (
@@ -713,6 +846,7 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
+        authorName={authorName}
       />
     </>
   )
@@ -752,7 +886,7 @@ function VrNpc({ npc, playerPositionRef }) {
             </mesh>
           }
         >
-          <group scale={NPC_SCALE}>
+          <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
             <MascotMesh mascot={mascot} />
           </group>
         </Suspense>
@@ -806,7 +940,7 @@ function WanderingCat({ path }) {
 
   return (
     <group ref={group} position={path[0]}>
-      <group scale={WANDER_CAT_SCALE}>
+      <group scale={WANDER_CAT_SCALE} position={[0, WANDER_CAT_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <MascotMesh mascot={mascot} />
       </group>
     </group>
@@ -819,11 +953,13 @@ function WanderingCat({ path }) {
 // remote movement looks smooth despite the ~120ms network tick. Metadata
 // (name/mascot/skin) comes from useVrPresenceStore and only changes on
 // join/rename, so it's safe to read via a normal hook.
-function RemotePlayerMesh({ id, transformsRef }) {
+function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
   const group = useRef()
   const player = useVrPresenceStore((s) => s.players[id])
   const mascot = getMascotById(player?.mascotId) || getMascotById(8)
   const skin = getSkinById(player?.skinId)
+
+  const bubble = useChatBubble(player?.name)
 
   useFrame((_, delta) => {
     const node = group.current
@@ -842,14 +978,22 @@ function RemotePlayerMesh({ id, transformsRef }) {
 
   return (
     <group ref={group}>
-      <group scale={PLAYER_SCALE}>
+      <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <MascotMesh mascot={mascot} skin={skin} />
       </group>
       <Html position={[0, PLAYER_HEIGHT + 0.5, 0]} center distanceFactor={10}>
-        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectPlayer?.({ id, name: player?.name || 'Viajero' })
+          }}
+          className="cursor-pointer whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg transition-colors hover:bg-primary/30"
+        >
           {player?.name || 'Viajero'}
-        </div>
+        </button>
       </Html>
+      {bubble && <ChatBubble text={bubble.text} y={PLAYER_HEIGHT + 1.1} />}
     </group>
   )
 }
@@ -858,7 +1002,7 @@ function RemotePlayerMesh({ id, transformsRef }) {
 // here) comes from useVrPresenceStore (zustand, low-churn); their live
 // transforms come from `transformsRef` (a plain Map, high-churn) so position
 // updates don't cause this list to re-render.
-function RemotePlayers({ transformsRef }) {
+function RemotePlayers({ transformsRef, onSelectPlayer }) {
   // `Object.keys(...)` returns a brand-new array on every store read, which
   // makes useSyncExternalStore think the snapshot changed on every render
   // and re-render forever ("Maximum update depth exceeded" / React error
@@ -871,7 +1015,7 @@ function RemotePlayers({ transformsRef }) {
   return (
     <>
       {playerIds.map((id) => (
-        <RemotePlayerMesh key={id} id={id} transformsRef={transformsRef} />
+        <RemotePlayerMesh key={id} id={id} transformsRef={transformsRef} onSelectPlayer={onSelectPlayer} />
       ))}
     </>
   )
@@ -922,6 +1066,8 @@ function World({
   playerRotationRef,
   remoteTransformsRef,
   onNearbyNpcChange,
+  authorName,
+  onSelectPlayer,
 }) {
   const WorldGround = USE_TEST_SCENERY ? TestWorld : CityWorld
 
@@ -934,12 +1080,13 @@ function World({
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
+        authorName={authorName}
       />
       {!SIMPLE_MODE &&
         VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />)}
       {!SIMPLE_MODE &&
         WANDER_CAT_PATHS.map((path, i) => <WanderingCat key={i} path={path} />)}
-      <RemotePlayers transformsRef={remoteTransformsRef} />
+      <RemotePlayers transformsRef={remoteTransformsRef} onSelectPlayer={onSelectPlayer} />
       {!SIMPLE_MODE && (
         <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
       )}
@@ -1070,6 +1217,40 @@ function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onCl
   )
 }
 
+// Small card shown when the player clicks another player's name tag in the
+// world: lets them whisper that player or add/remove them as a friend
+// (friends then show up in the Amigos tab of MascotCompanion).
+function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
+  if (!player) return null
+
+  return (
+    <div className="absolute bottom-24 left-1/2 w-[calc(100%-2rem)] max-w-xs -translate-x-1/2 rounded-2xl border border-border bg-surface/95 p-4 text-sm text-text shadow-xl backdrop-blur sm:bottom-20">
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-bold">👤 {player.name}</p>
+        <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
+          ✕
+        </button>
+      </div>
+      <div className="mt-3 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onWhisper}
+          className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
+        >
+          🔒 Susurrar
+        </button>
+        <button
+          type="button"
+          onClick={onToggleFriend}
+          className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
+        >
+          {isFriend ? '✖️ Quitar amigo' : '➕ Agregar amigo'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Top-down overview of the campus: the plaza, every NPC's zone, and a live
 // marker for the player's position. Opened/closed with the M key.
 function WorldMap({ open, onClose, playerPositionRef }) {
@@ -1143,12 +1324,47 @@ function WorldMap({ open, onClose, playerPositionRef }) {
   )
 }
 
+// Renders one chat line, styled differently for system (WoW-style admin
+// MOTD), whispers (sent or received) and regular global messages.
+function ChatLine({ message }) {
+  if (message.system) {
+    return (
+      <p className="text-amber-400">
+        <span className="font-semibold">🛡️ {message.author}:</span> {message.text}
+      </p>
+    )
+  }
+  if (message.whisperFrom) {
+    return (
+      <p className="text-fuchsia-400">
+        <span className="font-semibold">🔒 Susurro de {message.whisperFrom}:</span> {message.text}
+      </p>
+    )
+  }
+  if (message.whisperTo) {
+    return (
+      <p className="text-fuchsia-400">
+        <span className="font-semibold">🔒 Susurro a {message.whisperTo}:</span> {message.text}
+      </p>
+    )
+  }
+  return (
+    <p className="text-text">
+      <span className="font-semibold">{message.author}:</span> {message.text}
+    </p>
+  )
+}
+
 // Local "world chat" the player can type into, independent from the per-NPC
-// AI chats. Toggled with Enter, closed with Escape. Messages are local-only
-// for now (see useWorldChatStore for the multiplayer note).
-function WorldChat({ open, onClose, authorName, onSend }) {
+// AI chats. The message log is always visible (Habbo-style global chat);
+// C opens the input box, Escape (or sending a message) closes it again.
+// Messages broadcast over Realtime via useVrMultiplayer (see onSend).
+// Supports whispers via "/w <nombre> <mensaje>".
+function WorldChat({ open, onClose, onOpen, authorName, onSend, prefill }) {
   const messages = useWorldChatStore((s) => s.messages)
   const sendMessage = useWorldChatStore((s) => s.sendMessage)
+  const addSystemMessage = useWorldChatStore((s) => s.addSystemMessage)
+  const players = useVrPresenceStore((s) => s.players)
   const [text, setText] = useState('')
   const inputRef = useRef(null)
 
@@ -1156,13 +1372,38 @@ function WorldChat({ open, onClose, authorName, onSend }) {
     if (open) inputRef.current?.focus()
   }, [open])
 
-  if (!open && messages.length === 0) return null
+  // Pre-fills "/w <nombre> " when the chat is opened from the "Susurrar"
+  // option (selecting a player in the world, or the Amigos tab).
+  useEffect(() => {
+    if (!prefill) return
+    setText(prefill.text)
+    inputRef.current?.focus()
+  }, [prefill])
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (text.trim()) {
-      sendMessage(authorName, text)
-      onSend?.(authorName, text)
+    const trimmed = text.trim()
+    if (trimmed) {
+      // "/w <nombre> <mensaje>" (also "/susurro", "/whisper") sends a
+      // whisper instead of a global message — only the named player (and
+      // the sender) will see it.
+      const whisperMatch = trimmed.match(/^\/(?:w|susurro|whisper)\s+(\S+)\s+([\s\S]+)/i)
+      if (whisperMatch) {
+        const [, targetName, body] = whisperMatch
+        const targetEntry = Object.entries(players).find(
+          ([, p]) => (p?.name || '').toLowerCase() === targetName.toLowerCase(),
+        )
+        if (targetEntry) {
+          const [targetId] = targetEntry
+          sendMessage(authorName, body, { whisperTo: targetName })
+          onSend?.(authorName, body, targetId)
+        } else {
+          addSystemMessage(`No se encontró a "${targetName}" en el mundo.`)
+        }
+      } else {
+        sendMessage(authorName, trimmed)
+        onSend?.(authorName, trimmed)
+      }
       setText('')
     }
     onClose()
@@ -1178,23 +1419,21 @@ function WorldChat({ open, onClose, authorName, onSend }) {
 
   return (
     <div className="absolute bottom-20 left-4 z-20 w-72 max-w-[calc(100%-2rem)] rounded-xl border border-border bg-surface/90 p-3 text-sm shadow-xl backdrop-blur sm:bottom-24">
-      {messages.length > 0 && (
-        <div className="mb-2 flex max-h-32 flex-col gap-1 overflow-y-auto text-xs">
-          {messages.slice(-8).map((m) => (
-            <p key={m.id} className="text-text">
-              <span className="font-semibold">{m.author}:</span> {m.text}
-            </p>
-          ))}
-        </div>
-      )}
-      {open && (
+      <div className="mb-2 flex max-h-32 flex-col gap-1 overflow-y-auto text-xs">
+        {messages.length > 0 ? (
+          messages.slice(-8).map((m) => <ChatLine key={m.id} message={m} />)
+        ) : (
+          <p className="text-text-muted">El chat global aparecerá aquí.</p>
+        )}
+      </div>
+      {open ? (
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe en el chat global…"
+            placeholder="Mensaje global, o /w nombre mensaje para susurrar…"
             className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
           />
           <button
@@ -1204,6 +1443,14 @@ function WorldChat({ open, onClose, authorName, onSend }) {
             Enviar
           </button>
         </form>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="w-full rounded-lg border border-dashed border-border px-2 py-1.5 text-left text-xs text-text-muted hover:border-primary hover:text-text"
+        >
+          Pulsa <strong>C</strong> o toca aquí para chatear…
+        </button>
       )}
     </div>
   )
@@ -1217,7 +1464,14 @@ export default function VRPage() {
   const mascot = getMascotById(selectedMascotId)
   const skin = getSkinById(selectedSkinId)
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
-  const chatAuthor = settingsMascotName || mascot.name
+  // Show the player's real account name in the VR world (name tag + world
+  // chat), not their mascot's name — `display_name` is the same field
+  // CommentsPanel uses, falling back to the email's local part, then the
+  // mascot's own name/nickname if neither is set (offline/local-only mode).
+  const profile = useAuthStore((s) => s.profile)
+  const session = useAuthStore((s) => s.session)
+  const accountName = profile?.display_name || session?.user?.email?.split('@')[0]
+  const chatAuthor = accountName || settingsMascotName || mascot.name
 
   const playerPositionRef = useRef(null)
   const playerRotationRef = useRef(0)
@@ -1236,6 +1490,12 @@ export default function VRPage() {
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [mapOpen, setMapOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [chatPrefill, setChatPrefill] = useState(null)
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const friends = useFriendsStore((s) => s.friends)
+  const addFriend = useFriendsStore((s) => s.addFriend)
+  const removeFriend = useFriendsStore((s) => s.removeFriend)
+  const whisperTarget = useWorldChatStore((s) => s.whisperTarget)
   const accepted = useGlobalMissionsStore((s) => s.accepted)
   const claimed = useGlobalMissionsStore((s) => s.claimed)
   const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
@@ -1249,12 +1509,34 @@ export default function VRPage() {
     if (nearbyNpcId !== activeNpcId) setActiveNpcId(null)
   }, [nearbyNpcId, activeNpcId])
 
+  // WoW-style "MOTD": a local-only system message every time the world
+  // loads, welcoming the player by their account name and reminding them
+  // how chat/whispers work.
+  useEffect(() => {
+    useWorldChatStore
+      .getState()
+      .addSystemMessage(
+        `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`,
+      )
+    // Only on mount — re-running this on every name change would spam the log.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
     onOpenCharacter: () => openPanel('chat'),
     onOpenInventory: () => openPanel('items'),
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
   })
+
+  // Bridge from the "Susurrar" button in the Amigos tab (MascotCompanion,
+  // outside this canvas) — opens the world chat pre-filled with "/w <name> ".
+  useEffect(() => {
+    if (!whisperTarget) return
+    setChatPrefill({ text: `/w ${whisperTarget} `, key: Date.now() })
+    setChatOpen(true)
+    useWorldChatStore.getState().clearWhisperTarget()
+  }, [whisperTarget])
 
   const handleContextMenu = (e) => {
     e.preventDefault()
@@ -1263,7 +1545,7 @@ export default function VRPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background text-text">
+    <div className="flex h-dvh flex-col bg-background text-text">
       <AppTopBar />
       <PageVideoModal pageKey="vr" />
 
@@ -1278,7 +1560,7 @@ export default function VRPage() {
         onContextMenu={handleContextMenu}
       >
         <Canvas
-          camera={{ position: [0, 1.6, 3.4], fov: 50 }}
+          camera={{ position: [0, 1.6, 3.4], fov: 58 }}
           dpr={[1, 1.5]}
           gl={{ powerPreference: 'default', antialias: true }}
           onCreated={({ gl }) => {
@@ -1308,6 +1590,8 @@ export default function VRPage() {
               playerRotationRef={playerRotationRef}
               remoteTransformsRef={remoteTransformsRef}
               onNearbyNpcChange={setNearbyNpcId}
+              authorName={chatAuthor}
+              onSelectPlayer={setSelectedPlayer}
             />
           </Suspense>
         </Canvas>
@@ -1335,9 +1619,31 @@ export default function VRPage() {
         <WorldChat
           open={chatOpen}
           onClose={() => setChatOpen(false)}
+          onOpen={() => setChatOpen(true)}
           authorName={chatAuthor}
           onSend={sendChatMessage}
+          prefill={chatPrefill}
         />
+
+        {selectedPlayer && (
+          <PlayerMenu
+            player={selectedPlayer}
+            isFriend={friends.includes(selectedPlayer.name)}
+            onWhisper={() => {
+              setChatPrefill({ text: `/w ${selectedPlayer.name} `, key: Date.now() })
+              setChatOpen(true)
+              setSelectedPlayer(null)
+            }}
+            onToggleFriend={() => {
+              if (friends.includes(selectedPlayer.name)) {
+                removeFriend(selectedPlayer.name)
+              } else {
+                addFriend(selectedPlayer.name)
+              }
+            }}
+            onClose={() => setSelectedPlayer(null)}
+          />
+        )}
 
         <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
           {isVrRealtimeAvailable() ? (
@@ -1353,8 +1659,8 @@ export default function VRPage() {
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
           <strong>W A S D</strong> o flechas para moverte, <strong>espacio</strong> para saltar,{' '}
-          <strong>M</strong> mapa, <strong>C</strong> personaje, <strong>B</strong> inventario,{' '}
-          <strong>Enter</strong> chat global, arrastra el ratón para mirar y <strong>rueda</strong> para
+          <strong>M</strong> mapa, <strong>P</strong> personaje, <strong>B</strong> inventario,{' '}
+          <strong>C</strong> chat global, arrastra el ratón para mirar y <strong>rueda</strong> para
           zoom 🎮
         </div>
 

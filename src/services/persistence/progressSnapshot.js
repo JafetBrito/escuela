@@ -16,6 +16,8 @@ import { useGamesStore } from '../../stores/useGamesStore'
 import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
+import { useFriendsStore } from '../../stores/useFriendsStore'
+import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -39,6 +41,8 @@ export function buildProgressSnapshot() {
   const { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed } =
     useGlobalMissionsStore.getState()
   const { unlocked: unlockedAchievements } = useAchievementsStore.getState()
+  const { friends } = useFriendsStore.getState()
+  const { cameraMode, mouseSensitivity, invertY } = useVrSettingsStore.getState()
   const {
     mascotName,
     minimaxApiKey,
@@ -88,6 +92,8 @@ export function buildProgressSnapshot() {
     popupPositions,
     globalMissions: { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed },
     unlockedAchievements,
+    friends,
+    vrSettings: { cameraMode, mouseSensitivity, invertY },
     lastSaved: new Date().toISOString(),
   }
 }
@@ -135,4 +141,6 @@ export function applyProgressSnapshot(snapshot) {
   usePopupPositionStore.getState().loadPositions(snapshot.popupPositions ?? {})
   useGlobalMissionsStore.getState().loadGlobalMissions(snapshot.globalMissions ?? {})
   useAchievementsStore.getState().loadUnlocked(snapshot.unlockedAchievements ?? [])
+  useFriendsStore.getState().loadFriends(snapshot.friends ?? [])
+  useVrSettingsStore.getState().loadVrSettings(snapshot.vrSettings ?? {})
 }

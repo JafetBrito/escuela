@@ -63,7 +63,10 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef
 
     channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
       if (!payload || payload.id === playerId) return
-      receiveMessage(payload.author, payload.text)
+      // Whispers carry a `target` player id and are only shown to that
+      // player; global messages have no `target` and go to everyone.
+      if (payload.target && payload.target !== playerId) return
+      receiveMessage(payload.author, payload.text, payload.target ? { whisperFrom: payload.author } : {})
     })
 
     channel.subscribe((status) => {
@@ -120,10 +123,16 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, positionRef
     return () => clearInterval(interval)
   }, [playerId, name, mascotId, skinId, positionRef, rotationRef])
 
-  const sendChatMessage = (author, text) => {
+  // `targetId`, when given, sends a whisper: only the player with that id
+  // (matched against `payload.target` above) will display the message.
+  const sendChatMessage = (author, text, targetId) => {
     const channel = channelRef.current
     if (!channel) return
-    channel.send({ type: 'broadcast', event: 'chat', payload: { id: playerId, author, text } })
+    channel.send({
+      type: 'broadcast',
+      event: 'chat',
+      payload: { id: playerId, author, text, target: targetId ?? null },
+    })
   }
 
   return { remoteTransformsRef, sendChatMessage }
