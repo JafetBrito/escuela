@@ -1221,7 +1221,21 @@ export default function VRPage() {
         onWheel={onWheel}
         onContextMenu={handleContextMenu}
       >
-        <Canvas camera={{ position: [0, 1.6, 3.4], fov: 50 }}>
+        <Canvas
+          camera={{ position: [0, 1.6, 3.4], fov: 50 }}
+          onCreated={({ gl }) => {
+            // The campus loads ~15 mascot/NPC models at once, which can push
+            // weaker/integrated GPUs over their memory budget. When that
+            // happens the browser "loses" the WebGL context — without this,
+            // the lost context leaves <Canvas> stuck mid-render-loop, which
+            // React reports as a runaway update loop (error #185) and the
+            // whole world goes black. Telling the browser we'll handle it
+            // lets it restore the context automatically instead.
+            const canvas = gl.domElement
+            const handleLost = (e) => e.preventDefault()
+            canvas.addEventListener('webglcontextlost', handleLost, false)
+          }}
+        >
           <color attach="background" args={['#3b2a1f']} />
           <fog attach="fog" args={['#d98e4a', 12, 42]} />
           <ambientLight intensity={0.9} />
