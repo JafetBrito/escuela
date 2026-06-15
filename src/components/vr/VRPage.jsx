@@ -25,6 +25,13 @@ import { formatCurrency } from '../../utils/currency'
 // Flip this back to `false` to return to /fondo_azteca.glb.
 const USE_TEST_SCENERY = true
 
+// Temporary "stable core" mode: skips the 13 mission NPCs, wandering cats,
+// and the mission UI entirely, leaving just the campus ground, the player,
+// multiplayer presence and world chat. Lets us confirm the core
+// movement/connection/chat loop works on its own while the NPC/mission
+// side is reworked separately. Flip back to `false` once that's done.
+const SIMPLE_MODE = true
+
 const MOVE_SPEED = 5.5
 const TURN_SPEED = 10
 // How quickly the player accelerates/decelerates toward the target walking
@@ -852,7 +859,14 @@ function RemotePlayerMesh({ id, transformsRef }) {
 // transforms come from `transformsRef` (a plain Map, high-churn) so position
 // updates don't cause this list to re-render.
 function RemotePlayers({ transformsRef }) {
-  const playerIds = useVrPresenceStore((s) => Object.keys(s.players))
+  // `Object.keys(...)` returns a brand-new array on every store read, which
+  // makes useSyncExternalStore think the snapshot changed on every render
+  // and re-render forever ("Maximum update depth exceeded" / React error
+  // #185 — the actual cause of the VR world crashing to a black screen).
+  // Select the stable `players` object instead and only recompute the id
+  // list (via useMemo) when that object reference actually changes.
+  const players = useVrPresenceStore((s) => s.players)
+  const playerIds = useMemo(() => Object.keys(players), [players])
 
   return (
     <>
@@ -921,14 +935,14 @@ function World({
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
       />
-      {VR_NPCS.map((npc) => (
-        <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />
-      ))}
-      {WANDER_CAT_PATHS.map((path, i) => (
-        <WanderingCat key={i} path={path} />
-      ))}
+      {!SIMPLE_MODE &&
+        VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />)}
+      {!SIMPLE_MODE &&
+        WANDER_CAT_PATHS.map((path, i) => <WanderingCat key={i} path={path} />)}
       <RemotePlayers transformsRef={remoteTransformsRef} />
-      <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
+      {!SIMPLE_MODE && (
+        <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
+      )}
     </>
   )
 }
@@ -1298,23 +1312,24 @@ export default function VRPage() {
           </Suspense>
         </Canvas>
 
-        {activeNpcId ? (
-          <NpcMissionCard
-            npcId={activeNpcId}
-            accepted={accepted}
-            claimed={claimed}
-            missionState={missionState}
-            onAccept={acceptMission}
-            onClaim={claimReward}
-            onClose={() => setActiveNpcId(null)}
-          />
-        ) : (
-          nearbyNpcId && (
-            <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
-              {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
-            </div>
-          )
-        )}
+        {!SIMPLE_MODE &&
+          (activeNpcId ? (
+            <NpcMissionCard
+              npcId={activeNpcId}
+              accepted={accepted}
+              claimed={claimed}
+              missionState={missionState}
+              onAccept={acceptMission}
+              onClaim={claimReward}
+              onClose={() => setActiveNpcId(null)}
+            />
+          ) : (
+            nearbyNpcId && (
+              <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
+                {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
+              </div>
+            )
+          ))}
 
         <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
         <WorldChat
