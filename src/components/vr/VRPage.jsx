@@ -80,6 +80,14 @@ const NPC_SCALE = 0.16
 const WANDER_CAT_SCALE = 0.1
 const WANDER_CAT_SPEED = 1.1
 
+// NPCs further than this from the player are drawn as a cheap colored
+// marker instead of their full GLTF model (and skip the floating name tag).
+// With 13 NPCs around the campus, loading every GLTF + Html overlay at once
+// is what overwhelms weaker/integrated GPUs (WebGL "Context Lost" -> the VR
+// world goes black). Only the handful of NPCs near the player ever need to
+// look like their real mascot.
+const NPC_DETAIL_RADIUS = 11
+
 // Jumping.
 const GRAVITY = -20
 const JUMP_SPEED = 7
@@ -707,29 +715,53 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 // name tag above its head. Falls back to a simple colored marker if the NPC
 // has no mascotId (shouldn't happen, but keeps things from disappearing
 // silently if the registry entry is incomplete).
-function VrNpc({ npc }) {
+function VrNpc({ npc, playerPositionRef }) {
   const mascot = getMascotById(npc.mascotId)
   // Face the central plaza, so every NPC looks "inward" toward the player's
   // spawn point instead of all facing the same world direction.
   const facing = Math.atan2(-npc.position[0], -npc.position[2])
+  const npcPos = useMemo(() => new THREE.Vector3(...npc.position), [npc.position])
+
+  // Start far so every NPC spawns as its cheap marker; <Player> writes the
+  // real position into playerPositionRef on its first frame, and the check
+  // below promotes nearby NPCs to their full model shortly after.
+  const [near, setNear] = useState(false)
+
+  useFrame(() => {
+    const pos = playerPositionRef?.current
+    if (!pos) return
+    const shouldBeNear = pos.distanceTo(npcPos) <= NPC_DETAIL_RADIUS
+    if (shouldBeNear !== near) setNear(shouldBeNear)
+  })
 
   return (
     <group position={npc.position} rotation={[0, facing, 0]}>
-      {mascot ? (
-        <group scale={NPC_SCALE}>
-          <MascotMesh mascot={mascot} />
-        </group>
+      {near && mascot ? (
+        <Suspense
+          fallback={
+            <mesh position={[0, 0.6, 0]}>
+              <cylinderGeometry args={[0.18, 0.24, 1.2, 12]} />
+              <meshStandardMaterial color={npc.color} />
+            </mesh>
+          }
+        >
+          <group scale={NPC_SCALE}>
+            <MascotMesh mascot={mascot} />
+          </group>
+        </Suspense>
       ) : (
         <mesh position={[0, 0.6, 0]}>
           <cylinderGeometry args={[0.18, 0.24, 1.2, 12]} />
           <meshStandardMaterial color={npc.color} />
         </mesh>
       )}
-      <Html position={[0, 2.1, 0]} center distanceFactor={10}>
-        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-          {npc.emoji} {npc.name}
-        </div>
-      </Html>
+      {near && (
+        <Html position={[0, 2.1, 0]} center distanceFactor={10}>
+          <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+            {npc.emoji} {npc.name}
+          </div>
+        </Html>
+      )}
     </group>
   )
 }
@@ -890,7 +922,7 @@ function World({
         playerRotationRef={playerRotationRef}
       />
       {VR_NPCS.map((npc) => (
-        <VrNpc key={npc.id} npc={npc} />
+        <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />
       ))}
       {WANDER_CAT_PATHS.map((path, i) => (
         <WanderingCat key={i} path={path} />
