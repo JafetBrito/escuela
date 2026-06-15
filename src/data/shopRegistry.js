@@ -18,6 +18,7 @@ export const SHOP_CATEGORIES = {
   cosmeticos: { label: 'Cosméticos', icon: '✨' },
   objetos: { label: 'Objetos interactivos', icon: '🧰' },
   prompts: { label: 'Personalidades de IA', icon: '🧠' },
+  llaves: { label: 'Llaves de cursos', icon: '🔑' },
 }
 
 export const SHOP_ITEMS = [
@@ -286,6 +287,26 @@ export const SHOP_ITEMS = [
     interactive: true,
     kind: 'ai-prompt',
     promptText: 'Explica absolutamente todo como si el estudiante nunca hubiera escuchado el tema antes. Usa analogías cotidianas y sencillas, evita jerga técnica (o explícala apenas la uses), y divide explicaciones largas en pasos numerados cortos.',
+  },
+  {
+    id: 'llave-curso-individual',
+    name: 'Llave de un curso',
+    icon: '🔑',
+    rarity: 'rare',
+    category: 'llaves',
+    priceUSD: 9.99,
+    comingSoon: true,
+    description: 'Desbloquea para siempre todas las clases de un curso a tu elección.',
+  },
+  {
+    id: 'llave-completa',
+    name: 'Llave completa OLIVER SCHOOL',
+    icon: '🗝️',
+    rarity: 'legendary',
+    category: 'llaves',
+    priceUSD: 29.99,
+    comingSoon: true,
+    description: 'Acceso de por vida a todos los cursos actuales y futuros de la plataforma.',
   },
 ]
 

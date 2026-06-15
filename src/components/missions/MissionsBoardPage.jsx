@@ -2,12 +2,15 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import NpcViewport from '../mascot/NpcViewport'
+import NpcChatPanel from '../shared/NpcChatPanel'
 import GlobalMissionCard from './GlobalMissionCard'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
 
 const MAGE_MASCOT_ID = 9
+
+const MAGE_PROMPT = `Eres el Maestro de Misiones, un sabio mago anciano que entrega misiones en OLIVER SCHOOL. Hablas en español con un tono místico, motivador y un poco solemne, como un mentor de RPG. Animas al estudiante a aceptar y completar misiones generales (hablar con su mascota, completar clases, usar objetos, comprar en la tienda, leer libros, cambiar su apariencia) para ganar monedas y experiencia. No inventes recompensas exactas si no las tienes; invita al estudiante a revisar el tablón de misiones. Mantén tus respuestas breves (2-4 frases) y siempre en personaje.`
 
 export default function MissionsBoardPage() {
   const accepted = useGlobalMissionsStore((s) => s.accepted)
@@ -45,26 +48,26 @@ export default function MissionsBoardPage() {
             </div>
           </div>
 
-          <div className="flex items-stretch gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4">
+          <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:flex-row sm:items-stretch">
             <NpcViewport
               mascotId={MAGE_MASCOT_ID}
               className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-violet-500/10 to-transparent"
             />
-            <div className="flex flex-col justify-center gap-1">
+            <div className="flex flex-1 flex-col justify-center gap-2">
               <p className="text-xs font-bold uppercase tracking-wide text-violet-500">
                 🧙 Maestro de Misiones
               </p>
               <div className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-text">
                 ¡Bienvenido, aventurero! Estas son las misiones disponibles hoy. Acéptalas y
-                cúmplelas para ganar monedas y experiencia. 🪙✨
+                cúmplelas para ganar monedas y experiencia, o pregúntame lo que quieras. 🪙✨
               </div>
+              <NpcChatPanel npcId="mago-misiones" npcName="el Maestro de Misiones" npcPrompt={MAGE_PROMPT} />
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            {GLOBAL_MISSIONS.map((mission) => {
+            {GLOBAL_MISSIONS.filter((mission) => !claimed.includes(mission.id)).map((mission) => {
               const isAccepted = accepted.includes(mission.id)
-              const isClaimed = claimed.includes(mission.id)
               const isCompleted = mission.check(missionState)
               return (
                 <GlobalMissionCard
@@ -72,13 +75,32 @@ export default function MissionsBoardPage() {
                   mission={mission}
                   accepted={isAccepted}
                   completed={isCompleted}
-                  claimed={isClaimed}
+                  claimed={false}
                   onAccept={acceptMission}
                   onClaim={claimReward}
                 />
               )
             })}
           </div>
+
+          {claimed.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+                ✅ Misiones realizadas
+              </p>
+              <div className="flex flex-col gap-3">
+                {GLOBAL_MISSIONS.filter((mission) => claimed.includes(mission.id)).map((mission) => (
+                  <GlobalMissionCard
+                    key={mission.id}
+                    mission={mission}
+                    accepted
+                    completed
+                    claimed
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

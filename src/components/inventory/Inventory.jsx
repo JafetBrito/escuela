@@ -34,7 +34,9 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
   }
 
   const moduleItems = moduleId ? items.filter((i) => i.moduleId === moduleId) : []
-  const generalItems = items.filter((i) => !i.moduleId)
+  // When no moduleId is given (e.g. the /notas page), show every note —
+  // including ones added from inside a class — so nothing is hidden.
+  const generalItems = moduleId ? items.filter((i) => !i.moduleId) : items
 
   const handleSendToNotion = async (e, item) => {
     e.stopPropagation()
@@ -66,6 +68,9 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
           )}
           {item.text && <p className="truncate text-text">{item.text}</p>}
           {!item.text && !item.url && <p className="text-text-muted italic">(vacío)</p>}
+          {!moduleId && item.moduleTitle && (
+            <p className="mt-0.5 text-xs text-primary">📘 {item.moduleTitle}</p>
+          )}
           {notionStatus[item.id] && (
             <p className="mt-1 text-xs text-text-muted">{notionStatus[item.id]}</p>
           )}

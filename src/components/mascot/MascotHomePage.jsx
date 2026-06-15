@@ -39,7 +39,7 @@ export default function MascotHomePage() {
   const displayName = settingsMascotName || mascot.name
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-text">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-violet-500/15 via-background to-primary/10 text-text">
       <AppTopBar />
       <PageVideoModal pageKey="mascota" />
 

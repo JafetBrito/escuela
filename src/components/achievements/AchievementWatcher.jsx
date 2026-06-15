@@ -14,6 +14,7 @@ import { useChatHistoryStore } from '../../stores/useChatHistoryStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { playAchievementSound } from '../../utils/sound'
 
 const COURSES = Object.values(COURSES_DATA)
@@ -41,6 +42,8 @@ function buildAchievementState(unlockedCount) {
   const { openedBooks } = useLibraryStore.getState()
   const { claimed } = useGlobalMissionsStore.getState()
   const { selectedSkinId } = useMascotStore.getState()
+  const { user, googleUser } = useAuthStore.getState()
+  const userEmail = user?.email || googleUser?.email || null
 
   let historyMessages = 0
   for (const sessions of Object.values(history)) {
@@ -63,6 +66,7 @@ function buildAchievementState(unlockedCount) {
     booksOpened: openedBooks.length,
     globalMissionsClaimed: claimed.length,
     selectedSkinId,
+    userEmail,
     unlockedCount,
     hour: new Date().getHours(),
   }
@@ -80,6 +84,22 @@ function runAchievementCheck() {
       const isNew = unlock(achievement)
       if (isNew) playAchievementSound()
     }
+  }
+}
+
+// Silently marks every achievement whose condition is already true as
+// unlocked, without queuing a toast/sound. Used once on boot (after auth is
+// ready) so achievements earned in a previous session don't re-fire their
+// notification just because they're being detected again.
+function runSilentCatchUp() {
+  const { unlocked, silentUnlock } = useAchievementsStore.getState()
+  if (unlocked.length === ALL_ACHIEVEMENTS.length) return
+
+  const state = buildAchievementState(unlocked.length)
+
+  for (const achievement of ALL_ACHIEVEMENTS) {
+    if (unlocked.includes(achievement.id)) continue
+    if (achievement.check(state)) silentUnlock(achievement.id)
   }
 }
 
@@ -102,7 +122,29 @@ for (const achievement of ALL_ACHIEVEMENTS) {
 // player meets them, queuing a toast (AchievementToast) + sound.
 export default function AchievementWatcher() {
   useEffect(() => {
-    runAchievementCheck()
+    let initialSyncDone = false
+    const checkAfterSync = () => {
+      if (!initialSyncDone) return
+      runAchievementCheck()
+    }
+
+    const startWatching = () => {
+      runSilentCatchUp()
+      initialSyncDone = true
+    }
+
+    // Wait for auth (and any cloud snapshot applied during init) to settle
+    // before treating already-true conditions as "new" unlocks.
+    if (useAuthStore.getState().authReady) {
+      startWatching()
+    } else {
+      const unsubAuth = useAuthStore.subscribe((s) => {
+        if (s.authReady) {
+          unsubAuth()
+          startWatching()
+        }
+      })
+    }
 
     const stores = [
       useProgressStore,
@@ -117,8 +159,9 @@ export default function AchievementWatcher() {
       useLibraryStore,
       useGlobalMissionsStore,
       useMascotStore,
+      useAuthStore,
     ]
-    const unsubscribers = stores.map((store) => store.subscribe(runAchievementCheck))
+    const unsubscribers = stores.map((store) => store.subscribe(checkAfterSync))
     return () => unsubscribers.forEach((unsub) => unsub())
   }, [])
 

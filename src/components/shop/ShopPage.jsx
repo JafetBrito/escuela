@@ -3,6 +3,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import NpcViewport from '../mascot/NpcViewport'
+import NpcChatPanel from '../shared/NpcChatPanel'
 import { SHOP_ITEMS, SHOP_CATEGORIES, ITEM_RARITY } from '../../data/shopRegistry'
 import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
@@ -10,6 +11,10 @@ import { formatCurrency } from '../../utils/currency'
 
 const CATEGORY_ORDER = Object.keys(SHOP_CATEGORIES)
 const MAGE_MASCOT_ID = 9
+
+const ZAFIR_PROMPT = `Eres Zafir, un comerciante mágico y carismático de la Tienda de OLIVER SCHOOL. Hablas en español, con un tono cálido, juguetón y un poco teatral, como un vendedor de bazar fantástico. Conoces el catálogo de la tienda (mascotas, cosméticos, objetos interactivos, personalidades de IA y llaves de cursos) y puedes recomendar objetos según lo que el estudiante diga que necesita, animándolo a ganar monedas completando misiones y clases. No inventes precios exactos si no los tienes; en ese caso invita al estudiante a revisar la tienda. Mantén tus respuestas breves (2-4 frases) y siempre en personaje.`
+
+const MAGE_PROMPT = `Eres el Maestro de Misiones, un sabio mago anciano que entrega misiones en OLIVER SCHOOL. Hablas en español con un tono místico, motivador y un poco solemne, como un mentor de RPG. Animas al estudiante a aceptar y completar misiones generales (hablar con su mascota, completar clases, usar objetos, comprar en la tienda, leer libros, cambiar su apariencia) para ganar monedas y experiencia. No inventes recompensas exactas si no las tienes; invita al estudiante a revisar el tablón de misiones. Mantén tus respuestas breves (2-4 frases) y siempre en personaje.`
 
 export default function ShopPage() {
   const coins = useCurrencyStore((s) => s.coins)
@@ -45,17 +50,20 @@ export default function ShopPage() {
             </p>
           </div>
 
-          <div className="mt-6 flex items-stretch gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-5">
+          <div className="mt-6 flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:flex-row sm:items-stretch">
             <NpcViewport
               mascotId={MAGE_MASCOT_ID}
               className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-emerald-500/10 to-transparent"
             />
-            <div className="flex flex-col justify-center">
-              <p className="font-bold text-text">Zafir, el comerciante mágico</p>
-              <p className="text-sm text-text-muted">
-                "¡Bienvenido de nuevo! Tengo objetos nuevos recién forjados, cada uno con sus
-                propias características. Échales un vistazo."
-              </p>
+            <div className="flex flex-1 flex-col justify-center gap-3">
+              <div>
+                <p className="font-bold text-text">Zafir, el comerciante mágico</p>
+                <p className="text-sm text-text-muted">
+                  "¡Bienvenido de nuevo! Tengo objetos nuevos recién forjados, cada uno con sus
+                  propias características. Échales un vistazo, o pregúntame lo que quieras."
+                </p>
+              </div>
+              <NpcChatPanel npcId="zafir" npcName="Zafir" npcPrompt={ZAFIR_PROMPT} />
             </div>
           </div>
 
@@ -127,19 +135,25 @@ export default function ShopPage() {
 
                         <div className="mt-auto flex items-center justify-between gap-2">
                           <span className="text-sm font-semibold text-text">
-                            {formatCurrency(item.price)}
+                            {item.comingSoon ? `$${item.priceUSD.toFixed(2)} USD` : formatCurrency(item.price)}
                           </span>
-                          <button
-                            onClick={() => buyItem(item.id)}
-                            disabled={!canAfford}
-                            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                              canAfford
-                                ? 'bg-primary text-background hover:bg-primary-hover'
-                                : 'cursor-not-allowed bg-surface-hover text-text-muted'
-                            }`}
-                          >
-                            {canAfford ? 'Comprar' : 'Sin monedas'}
-                          </button>
+                          {item.comingSoon ? (
+                            <span className="rounded-lg bg-surface-hover px-4 py-2 text-sm font-semibold text-text-muted">
+                              🔒 Próximamente
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => buyItem(item.id)}
+                              disabled={!canAfford}
+                              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                                canAfford
+                                  ? 'bg-primary text-background hover:bg-primary-hover'
+                                  : 'cursor-not-allowed bg-surface-hover text-text-muted'
+                              }`}
+                            >
+                              {canAfford ? 'Comprar' : 'Sin monedas'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )

@@ -20,6 +20,8 @@ function GlobalMissionsSection() {
   const missionState = useMissionState()
 
   const acceptedMissions = GLOBAL_MISSIONS.filter((m) => accepted.includes(m.id))
+  const activeMissions = acceptedMissions.filter((m) => !claimed.includes(m.id))
+  const doneMissions = acceptedMissions.filter((m) => claimed.includes(m.id))
 
   return (
     <div className="flex flex-col gap-3">
@@ -36,17 +38,40 @@ function GlobalMissionsSection() {
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          {acceptedMissions.map((mission) => (
+          {activeMissions.map((mission) => (
             <GlobalMissionCard
               key={mission.id}
               mission={mission}
               accepted
               completed={mission.check(missionState)}
-              claimed={claimed.includes(mission.id)}
+              claimed={false}
               onClaim={claimReward}
               compact
             />
           ))}
+          {activeMissions.length === 0 && (
+            <p className="text-sm text-text-muted">No tienes misiones generales pendientes.</p>
+          )}
+        </div>
+      )}
+
+      {doneMissions.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-text-muted">
+            ✅ Misiones realizadas
+          </p>
+          <div className="flex flex-col gap-3">
+            {doneMissions.map((mission) => (
+              <GlobalMissionCard
+                key={mission.id}
+                mission={mission}
+                accepted
+                completed
+                claimed
+                compact
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

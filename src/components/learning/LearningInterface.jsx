@@ -9,7 +9,6 @@ import VideoPlayer from '../video/VideoPlayer'
 import VerticalVideo from '../video/VerticalVideo'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
-import SecurityWrapper from '../shared/SecurityWrapper'
 import AppTopBar from '../shared/AppTopBar'
 import { useProgressStore, EMPTY_ARRAY } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -52,8 +51,7 @@ export default function LearningInterface() {
   )
 
   return (
-    <SecurityWrapper>
-      <div className="flex min-h-screen flex-col bg-background text-text">
+    <div className="flex min-h-screen flex-col bg-background text-text">
         <AppTopBar variant="course" />
         <TopBar
           courseTitle={courseData.title}
@@ -88,7 +86,6 @@ export default function LearningInterface() {
 
         <MascotCompanion courseId={courseId} module={currentModule} />
         <WelcomeModal courseId={courseId} />
-      </div>
-    </SecurityWrapper>
+    </div>
   )
 }

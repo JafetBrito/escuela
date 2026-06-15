@@ -120,15 +120,29 @@ export default function SettingsPage() {
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-bold">Ajustes</h1>
-            <p className="mt-1 text-sm text-text-muted">
-              Configura tu mascota, tu IA y tu cuenta.
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-600 to-slate-800 px-6 py-8 shadow-lg">
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">⚙️ Ajustes</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">
+              Configura tu cuenta, tu mascota y la IA que la conecta.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-white">
+              <Link to="/notas" className="rounded-full bg-background/20 px-3 py-1 hover:bg-background/30">
+                📝 Notas
+              </Link>
+              <Link to="/misiones" className="rounded-full bg-background/20 px-3 py-1 hover:bg-background/30">
+                📜 Misiones
+              </Link>
+              <Link to="/tienda" className="rounded-full bg-background/20 px-3 py-1 hover:bg-background/30">
+                🛒 Tienda
+              </Link>
+              <Link to="/logros" className="rounded-full bg-background/20 px-3 py-1 hover:bg-background/30">
+                🏅 Logros
+              </Link>
+            </div>
           </div>
 
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
-            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">Cuenta</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">👤 Cuenta</p>
 
             {(session || googleUser) && (
               <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">

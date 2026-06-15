@@ -22,5 +22,13 @@ export const useAchievementsStore = create((set, get) => ({
   dismissToast: () =>
     set((state) => ({ toastQueue: state.toastQueue.slice(1) })),
 
+  // Marks an achievement as unlocked without queuing a toast/sound. Used for
+  // the initial catch-up pass so already-met conditions don't re-notify on
+  // every reload.
+  silentUnlock: (id) => {
+    if (get().unlocked.includes(id)) return
+    set((state) => ({ unlocked: [...state.unlocked, id] }))
+  },
+
   loadUnlocked: (unlocked) => set({ unlocked: unlocked ?? [] }),
 }))

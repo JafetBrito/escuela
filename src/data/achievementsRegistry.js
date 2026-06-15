@@ -316,6 +316,15 @@ export const STATIC_ACHIEVEMENTS = [
     description: 'Cambia tu apariencia y alcanza el nivel 10.',
     check: (s) => s.selectedSkinId !== 'default' && s.level >= 10,
   },
+  {
+    id: 'amigo-de-oliver',
+    category: 'secretos',
+    secret: true,
+    name: 'El puto amor del servidor',
+    icon: '❤️',
+    description: 'Por ser Amigo de Oliver.',
+    check: (s) => s.userEmail === 'wjafte28@gmail.com',
+  },
 ]
 
 // Returns the full catalog (dynamic course medals + static catalog), each
