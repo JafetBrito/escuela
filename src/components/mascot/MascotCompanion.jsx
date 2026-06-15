@@ -28,7 +28,7 @@ const BASE_MENU = [
 // Floating "Clippy"-style companion: a small mascot bubble anchored to the
 // corner, with a large popover menu (Chat / Misiones / Objetos / Libros /
 // Notas / Aspecto / Galería).
-export default function MascotCompanion({ courseId, module }) {
+export default function MascotCompanion({ courseId, module, hideViewport = false }) {
   const open = useMascotCompanionStore((s) => s.open)
   const setOpen = useMascotCompanionStore((s) => s.setOpen)
   const toggleOpen = useMascotCompanionStore((s) => s.toggleOpen)
@@ -98,10 +98,14 @@ export default function MascotCompanion({ courseId, module }) {
 
       <button
         onClick={toggleOpen}
-        className="h-20 w-20 overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
+        className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
         aria-label="Abrir mascota"
       >
-        <MascotViewport className="h-full w-full" />
+        {hideViewport ? (
+          <span className="text-3xl sm:text-4xl">🐾</span>
+        ) : (
+          <MascotViewport className="h-full w-full" />
+        )}
       </button>
     </div>
   )

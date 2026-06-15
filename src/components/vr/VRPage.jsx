@@ -478,6 +478,8 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
   const velocityXZ = useRef(new THREE.Vector3())
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
   const initialized = useRef(false)
+  const camCollisionDistance = useRef(Infinity)
+  const camCollisionFrame = useRef(0)
 
   useFrame((_, delta) => {
     if (!group.current) return
@@ -612,12 +614,20 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
       Math.sin(pitch),
       Math.cos(yaw) * Math.cos(pitch),
     )
-    const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + CAMERA_HEIGHT * 0.3, pos.z)
-    raycaster.set(camOrigin, camDir)
-    const camHits = raycaster.intersectObject(scenery, true)
+    // This raycast walks the entire scenery hierarchy (ground, walls, every
+    // NPC building/roof), so it's only re-cast every few frames — the
+    // camera-pull-in result barely changes frame-to-frame and the cached
+    // value is reused in between to keep the render loop cheap.
+    camCollisionFrame.current += 1
+    if (camCollisionFrame.current % 3 === 0) {
+      const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + CAMERA_HEIGHT * 0.3, pos.z)
+      raycaster.set(camOrigin, camDir)
+      const camHits = raycaster.intersectObject(scenery, true)
+      camCollisionDistance.current = camHits.length > 0 ? camHits[0].distance : Infinity
+    }
     const effectiveDistance =
-      camHits.length > 0 && camHits[0].distance < distance
-        ? Math.max(camHits[0].distance - CAMERA_COLLISION_MARGIN, ZOOM_MIN * 0.5)
+      camCollisionDistance.current < distance
+        ? Math.max(camCollisionDistance.current - CAMERA_COLLISION_MARGIN, ZOOM_MIN * 0.5)
         : distance
 
     const offset = new THREE.Vector3(
@@ -1223,6 +1233,8 @@ export default function VRPage() {
       >
         <Canvas
           camera={{ position: [0, 1.6, 3.4], fov: 50 }}
+          dpr={[1, 1.5]}
+          gl={{ powerPreference: 'default', antialias: true }}
           onCreated={({ gl }) => {
             // The campus loads ~15 mascot/NPC models at once, which can push
             // weaker/integrated GPUs over their memory budget. When that
@@ -1302,7 +1314,7 @@ export default function VRPage() {
         <TouchControls keysRef={keysRef} chatOpen={chatOpen} onOpenChat={() => setChatOpen(true)} />
       </div>
 
-      <MascotCompanion />
+      <MascotCompanion hideViewport />
     </div>
   )
 }
