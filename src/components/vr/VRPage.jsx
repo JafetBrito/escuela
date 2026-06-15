@@ -20,8 +20,12 @@ import { formatCurrency } from '../../utils/currency'
 // Flip this back to `false` to return to /fondo_azteca.glb.
 const USE_TEST_SCENERY = true
 
-const MOVE_SPEED = 4
-const TURN_SPEED = 8
+const MOVE_SPEED = 4.5
+const TURN_SPEED = 10
+// How quickly the player accelerates/decelerates toward the target walking
+// speed (higher = snappier, lower = floatier). This is what turns the old
+// "instant teleport to full speed" movement into something that feels solid.
+const MOVE_ACCEL = 14
 // MascotMesh normalizes models to ~2 units tall. The scenery footprint is
 // ~24 units wide, so we shrink the player to a human-ish scale that doesn't
 // dwarf the structure it's walking around.
@@ -35,16 +39,24 @@ const WALK_BOB_HEIGHT = 0.07
 const WALK_TILT = 0.06
 
 // Camera orbit (mouse-drag controlled) around the player, zoomable with the
-// mouse wheel or a two-finger pinch.
-const CAMERA_DISTANCE = 3.4
+// mouse wheel or a two-finger pinch. Movement is relative to this camera, so
+// "forward" always means "away from the camera", like a typical 3rd-person
+// game.
+const CAMERA_DISTANCE = 4.5
 const CAMERA_HEIGHT = 1.6
 const CAMERA_PITCH_MIN = -0.5
 const CAMERA_PITCH_MAX = 1.1
 const MOUSE_SENSITIVITY = 0.005
 const ZOOM_MIN = 1.5
-const ZOOM_MAX = 18
-const WHEEL_ZOOM_SPEED = 0.0025
-const PINCH_ZOOM_SPEED = 0.02
+const ZOOM_MAX = 36
+const WHEEL_ZOOM_SPEED = 0.0045
+const PINCH_ZOOM_SPEED = 0.045
+
+// Scale for NPC models (slightly bigger than the player so they stand out)
+// and for the background "wandering cats" that wander the test ground.
+const NPC_SCALE = 0.16
+const WANDER_CAT_SCALE = 0.1
+const WANDER_CAT_SPEED = 1.1
 
 // Jumping.
 const GRAVITY = -20
@@ -65,6 +77,24 @@ const TEST_WALLS = [
 
 // How close the player needs to be to an NPC for its mission card to appear.
 const INTERACT_RADIUS = 2.5
+
+// Patrol loops for the background "wandering cats" that bring the test
+// ground to life. Each path is a list of [x, y, z] waypoints the cat walks
+// between in order, looping back to the start.
+const WANDER_CAT_PATHS = [
+  [
+    [5, 0, 5],
+    [5, 0, -3],
+    [1, 0, -3],
+    [1, 0, 5],
+  ],
+  [
+    [-8, 0, 2],
+    [-4, 0, 8],
+    [0, 0, 4],
+    [-4, 0, -2],
+  ],
+]
 
 // Movement directions, shared by the keyboard listener and the on-screen
 // touch D-pad: both just flip the same keys on/off.
@@ -272,6 +302,7 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
   const cameraTarget = useRef(new THREE.Vector3())
   const walkCycle = useRef(0)
   const velocityY = useRef(0)
+  const velocityXZ = useRef(new THREE.Vector3())
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
   const initialized = useRef(false)
 
@@ -294,17 +325,32 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
       initialized.current = true
     }
 
-    const move = new THREE.Vector3()
-    if (keys['w'] || keys['arrowup']) move.z -= 1
-    if (keys['s'] || keys['arrowdown']) move.z += 1
-    if (keys['a'] || keys['arrowleft']) move.x -= 1
-    if (keys['d'] || keys['arrowright']) move.x += 1
+    // Movement is relative to the camera: "forward" is always away from the
+    // camera and "right" is always to the player's screen-right, regardless
+    // of which way the player model is currently facing. This is what makes
+    // WASD feel like a normal 3rd-person game instead of fixed world axes.
+    const { yaw } = cameraRef.current
+    const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw))
+    const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw))
 
-    const isMoving = move.lengthSq() > 0
+    const input = new THREE.Vector3()
+    if (keys['w'] || keys['arrowup']) input.add(forward)
+    if (keys['s'] || keys['arrowdown']) input.sub(forward)
+    if (keys['d'] || keys['arrowright']) input.add(right)
+    if (keys['a'] || keys['arrowleft']) input.sub(right)
 
-    if (isMoving) {
-      move.normalize().multiplyScalar(MOVE_SPEED * delta)
+    const isMoving = input.lengthSq() > 0
+    if (isMoving) input.normalize().multiplyScalar(MOVE_SPEED)
 
+    // Smoothly accelerate/decelerate toward the target velocity instead of
+    // snapping instantly to full speed (or to a dead stop).
+    const accel = 1 - Math.exp(-MOVE_ACCEL * delta)
+    velocityXZ.current.lerp(input, accel)
+
+    let stepX = velocityXZ.current.x * delta
+    let stepZ = velocityXZ.current.z * delta
+
+    if (stepX !== 0 || stepZ !== 0) {
       // Chest-height origin for wall checks, at the player's current spot.
       const chestY = pos.y + PLAYER_HEIGHT * 0.6
       const originX = new THREE.Vector3(pos.x, chestY, pos.z)
@@ -312,20 +358,26 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
 
       // Resolve each axis separately so the player can slide along walls
       // instead of getting stuck the moment one axis is blocked.
-      if (move.x !== 0) {
-        const dir = move.x > 0 ? AXIS_X : AXIS_X.clone().negate()
-        if (isBlocked(raycaster, scenery, originX, dir, Math.abs(move.x))) move.x = 0
+      if (stepX !== 0) {
+        const dir = stepX > 0 ? AXIS_X : AXIS_X.clone().negate()
+        if (isBlocked(raycaster, scenery, originX, dir, Math.abs(stepX))) {
+          stepX = 0
+          velocityXZ.current.x = 0
+        }
       }
-      if (move.z !== 0) {
-        const dir = move.z > 0 ? AXIS_Z : AXIS_Z.clone().negate()
-        if (isBlocked(raycaster, scenery, originZ, dir, Math.abs(move.z))) move.z = 0
+      if (stepZ !== 0) {
+        const dir = stepZ > 0 ? AXIS_Z : AXIS_Z.clone().negate()
+        if (isBlocked(raycaster, scenery, originZ, dir, Math.abs(stepZ))) {
+          stepZ = 0
+          velocityXZ.current.z = 0
+        }
       }
 
-      if (move.lengthSq() > 0) {
-        pos.x += move.x
-        pos.z += move.z
+      if (stepX !== 0 || stepZ !== 0) {
+        pos.x += stepX
+        pos.z += stepZ
 
-        const targetAngle = Math.atan2(move.x, move.z)
+        const targetAngle = Math.atan2(velocityXZ.current.x, velocityXZ.current.z)
         let angleDiff = targetAngle - group.current.rotation.y
         angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
         group.current.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
@@ -361,7 +413,7 @@ function Player({ mascot, skin, scenery, groundRayHeight, keysRef, cameraRef, pl
 
     // Camera orbits around the player based on mouse/touch drag (yaw + pitch)
     // and zooms in/out with the mouse wheel or a two-finger pinch (distance).
-    const { yaw, pitch, distance } = cameraRef.current
+    const { pitch, distance } = cameraRef.current
     const offset = new THREE.Vector3(
       distance * Math.sin(yaw) * Math.cos(pitch),
       CAMERA_HEIGHT + distance * Math.sin(pitch),
@@ -427,24 +479,70 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef }) {
   )
 }
 
-// A floating marker (post + head) with a name tag, standing in for a real
-// character model while NPCs are being designed.
+// Renders one of our real mascot/mage models as an NPC, with a floating
+// name tag above its head. Falls back to a simple colored marker if the NPC
+// has no mascotId (shouldn't happen, but keeps things from disappearing
+// silently if the registry entry is incomplete).
 function VrNpc({ npc }) {
+  const mascot = getMascotById(npc.mascotId)
+
   return (
     <group position={npc.position}>
-      <mesh position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.18, 0.24, 1.2, 12]} />
-        <meshStandardMaterial color={npc.color} />
-      </mesh>
-      <mesh position={[0, 1.35, 0]}>
-        <sphereGeometry args={[0.28, 16, 16]} />
-        <meshStandardMaterial color={npc.color} />
-      </mesh>
+      {mascot ? (
+        <group scale={NPC_SCALE}>
+          <MascotMesh mascot={mascot} />
+        </group>
+      ) : (
+        <mesh position={[0, 0.6, 0]}>
+          <cylinderGeometry args={[0.18, 0.24, 1.2, 12]} />
+          <meshStandardMaterial color={npc.color} />
+        </mesh>
+      )}
       <Html position={[0, 2.1, 0]} center distanceFactor={10}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
           {npc.emoji} {npc.name}
         </div>
       </Html>
+    </group>
+  )
+}
+
+// Background "wandering cat" that walks a fixed patrol loop, just to give
+// the test ground some life. Purely decorative — no collision, no missions.
+function WanderingCat({ path }) {
+  const group = useRef()
+  const targetIndex = useRef(1)
+  const mascot = useMemo(() => getMascotById(8), [])
+
+  useFrame((_, delta) => {
+    const node = group.current
+    if (!node) return
+
+    const target = path[targetIndex.current]
+    const dx = target[0] - node.position.x
+    const dz = target[2] - node.position.z
+    const dist = Math.hypot(dx, dz)
+
+    if (dist < 0.15) {
+      targetIndex.current = (targetIndex.current + 1) % path.length
+      return
+    }
+
+    const step = Math.min(WANDER_CAT_SPEED * delta, dist)
+    node.position.x += (dx / dist) * step
+    node.position.z += (dz / dist) * step
+
+    const targetAngle = Math.atan2(dx, dz)
+    let angleDiff = targetAngle - node.rotation.y
+    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
+    node.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
+  })
+
+  return (
+    <group ref={group} position={path[0]}>
+      <group scale={WANDER_CAT_SCALE}>
+        <MascotMesh mascot={mascot} />
+      </group>
     </group>
   )
 }
@@ -499,6 +597,9 @@ function World({ mascot, skin, keysRef, cameraRef, playerPositionRef, onNearbyNp
       />
       {VR_NPCS.map((npc) => (
         <VrNpc key={npc.id} npc={npc} />
+      ))}
+      {WANDER_CAT_PATHS.map((path, i) => (
+        <WanderingCat key={i} path={path} />
       ))}
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
@@ -712,8 +813,9 @@ export default function VRPage() {
         )}
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
-          Muévete con <strong>W A S D</strong> o las flechas, <strong>espacio</strong> para saltar,
-          arrastra el ratón para mirar alrededor 🎮
+          Muévete con <strong>W A S D</strong> o las flechas (siempre relativo a la cámara),{' '}
+          <strong>espacio</strong> para saltar, arrastra el ratón para mirar alrededor y usa la{' '}
+          <strong>rueda</strong> para acercar/alejar 🎮
         </div>
 
         <TouchControls keysRef={keysRef} />
