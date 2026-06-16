@@ -156,6 +156,16 @@ export default function App() {
           }
         />
         <Route
+          path="/vr/anfiteatro"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage anfiteatroMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/games"
           element={
             <ProtectedRoute>

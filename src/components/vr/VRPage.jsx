@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
@@ -201,6 +201,22 @@ const NEXUS_PORTALS = [
 const ROOM_SIZE = 28
 const ROOM_HEIGHT = 5.5
 const ROOM_EXIT_PORTAL_POSITION = [0, 0, -ROOM_SIZE / 2 + 2]
+
+// Anfiteatro — indoor theater with YouTube screen, stage, and audience seats.
+const ANFI_W  = 56   // half-width on each side = 28
+const ANFI_D  = 80   // total depth (lobby → backstage)
+const ANFI_H  = 18   // ceiling height
+const ANFI_HW = ANFI_W  / 2   // 28
+const ANFI_HD = ANFI_D  / 2   // 40
+// Stage platform occupies the north third of the hall; screen is on the back wall.
+const ANFI_STAGE_Z = -12    // south edge of stage (z < 0 = north)
+const ANFI_SCREEN_Z = -ANFI_HD + 1.5  // against the north back wall
+// NPC stands at center stage
+const ANFI_STAGE_NPC_POS = [0, 0, ANFI_STAGE_Z - 7]
+// Player spawns in middle of audience area, facing stage (north)
+const ANFI_SPAWN = [0, 0, ANFI_HD - 12]
+// Exit portal in lobby (south end)
+const ANFI_EXIT_PORTAL = [0, 0, ANFI_HD - 3]
 
 // Patrol loops for the background "wandering cats" that bring the campus
 // plaza to life. Each path is a list of [x, y, z] waypoints the cat walks
@@ -604,35 +620,53 @@ function useTestGround() {
     group.add(plazaRing)
 
     // ── 5. MAPLE LEAF MONUMENT ────────────────────────────────────────────
-    // 3 steps → pillar → gold ring → stylized red maple leaf
-    ;[[4.0, 0.6, 0.3], [2.8, 0.4, 0.8], [1.8, 0.4, 1.15]].forEach(([r, h, y]) => {
-      const step = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.18, h, 10), matGranite)
-      step.position.set(-7, y, 0)
+    // 3 granite steps → stone pillar → gold collar →
+    // a proper 3-D maple leaf crown (all lobes in the XY plane, tilted 25° toward player)
+    ;[[3.8, 0.35, 0.175], [2.6, 0.35, 0.525], [1.7, 0.35, 0.875]].forEach(([r, h, cy]) => {
+      const step = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.14, h, 12), matGranite)
+      step.position.set(-7, cy, 0)
       group.add(step)
     })
-    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.72, 6.5, 12), matStone)
-    pillar.position.set(-7, 4.6, 0)
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.60, 7.4, 12), matStone)
+    pillar.position.set(-7, 4.85, 0)
     group.add(pillar)
-    const goldRing = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.13, 8, 20), matGold)
-    goldRing.position.set(-7, 7.9, 0)
-    group.add(goldRing)
-    // Leaf body (flattened sphere)
-    const leafBody = new THREE.Mesh(new THREE.SphereGeometry(1.05, 12, 8), matRedCA)
-    leafBody.position.set(-7, 9.1, 0)
-    leafBody.scale.set(1.0, 0.72, 0.32)
-    group.add(leafBody)
-    // 5 radiating maple points
-    ;[0, 72, 144, 216, 288].forEach((deg) => {
+    // Gold collar between pillar and leaf
+    const goldCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.74, 0.26, 16), matGold)
+    goldCollar.position.set(-7, 8.63, 0)
+    group.add(goldCollar)
+    // Maple leaf group — all geometry in XY plane, tilted 22° forward (south-facing)
+    const mapleLG = new THREE.Group()
+    mapleLG.position.set(-7, 9.8, 0)
+    mapleLG.rotation.x = -Math.PI / 8  // lean toward player
+    // Central disc body (CylinderGeometry rotated so flat face points Z/south)
+    const leafDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.20, 14), matRedCA)
+    leafDisc.rotation.x = Math.PI / 2
+    mapleLG.add(leafDisc)
+    // Helper: cone lobe pointing outward from center at `deg` degrees from +Y, in XY plane
+    const addLobe = (deg, dist, r, h) => {
       const rad = (deg * Math.PI) / 180
-      const pt = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.72, 5), matRedCA)
-      pt.position.set(-7 + Math.sin(rad) * 1.38, 9.1 + Math.cos(rad) * 1.0, Math.cos(rad) * 0.28)
-      pt.rotation.z = Math.sin(rad) * -Math.PI / 2.2
-      pt.rotation.x = Math.cos(rad) * Math.PI / 2.2
-      group.add(pt)
-    })
-    const leafStem = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.55, 6), matRedCA)
-    leafStem.position.set(-7, 8.38, 0)
-    group.add(leafStem)
+      const lobe = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), matRedCA)
+      lobe.position.set(Math.sin(rad) * dist, Math.cos(rad) * dist, 0)
+      lobe.rotation.z = -rad
+      mapleLG.add(lobe)
+    }
+    // 5 upper lobes (classic Canadian maple leaf profile)
+    addLobe(0,   1.12, 0.26, 0.82) // top center (tallest)
+    addLobe(-28, 1.02, 0.23, 0.72) // upper-left inner
+    addLobe( 28, 1.02, 0.23, 0.72) // upper-right inner
+    addLobe(-60, 0.98, 0.21, 0.66) // upper-left outer
+    addLobe( 60, 0.98, 0.21, 0.66) // upper-right outer
+    // 2 wide side lobes
+    addLobe(-92, 0.86, 0.20, 0.58)
+    addLobe( 92, 0.86, 0.20, 0.58)
+    // 2 lower shoulder lobes
+    addLobe(-135, 0.68, 0.17, 0.48)
+    addLobe( 135, 0.68, 0.17, 0.48)
+    // Stem below central body
+    const mapleStem = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.10, 0.72, 6), matRedCA)
+    mapleStem.position.set(0, -1.28, 0)
+    mapleLG.add(mapleStem)
+    group.add(mapleLG)
 
     // ── 6. FOUNTAIN ───────────────────────────────────────────────────────
     const fBase = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.8, 0.45, 20), matFount)
@@ -1219,8 +1253,407 @@ function useRoomGround() {
   }, [])
 }
 
+// ─── Anfiteatro ───────────────────────────────────────────────────────────────
+// Indoor theater: lobby → audience seating → raised stage → video screen wall
+// Backstage wings extend behind the screen on both sides.
+// The YouTube iframe is rendered via <Html> overlay from @react-three/drei.
+function useAnfiteatroGround() {
+  return useMemo(() => {
+    const group = new THREE.Group()
+    const hw = ANFI_HW   // 28
+    const hd = ANFI_HD   // 40
+    const wallT = 1.6
+
+    // ── Materials ─────────────────────────────────────────────────────────
+    const matFloor    = new THREE.MeshStandardMaterial({ color: '#2a1e14' })      // dark wood
+    const matFloorAud = new THREE.MeshStandardMaterial({ color: '#1e1510' })      // darker audience
+    const matStage    = new THREE.MeshStandardMaterial({ color: '#3d2a1a' })      // warm oak stage
+    const matWall     = new THREE.MeshStandardMaterial({ color: '#1a1020' })      // deep theatre purple
+    const matWallRed  = new THREE.MeshStandardMaterial({ color: '#4a0a0a' })      // dark red wall accents
+    const matCeiling  = new THREE.MeshStandardMaterial({ color: '#111018', side: THREE.BackSide })
+    const matScreen   = new THREE.MeshStandardMaterial({ color: '#0a0a14', emissive: '#1a1a3a', emissiveIntensity: 0.5 })
+    const matBeam     = new THREE.MeshStandardMaterial({ color: '#2d1a0a' })
+    const matGold     = new THREE.MeshStandardMaterial({ color: '#b8880e', emissive: '#704400', emissiveIntensity: 0.3 })
+    const matSeatBody = new THREE.MeshStandardMaterial({ color: '#6a0a14' })      // deep red seats
+    const matSeatBack = new THREE.MeshStandardMaterial({ color: '#820f18' })
+    const matSeatLeg  = new THREE.MeshStandardMaterial({ color: '#1a1010' })
+    const matCurtain  = new THREE.MeshStandardMaterial({ color: '#7a0020', side: THREE.DoubleSide })
+    const matLight    = new THREE.MeshStandardMaterial({ color: '#fff8e0', emissive: '#fff0b0', emissiveIntensity: 2.0 })
+    const matPoster   = new THREE.MeshStandardMaterial({ color: '#ffd700' })
+    const matLobbyFlr = new THREE.MeshStandardMaterial({ color: '#c8b890' })      // marble lobby
+    const matBackstage= new THREE.MeshStandardMaterial({ color: '#181210' })
+    const matProp     = new THREE.MeshStandardMaterial({ color: '#554433' })
+
+    // ── Floor ─────────────────────────────────────────────────────────────
+    // Lobby (south) — marble
+    const lobbyFloor = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, 16), matLobbyFlr)
+    lobbyFloor.rotation.x = -Math.PI / 2; lobbyFloor.position.set(0, 0, hd - 8)
+    lobbyFloor.userData.isFloor = true; group.add(lobbyFloor)
+    // Audience area
+    const audFloor = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, hd - ANFI_STAGE_Z - 16), matFloorAud)
+    audFloor.rotation.x = -Math.PI / 2
+    audFloor.position.set(0, 0, (ANFI_STAGE_Z + hd - 16) / 2)
+    audFloor.userData.isFloor = true; group.add(audFloor)
+    // Stage platform (raised 1.4 m)
+    const stagePlatform = new THREE.Mesh(new THREE.BoxGeometry(hw * 2, 1.4, 28), matStage)
+    stagePlatform.position.set(0, 0.7, ANFI_STAGE_Z - 14)
+    group.add(stagePlatform)
+    // Backstage floor (behind screen)
+    const bsFloor = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2 - 8, 16), matBackstage)
+    bsFloor.rotation.x = -Math.PI / 2; bsFloor.position.set(0, 0, -hd + 8)
+    bsFloor.userData.isFloor = true; group.add(bsFloor)
+
+    // ── Walls ─────────────────────────────────────────────────────────────
+    const addWall = (x, y, z, w, h, d, mat = matWall) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
+      m.position.set(x, y, z); group.add(m)
+    }
+    // East wall
+    addWall(hw + wallT / 2, ANFI_H / 2, 0, wallT, ANFI_H, ANFI_D + wallT * 2)
+    // West wall
+    addWall(-hw - wallT / 2, ANFI_H / 2, 0, wallT, ANFI_H, ANFI_D + wallT * 2)
+    // North (back/screen) wall — split into sides (screen gap in center)
+    const screenW = 36; const screenH = 22
+    ;[-1, 1].forEach((side) => {
+      const xOff = side * (hw / 2 + screenW / 4)
+      addWall(xOff, ANFI_H / 2, -hd - wallT / 2, hw - screenW / 2, ANFI_H, wallT)
+    })
+    // Above screen panel
+    addWall(0, ANFI_H - (ANFI_H - screenH) / 2, -hd - wallT / 2, screenW, ANFI_H - screenH, wallT)
+    // Below screen panel (below screen to floor)
+    addWall(0, (1.5) / 2, -hd - wallT / 2, screenW, 1.5, wallT)
+    // South (lobby) wall — split around entrance doorway (6 wide × 9 tall)
+    ;[-1, 1].forEach((side) => {
+      const xOff = side * (hw / 2 + 3)
+      addWall(xOff, ANFI_H / 2, hd + wallT / 2, hw - 6, ANFI_H, wallT)
+    })
+    addWall(0, ANFI_H - (ANFI_H - 9) / 2, hd + wallT / 2, 12, ANFI_H - 9, wallT) // above door
+    // Red accent trim strips on side walls
+    ;[-hw, hw].forEach((x) => {
+      for (let z = -30; z <= 30; z += 12) {
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 5, 0.6), matWallRed)
+        strip.position.set(x + (x > 0 ? -0.9 : 0.9), 4.5, z); group.add(strip)
+      }
+    })
+
+    // ── Ceiling ───────────────────────────────────────────────────────────
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(hw * 2, ANFI_D), matCeiling)
+    ceiling.rotation.x = Math.PI / 2; ceiling.position.set(0, ANFI_H, 0); group.add(ceiling)
+    // Gold ceiling beams across width
+    for (let z = -30; z <= 30; z += 10) {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(hw * 2, 0.5, 0.6), matBeam)
+      beam.position.set(0, ANFI_H - 0.25, z); group.add(beam)
+    }
+    // Longitudinal beam down center
+    const cenBeam = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, ANFI_D), matBeam)
+    cenBeam.position.set(0, ANFI_H - 0.3, 0); group.add(cenBeam)
+    // Stage proscenium arch
+    const archH = 16; const archW = screenW + 4
+    ;[-1, 1].forEach((side) => {
+      const pillar = new THREE.Mesh(new THREE.BoxGeometry(2.5, archH, wallT + 1), matGold)
+      pillar.position.set(side * (archW / 2 + 1.25), archH / 2, ANFI_STAGE_Z)
+      group.add(pillar)
+    })
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(archW + 7, 2.2, wallT + 1), matGold)
+    archTop.position.set(0, archH + 1.1, ANFI_STAGE_Z); group.add(archTop)
+
+    // ── Audience seating — 8 rows of 12 seats ────────────────────────────
+    const rowZ0 = ANFI_STAGE_Z - 4  // front row just south of stage
+    for (let row = 0; row < 8; row++) {
+      const rz = rowZ0 + row * 4.8 + 3
+      const rise = row * 0.28       // gentle rake so back rows see over front
+      for (let col = -5; col <= 5; col++) {
+        const sx = col * 4.2
+        // Seat cushion
+        const cushion = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.2, 2.2), matSeatBody)
+        cushion.position.set(sx, rise + 0.9, rz); group.add(cushion)
+        // Seat back
+        const back = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, 0.28), matSeatBack)
+        back.position.set(sx, rise + 1.9, rz - 1.0); group.add(back)
+        // Legs
+        ;[-1.2, 1.2].forEach((legX) => {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.85, 0.18), matSeatLeg)
+          leg.position.set(sx + legX, rise + 0.42, rz); group.add(leg)
+        })
+      }
+      // Aisle step-light strips along side walls
+      const lightL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.5), matLight)
+      lightL.position.set(-hw + 0.2, rise + 0.3, rz)
+      const lightR = lightL.clone()
+      lightR.position.set(hw - 0.2, rise + 0.3, rz)
+      group.add(lightL); group.add(lightR)
+    }
+
+    // ── Stage-level spotlights (decorative bars on ceiling) ───────────────
+    ;[-16, -8, 0, 8, 16].forEach((x) => {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 0.4), matLight)
+      bar.position.set(x, ANFI_H - 0.5, ANFI_STAGE_Z + 2); group.add(bar)
+    })
+
+    // ── Stage curtains (side wings / bambalinas) ──────────────────────────
+    // The curtains separate the stage from the backstage wings on each side.
+    ;[-1, 1].forEach((side) => {
+      const cx = side * (hw - 4)
+      // Main drop curtain (front proscenium)
+      const curtFront = new THREE.Mesh(new THREE.PlaneGeometry(6, archH), matCurtain)
+      curtFront.position.set(cx, archH / 2, ANFI_STAGE_Z + 0.5)
+      curtFront.rotation.y = side * Math.PI / 8; group.add(curtFront)
+      // Backstage wing partition wall
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(wallT, ANFI_H, 18), matBackstage)
+      wing.position.set(side * (screenW / 2 + 1.5), ANFI_H / 2, -hd + 10)
+      group.add(wing)
+      // Props/equipment boxes in backstage wing
+      for (let bz = -hd + 4; bz < -hd + 18; bz += 5) {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 3.5), matProp)
+        box.position.set(side * (hw - 5), 1.25, bz); group.add(box)
+      }
+    })
+
+    // ── Video screen frame on north wall ─────────────────────────────────
+    // The actual YouTube iframe is handled by <Html> in AnfiteatroWorld.
+    // This geometry is the physical screen frame + bezel.
+    const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(screenW + 1.5, screenH + 1.5, 0.3), matBeam)
+    screenFrame.position.set(0, screenH / 2 + 1.5, -hd + 0.2)
+    group.add(screenFrame)
+    const screenSurf = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), matScreen)
+    screenSurf.position.set(0, screenH / 2 + 1.5, -hd + 0.36)
+    group.add(screenSurf)
+
+    // ── Exterior announcement posters (on south lobby façade) ─────────────
+    const matPosterBg  = new THREE.MeshStandardMaterial({ color: '#1a0822' })
+    const matPosterAcc = new THREE.MeshStandardMaterial({ color: '#d4a820', emissive: '#704400', emissiveIntensity: 0.5 })
+    ;[-18, -6, 6, 18].forEach((px) => {
+      // Poster board
+      const board = new THREE.Mesh(new THREE.BoxGeometry(8, 12, 0.25), matPosterBg)
+      board.position.set(px, 7, hd + wallT + 0.12); group.add(board)
+      // Gold frame
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(8.6, 12.6, 0.18), matPosterAcc)
+      frame.position.set(px, 7, hd + wallT + 0.05); group.add(frame)
+      // Gold decorative star/diamond on poster
+      const star = new THREE.Mesh(new THREE.SphereGeometry(1.0, 6, 4), matPosterAcc)
+      star.position.set(px, 7, hd + wallT + 0.38); group.add(star)
+    })
+    // Marquee sign over entrance
+    const marquee = new THREE.Mesh(new THREE.BoxGeometry(hw * 2, 3.5, 0.5), matGold)
+    marquee.position.set(0, ANFI_H - 1.5, hd + wallT + 0.25); group.add(marquee)
+    // Lobby column pillars outside entrance
+    ;[-20, -12, 12, 20].forEach((cx) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, ANFI_H, 10), matGold)
+      col.position.set(cx, ANFI_H / 2, hd + wallT + 1.5); group.add(col)
+    })
+
+    // ── Ceiling accent lights (warm house lighting) ────────────────────────
+    for (let z = -20; z <= 20; z += 10) {
+      for (let x = -20; x <= 20; x += 10) {
+        const spot = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), matLight)
+        spot.position.set(x, ANFI_H - 0.4, z); group.add(spot)
+      }
+    }
+
+    return { model: group, groundRayHeight: ANFI_H + 4 }
+  }, [])
+}
+
+// Renders the Anfiteatro world: theater geometry + YouTube screen iframe +
+// one center-stage NPC + exit portal back to campus.
+function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
+  const { model, groundRayHeight } = useAnfiteatroGround()
+  const stageMascot = useMemo(() => getMascotById(9), [])  // director mascot on stage
+
+  return (
+    <>
+      <primitive object={model} />
+
+      {/* YouTube screen via Html overlay — centered on the north back wall */}
+      <Html
+        position={[0, 12.5, -39.0]}
+        transform
+        scale={0.052}
+        distanceFactor={1}
+        occlude={false}
+      >
+        <div style={{ width: '690px', height: '420px', background: '#000', borderRadius: 4, overflow: 'hidden', boxShadow: '0 0 40px #0044ff88' }}>
+          <iframe
+            width="690"
+            height="420"
+            src="https://www.youtube.com/embed/nKSCVzTy69U?autoplay=1&rel=0&modestbranding=1"
+            title="Pantalla Anfiteatro"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{ width: '100%', height: '100%', display: 'block' }}
+          />
+        </div>
+      </Html>
+
+      {/* Marquee sign text */}
+      <Html position={[0, ANFI_H - 1.6, ANFI_HD + 1.8 + 0.5]} transform scale={0.06} distanceFactor={1} occlude={false}>
+        <div style={{ width: '700px', textAlign: 'center', color: '#1a1020', fontWeight: 'bold', fontSize: '44px', fontFamily: 'serif', letterSpacing: 4, textShadow: '0 0 8px #0008' }}>
+          🎭 ANFITEATRO OLIVER 🎭
+        </div>
+      </Html>
+
+      {/* Stage NPC — slightly bigger to command the stage */}
+      <group position={ANFI_STAGE_NPC_POS}>
+        <group scale={NPC_SCALE * 1.45} position={[0, NPC_SCALE * 1.45 * MODEL_HALF_HEIGHT, 0]}>
+          <MascotMesh mascot={stageMascot} />
+        </group>
+        <Html position={[0, 0.9, 0]} center distanceFactor={10}>
+          <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+            🎬 Director de Escena
+          </div>
+        </Html>
+      </group>
+
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        spawnAt={ANFI_SPAWN}
+      />
+      <Portal
+        position={ANFI_EXIT_PORTAL}
+        color="#d946ef"
+        label="🌀 Salir al Campus"
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
+    </>
+  )
+}
+
+// ── Voice chat ────────────────────────────────────────────────────────────────
+// Captures local mic and broadcasts mute/active state. The VoicePanel
+// component renders a mic toggle button and a list of speaking players.
+function useVoiceChat({ enabled, playerId, name, channel }) {
+  const [micActive, setMicActive] = useState(false)
+  const [speaking, setSpeaking] = useState({}) // playerId -> name
+  const [micError, setMicError] = useState(null)
+  const streamRef  = useRef(null)
+  const analyserRef = useRef(null)
+  const rafRef     = useRef(null)
+
+  // Activate / deactivate mic
+  const toggleMic = useCallback(async () => {
+    if (micActive) {
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+      analyserRef.current = null
+      cancelAnimationFrame(rafRef.current)
+      setMicActive(false)
+      useVrSettingsStore.getState().setMicEnabled(false)
+      // Broadcast mic-off
+      channel?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: false } })
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        streamRef.current = stream
+        const ctx = new AudioContext()
+        const src = ctx.createMediaStreamSource(stream)
+        const analyser = ctx.createAnalyser()
+        analyser.fftSize = 256
+        src.connect(analyser)
+        analyserRef.current = analyser
+        setMicActive(true)
+        setMicError(null)
+        useVrSettingsStore.getState().setMicEnabled(true)
+        channel?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: true } })
+      } catch (err) {
+        setMicError('Sin acceso al micrófono: ' + err.message)
+      }
+    }
+  }, [micActive, playerId, name, channel])
+
+  // Listen for other players' voice state via channel
+  useEffect(() => {
+    if (!channel) return
+    const handler = (msg) => {
+      if (msg.event !== 'voice') return
+      const { id, name: n, active } = msg.payload ?? {}
+      if (!id) return
+      setSpeaking((prev) => {
+        if (active) return { ...prev, [id]: n }
+        const next = { ...prev }; delete next[id]; return next
+      })
+    }
+    channel.on('broadcast', { event: 'voice' }, handler)
+  }, [channel])
+
+  // Clean up on unmount
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    cancelAnimationFrame(rafRef.current)
+    window.speechSynthesis?.cancel()
+  }, [])
+
+  return { micActive, speaking, micError, toggleMic }
+}
+
+// Mic toggle button + speaking player list, shown in the VR HUD.
+function VoicePanel({ playerId, name, channel }) {
+  const { micActive, speaking, micError, toggleMic } = useVoiceChat({ enabled: true, playerId, name, channel })
+  const [open, setOpen] = useState(false)
+  const speakingList = Object.values(speaking)
+
+  return (
+    <div className="absolute left-4 top-14 z-20 flex flex-col items-start gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={[
+          'rounded-full px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur transition-colors',
+          micActive
+            ? 'bg-green-500/90 text-white animate-pulse'
+            : 'bg-surface/90 text-text hover:bg-primary/30',
+        ].join(' ')}
+      >
+        {micActive ? '🎤 Hablando' : '🎙️ Voz'}
+      </button>
+      {open && (
+        <div className="w-56 rounded-xl border border-border bg-surface/95 p-3 text-xs text-text shadow-xl backdrop-blur">
+          <p className="mb-2 font-semibold">Chat de voz</p>
+          <button
+            type="button"
+            onClick={toggleMic}
+            className={[
+              'mb-2 w-full rounded-lg px-3 py-2 font-semibold transition-colors',
+              micActive
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-primary text-background hover:bg-primary-hover',
+            ].join(' ')}
+          >
+            {micActive ? '🔴 Desactivar micrófono' : '🎙️ Activar micrófono'}
+          </button>
+          {micError && <p className="mb-2 text-red-400">{micError}</p>}
+          <p className="mb-1 text-text-muted">Hablando ahora:</p>
+          {speakingList.length > 0 ? (
+            speakingList.map((n) => (
+              <p key={n} className="flex items-center gap-1 text-green-400">
+                <span className="animate-pulse">🔊</span> {n}
+              </p>
+            ))
+          ) : (
+            <p className="text-text-muted italic">Nadie está hablando</p>
+          )}
+          <p className="mt-2 text-[10px] text-text-muted">
+            El audio de voz viaja directamente entre navegadores.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Casts a ray straight down from above the given x/z to find the scenery
 // height directly beneath the player. Falls back to y = 0 if nothing is hit
+// (e.g. the player walked off the edge of the model). Falls back to y = 0 if nothing is hit
 // (e.g. the player walked off the edge of the model).
 function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
   raycaster.set(new THREE.Vector3(x, groundRayHeight, z), DOWN)
@@ -1408,6 +1841,7 @@ function Player({
   const camCollisionFrame = useRef(0)
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const fov = useVrSettingsStore((s) => s.fov)
+  const noClip = useVrSettingsStore((s) => s.noClip)
 
   // Applies the player's FOV setting (used by both first- and third-person
   // modes) whenever it changes, instead of the Canvas's hardcoded default.
@@ -1481,18 +1915,21 @@ function Player({
 
       // Resolve each axis separately so the player can slide along walls
       // instead of getting stuck the moment one axis is blocked.
-      if (stepX !== 0) {
-        const dir = stepX > 0 ? AXIS_X : AXIS_X.clone().negate()
-        if (isBlocked(raycaster, scenery, originX, dir, Math.abs(stepX))) {
-          stepX = 0
-          velocityXZ.current.x = 0
+      // noClip skips all collision so the player can walk through walls.
+      if (!noClip) {
+        if (stepX !== 0) {
+          const dir = stepX > 0 ? AXIS_X : AXIS_X.clone().negate()
+          if (isBlocked(raycaster, scenery, originX, dir, Math.abs(stepX))) {
+            stepX = 0
+            velocityXZ.current.x = 0
+          }
         }
-      }
-      if (stepZ !== 0) {
-        const dir = stepZ > 0 ? AXIS_Z : AXIS_Z.clone().negate()
-        if (isBlocked(raycaster, scenery, originZ, dir, Math.abs(stepZ))) {
-          stepZ = 0
-          velocityXZ.current.z = 0
+        if (stepZ !== 0) {
+          const dir = stepZ > 0 ? AXIS_Z : AXIS_Z.clone().negate()
+          if (isBlocked(raycaster, scenery, originZ, dir, Math.abs(stepZ))) {
+            stepZ = 0
+            velocityXZ.current.z = 0
+          }
         }
       }
 
@@ -1780,11 +2217,26 @@ function IdleNpc({ config }) {
       return text
     }
 
+    const speakText = (text) => {
+      if (!useVrSettingsStore.getState().npcVoice) return
+      if (!window.speechSynthesis) return
+      // Strip emoji for cleaner TTS
+      const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
+      if (!clean) return
+      window.speechSynthesis.cancel()
+      const utt = new SpeechSynthesisUtterance(clean)
+      utt.lang = 'es-ES'
+      utt.rate = 0.95
+      utt.pitch = 1.1
+      window.speechSynthesis.speak(utt)
+    }
+
     const tick = async () => {
       const text = await nextLine()
       if (cancelled) return
       const id = bubbleIdRef.current++
       setBubbles((current) => [...current, { id, text }].slice(-MAX_STACKED_BUBBLES))
+      speakText(text)
       setTimeout(() => {
         if (cancelled) return
         setBubbles((current) => current.filter((b) => b.id !== id))
@@ -1796,6 +2248,7 @@ function IdleNpc({ config }) {
     return () => {
       cancelled = true
       clearInterval(interval)
+      window.speechSynthesis?.cancel()
     }
   }, [config])
 
@@ -2084,8 +2537,7 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
 // the player, NPCs, remote players, and the portal to the player's Room.
-// When roomMode=true, renders the private Room instead (RoomWorld) with no
-// NPCs/multiplayer, just the player and an exit portal back to the campus.
+// When roomMode/anfiteatroMode=true, renders the respective world instead (no NPCs/multiplayer).
 function World({
   mascot,
   skin,
@@ -2100,7 +2552,24 @@ function World({
   playerId,
   onSelectPlayer,
   roomMode,
+  anfiteatroMode,
 }) {
+  if (anfiteatroMode) {
+    return (
+      <AnfiteatroWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+      />
+    )
+  }
+
   if (roomMode) {
     return (
       <RoomWorld
@@ -2344,6 +2813,10 @@ function CameraSettingsMenu() {
   const setPitchMax = useVrSettingsStore((s) => s.setPitchMax)
   const fov = useVrSettingsStore((s) => s.fov)
   const setFov = useVrSettingsStore((s) => s.setFov)
+  const noClip = useVrSettingsStore((s) => s.noClip)
+  const setNoClip = useVrSettingsStore((s) => s.setNoClip)
+  const npcVoice = useVrSettingsStore((s) => s.npcVoice)
+  const setNpcVoice = useVrSettingsStore((s) => s.setNpcVoice)
 
   return (
     <div className="absolute right-4 top-14 z-20 flex flex-col items-end gap-2">
@@ -2529,6 +3002,31 @@ function CameraSettingsMenu() {
               👁️ Modo primera persona: arrastra para mirar alrededor, W A S D para moverte.
             </p>
           )}
+
+          <div className="mt-3 border-t border-border pt-3 flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-xs font-semibold text-text-muted cursor-pointer">
+              <input
+                type="checkbox"
+                checked={noClip}
+                onChange={(e) => setNoClip(e.target.checked)}
+                className="accent-primary"
+              />
+              🚧 Atravesar paredes (noClip)
+              {noClip && <span className="ml-auto text-yellow-400">ACTIVO</span>}
+            </label>
+            <p className="text-[10px] text-text-muted -mt-1">
+              Actívalo si tu personaje quedó atrapado. Recuerda desactivarlo después.
+            </p>
+            <label className="flex items-center gap-2 text-xs font-semibold text-text-muted cursor-pointer">
+              <input
+                type="checkbox"
+                checked={npcVoice}
+                onChange={(e) => setNpcVoice(e.target.checked)}
+                className="accent-primary"
+              />
+              🔊 Voz de los NPCs (Text-to-Speech)
+            </label>
+          </div>
         </div>
       )}
     </div>
@@ -2538,10 +3036,10 @@ function CameraSettingsMenu() {
 // Full-screen transport picker: 4 world cards (2 available, 2 locked future
 // destinations). Opened by clicking/pressing E at the campus portal.
 const TRANSPORT_WORLDS = [
-  { id: 'campus',  emoji: '🏫', name: 'Campus Principal', desc: 'El mundo universitario', available: true,  path: '/vr' },
-  { id: 'room',    emoji: '🏠', name: 'Mi Room',           desc: 'Tu espacio privado',     available: true,  path: '/vr/room' },
-  { id: 'lab',     emoji: '🔬', name: 'Laboratorio',       desc: 'Próximamente…',          available: false, path: null },
-  { id: 'ciudad',  emoji: '🌆', name: 'Ciudad',            desc: 'Próximamente…',          available: false, path: null },
+  { id: 'campus',     emoji: '🏫', name: 'Campus Principal', desc: 'El mundo universitario',     available: true,  path: '/vr' },
+  { id: 'room',       emoji: '🏠', name: 'Mi Room',           desc: 'Tu espacio privado',         available: true,  path: '/vr/room' },
+  { id: 'anfiteatro', emoji: '🎭', name: 'Anfiteatro',        desc: 'Teatro con pantalla en vivo', available: true,  path: '/vr/anfiteatro' },
+  { id: 'ciudad',     emoji: '🌆', name: 'Ciudad',            desc: 'Próximamente…',              available: false, path: null },
 ]
 
 function TransportMenu({ onNavigate, onClose }) {
@@ -2764,6 +3262,16 @@ function WorldMap({ open, onClose, playerPositionRef }) {
               </g>
             )
           })()}
+
+          {/* Anfiteatro portal marker — south-east of plaza */}
+          <g>
+            <rect x="14" y="-10" width="16" height="20" fill="#7c2d8a" opacity="0.8" rx="1" />
+            <rect x="14" y="-10" width="16" height="20" fill="none" stroke="#d946ef" strokeWidth="0.6" opacity="0.7" rx="1" />
+            <text x="22" y="2" fontSize="5" textAnchor="middle" dominantBaseline="middle">🎭</text>
+            <text x="22" y="14" fontSize="2.1" textAnchor="middle" fill="#f5d0fe" opacity="0.95">Anfiteatro</text>
+            <circle cx="5" cy="0" r="2.2" fill="#d946ef" opacity="0.85" />
+            <text x="5" y="-3.4" fontSize="3" textAnchor="middle">🌀</text>
+          </g>
 
           {/* Perimeter stone fence */}
           <circle cx="0" cy="0" r={GROUND_RADIUS - 0.5} fill="none" stroke="#beb8a8" strokeWidth="1.8" opacity="0.70" strokeDasharray="4 2.5" />

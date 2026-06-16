@@ -23,6 +23,11 @@ export const useVrSettingsStore = create((set) => ({
   pitchMax: 1.0,
   fov: 58,
 
+  // Traversal / gameplay
+  noClip: false,    // pass through walls (emergency unstuck)
+  npcVoice: true,   // NPCs speak their lines via Web Speech API
+  micEnabled: false, // player microphone active for voice chat
+
   setCameraMode: (cameraMode) => set({ cameraMode: cameraMode === 'first' ? 'first' : 'third' }),
   setMouseSensitivity: (mouseSensitivity) => set({ mouseSensitivity }),
   setInvertY: (invertY) => set({ invertY }),
@@ -33,6 +38,9 @@ export const useVrSettingsStore = create((set) => ({
   setPitchMin: (pitchMin) => set({ pitchMin }),
   setPitchMax: (pitchMax) => set({ pitchMax }),
   setFov: (fov) => set({ fov }),
+  setNoClip: (noClip) => set({ noClip }),
+  setNpcVoice: (npcVoice) => set({ npcVoice }),
+  setMicEnabled: (micEnabled) => set({ micEnabled }),
 
   loadVrSettings: (settings) =>
     set({
@@ -47,5 +55,8 @@ export const useVrSettingsStore = create((set) => ({
       pitchMin: typeof settings?.pitchMin === 'number' ? settings.pitchMin : -0.6,
       pitchMax: typeof settings?.pitchMax === 'number' ? settings.pitchMax : 1.0,
       fov: typeof settings?.fov === 'number' ? settings.fov : 58,
+      noClip: !!settings?.noClip,
+      npcVoice: settings?.npcVoice !== false,
+      micEnabled: false, // always off on load — user opts in per session
     }),
 }))
