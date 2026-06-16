@@ -161,22 +161,22 @@ const BUILDING_SIZE = 3.2
 // Major academic buildings — shared between useTestGround (geometry) and
 // WorldMap (minimap markers), so they're module-level constants.
 const CAMPUS_ACADEMIC = [
-  { pos: [0, 0, -40], color: '#5b3a29', w: 14, d: 9, h: 7, label: '🎭', name: 'Auditorio' },
-  { pos: [40, 0, 0],  color: '#1a3a5c', w: 9, d: 14, h: 8, label: '📚', name: 'Biblioteca' },
-  { pos: [0, 0, 40],  color: '#2e5e4e', w: 14, d: 9, h: 6, label: '🍽️', name: 'Cafetería' },
-  { pos: [-40, 0, 0], color: '#7a3b00', w: 9, d: 14, h: 6, label: '🎨', name: 'Artes' },
+  { pos: [0, 0, -62],  color: '#d4c4a0', w: 30, d: 18, h: 13, label: '🎭', name: 'Gran Salón' },
+  { pos: [28, 0, -48], color: '#7a5a3a', w: 18, d: 14, h: 11, label: '📚', name: 'Biblioteca' },
+  { pos: [-26, 0, -46],color: '#3a5a7a', w: 16, d: 13, h: 10, label: '🔬', name: 'Ciencias' },
+  { pos: [65, 0, 0],   color: '#1a7abf', w: 18, d: 44, h: 1,  label: '🏊', name: 'Piscina' },
 ]
 
-// Dormitory blocks — 8 buildings in the mid-outer campus ring.
+// Dormitory blocks — 8 buildings in the outer campus ring (summer colours).
 const CAMPUS_DORMS = [
-  { pos: [58, 0, 28],  color: '#7a6a5a' },
-  { pos: [-58, 0, 28], color: '#6a7a5a' },
-  { pos: [58, 0, -28], color: '#5a6a7a' },
-  { pos: [-58, 0, -28],color: '#7a5a6a' },
-  { pos: [28, 0, 60],  color: '#6a5a7a' },
-  { pos: [-28, 0, 60], color: '#5a7a6a' },
-  { pos: [28, 0, -62], color: '#7a7a5a' },
-  { pos: [-28, 0, -62],color: '#5a7a7a' },
+  { pos: [40, 0, -70],  color: '#8a7a6a' },
+  { pos: [-40, 0, -70], color: '#7a8a6a' },
+  { pos: [-58, 0, -38], color: '#6a7a8a' },
+  { pos: [-62, 0, 25],  color: '#8a6a7a' },
+  { pos: [55, 0, -40],  color: '#7a6a8a' },
+  { pos: [58, 0, 36],   color: '#6a8a7a' },
+  { pos: [38, 0, 28],   color: '#8a8a6a' },
+  { pos: [-38, 0, 28],  color: '#6a8a8a' },
 ]
 
 // How close the player needs to be to an NPC to interact with them.
@@ -197,9 +197,9 @@ const NEXUS_PORTALS = [
   { id: 'nexus-city',  pos: [0, 0, 80],   color: '#dc2626', label: '🏙️ Metrópolis' },
 ]
 
-// Private Room constants — larger cabin-style interior space.
-const ROOM_SIZE = 22
-const ROOM_HEIGHT = 5
+// Private Room constants — spacious summer-cottage interior.
+const ROOM_SIZE = 28
+const ROOM_HEIGHT = 5.5
 const ROOM_EXIT_PORTAL_POSITION = [0, 0, -ROOM_SIZE / 2 + 2]
 
 // Patrol loops for the background "wandering cats" that bring the campus
@@ -494,45 +494,50 @@ function useSceneryModel() {
   }, [scene])
 }
 
-// Canadian northern university campus — snow-covered ground, spruce/pine
-// forest perimeter, frozen lake, stone academic buildings with steep A-frame
-// roofs, log-trimmed NPC cabins, and a Portal Nexus plaza in the south.
+// Summer Canadian university campus — green grass, maple trees with red tips,
+// neoclassical Grand Hall, swimming pool, dense west forest, Portal Nexus plaza.
 // All geometry is THREE.js primitives; InstancedMesh keeps draw calls low.
 function useTestGround() {
   return useMemo(() => {
     const group = new THREE.Group()
 
-    // ── Shared materials ────────────────────────────────────────────────────
-    // Snow / winter palette
-    const matSnow       = new THREE.MeshStandardMaterial({ color: '#dce8f0' })
-    const matSnowDeep   = new THREE.MeshStandardMaterial({ color: '#c8d8e8' })
-    const matIcePlaza   = new THREE.MeshStandardMaterial({ color: '#b8cfe0' })
-    const matSnowPath   = new THREE.MeshStandardMaterial({ color: '#c0d0dc', roughness: 0.9 })
-    const matIceRoad    = new THREE.MeshStandardMaterial({ color: '#a8b8c8', roughness: 0.6 })
-    const matFrozenLake = new THREE.MeshStandardMaterial({ color: '#8ab0cc', emissive: '#6090aa', emissiveIntensity: 0.08, roughness: 0.1, metalness: 0.2 })
-    const matIceRing    = new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.6 })
-    // Wood / stone
-    const matLogWall    = new THREE.MeshStandardMaterial({ color: '#6b4a30' })
-    const matLogRoof    = new THREE.MeshStandardMaterial({ color: '#3a2818' })
-    const matStoneBld   = new THREE.MeshStandardMaterial({ color: '#7a8090' })
-    const matStoneRoof  = new THREE.MeshStandardMaterial({ color: '#3a3850' })
-    const matSnowCap    = new THREE.MeshStandardMaterial({ color: '#eaf2f8' })
-    const matWindowWarm = new THREE.MeshStandardMaterial({ color: '#ffe8a0', emissive: '#ffd060', emissiveIntensity: 0.4 })
-    const matStep       = new THREE.MeshStandardMaterial({ color: '#909ab0' })
-    const matGatePost   = new THREE.MeshStandardMaterial({ color: '#8a6a50' })
-    // Trees
-    const matTrunk      = new THREE.MeshStandardMaterial({ color: '#4a3020' })
-    const matPineA      = new THREE.MeshStandardMaterial({ color: '#1e4a28' })
-    const matPineB      = new THREE.MeshStandardMaterial({ color: '#183820' })
-    const matPineSnow   = new THREE.MeshStandardMaterial({ color: '#ddeef8' })
-    // Lamps
-    const matPole       = new THREE.MeshStandardMaterial({ color: '#1a1a22' })
-    const matBulb       = new THREE.MeshStandardMaterial({ color: '#ffe9a8', emissive: '#ffe9a8', emissiveIntensity: 1.6 })
-    // Fence wall
-    const matFence      = new THREE.MeshStandardMaterial({ color: '#5a4a38' })
+    // ── Materials ─────────────────────────────────────────────────────────
+    const matGrass     = new THREE.MeshStandardMaterial({ color: '#4a8a3a' })
+    const matGrassOut  = new THREE.MeshStandardMaterial({ color: '#5ea848' })
+    const matGrassFor  = new THREE.MeshStandardMaterial({ color: '#2d6a22' })
+    const matPath      = new THREE.MeshStandardMaterial({ color: '#c8bc9c' })
+    const matRoad      = new THREE.MeshStandardMaterial({ color: '#a8a090' })
+    const matPlaza     = new THREE.MeshStandardMaterial({ color: '#d0c8b8' })
+    const matGranite   = new THREE.MeshStandardMaterial({ color: '#beb8a8' })
+    const matStone     = new THREE.MeshStandardMaterial({ color: '#909090' })
+    const matColumn    = new THREE.MeshStandardMaterial({ color: '#e8e4d8' })
+    const matCream     = new THREE.MeshStandardMaterial({ color: '#d4c4a0' })
+    const matBrickRed  = new THREE.MeshStandardMaterial({ color: '#9a4a3a' })
+    const matBrickBrn  = new THREE.MeshStandardMaterial({ color: '#7a5a3a' })
+    const matBrickBlu  = new THREE.MeshStandardMaterial({ color: '#3a5a7a' })
+    const matRoof      = new THREE.MeshStandardMaterial({ color: '#7a3830' })
+    const matRedCA     = new THREE.MeshStandardMaterial({ color: '#d52b1e' })
+    const matGold      = new THREE.MeshStandardMaterial({ color: '#d4a820', emissive: '#b08010', emissiveIntensity: 0.28 })
+    const matPoolWater = new THREE.MeshStandardMaterial({ color: '#1a7abf', transparent: true, opacity: 0.88, emissive: '#0a5080', emissiveIntensity: 0.1 })
+    const matPoolDeck  = new THREE.MeshStandardMaterial({ color: '#d8d0b8' })
+    const matPoolCurb  = new THREE.MeshStandardMaterial({ color: '#e8e2d4' })
+    const matPoolLane  = new THREE.MeshStandardMaterial({ color: '#f0ece4' })
+    const matGlass     = new THREE.MeshStandardMaterial({ color: '#88c8f8', transparent: true, opacity: 0.55, emissive: '#4488a8', emissiveIntensity: 0.2 })
+    const matNexus     = new THREE.MeshStandardMaterial({ color: '#2a2840' })
+    const matNexusDk   = new THREE.MeshStandardMaterial({ color: '#181828' })
+    const matWood      = new THREE.MeshStandardMaterial({ color: '#8b6234' })
+    const matWoodDk    = new THREE.MeshStandardMaterial({ color: '#5a3c20' })
+    const matTrunk     = new THREE.MeshStandardMaterial({ color: '#6b4520' })
+    const matFolA      = new THREE.MeshStandardMaterial({ color: '#2d6b1a' })
+    const matFolB      = new THREE.MeshStandardMaterial({ color: '#3d8a28' })
+    const matMapleRed  = new THREE.MeshStandardMaterial({ color: '#c42020' })
+    const matPole      = new THREE.MeshStandardMaterial({ color: '#2a2830' })
+    const matBulb      = new THREE.MeshStandardMaterial({ color: '#ffe890', emissive: '#ffd050', emissiveIntensity: 1.8 })
+    const matFount     = new THREE.MeshStandardMaterial({ color: '#b0a898' })
+    const matWater     = new THREE.MeshStandardMaterial({ color: '#2888cc', transparent: true, opacity: 0.75 })
 
-    // ── Path helper ─────────────────────────────────────────────────────────
-    const addPath = (x1, z1, x2, z2, width, mat = matSnowPath) => {
+    // ── Path helper ───────────────────────────────────────────────────────
+    const addPath = (x1, z1, x2, z2, width, mat = matPath) => {
       const dx = x2 - x1; const dz = z2 - z1
       const len = Math.hypot(dx, dz)
       if (len < 0.01) return
@@ -546,501 +551,669 @@ function useTestGround() {
       group.add(g)
     }
 
-    // ── Snow ground disc ─────────────────────────────────────────────────────
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(GROUND_RADIUS, 72), matSnow)
+    // ── 1. GROUND ─────────────────────────────────────────────────────────
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(GROUND_RADIUS, 72), matGrass)
     ground.rotation.x = -Math.PI / 2
     ground.userData.isFloor = true
     group.add(ground)
+    // Lighter outer ring (sun-bleached summer grass)
+    const outerRing = new THREE.Mesh(new THREE.RingGeometry(58, GROUND_RADIUS, 72), matGrassOut)
+    outerRing.rotation.x = -Math.PI / 2
+    outerRing.position.y = 0.005
+    outerRing.userData.isFloor = true
+    group.add(outerRing)
+    // Forest floor (west zone)
+    const forestFloor = new THREE.Mesh(new THREE.CircleGeometry(36, 48), matGrassFor)
+    forestFloor.rotation.x = -Math.PI / 2
+    forestFloor.position.set(-60, 0.008, 0)
+    forestFloor.userData.isFloor = true
+    group.add(forestFloor)
 
-    // Deeper snow perimeter (r=62 → 90)
-    const outerSnow = new THREE.Mesh(new THREE.RingGeometry(62, GROUND_RADIUS, 72), matSnowDeep)
-    outerSnow.rotation.x = -Math.PI / 2
-    outerSnow.position.y = 0.005
-    outerSnow.userData.isFloor = true
-    group.add(outerSnow)
-
-    // ── Ring roads (icy compacted paths) ────────────────────────────────────
-    ;[[22, 25], [48, 52], [74, 77]].forEach(([ri, ro]) => {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(ri, ro, 64), matIceRoad)
+    // ── 2. RING ROADS ─────────────────────────────────────────────────────
+    ;[[21, 25], [45, 49], [72, 76]].forEach(([ri, ro]) => {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(ri, ro, 64), matRoad)
       ring.rotation.x = -Math.PI / 2
       ring.position.y = 0.012
       ring.userData.isFloor = true
       group.add(ring)
     })
 
-    // ── Central ice plaza ────────────────────────────────────────────────────
-    const plaza = new THREE.Mesh(new THREE.CircleGeometry(9, 8), matIcePlaza)
+    // ── 3. CARDINAL ROADS + SPOKE PATHS ──────────────────────────────────
+    addPath(0, 0, 0, -(GROUND_RADIUS - 5), 7, matRoad)
+    addPath(0, 0, 0,  GROUND_RADIUS - 5,   7, matRoad)
+    addPath(0, 0,  GROUND_RADIUS - 5, 0,   7, matRoad)
+    addPath(0, 0, -(GROUND_RADIUS - 5), 0, 7, matRoad)
+    VR_NPCS.forEach((npc) => {
+      const [nx, , nz] = npc.position
+      const d = Math.hypot(nx, nz)
+      addPath(0, 0, nx * 50 / d, nz * 50 / d, 4)
+    })
+    addPath(0, -22, 0, -74, 9, matPath)   // wide avenue to Grand Hall
+    addPath(22, 0, 76, 0, 5, matPath)     // east sports path
+    addPath(-22, 0, -80, 0, 4, matPath)   // west forest path
+
+    // ── 4. CENTRAL PLAZA ──────────────────────────────────────────────────
+    const plaza = new THREE.Mesh(new THREE.CircleGeometry(11, 8), matPlaza)
     plaza.rotation.x = -Math.PI / 2
     plaza.position.y = 0.018
     plaza.userData.isFloor = true
     group.add(plaza)
+    const plazaRing = new THREE.Mesh(new THREE.RingGeometry(9, 11, 8), matGranite)
+    plazaRing.rotation.x = -Math.PI / 2
+    plazaRing.position.y = 0.022
+    group.add(plazaRing)
 
-    // ── Frozen fountain (ice + stone) ────────────────────────────────────────
-    const stoneMat = new THREE.MeshStandardMaterial({ color: '#8090a0' })
-    const fBase = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.6, 0.38, 20), stoneMat)
-    fBase.position.set(0, 0.19, 0)
+    // ── 5. MAPLE LEAF MONUMENT ────────────────────────────────────────────
+    // 3 steps → pillar → gold ring → stylized red maple leaf
+    ;[[4.0, 0.6, 0.3], [2.8, 0.4, 0.8], [1.8, 0.4, 1.15]].forEach(([r, h, y]) => {
+      const step = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.18, h, 10), matGranite)
+      step.position.set(-7, y, 0)
+      group.add(step)
+    })
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.72, 6.5, 12), matStone)
+    pillar.position.set(-7, 4.6, 0)
+    group.add(pillar)
+    const goldRing = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.13, 8, 20), matGold)
+    goldRing.position.set(-7, 7.9, 0)
+    group.add(goldRing)
+    // Leaf body (flattened sphere)
+    const leafBody = new THREE.Mesh(new THREE.SphereGeometry(1.05, 12, 8), matRedCA)
+    leafBody.position.set(-7, 9.1, 0)
+    leafBody.scale.set(1.0, 0.72, 0.32)
+    group.add(leafBody)
+    // 5 radiating maple points
+    ;[0, 72, 144, 216, 288].forEach((deg) => {
+      const rad = (deg * Math.PI) / 180
+      const pt = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.72, 5), matRedCA)
+      pt.position.set(-7 + Math.sin(rad) * 1.38, 9.1 + Math.cos(rad) * 1.0, Math.cos(rad) * 0.28)
+      pt.rotation.z = Math.sin(rad) * -Math.PI / 2.2
+      pt.rotation.x = Math.cos(rad) * Math.PI / 2.2
+      group.add(pt)
+    })
+    const leafStem = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.55, 6), matRedCA)
+    leafStem.position.set(-7, 8.38, 0)
+    group.add(leafStem)
+
+    // ── 6. FOUNTAIN ───────────────────────────────────────────────────────
+    const fBase = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.8, 0.45, 20), matFount)
+    fBase.position.set(7, 0.225, 0)
     group.add(fBase)
-    // Ice surface inside bowl
-    const fIce = new THREE.Mesh(new THREE.CircleGeometry(1.9, 20), matFrozenLake)
-    fIce.rotation.x = -Math.PI / 2
-    fIce.position.set(0, 0.42, 0)
-    fIce.userData.isFloor = true
-    group.add(fIce)
-    // Stone spire with snow cap
-    const fSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.18, 2.0, 8), stoneMat)
-    fSpire.position.set(0, 1.38, 0)
-    group.add(fSpire)
-    const fSnowCap = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.5, 8), matSnowCap)
-    fSnowCap.position.set(0, 2.63, 0)
-    group.add(fSnowCap)
+    const fPool = new THREE.Mesh(new THREE.CircleGeometry(2.0, 20), matPoolWater)
+    fPool.rotation.x = -Math.PI / 2; fPool.position.set(7, 0.46, 0); fPool.userData.isFloor = true
+    group.add(fPool)
+    const fRing = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.6, 20), matFount)
+    fRing.rotation.x = -Math.PI / 2; fRing.position.set(7, 0.47, 0)
+    group.add(fRing)
+    const fSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.18, 2.2, 8), matFount)
+    fSpire.position.set(7, 1.6, 0); group.add(fSpire)
+    const fSpray = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), matWater)
+    fSpray.position.set(7, 2.8, 0); fSpray.scale.set(1, 0.5, 1); group.add(fSpray)
 
-    // ── Main paths (snowed-over walkways) ────────────────────────────────────
-    addPath(0, 0, 0, -GROUND_RADIUS * 0.88, 7)
-    addPath(0, 0, 0,  GROUND_RADIUS * 0.88, 7)
-    addPath(0, 0,  GROUND_RADIUS * 0.88, 0, 7)
-    addPath(0, 0, -GROUND_RADIUS * 0.88, 0, 7)
+    // ── 7. NPC PAVILIONS ──────────────────────────────────────────────────
     VR_NPCS.forEach((npc) => {
       const [nx, , nz] = npc.position
-      const dist = Math.hypot(nx, nz)
-      addPath(0, 0, nx * (50 / dist), nz * (50 / dist), 5)
+      const bx = nx * NPC_BUILDING_OFFSET, bz = nz * NPC_BUILDING_OFFSET
+      const pavBase = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.8, 0.4, 6), matGranite)
+      pavBase.position.set(bx, 0.2, bz); group.add(pavBase)
+      ;[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].forEach((ca) => {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 3.2, 8), matColumn)
+        col.position.set(bx + Math.sin(ca) * 1.8, 2.0, bz + Math.cos(ca) * 1.8)
+        group.add(col)
+      })
+      const pavRoof = new THREE.Mesh(new THREE.ConeGeometry(2.4, 2.2, 6), matRoof)
+      pavRoof.position.set(bx, 4.3, bz); group.add(pavRoof)
+      const roofRing = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.14, 6, 16), matRedCA)
+      roofRing.rotation.x = Math.PI / 2; roofRing.position.set(bx, 3.2, bz); group.add(roofRing)
     })
 
-    // ── NPC log cabins ───────────────────────────────────────────────────────
-    // Small log-cabin style huts — dark wood walls, steep A-frame roof, warm window
-    VR_NPCS.forEach((npc, i) => {
-      const [x, , z] = npc.position
-      const h = 3.0 + (i % 3) * 0.7
-      const bld = new THREE.Mesh(new THREE.BoxGeometry(BUILDING_SIZE + 0.6, h, BUILDING_SIZE + 0.6), matLogWall)
-      bld.position.set(x * NPC_BUILDING_OFFSET, h / 2, z * NPC_BUILDING_OFFSET)
-      group.add(bld)
-      // A-frame roof
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(3.2, 2.8, 4), matLogRoof)
-      roof.position.set(x * NPC_BUILDING_OFFSET, h + 1.4, z * NPC_BUILDING_OFFSET)
-      roof.rotation.y = Math.PI / 4
-      group.add(roof)
-      // Snow on roof
-      const rSnow = new THREE.Mesh(new THREE.ConeGeometry(2.9, 0.6, 4), matSnowCap)
-      rSnow.position.set(x * NPC_BUILDING_OFFSET, h + 2.9, z * NPC_BUILDING_OFFSET)
-      rSnow.rotation.y = Math.PI / 4
-      group.add(rSnow)
-      // Warm window glow
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.1), matWindowWarm)
-      const stepAngle = Math.atan2(x, z)
-      win.position.set(
-        x * NPC_BUILDING_OFFSET - Math.sin(stepAngle) * (BUILDING_SIZE / 2 + 0.35),
-        h * 0.6,
-        z * NPC_BUILDING_OFFSET - Math.cos(stepAngle) * (BUILDING_SIZE / 2 + 0.35),
-      )
-      group.add(win)
-      // Stone steps
-      const steps = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.25, 1.0), matStep)
-      steps.position.set(
-        x * NPC_BUILDING_OFFSET - Math.sin(stepAngle) * (BUILDING_SIZE / 2 + 0.6),
-        0.125,
-        z * NPC_BUILDING_OFFSET - Math.cos(stepAngle) * (BUILDING_SIZE / 2 + 0.6),
-      )
-      group.add(steps)
+    // ── 8. GRAND LECTURE HALL (Salón Grande) ──────────────────────────────
+    const GX = 0, GZ = -62
+    const ghBody = new THREE.Mesh(new THREE.BoxGeometry(30, 13, 18), matCream)
+    ghBody.position.set(GX, 6.5, GZ); group.add(ghBody)
+    // Side wings
+    ;[-17, 17].forEach((ox) => {
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 12), matCream)
+      wing.position.set(GX + ox, 4.5, GZ + 2); group.add(wing)
+      const wr = new THREE.Mesh(new THREE.BoxGeometry(8.5, 1, 12.5), matRoof)
+      wr.position.set(GX + ox, 9.5, GZ + 2); group.add(wr)
     })
-
-    // ── Major Academic Buildings (stone, steep roofs) ────────────────────────
-    CAMPUS_ACADEMIC.forEach(({ pos, color, w, d, h, label }) => {
-      const [bx, , bz] = pos
-      // Stone body (desaturated version of the original color)
-      const bldMat = new THREE.MeshStandardMaterial({ color })
-      const bld = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bldMat)
-      bld.position.set(bx, h / 2, bz)
-      group.add(bld)
-      // Steep dark roof
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.4, d + 0.6), matStoneRoof)
-      roof.position.set(bx, h + 0.2, bz)
-      group.add(roof)
-      // Snow on roof edge
-      const rSnow = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.28, d + 0.8), matSnowCap)
-      rSnow.position.set(bx, h + 0.38, bz)
-      group.add(rSnow)
-      // Warm windows
-      const winMat = matWindowWarm
-      const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6, h * 0.22, 0.12), winMat)
-      const ang = Math.atan2(bx, bz)
-      win.position.set(
-        bx - Math.sin(ang) * (d / 2 + 0.06),
-        h * 0.52,
-        bz - Math.cos(ang) * (d / 2 + 0.06),
-      )
-      group.add(win)
-      // Steps
-      const stepsW = Math.min(w, d) * 0.55
-      const steps = new THREE.Mesh(new THREE.BoxGeometry(stepsW, 0.28, 1.8), matStep)
-      steps.position.set(bx - Math.sin(ang) * (d / 2 + 1.0), 0.14, bz - Math.cos(ang) * (d / 2 + 1.0))
-      group.add(steps)
+    // Portico columns
+    for (let ci = 0; ci < 6; ci++) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.64, 11.5, 12), matColumn)
+      col.position.set(GX - 11.5 + ci * 4.6, 5.75, GZ - 7.5); group.add(col)
+    }
+    const ghPed = new THREE.Mesh(new THREE.BoxGeometry(28, 3.2, 1.2), matColumn)
+    ghPed.position.set(GX, 14.3, GZ - 7.5); group.add(ghPed)
+    const ghCornice = new THREE.Mesh(new THREE.BoxGeometry(32, 0.8, 20), matRedCA)
+    ghCornice.position.set(GX, 13.4, GZ); group.add(ghCornice)
+    const ghRoof = new THREE.Mesh(new THREE.BoxGeometry(32, 0.7, 20), matRoof)
+    ghRoof.position.set(GX, 14.1, GZ); group.add(ghRoof)
+    // Wide steps (3 levels)
+    ;[[24, 0.5, GZ - 9.0], [20, 0.5, GZ - 11.0], [16, 0.5, GZ - 13.0]].forEach(([w, h, pz], idx) => {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2.0), matColumn)
+      step.position.set(GX, h / 2 + idx * h, pz); group.add(step)
     })
+    // Windows (two rows on south face)
+    ;[4, 8].forEach((wy) => {
+      for (let wi = -2; wi <= 2; wi++) {
+        const win = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 3.5), matGlass)
+        win.position.set(GX + wi * 5.5, wy, GZ - 9.08); group.add(win)
+      }
+    })
+    const ghBanner = new THREE.Mesh(new THREE.BoxGeometry(14, 1.2, 0.25), matRedCA)
+    ghBanner.position.set(GX, 12.1, GZ - 7.4); group.add(ghBanner)
 
-    // ── Dormitory Blocks (stone with snow caps) ──────────────────────────────
+    // ── 9. LIBRARY ────────────────────────────────────────────────────────
+    const LX = 28, LZ = -48
+    const libBody = new THREE.Mesh(new THREE.BoxGeometry(18, 11, 14), matBrickBrn)
+    libBody.position.set(LX, 5.5, LZ); group.add(libBody)
+    const libRoof = new THREE.Mesh(new THREE.BoxGeometry(19, 1, 15), matRoof)
+    libRoof.position.set(LX, 11.5, LZ); group.add(libRoof)
+    ;[-2, 2].forEach((cx) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.48, 9, 10), matColumn)
+      col.position.set(LX + cx, 4.5, LZ - 7.05); group.add(col)
+    })
+    const libPed = new THREE.Mesh(new THREE.BoxGeometry(16, 2.5, 0.8), matColumn)
+    libPed.position.set(LX, 12.25, LZ - 7.05); group.add(libPed)
+    for (let wi = -3; wi <= 3; wi += 2) {
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(2, 3), matGlass)
+      win.position.set(LX + wi * 2.5, 5.5, LZ - 7.06); group.add(win)
+    }
+
+    // ── 10. SCIENCE / ADMIN BUILDING ──────────────────────────────────────
+    const AX = -26, AZ = -46
+    const admBody = new THREE.Mesh(new THREE.BoxGeometry(16, 10, 13), matBrickBlu)
+    admBody.position.set(AX, 5, AZ); group.add(admBody)
+    const admRoof = new THREE.Mesh(new THREE.BoxGeometry(17, 0.9, 14), matRoof)
+    admRoof.position.set(AX, 10.45, AZ); group.add(admRoof)
+    const admCor = new THREE.Mesh(new THREE.BoxGeometry(17, 0.6, 14), matRedCA)
+    admCor.position.set(AX, 10.0, AZ); group.add(admCor)
+    for (let wi = -2; wi <= 2; wi++) {
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(2, 2.8), matGlass)
+      win.position.set(AX + wi * 2.8, 5, AZ - 6.51); group.add(win)
+    }
+
+    // ── 11. SWIMMING POOL (east sports zone) ──────────────────────────────
+    const PX = 65, PZ = 0
+    const poolDeck = new THREE.Mesh(new THREE.PlaneGeometry(36, 58), matPoolDeck)
+    poolDeck.rotation.x = -Math.PI / 2; poolDeck.position.set(PX, 0.012, PZ)
+    poolDeck.userData.isFloor = true; group.add(poolDeck)
+    const poolWater = new THREE.Mesh(new THREE.PlaneGeometry(18, 44), matPoolWater)
+    poolWater.rotation.x = -Math.PI / 2; poolWater.position.set(PX, 0.06, PZ - 2)
+    poolWater.userData.isFloor = true; group.add(poolWater)
+    // Curbs
+    ;[[PX, 0.22, PZ - 24.25, 20, 0.45, 0.5], [PX, 0.22, PZ + 20.25, 20, 0.45, 0.5],
+      [PX - 9.25, 0.22, PZ - 2, 0.5, 0.45, 44], [PX + 9.25, 0.22, PZ - 2, 0.5, 0.45, 44]
+    ].forEach(([x, y, z, w, h, d]) => {
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), matPoolCurb)
+      curb.position.set(x, y, z); group.add(curb)
+    })
+    // Lane dividers
+    for (let li = -3; li <= 3; li++) {
+      const lane = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 44), matPoolLane)
+      lane.rotation.x = -Math.PI / 2; lane.position.set(PX + li * 1.15, 0.07, PZ - 2); group.add(lane)
+    }
+    // Diving platform
+    const diveBase = new THREE.Mesh(new THREE.BoxGeometry(2.5, 3.5, 2.5), matPoolDeck)
+    diveBase.position.set(PX, 1.75, PZ - 26); group.add(diveBase)
+    const diveBoard = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.18, 4.5), matPoolCurb)
+    diveBoard.position.set(PX, 3.6, PZ - 25); group.add(diveBoard)
+    // Sports building
+    const pbBody = new THREE.Mesh(new THREE.BoxGeometry(14, 6.5, 12), matCream)
+    pbBody.position.set(PX, 3.25, PZ + 28); group.add(pbBody)
+    const pbRoof = new THREE.Mesh(new THREE.BoxGeometry(15, 0.8, 13), matRoof)
+    pbRoof.position.set(PX, 6.9, PZ + 28); group.add(pbRoof)
+    const pbSign = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 0.2), matRedCA)
+    pbSign.position.set(PX, 5.5, PZ + 22.1); group.add(pbSign)
+    // Bleachers
+    const bleachers = new THREE.Mesh(new THREE.BoxGeometry(18, 2.5, 6), matGranite)
+    bleachers.position.set(PX + 15, 1.25, PZ - 2); group.add(bleachers)
+
+    // ── 12. WEST FOREST ZONE ──────────────────────────────────────────────
+    const clearPath = new THREE.Mesh(new THREE.CircleGeometry(7, 12), matPath)
+    clearPath.rotation.x = -Math.PI / 2; clearPath.position.set(-60, 0.015, 0)
+    clearPath.userData.isFloor = true; group.add(clearPath)
+    const hBody = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 4), matWood)
+    hBody.position.set(-62, 2, 0); group.add(hBody)
+    const hRoof = new THREE.Mesh(new THREE.ConeGeometry(4, 3.5, 4), matRoof)
+    hRoof.position.set(-62, 5.75, 0); hRoof.rotation.y = Math.PI / 4; group.add(hRoof)
+
+    // ── 13. PORTAL NEXUS (south) ──────────────────────────────────────────
+    const nexusPlaza = new THREE.Mesh(new THREE.CircleGeometry(30, 16), matNexus)
+    nexusPlaza.rotation.x = -Math.PI / 2; nexusPlaza.position.set(0, 0.014, 70)
+    nexusPlaza.userData.isFloor = true; group.add(nexusPlaza)
+    const nexusRing = new THREE.Mesh(new THREE.RingGeometry(27, 30.5, 16), matNexusDk)
+    nexusRing.rotation.x = -Math.PI / 2; nexusRing.position.set(0, 0.02, 70); group.add(nexusRing)
+    ;[-12, 12].forEach((ox) => {
+      const gp = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 11, 8), matNexus)
+      gp.position.set(ox, 5.5, 46); group.add(gp)
+      const gpc = new THREE.Mesh(new THREE.SphereGeometry(1.1, 8, 6), matNexusDk)
+      gpc.position.set(ox, 11.55, 46); group.add(gpc)
+    })
+    const gateArch = new THREE.Mesh(new THREE.BoxGeometry(27, 1.5, 1.2), matNexus)
+    gateArch.position.set(0, 11.25, 46); group.add(gateArch)
+    const gateSign = new THREE.Mesh(new THREE.BoxGeometry(12, 1.8, 0.4), matNexusDk)
+    gateSign.position.set(0, 9.5, 45.7); group.add(gateSign)
+    // Side walls of nexus
+    ;[-25, 25].forEach((ox) => {
+      const sw = new THREE.Mesh(new THREE.BoxGeometry(1.2, 7, 50), matNexus)
+      sw.position.set(ox, 3.5, 70); group.add(sw)
+    })
+    const nexusBack = new THREE.Mesh(new THREE.BoxGeometry(52, 7, 1.2), matNexus)
+    nexusBack.position.set(0, 3.5, 95); group.add(nexusBack)
+
+    // ── 14. DORMITORIES ───────────────────────────────────────────────────
     CAMPUS_DORMS.forEach(({ pos, color }) => {
       const [bx, , bz] = pos
-      const dormH = 5.0
-      const dorm = new THREE.Mesh(new THREE.BoxGeometry(7, dormH, 12), new THREE.MeshStandardMaterial({ color }))
-      dorm.position.set(bx, dormH / 2, bz)
-      group.add(dorm)
-      const dormRoof = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.35, 12.4), matStoneRoof)
-      dormRoof.position.set(bx, dormH + 0.175, bz)
-      group.add(dormRoof)
-      const dormSnow = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.22, 12.6), matSnowCap)
-      dormSnow.position.set(bx, dormH + 0.33, bz)
-      group.add(dormSnow)
+      const dorm = new THREE.Mesh(new THREE.BoxGeometry(12, 8.5, 10), new THREE.MeshStandardMaterial({ color }))
+      dorm.position.set(bx, 4.25, bz); group.add(dorm)
+      const dr = new THREE.Mesh(new THREE.BoxGeometry(13, 1.0, 11), matRoof)
+      dr.position.set(bx, 8.75, bz); group.add(dr)
+      for (let wr = 0; wr < 2; wr++) {
+        for (let wi = -1; wi <= 1; wi++) {
+          const win = new THREE.Mesh(new THREE.PlaneGeometry(2, 1.8), matGlass)
+          win.position.set(bx + wi * 3.5, 2.5 + wr * 3.5, bz + 5.06); group.add(win)
+        }
+      }
+      const fstrip = new THREE.Mesh(new THREE.BoxGeometry(6, 0.5, 0.1), matRedCA)
+      fstrip.position.set(bx, 8.2, bz + 5.08); group.add(fstrip)
     })
 
-    // ── Frozen Lake (replaces sports field) — east side ──────────────────────
-    const lake = new THREE.Mesh(new THREE.CircleGeometry(24, 48), matFrozenLake)
-    lake.rotation.x = -Math.PI / 2
-    lake.position.set(68, 0.016, 8)
-    lake.userData.isFloor = true
-    group.add(lake)
-    // Ice ring lines (skating rink markings)
-    ;[8, 16].forEach((r) => {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(r - 0.2, r + 0.2, 40), matIceRing)
-      ring.rotation.x = -Math.PI / 2
-      ring.position.set(68, 0.022, 8)
-      group.add(ring)
-    })
-    // Snow banks around lake
-    for (let i = 0; i < 12; i += 1) {
-      const a = (i / 12) * Math.PI * 2
-      const sb = new THREE.Mesh(new THREE.BoxGeometry(4, 0.7, 1.5), matSnowDeep)
-      sb.position.set(68 + Math.cos(a) * 25.5, 0.35, 8 + Math.sin(a) * 25.5)
-      sb.rotation.y = a
-      group.add(sb)
-    }
-
-    // ── Portal Nexus (south end — future worlds) ─────────────────────────────
-    // Stone platform for the nexus
-    const nexusPlat = new THREE.Mesh(new THREE.CircleGeometry(26, 32), matIceRoad)
-    nexusPlat.rotation.x = -Math.PI / 2
-    nexusPlat.position.set(0, 0.016, 72)
-    nexusPlat.userData.isFloor = true
-    group.add(nexusPlat)
-    // Decorative outer ring
-    const nexusRing = new THREE.Mesh(new THREE.RingGeometry(24, 26.5, 32), matStep)
-    nexusRing.rotation.x = -Math.PI / 2
-    nexusRing.position.set(0, 0.02, 72)
-    group.add(nexusRing)
-    // Stone pillars marking the nexus entrance
-    ;[-12, 12].forEach((ox) => {
-      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 5, 8), matStep)
-      pillar.position.set(ox, 2.5, 47)
-      group.add(pillar)
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 6), matSnowCap)
-      cap.position.set(ox, 5.35, 47)
-      group.add(cap)
-    })
-    // "Portal Nexus" arch spanning the pillars
-    const nexusArch = new THREE.Mesh(new THREE.BoxGeometry(27, 0.5, 0.5), matGatePost)
-    nexusArch.position.set(0, 5.5, 47)
-    group.add(nexusArch)
-
-    // ── Sparse spruce/pine trees (InstancedMesh, 3 tiers: trunk, foliage, snow tip) ─
+    // ── 15. MAPLE TREES (InstancedMesh) ──────────────────────────────────
     const rng = (seed) => { const v = Math.sin(seed * 127.1) * 43758.5453; return v - Math.floor(v) }
-
     const rawTrees = []
-    // Only ~40 trees, placed mainly in outer perimeter (r=50-88)
-    for (let i = 0; i < 55; i += 1) {
-      const angle = rng(i * 3.7) * Math.PI * 2
-      const r = 52 + rng(i * 9.1) * 34
-      // Avoid cardinal avenues and the nexus south zone
-      const nearCardinal = [0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].some(
-        (ca) => Math.abs(((angle % (Math.PI * 2)) - ca + Math.PI * 4) % (Math.PI * 2)) < 0.15,
-      )
-      const inNexus = angle > Math.PI * 0.35 && angle < Math.PI * 0.65 && r > 58
-      if (nearCardinal || inNexus) continue
-      rawTrees.push({ x: Math.cos(angle) * r, z: Math.sin(angle) * r, s: 0.7 + rng(i * 11.7) * 0.7 })
+    // Forest zone (dense, west)
+    for (let row = 0; row < 7; row++) {
+      for (let col = 0; col < 7; col++) {
+        const tx = -44 - col * 5.5 + (row % 2) * 2.5
+        const tz = -32 + row * 10 + rng(row * 7 + col) * 4 - 2
+        if (Math.hypot(tx, tz) > 87) continue
+        rawTrees.push({ x: tx, z: tz, s: 0.8 + rng(row * 14 + col) * 0.25 })
+      }
     }
+    // Grand Hall avenue (flanking north road)
+    for (let i = 0; i < 8; i++) {
+      const tz = -30 - i * 4.5; if (tz < -62) break
+      rawTrees.push({ x: 9, z: tz, s: 0.88 }); rawTrees.push({ x: -9, z: tz, s: 0.88 })
+    }
+    // Perimeter ring (r=73-79)
+    for (let i = 0; i < 40; i++) {
+      const angle = (i / 40) * Math.PI * 2
+      const tx = Math.sin(angle) * (73 + rng(i * 5.3) * 5)
+      const tz = Math.cos(angle) * (73 + rng(i * 7.1) * 5)
+      if (tx > 48 && Math.abs(tz) < 40) continue
+      if (tz > 44 && Math.abs(tx) < 28) continue
+      if (tz < -58 && Math.abs(tx) < 20) continue
+      rawTrees.push({ x: tx, z: tz, s: 1.0 + rng(i * 11.3) * 0.2 })
+    }
+    // Mid-campus scatter
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.PI / 6 + (i / 6) * Math.PI * 2
+      const tx = Math.sin(angle) * 32, tz = Math.cos(angle) * 32
+      if (tz < -28 || (tx > 0 && tz < 0)) continue
+      rawTrees.push({ x: tx, z: tz, s: 0.85 })
+    }
+    ;[-20, -12, 12, 20].forEach((tx) => rawTrees.push({ x: tx, z: 42, s: 1.0 }))
 
-    const trunkGeo    = new THREE.CylinderGeometry(0.16, 0.24, 2.6, 7)
-    const foliageGeoA = new THREE.ConeGeometry(1.1, 3.8, 7)  // tall narrow spruce
-    const foliageGeoB = new THREE.ConeGeometry(0.75, 2.6, 7) // smaller upper cone
-    const snowTipGeo  = new THREE.ConeGeometry(0.4, 1.0, 6)
-    const dummy = new THREE.Object3D()
+    const TREE_COUNT = rawTrees.length
+    const trunkGeo  = new THREE.CylinderGeometry(0.22, 0.32, 4.0, 7)
+    const fol1Geo   = new THREE.SphereGeometry(2.5, 8, 6)
+    const fol2Geo   = new THREE.SphereGeometry(1.8, 7, 5)
+    const redTopGeo = new THREE.SphereGeometry(1.0, 6, 4)
+    const dummy     = new THREE.Object3D()
 
-    const trunkInst  = new THREE.InstancedMesh(trunkGeo, matTrunk, rawTrees.length)
-    const fol1Inst   = new THREE.InstancedMesh(foliageGeoA, matPineA, rawTrees.length)
-    const fol2Inst   = new THREE.InstancedMesh(foliageGeoB, matPineB, rawTrees.length)
-    const snowTipInst= new THREE.InstancedMesh(snowTipGeo, matPineSnow, rawTrees.length)
-    // Disable raycasting on decorative trees
-    ;[trunkInst, fol1Inst, fol2Inst, snowTipInst].forEach((m) => { m.raycast = () => {} })
+    const trunkInst  = new THREE.InstancedMesh(trunkGeo, matTrunk, TREE_COUNT)
+    const fol1Inst   = new THREE.InstancedMesh(fol1Geo, matFolA, TREE_COUNT)
+    const fol2Inst   = new THREE.InstancedMesh(fol2Geo, matFolB, TREE_COUNT)
+    const redTopInst = new THREE.InstancedMesh(redTopGeo, matMapleRed, TREE_COUNT)
+    ;[trunkInst, fol1Inst, fol2Inst, redTopInst].forEach((m) => { m.raycast = () => {} })
 
     rawTrees.forEach(({ x, z, s }, i) => {
-      dummy.rotation.set(0, 0, 0)
+      dummy.rotation.y = rng(i * 3.3) * Math.PI * 2
       dummy.scale.setScalar(s)
-      dummy.position.set(x, 1.3 * s, z); dummy.updateMatrix()
-      trunkInst.setMatrixAt(i, dummy.matrix)
-      dummy.position.set(x, 3.2 * s, z); dummy.updateMatrix()
-      fol1Inst.setMatrixAt(i, dummy.matrix)
-      dummy.position.set(x, 5.0 * s, z); dummy.updateMatrix()
-      fol2Inst.setMatrixAt(i, dummy.matrix)
-      dummy.position.set(x, 6.5 * s, z); dummy.updateMatrix()
-      snowTipInst.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(x, 2.0 * s, z); dummy.updateMatrix(); trunkInst.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(x, 4.5 * s, z); dummy.updateMatrix(); fol1Inst.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(x, 5.8 * s, z); dummy.updateMatrix(); fol2Inst.setMatrixAt(i, dummy.matrix)
+      dummy.scale.setScalar(s * 0.65); dummy.position.set(x, 7.0 * s, z); dummy.updateMatrix(); redTopInst.setMatrixAt(i, dummy.matrix)
     })
-    trunkInst.instanceMatrix.needsUpdate = true
-    fol1Inst.instanceMatrix.needsUpdate  = true
-    fol2Inst.instanceMatrix.needsUpdate  = true
-    snowTipInst.instanceMatrix.needsUpdate= true
-    group.add(trunkInst); group.add(fol1Inst); group.add(fol2Inst); group.add(snowTipInst)
+    ;[trunkInst, fol1Inst, fol2Inst, redTopInst].forEach((m) => { m.instanceMatrix.needsUpdate = true })
+    group.add(trunkInst, fol1Inst, fol2Inst, redTopInst)
 
-    // ── Iron lamp posts (InstancedMesh) ──────────────────────────────────────
-    const lampPositions = []
-    for (let i = 0; i < 14; i += 1) {
-      const a = (i / 14) * Math.PI * 2
-      lampPositions.push(new THREE.Vector3(Math.cos(a) * 23.5, 0, Math.sin(a) * 23.5))
+    // ── 16. LAMP POSTS (InstancedMesh) ────────────────────────────────────
+    const lampPos = []
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2
+      lampPos.push([Math.sin(a) * 23.5, Math.cos(a) * 23.5])
     }
     ;[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].forEach((a) => {
-      ;[15, 30, 44, 60].forEach((r) => {
+      ;[15, 30, 44, 58].forEach((r) => {
         const perp = a + Math.PI / 2
-        lampPositions.push(
-          new THREE.Vector3(Math.cos(a) * r + Math.cos(perp) * 4.5, 0, Math.sin(a) * r + Math.sin(perp) * 4.5),
-          new THREE.Vector3(Math.cos(a) * r - Math.cos(perp) * 4.5, 0, Math.sin(a) * r - Math.sin(perp) * 4.5),
+        lampPos.push(
+          [Math.cos(a) * r + Math.cos(perp) * 4.2, Math.sin(a) * r + Math.sin(perp) * 4.2],
+          [Math.cos(a) * r - Math.cos(perp) * 4.2, Math.sin(a) * r - Math.sin(perp) * 4.2],
         )
       })
     })
-    const poleGeo  = new THREE.CylinderGeometry(0.07, 0.07, 4.2, 8)
-    const bulbGeo  = new THREE.SphereGeometry(0.26, 10, 8)
-    const poleInst = new THREE.InstancedMesh(poleGeo, matPole, lampPositions.length)
-    const bulbInst = new THREE.InstancedMesh(bulbGeo, matBulb, lampPositions.length)
-    lampPositions.forEach((pos, i) => {
+    const poleGeo  = new THREE.CylinderGeometry(0.07, 0.09, 5.5, 8)
+    const bulbGeo  = new THREE.SphereGeometry(0.28, 8, 6)
+    const poleInst = new THREE.InstancedMesh(poleGeo, matPole, lampPos.length)
+    const bulbInst = new THREE.InstancedMesh(bulbGeo, matBulb, lampPos.length)
+    lampPos.forEach(([lx, lz], i) => {
       dummy.scale.setScalar(1); dummy.rotation.set(0, 0, 0)
-      dummy.position.set(pos.x, 2.1, pos.z); dummy.updateMatrix()
-      poleInst.setMatrixAt(i, dummy.matrix)
-      dummy.position.set(pos.x, 4.35, pos.z); dummy.updateMatrix()
-      bulbInst.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(lx, 2.75, lz); dummy.updateMatrix(); poleInst.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(lx, 5.65, lz); dummy.updateMatrix(); bulbInst.setMatrixAt(i, dummy.matrix)
     })
-    poleInst.instanceMatrix.needsUpdate = true
-    bulbInst.instanceMatrix.needsUpdate = true
-    group.add(poleInst); group.add(bulbInst)
+    ;[poleInst, bulbInst].forEach((m) => { m.instanceMatrix.needsUpdate = true; m.raycast = () => {} })
+    group.add(poleInst, bulbInst)
 
-    // ── Wooden perimeter fence + log gate posts ──────────────────────────────
-    const FENCE_SEGS  = 72
-    const fenceArcLen = (2 * Math.PI * GROUND_RADIUS) / FENCE_SEGS * 1.03
-    const fenceGeo    = new THREE.BoxGeometry(fenceArcLen, 2.4, 0.5)
-    const gateSegs    = new Set()
-    ;[0, 18, 36, 54].forEach((b) => { gateSegs.add(b); gateSegs.add((b + 1) % FENCE_SEGS) })
-    const fenceIdx    = Array.from({ length: FENCE_SEGS }, (_, i) => i).filter((i) => !gateSegs.has(i))
-    const fenceInst   = new THREE.InstancedMesh(fenceGeo, matFence, fenceIdx.length)
-    fenceIdx.forEach((idx, i) => {
+    // ── 17. PERIMETER: STONE FENCE + GATE POSTS ───────────────────────────
+    const FENCE_SEGS = 72
+    const arcLen = (2 * Math.PI * GROUND_RADIUS) / FENCE_SEGS * 1.03
+    const fenceGeo = new THREE.BoxGeometry(arcLen, 1.8, 0.45)
+    const gateSet  = new Set()
+    ;[0, 18, 36, 54].forEach((b) => { gateSet.add(b); gateSet.add((b + 1) % FENCE_SEGS) })
+    const fenceSegs = Array.from({ length: FENCE_SEGS }, (_, i) => i).filter((i) => !gateSet.has(i))
+    const fenceInst = new THREE.InstancedMesh(fenceGeo, matGranite, fenceSegs.length)
+    fenceSegs.forEach((idx, i) => {
       const a = (idx / FENCE_SEGS) * Math.PI * 2
-      dummy.position.set(Math.sin(a) * GROUND_RADIUS, 1.2, Math.cos(a) * GROUND_RADIUS)
+      dummy.position.set(Math.sin(a) * GROUND_RADIUS, 0.9, Math.cos(a) * GROUND_RADIUS)
       dummy.rotation.set(0, a, 0); dummy.scale.setScalar(1); dummy.updateMatrix()
       fenceInst.setMatrixAt(i, dummy.matrix)
     })
-    fenceInst.instanceMatrix.needsUpdate = true
+    fenceInst.instanceMatrix.needsUpdate = true; fenceInst.raycast = () => {}
     group.add(fenceInst)
-
-    // Log gate posts at cardinal entrances
+    // Stone gate posts with red caps
     ;[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].forEach((a) => {
-      const sx = Math.sin(a); const cz = Math.cos(a)
-      const px = Math.cos(a); const pz = -Math.sin(a)
+      const sx = Math.sin(a); const cz = Math.cos(a); const px = Math.cos(a); const pz = -Math.sin(a)
       ;[-5.5, 5.5].forEach((off) => {
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 5.5, 8), matGatePost)
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 5.5, 8), matGranite)
         post.position.set(sx * GROUND_RADIUS + px * off, 2.75, cz * GROUND_RADIUS + pz * off)
         group.add(post)
-        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.65, 0.9, 8), matLogRoof)
-        cap.position.set(sx * GROUND_RADIUS + px * off, 5.95, cz * GROUND_RADIUS + pz * off)
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.65, 8, 6), matRedCA)
+        cap.position.set(sx * GROUND_RADIUS + px * off, 5.85, cz * GROUND_RADIUS + pz * off)
         group.add(cap)
-        const capSnow = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.4, 8), matSnowCap)
-        capSnow.position.set(sx * GROUND_RADIUS + px * off, 6.6, cz * GROUND_RADIUS + pz * off)
-        group.add(capSnow)
       })
-      const crossbar = new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.4, 0.4), matGatePost)
-      crossbar.position.set(sx * GROUND_RADIUS, 5.7, cz * GROUND_RADIUS)
-      crossbar.rotation.y = a
-      group.add(crossbar)
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.45, 0.45), matGranite)
+      bar.position.set(sx * GROUND_RADIUS, 5.7, cz * GROUND_RADIUS); bar.rotation.y = a
+      group.add(bar)
     })
 
     return { model: group, groundRayHeight: 22 }
   }, [])
 }
 
-// Canadian log cabin — warm interior with wood floor planks, horizontal log
-// walls, a stone fireplace, bookshelf, desk, rug, and a frost-edged window.
-// Walls are 1.2 units thick to prevent the player from passing through them.
+// Canadian summer cottage suite — honey-oak floors, cream walls with maple-wood
+// trim, stone fireplace on south wall, study desk, bookshelf, cozy couch area,
+// queen bed with maple-leaf quilt, and a decorative portal arch on the north wall.
+// Walls are 1.4 units thick to prevent wall-clipping.
 function useRoomGround() {
   return useMemo(() => {
     const group = new THREE.Group()
-    const hw = ROOM_SIZE / 2
+    const hw = ROOM_SIZE / 2  // 14
 
     // ── Materials ─────────────────────────────────────────────────────────
-    const matFloor    = new THREE.MeshStandardMaterial({ color: '#8b6234' })
-    const matFloorDk  = new THREE.MeshStandardMaterial({ color: '#7a5428' })
-    const matLogWall  = new THREE.MeshStandardMaterial({ color: '#6b4a2a' })
-    const matLogBand  = new THREE.MeshStandardMaterial({ color: '#7e5c38' })
-    const matCeiling  = new THREE.MeshStandardMaterial({ color: '#9b7848', side: THREE.BackSide })
-    const matBeam     = new THREE.MeshStandardMaterial({ color: '#5a3c1e' })
-    const matStone    = new THREE.MeshStandardMaterial({ color: '#6a6870' })
-    const matFireGlow = new THREE.MeshStandardMaterial({ color: '#ff6a00', emissive: '#ff4400', emissiveIntensity: 0.8 })
-    const matRug      = new THREE.MeshStandardMaterial({ color: '#7a2828' })
-    const matRugPat   = new THREE.MeshStandardMaterial({ color: '#c0a028' })
-    const matShelf    = new THREE.MeshStandardMaterial({ color: '#5a3c20' })
-    const matBook     = [
+    const matFloor   = new THREE.MeshStandardMaterial({ color: '#b8863a' })
+    const matFloorDk = new THREE.MeshStandardMaterial({ color: '#9a6c28' })
+    const matWall    = new THREE.MeshStandardMaterial({ color: '#f0ece0' })
+    const matWains   = new THREE.MeshStandardMaterial({ color: '#8b6234' })
+    const matCeiling = new THREE.MeshStandardMaterial({ color: '#f5f2ea', side: THREE.BackSide })
+    const matBeam    = new THREE.MeshStandardMaterial({ color: '#7a5228' })
+    const matRedCA   = new THREE.MeshStandardMaterial({ color: '#d52b1e' })
+    const matWhiteCA = new THREE.MeshStandardMaterial({ color: '#f8f4ec' })
+    const matStone   = new THREE.MeshStandardMaterial({ color: '#8a8278' })
+    const matFireGlw = new THREE.MeshStandardMaterial({ color: '#ff6a00', emissive: '#ff4400', emissiveIntensity: 0.85 })
+    const matGlass   = new THREE.MeshStandardMaterial({ color: '#88d8a0', transparent: true, opacity: 0.45, emissive: '#44a860', emissiveIntensity: 0.12 })
+    const matWFrame  = new THREE.MeshStandardMaterial({ color: '#f0ece0' })
+    const matShelf   = new THREE.MeshStandardMaterial({ color: '#7a5228' })
+    const matBook    = [
       new THREE.MeshStandardMaterial({ color: '#1a3a6a' }),
       new THREE.MeshStandardMaterial({ color: '#6a1a1a' }),
       new THREE.MeshStandardMaterial({ color: '#1a5a2a' }),
       new THREE.MeshStandardMaterial({ color: '#4a3a1a' }),
+      new THREE.MeshStandardMaterial({ color: '#5a2a5a' }),
+      new THREE.MeshStandardMaterial({ color: '#1a5a5a' }),
     ]
-    const matDesk     = new THREE.MeshStandardMaterial({ color: '#6b4a28' })
-    const matLampBase = new THREE.MeshStandardMaterial({ color: '#3a3020' })
-    const matLampGlow = new THREE.MeshStandardMaterial({ color: '#ffe8a0', emissive: '#ffcc60', emissiveIntensity: 0.9 })
-    const matSnowWin  = new THREE.MeshStandardMaterial({ color: '#c8e8f8', emissive: '#88bce0', emissiveIntensity: 0.2, transparent: true, opacity: 0.65 })
-    const matBed      = new THREE.MeshStandardMaterial({ color: '#2a4a6a' })
-    const matPillow   = new THREE.MeshStandardMaterial({ color: '#e8ddd0' })
+    const matDesk    = new THREE.MeshStandardMaterial({ color: '#9a7a4a' })
+    const matMetal   = new THREE.MeshStandardMaterial({ color: '#3a3030' })
+    const matMonScr  = new THREE.MeshStandardMaterial({ color: '#2a4a8a', emissive: '#1a3a6a', emissiveIntensity: 0.55 })
+    const matLmpBase = new THREE.MeshStandardMaterial({ color: '#3a3030' })
+    const matLmpGlow = new THREE.MeshStandardMaterial({ color: '#fff8e0', emissive: '#ffcc50', emissiveIntensity: 1.2 })
+    const matRug     = new THREE.MeshStandardMaterial({ color: '#8a3a28' })
+    const matRugPat  = new THREE.MeshStandardMaterial({ color: '#d49a28' })
+    const matBed     = new THREE.MeshStandardMaterial({ color: '#2a3a5a' })
+    const matPillow  = new THREE.MeshStandardMaterial({ color: '#f0eae0' })
+    const matCouch   = new THREE.MeshStandardMaterial({ color: '#4a3a28' })
+    const matCoffee  = new THREE.MeshStandardMaterial({ color: '#6a4a1a' })
+    const matCurtain = new THREE.MeshStandardMaterial({ color: '#c04428', transparent: true, opacity: 0.88 })
+    const matWard    = new THREE.MeshStandardMaterial({ color: '#7a5228' })
+    const matMirror  = new THREE.MeshStandardMaterial({ color: '#8ac8e8', transparent: true, opacity: 0.5, emissive: '#4088a0', emissiveIntensity: 0.12 })
+    const matPlant   = new THREE.MeshStandardMaterial({ color: '#2d6b1a' })
+    const matPlantRd = new THREE.MeshStandardMaterial({ color: '#d42020' })
+    const matNexus   = new THREE.MeshStandardMaterial({ color: '#2a2840' })
 
-    // ── Plank floor (alternating dark/light strips) ───────────────────────
+    // ── Floor (honey-oak planks) ───────────────────────────────────────────
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), matFloor)
-    floor.rotation.x = -Math.PI / 2
-    floor.userData.isFloor = true
-    group.add(floor)
-    for (let p = -hw + 0.75; p < hw; p += 1.5) {
-      const plank = new THREE.Mesh(new THREE.PlaneGeometry(0.9, ROOM_SIZE), matFloorDk)
-      plank.rotation.x = -Math.PI / 2
-      plank.position.set(p, 0.002, 0)
-      plank.userData.isFloor = true
-      group.add(plank)
+    floor.rotation.x = -Math.PI / 2; floor.userData.isFloor = true; group.add(floor)
+    for (let p = -hw + 0.65; p < hw; p += 1.3) {
+      const plank = new THREE.Mesh(new THREE.PlaneGeometry(0.7, ROOM_SIZE), matFloorDk)
+      plank.rotation.x = -Math.PI / 2; plank.position.set(p, 0.002, 0)
+      plank.userData.isFloor = true; group.add(plank)
     }
 
-    // ── Thick log walls (1.2 unit thickness prevents wall-clipping) ───────
-    const wallThick = 1.2
+    // ── Walls (thick cream, with maple wood wainscoting) ──────────────────
+    const wallT = 1.4
     const wallDefs = [
-      { pos: [0, ROOM_HEIGHT / 2, -hw - wallThick / 2], size: [ROOM_SIZE + wallThick * 2, ROOM_HEIGHT, wallThick] },
-      { pos: [0, ROOM_HEIGHT / 2,  hw + wallThick / 2], size: [ROOM_SIZE + wallThick * 2, ROOM_HEIGHT, wallThick] },
-      { pos: [-hw - wallThick / 2, ROOM_HEIGHT / 2, 0], size: [wallThick, ROOM_HEIGHT, ROOM_SIZE] },
-      { pos: [ hw + wallThick / 2, ROOM_HEIGHT / 2, 0], size: [wallThick, ROOM_HEIGHT, ROOM_SIZE] },
+      { pos: [0, ROOM_HEIGHT / 2, -hw - wallT / 2], size: [ROOM_SIZE + wallT * 2, ROOM_HEIGHT, wallT] },
+      { pos: [0, ROOM_HEIGHT / 2,  hw + wallT / 2], size: [ROOM_SIZE + wallT * 2, ROOM_HEIGHT, wallT] },
+      { pos: [-hw - wallT / 2, ROOM_HEIGHT / 2, 0], size: [wallT, ROOM_HEIGHT, ROOM_SIZE] },
+      { pos: [ hw + wallT / 2, ROOM_HEIGHT / 2, 0], size: [wallT, ROOM_HEIGHT, ROOM_SIZE] },
     ]
     wallDefs.forEach(({ pos, size }) => {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(...size), matLogWall)
-      wall.position.set(...pos)
-      group.add(wall)
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(...size), matWall)
+      wall.position.set(...pos); group.add(wall)
+      const wains = new THREE.Mesh(new THREE.BoxGeometry(size[0] + 0.02, 1.0, size[2] + 0.02), matWains)
+      wains.position.set(pos[0], 0.5, pos[2]); group.add(wains)
     })
-    // Horizontal log bands (decorative lines on walls)
-    ;[1.0, 2.0, 3.0, 4.0].forEach((y) => {
-      wallDefs.forEach(({ pos, size }) => {
-        const band = new THREE.Mesh(new THREE.BoxGeometry(size[0] + 0.02, 0.12, size[2] + 0.02), matLogBand)
-        band.position.set(pos[0], y, pos[2])
-        group.add(band)
+
+    // ── Ceiling + maple beams ──────────────────────────────────────────────
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), matCeiling)
+    ceiling.rotation.x = Math.PI / 2; ceiling.position.y = ROOM_HEIGHT
+    ceiling.userData.isFloor = true; group.add(ceiling)
+    for (let bx = -hw + 3.5; bx < hw; bx += 5) {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.3, ROOM_SIZE), matBeam)
+      beam.position.set(bx, ROOM_HEIGHT - 0.16, 0); group.add(beam)
+    }
+    for (let bz = -hw + 4; bz < hw; bz += 8) {
+      const cb = new THREE.Mesh(new THREE.BoxGeometry(ROOM_SIZE, 0.2, 0.25), matBeam)
+      cb.position.set(0, ROOM_HEIGHT - 0.12, bz); group.add(cb)
+    }
+
+    // ── SOUTH WALL — Fireplace (faces north, player spawns near center) ───
+    const fpBase = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.45, 1.5), matStone)
+    fpBase.position.set(0, 0.225, hw - 1.2); group.add(fpBase)
+    ;[-1.9, 1.9].forEach((ox) => {
+      const fp = new THREE.Mesh(new THREE.BoxGeometry(0.7, 3.2, 1.5), matStone)
+      fp.position.set(ox, 1.6, hw - 1.2); group.add(fp)
+    })
+    const fpLintel = new THREE.Mesh(new THREE.BoxGeometry(4.7, 0.5, 1.5), matStone)
+    fpLintel.position.set(0, 3.45, hw - 1.2); group.add(fpLintel)
+    const fpMantel = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.35, 0.65), matWard)
+    fpMantel.position.set(0, 3.85, hw - 1.0); group.add(fpMantel)
+    const fpChim = new THREE.Mesh(new THREE.BoxGeometry(2.0, ROOM_HEIGHT - 3.8, 1.1), matStone)
+    fpChim.position.set(0, (ROOM_HEIGHT + 3.8) / 2, hw - 0.9); group.add(fpChim)
+    const fpFire = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.4), matFireGlw)
+    fpFire.position.set(0, 0.9, hw - 0.75); group.add(fpFire)
+    ;[-1.8, 1.8].forEach((ox) => {
+      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.45, 8), matRedCA)
+      vase.position.set(ox, 4.15, hw - 1.05); group.add(vase)
+    })
+    // Maple-leaf art above fireplace
+    const artBase = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 3.5), matWhiteCA)
+    artBase.position.set(0, 6.0, hw - 0.72); group.add(artBase)
+    const artLeaf = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 8), matRedCA)
+    artLeaf.position.set(0, 6.0, hw - 0.78); artLeaf.scale.set(1.0, 0.7, 0.18); group.add(artLeaf)
+
+    // ── NORTH WALL — Portal arch + two windows ─────────────────────────────
+    // Decorative stone arch surrounds the exit portal
+    ;[-2.5, 2.5].forEach((ox) => {
+      const archP = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.5, 0.9), matNexus)
+      archP.position.set(ox, 2.75, -hw + 0.85); group.add(archP)
+    })
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(6.5, 1.0, 0.9), matNexus)
+    archTop.position.set(0, 5.75, -hw + 0.85); group.add(archTop)
+    const archCurve = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.38, 6, 12, Math.PI), matNexus)
+    archCurve.position.set(0, 5.5, -hw + 0.85); archCurve.rotation.z = Math.PI; group.add(archCurve)
+    // Two windows flanking the arch
+    ;[-7, 7].forEach((wx) => {
+      const nWin = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 2.8), matGlass)
+      nWin.position.set(wx, 3.2, -hw + 0.72); group.add(nWin)
+      ;[wx - 1.55, wx + 1.55].forEach((fx) => {
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.1, 0.18), matWFrame)
+        fr.position.set(fx, 3.2, -hw + 0.64); group.add(fr)
+      })
+      ;[wx - 1.7, wx + 1.7].forEach((cx) => {
+        const curt = new THREE.Mesh(new THREE.BoxGeometry(0.35, 2.8, 0.12), matCurtain)
+        curt.position.set(cx, 3.2, -hw + 0.88); group.add(curt)
       })
     })
 
-    // ── Ceiling with wooden beams ─────────────────────────────────────────
-    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), matCeiling)
-    ceiling.rotation.x = Math.PI / 2
-    ceiling.position.y = ROOM_HEIGHT
-    ceiling.userData.isFloor = true
-    group.add(ceiling)
-    for (let bx = -hw + 3; bx < hw; bx += 5) {
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, ROOM_SIZE), matBeam)
-      beam.position.set(bx, ROOM_HEIGHT - 0.12, 0)
-      group.add(beam)
-    }
-
-    // ── Stone fireplace (north wall, center) ──────────────────────────────
-    const fpBase = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.4, 1.2), matStone)
-    fpBase.position.set(0, 0.2, -hw + 1.0)
-    group.add(fpBase)
-    const fpLeft  = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.8, 1.2), matStone)
-    const fpRight = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.8, 1.2), matStone)
-    fpLeft.position.set(-1.55,  1.4, -hw + 1.0)
-    fpRight.position.set(1.55,  1.4, -hw + 1.0)
-    group.add(fpLeft); group.add(fpRight)
-    const fpLintel = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.45, 1.2), matStone)
-    fpLintel.position.set(0, 2.9, -hw + 1.0)
-    group.add(fpLintel)
-    const fpChimney = new THREE.Mesh(new THREE.BoxGeometry(1.8, ROOM_HEIGHT - 3.0, 0.9), matStone)
-    fpChimney.position.set(0, (ROOM_HEIGHT + 3.0) / 2, -hw + 0.8)
-    group.add(fpChimney)
-    // Fire glow
-    const fpFire = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.0, 0.4), matFireGlow)
-    fpFire.position.set(0, 0.9, -hw + 0.65)
-    group.add(fpFire)
-
-    // ── Frosty window (east wall) ─────────────────────────────────────────
-    const win = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.8), matSnowWin)
-    win.rotation.y = -Math.PI / 2
-    win.position.set(hw - 0.01, 2.2, -3)
-    group.add(win)
-    // Window frame
-    const wfMat = new THREE.MeshStandardMaterial({ color: '#5a3c20' })
-    ;[[-0.55, 0, 0.09], [0.55, 0, 0.09]].forEach(([ox]) => {
-      const side = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.9, 0.15), wfMat)
-      side.rotation.y = -Math.PI / 2
-      side.position.set(hw + 0.05, 2.2, -3 + ox * 2.2)
-      group.add(side)
-    })
-
-    // ── Rug at center ─────────────────────────────────────────────────────
-    const rug = new THREE.Mesh(new THREE.PlaneGeometry(7, 5), matRug)
-    rug.rotation.x = -Math.PI / 2
-    rug.position.set(0, 0.004, 2)
-    rug.userData.isFloor = true
-    group.add(rug)
-    const rugBorder = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 4.2), matRugPat)
-    rugBorder.rotation.x = -Math.PI / 2
-    rugBorder.position.set(0, 0.006, 2)
-    group.add(rugBorder)
-
-    // ── Bookshelf (west wall) ─────────────────────────────────────────────
-    const shelfCase = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.5, 5.0), matShelf)
-    shelfCase.position.set(-hw + 0.8, 1.75, 3)
-    group.add(shelfCase)
-    ;[0.8, 1.7, 2.6].forEach((sy) => {
-      const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 5.0), matShelf)
-      shelf.position.set(-hw + 0.8, sy, 3)
-      group.add(shelf)
-      // Books on each shelf
-      let bx = -2.1
-      for (let bi = 0; bi < 7; bi += 1) {
-        const bW = 0.28 + (bi % 3) * 0.08
-        const book = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.65 + (bi % 2) * 0.1, bW), matBook[bi % 4])
-        book.position.set(-hw + 0.82, sy + 0.42, 3 + bx + bW / 2)
-        group.add(book)
-        bx += bW + 0.04
+    // ── EAST WALL — Desk + two bookshelves + window ────────────────────────
+    ;[-4.5, 4.5].forEach((bz) => {
+      const shCase = new THREE.Mesh(new THREE.BoxGeometry(0.45, ROOM_HEIGHT - 0.2, 5.5), matShelf)
+      shCase.position.set(hw - 0.9, (ROOM_HEIGHT - 0.2) / 2, bz); group.add(shCase)
+      for (let sy = 0.9; sy < ROOM_HEIGHT - 1.0; sy += 1.4) {
+        const sh = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.1, 5.5), matShelf)
+        sh.position.set(hw - 0.9, sy, bz); group.add(sh)
+        let bp = bz - 2.4
+        for (let bi = 0; bi < 8; bi++) {
+          const bW = 0.28 + (bi % 3) * 0.1
+          const book = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.7 + (bi % 2) * 0.12, bW), matBook[bi % 6])
+          book.position.set(hw - 0.88, sy + 0.44, bp + bW / 2); group.add(book)
+          bp += bW + 0.05
+        }
       }
     })
-
-    // ── Desk + lamp (east wall, north) ───────────────────────────────────
-    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 3.0), matDesk)
-    deskTop.position.set(hw - 1.0, 1.8, -5)
-    group.add(deskTop)
-    ;[-1.3, 1.3].forEach((dz) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.1), matDesk)
-      leg.position.set(hw - 1.0, 0.9, -5 + dz)
-      group.add(leg)
+    // Window between bookshelves
+    const eWin = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 4.0), matGlass)
+    eWin.rotation.y = -Math.PI / 2; eWin.position.set(hw - 0.72, 3.2, -0.5); group.add(eWin)
+    ;[-0.5 - 1.9, -0.5 + 1.9].forEach((cz) => {
+      const curt = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.0, 0.4), matCurtain)
+      curt.position.set(hw - 0.88, 3.2, cz); group.add(curt)
     })
+    // Study desk (north end of east wall)
+    const dTop = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.12, 5.5), matDesk)
+    dTop.position.set(hw - 2.0, 1.8, -7.5); group.add(dTop)
+    ;[-2.2, 2.2].forEach((dz) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 0.08), matMetal)
+      leg.position.set(hw - 2.0, 0.9, -7.5 + dz); group.add(leg)
+    })
+    // Monitor
+    const monBase = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.12, 0.35), matMetal)
+    monBase.position.set(hw - 2.0, 1.93, -7.2); group.add(monBase)
+    const monScr = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.5, 2.2), matMetal)
+    monScr.position.set(hw - 2.08, 2.82, -7.2); group.add(monScr)
+    const monGlow = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 1.3), matMonScr)
+    monGlow.rotation.y = Math.PI / 2; monGlow.position.set(hw - 1.99, 2.82, -7.2); group.add(monGlow)
     // Desk lamp
-    const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.7, 6), matLampBase)
-    lampPole.position.set(hw - 1.0, 2.21, -5 + 1.1)
-    group.add(lampPole)
-    const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.28, 8, 1, true), matLampBase)
-    lampShade.position.set(hw - 1.0, 2.66, -5 + 1.1)
-    group.add(lampShade)
-    const lampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), matLampGlow)
-    lampBulb.position.set(hw - 1.0, 2.65, -5 + 1.1)
-    group.add(lampBulb)
+    const dLBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 0.12, 8), matLmpBase)
+    dLBase.position.set(hw - 2.0, 1.92, -9.5); group.add(dLBase)
+    const dLPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 6), matLmpBase)
+    dLPole.position.set(hw - 2.0, 2.43, -9.5); group.add(dLPole)
+    const dLShade = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.32, 8, 1, true), matLmpBase)
+    dLShade.position.set(hw - 2.0, 2.97, -9.5); group.add(dLShade)
+    const dLBulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 4), matLmpGlow)
+    dLBulb.position.set(hw - 2.0, 2.97, -9.5); group.add(dLBulb)
 
-    // ── Bed (west wall, south corner) ────────────────────────────────────
-    const bedBase = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.6, 5.0), matBed)
-    bedBase.position.set(-hw + 2.35, 0.3, 5.5)
-    group.add(bedBase)
-    const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.35, 4.8), new THREE.MeshStandardMaterial({ color: '#e8d8c8' }))
-    mattress.position.set(-hw + 2.35, 0.78, 5.5)
-    group.add(mattress)
-    const blanket = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.18, 3.5), new THREE.MeshStandardMaterial({ color: '#3a5a3a' }))
-    blanket.position.set(-hw + 2.35, 1.0, 6.5)
-    group.add(blanket)
-    ;[-1.1, 1.1].forEach((ox) => {
-      const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.22, 0.7), matPillow)
-      pillow.position.set(-hw + 2.35 + ox, 1.02, 3.2)
-      group.add(pillow)
+    // ── WEST WALL — Bed + Wardrobe + window ───────────────────────────────
+    const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.55, 6.0), matBed)
+    bedFrame.position.set(-hw + 3.0, 0.275, -5); group.add(bedFrame)
+    const mattress = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.4, 5.7), new THREE.MeshStandardMaterial({ color: '#e8ddd0' }))
+    mattress.position.set(-hw + 3.0, 0.75, -5); group.add(mattress)
+    const blanket = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.22, 3.8), matRedCA)
+    blanket.position.set(-hw + 3.0, 0.98, -3.8); group.add(blanket)
+    const quilPat = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.23, 1.5), matWhiteCA)
+    quilPat.position.set(-hw + 3.0, 0.99, -3.8); group.add(quilPat)
+    ;[-1.4, 1.4].forEach((ox) => {
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.28, 0.85), matPillow)
+      pil.position.set(-hw + 3.0 + ox, 1.03, -7.4); group.add(pil)
     })
-    // Headboard
-    const headboard = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 0.18), matShelf)
-    headboard.position.set(-hw + 2.35, 1.2, 3.0)
-    group.add(headboard)
+    const headboard = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.6, 0.22), matWard)
+    headboard.position.set(-hw + 3.0, 1.5, -8.0); group.add(headboard)
+    const hbLeaf = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), matRedCA)
+    hbLeaf.position.set(-hw + 3.0, 1.5, -7.89); hbLeaf.scale.set(1.0, 0.7, 0.2); group.add(hbLeaf)
+    // Bedside lamp
+    const bLBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.55, 8), matLmpBase)
+    bLBase.position.set(-hw + 1.0, 0.92, -7.0); group.add(bLBase)
+    const bLShade = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.3, 8, 1, true), matLmpBase)
+    bLShade.position.set(-hw + 1.0, 1.45, -7.0); group.add(bLShade)
+    const bLBulb = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 4), matLmpGlow)
+    bLBulb.position.set(-hw + 1.0, 1.43, -7.0); group.add(bLBulb)
+    // Wardrobe (south end of west wall)
+    const wCab = new THREE.Mesh(new THREE.BoxGeometry(0.65, ROOM_HEIGHT - 1.0, 5.0), matWard)
+    wCab.position.set(-hw + 0.95, (ROOM_HEIGHT - 1.0) / 2, 5.5); group.add(wCab)
+    ;[4.1, 6.8].forEach((dz) => {
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.68, ROOM_HEIGHT - 1.5, 2.2), matWall)
+      door.position.set(-hw + 1.0, (ROOM_HEIGHT - 1.5) / 2, dz); group.add(door)
+    })
+    const mirror = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.8), matMirror)
+    mirror.rotation.y = Math.PI / 2; mirror.position.set(-hw + 1.36, 2.2, 5.5); group.add(mirror)
+    // West window (above bed)
+    const wWin = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 2.5), matGlass)
+    wWin.rotation.y = Math.PI / 2; wWin.position.set(-hw + 0.72, 3.8, -5); group.add(wWin)
+
+    // ── CENTER — Rug + Couch + Coffee table ──────────────────────────────
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), matRug)
+    rug.rotation.x = -Math.PI / 2; rug.position.set(2, 0.004, 3); rug.userData.isFloor = true; group.add(rug)
+    const rugBorder = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 6.5), matRugPat)
+    rugBorder.rotation.x = -Math.PI / 2; rugBorder.position.set(2, 0.006, 3); group.add(rugBorder)
+    const rugCtr = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 5.0), matRug)
+    rugCtr.rotation.x = -Math.PI / 2; rugCtr.position.set(2, 0.008, 3); group.add(rugCtr)
+    // Couch (facing south / fireplace)
+    const cBase1 = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.7, 2.2), matCouch)
+    cBase1.position.set(1.5, 0.35, 0); group.add(cBase1)
+    const cBack1 = new THREE.Mesh(new THREE.BoxGeometry(6.5, 1.2, 0.55), matCouch)
+    cBack1.position.set(1.5, 1.05, -1.2); group.add(cBack1)
+    ;[-2, 0, 2].forEach((ox) => {
+      const cush = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.35, 1.8), matRedCA)
+      cush.position.set(1.5 + ox, 0.88, 0); group.add(cush)
+    })
+    // Coffee table
+    const ctTop = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.14, 2.5), matCoffee)
+    ctTop.position.set(2, 0.72, 3.5); group.add(ctTop)
+    ;[[-1.5, 2.5], [1.5, 2.5], [-1.5, 4.5], [1.5, 4.5]].forEach(([cx, cz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.72, 6), matMetal)
+      leg.position.set(cx, 0.36, cz); group.add(leg)
+    })
+
+    // ── NE CORNER — Decorative maple tree ─────────────────────────────────
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.75, 10), matStone)
+    pot.position.set(hw - 2, 0.375, -hw + 2); group.add(pot)
+    const tTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 1.8, 7), matWard)
+    tTrunk.position.set(hw - 2, 1.65, -hw + 2); group.add(tTrunk)
+    const tGreen = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), matPlant)
+    tGreen.position.set(hw - 2, 3.2, -hw + 2); group.add(tGreen)
+    const tRed = new THREE.Mesh(new THREE.SphereGeometry(0.6, 6, 4), matPlantRd)
+    tRed.position.set(hw - 2, 4.15, -hw + 2); group.add(tRed)
+
+    // ── SOUTH WINDOWS + Canadian flag ─────────────────────────────────────
+    // Flag mounted on south wall (left of fireplace)
+    ;[matRedCA, matWhiteCA, matRedCA].forEach((mat, i) => {
+      const seg = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.2), mat)
+      seg.position.set(-5.0 + i * 1.3, 4.5, hw - 0.72); group.add(seg)
+    })
+    const fMaple = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), matRedCA)
+    fMaple.position.set(-3.7, 4.5, hw - 0.70); fMaple.scale.set(1.0, 0.7, 0.18); group.add(fMaple)
+    const fRod = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 4.5, 6), matMetal)
+    fRod.position.set(-6.2, 4.5, hw - 0.7); fRod.rotation.z = Math.PI / 2; group.add(fRod)
+    // South windows (flanking fireplace)
+    ;[-6, 6].forEach((wx) => {
+      const sWin = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 3.5), matGlass)
+      sWin.position.set(wx, 3.0, hw - 0.72); group.add(sWin)
+      ;[wx - 1.9, wx + 1.9].forEach((cx) => {
+        const curt = new THREE.Mesh(new THREE.BoxGeometry(0.35, 3.5, 0.12), matCurtain)
+        curt.position.set(cx, 3.0, hw - 0.88); group.add(curt)
+      })
+    })
 
     return { model: group, groundRayHeight: ROOM_HEIGHT + 2 }
   }, [])
@@ -1220,6 +1393,7 @@ function Player({
   playerRotationRef,
   authorName,
   playerId,
+  spawnAt,
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -1255,9 +1429,11 @@ function Player({
       playerPositionRef.current = pos
     }
 
-    // Drop the player onto the real scenery surface the first time we run,
-    // instead of starting at the world origin (y = 0).
+    // Drop the player onto the real scenery surface the first time we run.
+    // If spawnAt is provided (e.g. room mode), teleport x/z first so the
+    // player starts inside the room rather than at world origin.
     if (!initialized.current) {
+      if (spawnAt) { pos.x = spawnAt[0]; pos.z = spawnAt[2] }
       pos.y = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
       initialized.current = true
     }
@@ -1859,6 +2035,7 @@ function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
         playerRotationRef={playerRotationRef}
         authorName={authorName}
         playerId={playerId}
+        spawnAt={[0, 0, 3]}
       />
       <Portal
         position={ROOM_EXIT_PORTAL_POSITION}
@@ -2463,22 +2640,25 @@ function WorldMap({ open, onClose, playerPositionRef }) {
           viewBox={`-${GROUND_RADIUS + 5} -${GROUND_RADIUS + 5} ${(GROUND_RADIUS + 5) * 2} ${(GROUND_RADIUS + 5) * 2}`}
           className="h-[66vh] w-[66vh] max-w-[90vw]"
         >
-          {/* Snow ground */}
-          <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#dce8f0" />
-          <circle cx="0" cy="0" r="62" fill="#c8d8e8" opacity="0.5" />
+          {/* Summer grass ground */}
+          <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#4a8a3a" />
+          <circle cx="0" cy="0" r="58" fill="#5ea848" opacity="0.4" />
 
-          {/* Frozen lake (east) */}
-          <circle cx="68" cy="8" r="24" fill="#8ab0cc" opacity="0.7" />
-          <circle cx="68" cy="8" r="8" fill="none" stroke="#ffffff" strokeWidth="0.5" opacity="0.6" />
-          <circle cx="68" cy="8" r="16" fill="none" stroke="#ffffff" strokeWidth="0.5" opacity="0.6" />
-          <text x="68" y="9" fontSize="5" textAnchor="middle" dominantBaseline="middle">⛸️</text>
+          {/* West forest zone */}
+          <circle cx="-60" cy="0" r="36" fill="#2d6a22" opacity="0.75" />
+          <text x="-60" y="1" fontSize="5" textAnchor="middle" dominantBaseline="middle">🌲</text>
 
-          {/* Ring roads (icy) */}
-          <circle cx="0" cy="0" r="23.5" fill="none" stroke="#a8b8c8" strokeWidth="3" opacity="0.8" />
-          <circle cx="0" cy="0" r="50" fill="none" stroke="#909ab0" strokeWidth="3.5" opacity="0.75" />
-          <circle cx="0" cy="0" r="75.5" fill="none" stroke="#909ab0" strokeWidth="2.5" opacity="0.7" />
+          {/* Swimming pool (east) */}
+          <rect x="56" y="-22" width="18" height="44" fill="#1a7abf" opacity="0.85" rx="1" />
+          <rect x="60" y="-20" width="10" height="40" fill="#2888cc" opacity="0.7" rx="0.5" />
+          <text x="65" y="1" fontSize="5" textAnchor="middle" dominantBaseline="middle">🏊</text>
 
-          {/* Cardinal avenues (snow paths) */}
+          {/* Ring roads (paved stone) */}
+          <circle cx="0" cy="0" r="23.5" fill="none" stroke="#a8a090" strokeWidth="3" opacity="0.8" />
+          <circle cx="0" cy="0" r="47" fill="none" stroke="#a0988a" strokeWidth="3.5" opacity="0.75" />
+          <circle cx="0" cy="0" r="74" fill="none" stroke="#a0988a" strokeWidth="2.5" opacity="0.7" />
+
+          {/* Cardinal avenues */}
           {[0, 90, 180, 270].map((deg) => {
             const rad = (deg * Math.PI) / 180
             return (
@@ -2486,21 +2666,23 @@ function WorldMap({ open, onClose, playerPositionRef }) {
                 key={deg}
                 x1={Math.sin(rad) * 9} y1={Math.cos(rad) * 9}
                 x2={Math.sin(rad) * (GROUND_RADIUS - 2)} y2={Math.cos(rad) * (GROUND_RADIUS - 2)}
-                stroke="#c0d0dc" strokeWidth="6.5" opacity="0.65"
+                stroke="#c8bc9c" strokeWidth="6.5" opacity="0.65"
               />
             )
           })}
 
-          {/* Central ice plaza */}
+          {/* Central plaza (octagonal stone) */}
           <polygon points={
             Array.from({ length: 8 }, (_, i) => {
               const a = (i / 8) * Math.PI * 2
               return `${Math.cos(a) * 9},${Math.sin(a) * 9}`
             }).join(' ')
-          } fill="#b8cfe0" />
-          <circle cx="0" cy="0" r="5" fill="#8ab0cc" opacity="0.6" />
-          {/* Frozen fountain */}
-          <circle cx="0" cy="0" r="2.2" fill="#6090aa" opacity="0.9" />
+          } fill="#d0c8b8" />
+          {/* Maple leaf monument */}
+          <circle cx="-7" cy="0" r="2.0" fill="#d52b1e" opacity="0.9" />
+          <text x="-7" y="0.5" fontSize="3.5" textAnchor="middle" dominantBaseline="middle">🍁</text>
+          {/* Fountain */}
+          <circle cx="7" cy="0" r="2.2" fill="#2888cc" opacity="0.9" />
 
           {/* Portal Nexus (south) */}
           <circle cx="0" cy="72" r="26" fill="#181830" opacity="0.55" />
@@ -2521,11 +2703,10 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             const [bx, , bz] = pos
             return (
               <g key={name}>
-                <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill={color} opacity="0.80" rx="0.6" />
-                {/* Snow on roof */}
-                <rect x={bx - w / 2 - 0.3} y={bz - d / 2 - 0.3} width={w + 0.6} height={d + 0.6} fill="none" stroke="#dce8f0" strokeWidth="0.8" opacity="0.6" rx="0.5" />
+                <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill={color} opacity="0.82" rx="0.8" />
+                <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill="none" stroke="#d52b1e" strokeWidth="0.6" opacity="0.5" rx="0.8" />
                 <text x={bx} y={bz + 0.6} fontSize="4.5" textAnchor="middle" dominantBaseline="middle">{label}</text>
-                <text x={bx} y={bz + d / 2 + 3.5} fontSize="2.2" textAnchor="middle" fill="#e8f0f8" opacity="0.9">{name}</text>
+                <text x={bx} y={bz + d / 2 + 3.5} fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.95">{name}</text>
               </g>
             )
           })}
@@ -2535,8 +2716,8 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             const [bx, , bz] = pos
             return (
               <g key={i}>
-                <rect x={bx - 3.5} y={bz - 6} width={7} height={12} fill={color} opacity="0.65" rx="0.4" />
-                <rect x={bx - 3.5} y={bz - 6} width={7} height={1.5} fill="#dce8f0" opacity="0.5" rx="0.3" />
+                <rect x={bx - 3.5} y={bz - 6} width={7} height={12} fill={color} opacity="0.70" rx="0.4" />
+                <rect x={bx - 3.5} y={bz - 6} width={7} height={1.5} fill="#d52b1e" opacity="0.45" rx="0.3" />
               </g>
             )
           })}
@@ -2584,14 +2765,15 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             )
           })()}
 
-          {/* Perimeter wooden fence */}
-          <circle cx="0" cy="0" r={GROUND_RADIUS - 0.5} fill="none" stroke="#6b4a30" strokeWidth="1.8" opacity="0.65" strokeDasharray="4 2.5" />
+          {/* Perimeter stone fence */}
+          <circle cx="0" cy="0" r={GROUND_RADIUS - 0.5} fill="none" stroke="#beb8a8" strokeWidth="1.8" opacity="0.70" strokeDasharray="4 2.5" />
 
-          {/* Log gate posts */}
+          {/* Stone gate posts with red caps */}
           {[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].map((a, i) => (
             <g key={i}>
-              <circle cx={Math.sin(a) * GROUND_RADIUS} cy={Math.cos(a) * GROUND_RADIUS} r="2.8" fill="#8a6a50" opacity="0.85" />
-              <text x={Math.sin(a) * (GROUND_RADIUS - 6)} y={Math.cos(a) * (GROUND_RADIUS - 6)} fontSize="3.5" textAnchor="middle" dominantBaseline="middle">🏔️</text>
+              <circle cx={Math.sin(a) * GROUND_RADIUS} cy={Math.cos(a) * GROUND_RADIUS} r="2.8" fill="#beb8a8" opacity="0.85" />
+              <circle cx={Math.sin(a) * GROUND_RADIUS} cy={Math.cos(a) * GROUND_RADIUS} r="1.2" fill="#d52b1e" opacity="0.9" />
+              <text x={Math.sin(a) * (GROUND_RADIUS - 6)} y={Math.cos(a) * (GROUND_RADIUS - 6)} fontSize="3.5" textAnchor="middle" dominantBaseline="middle">🍁</text>
             </g>
           ))}
 
@@ -2961,8 +3143,8 @@ export default function VRPage({ roomMode = false }) {
 
   // Room: warm amber firelight interior. Campus: overcast Canadian winter sky
   // (grey-blue), fog starts at r=38 and fades by r=148 (full campus visible).
-  const bgColor = roomMode ? '#3a2a1a' : '#aabdcc'
-  const fogArgs = roomMode ? ['#2a1e14', 6, 20] : ['#aabdcc', 38, 148]
+  const bgColor = roomMode ? '#3d2a1c' : '#87ceeb'
+  const fogArgs = roomMode ? ['#3d2a1c', 12, 36] : ['#c8e8f4', 50, 165]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -2992,8 +3174,8 @@ export default function VRPage({ roomMode = false }) {
           <color attach="background" args={[bgColor]} />
           <fog attach="fog" args={fogArgs} />
           {/* Campus: cold overcast northern light. Room: warm firelight fill. */}
-          <ambientLight intensity={roomMode ? 0.55 : 0.75} color={roomMode ? '#ffcc88' : '#c8d8f0'} />
-          <directionalLight position={[10, 15, 8]} intensity={roomMode ? 0.4 : 0.9} color={roomMode ? '#ffaa44' : '#d0e0f0'} />
+          <ambientLight intensity={roomMode ? 0.55 : 0.85} color={roomMode ? '#ffcc88' : '#d8eaf8'} />
+          <directionalLight position={[20, 30, 10]} intensity={roomMode ? 0.4 : 1.1} color={roomMode ? '#ffaa44' : '#fff8d8'} />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           <Suspense fallback={null}>
             <World
