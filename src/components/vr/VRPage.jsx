@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import PageVideoModal from '../shared/PageVideoModal'
 import MascotMesh from '../mascot/MascotMesh'
@@ -593,6 +594,51 @@ function useTestGround() {
     }
 
     return { model: group, groundRayHeight: 14 }
+  }, [])
+}
+
+// Private "Room" scenery: a simple enclosed square space (floor + 4 walls).
+// Intentionally minimal — just the player, no NPCs/multiplayer — so it acts
+// as a blank canvas for future furniture/decoration. Same return shape as
+// useTestGround so <Player> works without any changes.
+function useRoomGround() {
+  return useMemo(() => {
+    const group = new THREE.Group()
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE),
+      new THREE.MeshStandardMaterial({ color: '#c8b49a' }),
+    )
+    floor.rotation.x = -Math.PI / 2
+    floor.userData.isFloor = true
+    group.add(floor)
+
+    const wallMat = new THREE.MeshStandardMaterial({ color: '#e8ddd0' })
+    const wallThick = 0.4
+    const hw = ROOM_SIZE / 2
+    const wallDefs = [
+      { pos: [0, ROOM_HEIGHT / 2, -hw], size: [ROOM_SIZE + wallThick, ROOM_HEIGHT, wallThick] },
+      { pos: [0, ROOM_HEIGHT / 2, hw], size: [ROOM_SIZE + wallThick, ROOM_HEIGHT, wallThick] },
+      { pos: [-hw, ROOM_HEIGHT / 2, 0], size: [wallThick, ROOM_HEIGHT, ROOM_SIZE] },
+      { pos: [hw, ROOM_HEIGHT / 2, 0], size: [wallThick, ROOM_HEIGHT, ROOM_SIZE] },
+    ]
+    wallDefs.forEach(({ pos, size }) => {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(...size), wallMat)
+      wall.position.set(...pos)
+      group.add(wall)
+    })
+
+    // Ceiling — gives the room a proper interior feel.
+    const ceiling = new THREE.Mesh(
+      new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE),
+      new THREE.MeshStandardMaterial({ color: '#f5f0ea', side: THREE.BackSide }),
+    )
+    ceiling.rotation.x = Math.PI / 2
+    ceiling.position.y = ROOM_HEIGHT
+    ceiling.userData.isFloor = true
+    group.add(ceiling)
+
+    return { model: group, groundRayHeight: ROOM_HEIGHT + 2 }
   }, [])
 }
 
@@ -1302,6 +1348,79 @@ function RemotePlayers({ transformsRef, onSelectPlayer }) {
   )
 }
 
+// A glowing torus "portal" ring that detects when the player walks within
+// PORTAL_INTERACT_RADIUS and reports it via onNearbyChange, so VRPage can
+// show the "press E" prompt outside the canvas and handle the navigation.
+// The ring slowly spins on its Y axis to make it visually distinct from
+// static scenery objects.
+function Portal({ position, color, label, playerPositionRef, onNearbyChange }) {
+  const portalVec = useRef(new THREE.Vector3(...position))
+  const ringRef = useRef()
+  const lastNear = useRef(false)
+
+  useFrame((_, delta) => {
+    if (ringRef.current) ringRef.current.rotation.y += delta * 0.8
+
+    const pos = playerPositionRef?.current
+    if (!pos) return
+    const near = pos.distanceTo(portalVec.current) <= PORTAL_INTERACT_RADIUS
+    if (near !== lastNear.current) {
+      lastNear.current = near
+      onNearbyChange?.(near)
+    }
+  })
+
+  return (
+    <group position={position}>
+      <mesh ref={ringRef} position={[0, 1.2, 0]}>
+        <torusGeometry args={[1, 0.12, 16, 48]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} />
+      </mesh>
+      {/* Inner glow disc */}
+      <mesh position={[0, 1.2, 0]}>
+        <circleGeometry args={[0.9, 32]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} transparent opacity={0.35} side={THREE.DoubleSide} />
+      </mesh>
+      <Html position={[0, 2.7, 0]} center distanceFactor={10}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          {label}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+// Player's private room: same Player + camera as the campus, but on the
+// simple enclosed Room ground with no NPCs, no remote players, and an exit
+// portal back to /vr (the campus).
+function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
+  const { model, groundRayHeight } = useRoomGround()
+  return (
+    <>
+      <primitive object={model} />
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+      />
+      <Portal
+        position={ROOM_EXIT_PORTAL_POSITION}
+        color="#7dd3fc"
+        label="🌀 Salir al Campus"
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
+    </>
+  )
+}
+
 // Watches the distance from the player to every NPC and reports the closest
 // one within INTERACT_RADIUS (or null) via `onNearbyChange`, so VRPage can
 // show its mission card outside the canvas.
@@ -1337,7 +1456,9 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 }
 
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
-// the player and the mission NPCs on top.
+// the player, NPCs, remote players, and the portal to the player's Room.
+// When roomMode=true, renders the private Room instead (RoomWorld) with no
+// NPCs/multiplayer, just the player and an exit portal back to the campus.
 function World({
   mascot,
   skin,
@@ -1347,10 +1468,28 @@ function World({
   playerRotationRef,
   remoteTransformsRef,
   onNearbyNpcChange,
+  onNearPortalChange,
   authorName,
   playerId,
   onSelectPlayer,
+  roomMode,
 }) {
+  if (roomMode) {
+    return (
+      <RoomWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+      />
+    )
+  }
+
   const WorldGround = USE_TEST_SCENERY ? TestWorld : CityWorld
 
   return (
@@ -1372,6 +1511,13 @@ function World({
       ))}
       {!SIMPLE_MODE &&
         WANDER_CAT_PATHS.map((path, i) => <WanderingCat key={i} path={path} />)}
+      <Portal
+        position={ROOM_PORTAL_POSITION}
+        color="#a78bfa"
+        label="🚪 Mi Room"
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
       <RemotePlayers transformsRef={remoteTransformsRef} onSelectPlayer={onSelectPlayer} />
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
@@ -2021,7 +2167,10 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
   )
 }
 
-export default function VRPage() {
+// roomMode=true is passed from the /vr/room route — renders the private Room
+// instead of the campus (no NPCs, no remote players, exit portal back to /vr).
+export default function VRPage({ roomMode = false }) {
+  const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
@@ -2029,10 +2178,6 @@ export default function VRPage() {
   const mascot = getMascotById(selectedMascotId)
   const skin = getSkinById(selectedSkinId)
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
-  // Show the player's real account name in the VR world (name tag + world
-  // chat), not their mascot's name — `display_name` is the same field
-  // CommentsPanel uses, falling back to the email's local part, then the
-  // mascot's own name/nickname if neither is set (offline/local-only mode).
   const profile = useAuthStore((s) => s.profile)
   const session = useAuthStore((s) => s.session)
   const accountName =
@@ -2047,6 +2192,7 @@ export default function VRPage() {
   const playerId = useRef(crypto.randomUUID()).current
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
+  // Room is private — no shared presence channel needed.
   const { remoteTransformsRef, sendChatMessage, kicked } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
@@ -2055,9 +2201,11 @@ export default function VRPage() {
     accountId: session?.user?.id ?? null,
     positionRef: playerPositionRef,
     rotationRef: playerRotationRef,
+    enabled: !roomMode,
   })
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
+  const [nearPortal, setNearPortal] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatPrefill, setChatPrefill] = useState(null)
@@ -2073,24 +2221,29 @@ export default function VRPage() {
   const missionState = useMissionState()
   const openPanel = useMascotCompanionStore((s) => s.openPanel)
 
-  // Closing the mission card when the player walks away from (or changes)
-  // the NPC they were talking to — it only stays open while still nearby.
   useEffect(() => {
     if (nearbyNpcId !== activeNpcId) setActiveNpcId(null)
   }, [nearbyNpcId, activeNpcId])
 
-  // WoW-style "MOTD": a local-only system message every time the world
-  // loads, welcoming the player by their account name and reminding them
-  // how chat/whispers work.
   useEffect(() => {
-    useWorldChatStore
-      .getState()
-      .addSystemMessage(
-        `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`,
-      )
-    // Only on mount — re-running this on every name change would spam the log.
+    const motd = roomMode
+      ? `Tu Room privada, ${chatAuthor}. Aquí solo apareces tú. Acércate al portal 🌀 y pulsa E para volver al Campus.`
+      : `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`
+    useWorldChatStore.getState().addSystemMessage(motd)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 'E' interacts with nearby portals (campus → Room, or Room → campus).
+  useEffect(() => {
+    const handleDown = (e) => {
+      if (isTypingTarget(e.target)) return
+      if (e.key.toLowerCase() === 'e' && nearPortal) {
+        navigate(roomMode ? '/vr' : '/vr/room')
+      }
+    }
+    window.addEventListener('keydown', handleDown)
+    return () => window.removeEventListener('keydown', handleDown)
+  }, [nearPortal, roomMode, navigate])
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
@@ -2099,8 +2252,6 @@ export default function VRPage() {
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
   })
 
-  // Bridge from the "Susurrar" button in the Amigos tab (MascotCompanion,
-  // outside this canvas) — opens the world chat pre-filled with "/w <name> ".
   useEffect(() => {
     if (!whisperTarget) return
     setChatPrefill({ text: `/w ${whisperTarget} `, key: Date.now() })
@@ -2114,10 +2265,14 @@ export default function VRPage() {
     setActiveNpcId((current) => (current === nearbyNpcId ? null : nearbyNpcId))
   }
 
+  // Room gets a warm interior background; campus keeps the dusk-sky palette.
+  const bgColor = roomMode ? '#f5ede0' : '#3b2a1f'
+  const fogArgs = roomMode ? ['#f5ede0', 8, 22] : ['#d98e4a', 12, 48]
+
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
       <AppTopBar />
-      <PageVideoModal pageKey="vr" />
+      {!roomMode && <PageVideoModal pageKey="vr" />}
 
       <div
         className="relative flex-1"
@@ -2134,22 +2289,16 @@ export default function VRPage() {
           dpr={[1, 1.5]}
           gl={{ powerPreference: 'default', antialias: true }}
           onCreated={({ gl }) => {
-            // The campus loads ~15 mascot/NPC models at once, which can push
-            // weaker/integrated GPUs over their memory budget. When that
-            // happens the browser "loses" the WebGL context — without this,
-            // the lost context leaves <Canvas> stuck mid-render-loop, which
-            // React reports as a runaway update loop (error #185) and the
-            // whole world goes black. Telling the browser we'll handle it
-            // lets it restore the context automatically instead.
             const canvas = gl.domElement
             const handleLost = (e) => e.preventDefault()
             canvas.addEventListener('webglcontextlost', handleLost, false)
           }}
         >
-          <color attach="background" args={['#3b2a1f']} />
-          <fog attach="fog" args={['#d98e4a', 12, 42]} />
-          <ambientLight intensity={0.9} />
-          <directionalLight position={[10, 15, 8]} intensity={1} />
+          <color attach="background" args={[bgColor]} />
+          <fog attach="fog" args={fogArgs} />
+          <ambientLight intensity={roomMode ? 1.1 : 0.9} />
+          <directionalLight position={[10, 15, 8]} intensity={roomMode ? 0.6 : 1} />
+          {roomMode && <directionalLight position={[-8, 6, -6]} intensity={0.4} />}
           <Suspense fallback={null}>
             <World
               mascot={mascot}
@@ -2160,32 +2309,46 @@ export default function VRPage() {
               playerRotationRef={playerRotationRef}
               remoteTransformsRef={remoteTransformsRef}
               onNearbyNpcChange={setNearbyNpcId}
+              onNearPortalChange={setNearPortal}
               authorName={chatAuthor}
               playerId={playerId}
               onSelectPlayer={setSelectedPlayer}
+              roomMode={roomMode}
             />
           </Suspense>
         </Canvas>
 
-        {activeNpcId ? (
-          <NpcMissionCard
-            npcId={activeNpcId}
-            accepted={accepted}
-            claimed={claimed}
-            missionState={missionState}
-            onAccept={acceptMission}
-            onClaim={claimReward}
-            onClose={() => setActiveNpcId(null)}
-          />
-        ) : (
-          nearbyNpcId && (
-            <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
-              {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
-            </div>
+        {/* Portal prompt — shown whenever the player is within range of a portal */}
+        {nearPortal && (
+          <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
+            {roomMode ? '🌀 Pulsa E para volver al Campus' : '🚪 Pulsa E para entrar a tu Room'}
+          </div>
+        )}
+
+        {/* NPC mission card / nearby-NPC hint (campus only) */}
+        {!roomMode && (
+          activeNpcId ? (
+            <NpcMissionCard
+              npcId={activeNpcId}
+              accepted={accepted}
+              claimed={claimed}
+              missionState={missionState}
+              onAccept={acceptMission}
+              onClaim={claimReward}
+              onClose={() => setActiveNpcId(null)}
+            />
+          ) : (
+            nearbyNpcId && !nearPortal && (
+              <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
+                {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
+              </div>
+            )
           )
         )}
 
-        <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
+        {!roomMode && (
+          <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
+        )}
         <WorldChat
           open={chatOpen}
           onClose={() => setChatOpen(false)}
@@ -2196,7 +2359,7 @@ export default function VRPage() {
           prefill={chatPrefill}
         />
 
-        {selectedPlayer && (
+        {!roomMode && selectedPlayer && (
           <PlayerMenu
             player={selectedPlayer}
             isFriend={friends.includes(selectedPlayer.name)}
@@ -2218,23 +2381,32 @@ export default function VRPage() {
 
         <CameraSettingsMenu />
 
-        <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
-          {isVrRealtimeAvailable() ? (
-            connected ? (
-              <span>🟢 Conectado · {remotePlayerCount} {remotePlayerCount === 1 ? 'jugador' : 'jugadores'} más</span>
+        {/* Connection status badge — hidden in Room (no multiplayer) */}
+        {!roomMode && (
+          <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
+            {isVrRealtimeAvailable() ? (
+              connected ? (
+                <span>🟢 Conectado · {remotePlayerCount} {remotePlayerCount === 1 ? 'jugador' : 'jugadores'} más</span>
+              ) : (
+                <span>🟡 Conectando…</span>
+              )
             ) : (
-              <span>🟡 Conectando…</span>
-            )
-          ) : (
-            <span>⚪ Modo sin conexión</span>
-          )}
-        </div>
+              <span>⚪ Modo sin conexión</span>
+            )}
+          </div>
+        )}
+
+        {/* Room badge */}
+        {roomMode && (
+          <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
+            🏠 Mi Room (privada)
+          </div>
+        )}
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
-          <strong>W A S D</strong> o flechas para moverte, <strong>espacio</strong> para saltar,{' '}
-          <strong>M</strong> mapa, <strong>P</strong> personaje, <strong>B</strong> inventario,{' '}
-          <strong>C</strong> chat global, arrastra el ratón para mirar y <strong>rueda</strong> para
-          zoom 🎮
+          <strong>W A S D</strong> o flechas para moverte · <strong>espacio</strong> saltar ·{' '}
+          {!roomMode && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
+          <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
         </div>
 
         <TouchControls keysRef={keysRef} chatOpen={chatOpen} onOpenChat={() => setChatOpen(true)} />

@@ -24,7 +24,7 @@ export function isVrRealtimeAvailable() {
 // Returns `{ remoteTransformsRef, sendChatMessage }`. When Realtime isn't
 // configured, this is a no-op: the store stays disconnected/empty and
 // sendChatMessage does nothing, so the world plays fine single-player.
-export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, positionRef, rotationRef }) {
+export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, positionRef, rotationRef, enabled = true }) {
   const remoteTransformsRef = useRef(new Map())
   const channelRef = useRef(null)
   const joinedAtRef = useRef(Date.now())
@@ -35,7 +35,7 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
   const receiveMessage = useWorldChatStore((s) => s.receiveMessage)
 
   useEffect(() => {
-    if (!isVrRealtimeAvailable() || kicked) return
+    if (!enabled || !isVrRealtimeAvailable() || kicked) return
 
     const channel = supabase.channel(VR_CHANNEL, {
       config: { presence: { key: playerId }, broadcast: { self: false } },
@@ -107,7 +107,7 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
     // Only (re)connect when the player's identity changes — name/mascot/skin
     // updates are pushed via the effect below instead of reconnecting.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerId, kicked])
+  }, [playerId, kicked, enabled])
 
   // Re-broadcast presence whenever the player's displayed name/mascot/skin
   // changes (e.g. they swap mascots in the Aspecto panel mid-session).
@@ -121,7 +121,7 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
   // straight from the refs (mutated every frame by <Player>) so this effect
   // itself never needs to re-run on movement.
   useEffect(() => {
-    if (!isVrRealtimeAvailable()) return
+    if (!enabled || !isVrRealtimeAvailable()) return
     const interval = setInterval(() => {
       const channel = channelRef.current
       const pos = positionRef?.current
@@ -142,7 +142,7 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
       })
     }, POSITION_INTERVAL)
     return () => clearInterval(interval)
-  }, [playerId, name, mascotId, skinId, positionRef, rotationRef])
+  }, [enabled, playerId, name, mascotId, skinId, positionRef, rotationRef])
 
   // `targetId`, when given, sends a whisper: only the player with that id
   // (matched against `payload.target` above) will display the message.

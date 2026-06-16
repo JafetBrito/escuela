@@ -146,6 +146,16 @@ export default function App() {
           }
         />
         <Route
+          path="/vr/room"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage roomMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/games"
           element={
             <ProtectedRoute>
