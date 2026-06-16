@@ -190,7 +190,17 @@ export const SHOP_ITEMS = [
     description: 'Sintoniza la radio del programa mientras estudias.',
     interactive: true,
     kind: 'radio-player',
-    audioSrc: '/audio/radio-oliver.mp3',
+    
+    // 1. ELIMINAMOS esta línea porque solo permite un archivo:
+    // audioSrc: '/audio/radio-oliver.mp3', 
+    
+    // 2. AGREGAMOS esta lista (Array) con todas las canciones de tu carpeta:
+    playlist: [
+      '/audio/radio-oliver.mp3',
+      '/audio/Hackea_tu_realidad_con_Jafet_Brito.m4a',
+      '/audio/Domina_tus_exámenes_con_NotebookLM.m4a',
+      // ... puedes agregar todas las que quieras, siempre separadas por comas
+    ],
   },
   {
     id: 'lente-resumen',
