@@ -149,52 +149,45 @@ const JUMP_SPEED = 7
 // scenery, so a flat-grey export still reads as a colorful scene.
 const SCENERY_PALETTE = ['#c2703d', '#e8c477', '#9b5a3a', '#7d8597', '#3f9e7a', '#caa46c']
 
-// Radius of the procedural campus ground (test scenery). Bigger than the
-// landmark buildings need, so the campus reads as a real open campus with
-// room to walk between zones instead of a cramped plaza.
-const GROUND_RADIUS = 40
+// Radius of the procedural campus ground — large enough to feel like a real
+// university campus with multiple zones (inner quad, sports, dorms, outer park).
+const GROUND_RADIUS = 90
 
-// Decorative tree positions scattered around the campus (trunk + foliage,
-// see useTestGround) — placed in the open gaps between the NPC zones so they
-// don't overlap any landmark building or the paved paths leading to them.
-const TREE_POSITIONS = [
-  [9, -19], [-9, 19], [19, 9], [-19, -9],
-  [19, -9], [-19, 9], [9, 19], [-9, -19],
-  [3, -8], [-3, 8],
-]
-
-// Lamp post positions ringing the central plaza, just outside its paved
-// edge, so the spawn area reads as a lit town square at night/dusk.
-const LAMP_POSITIONS = [
-  [4.5, 4.5], [-4.5, 4.5], [4.5, -4.5], [-4.5, -4.5],
-]
-
-// How many paving stones lead from the plaza out to each NPC's landmark
-// building, evenly spaced along the straight line between them.
-const PATH_STEPS = 5
-
-// Each NPC's landmark building sits further from the plaza than the NPC
-// itself, scaled by this factor — kept generous so the building's footprint
-// (BUILDING_SIZE wide) never overlaps the NPC or the spot the player stands
-// to talk to them (which would otherwise hide everyone inside the wall).
+// NPC landmark building geometry constants.
 const NPC_BUILDING_OFFSET = 1.8
 const BUILDING_SIZE = 3.2
 
-// How close the player needs to be to an NPC to interact with them. Right-
-// clicking while inside this radius opens their mission card.
+// Major academic buildings — shared between useTestGround (geometry) and
+// WorldMap (minimap markers), so they're module-level constants.
+const CAMPUS_ACADEMIC = [
+  { pos: [0, 0, -40], color: '#5b3a29', w: 14, d: 9, h: 7, label: '🎭', name: 'Auditorio' },
+  { pos: [40, 0, 0],  color: '#1a3a5c', w: 9, d: 14, h: 8, label: '📚', name: 'Biblioteca' },
+  { pos: [0, 0, 40],  color: '#2e5e4e', w: 14, d: 9, h: 6, label: '🍽️', name: 'Cafetería' },
+  { pos: [-40, 0, 0], color: '#7a3b00', w: 9, d: 14, h: 6, label: '🎨', name: 'Artes' },
+]
+
+// Dormitory blocks — 8 buildings in the mid-outer campus ring.
+const CAMPUS_DORMS = [
+  { pos: [58, 0, 28],  color: '#7a6a5a' },
+  { pos: [-58, 0, 28], color: '#6a7a5a' },
+  { pos: [58, 0, -28], color: '#5a6a7a' },
+  { pos: [-58, 0, -28],color: '#7a5a6a' },
+  { pos: [28, 0, 60],  color: '#6a5a7a' },
+  { pos: [-28, 0, 60], color: '#5a7a6a' },
+  { pos: [28, 0, -62], color: '#7a7a5a' },
+  { pos: [-28, 0, -62],color: '#5a7a7a' },
+]
+
+// How close the player needs to be to an NPC to interact with them.
 const INTERACT_RADIUS = 2.5
 
-// How close the player needs to be to a world portal (campus <-> Room) to
-// interact with it by pressing E.
-const PORTAL_INTERACT_RADIUS = 2.2
+// How close the player needs to be to a world portal to interact.
+const PORTAL_INTERACT_RADIUS = 2.5
 
-// Where the portal to the player's private Room sits in the campus — just
-// off the plaza, in an open gap between the wandering-cat loops and the
-// NPC zones, so it's easy to find from spawn but doesn't block anything.
-const ROOM_PORTAL_POSITION = [-3, 0, -3]
+// Campus portal position — northwest of plaza, easy to find from spawn.
+const ROOM_PORTAL_POSITION = [-5, 0, -5]
 
-// The player's private "Room": a small enclosed space (just the player, no
-// NPCs/multiplayer — see roomMode), with an exit portal back to the campus.
+// Private Room constants — a small enclosed interior space.
 const ROOM_SIZE = 14
 const ROOM_HEIGHT = 4
 const ROOM_EXIT_PORTAL_POSITION = [0, 0, -ROOM_SIZE / 2 + 2]
@@ -462,138 +455,441 @@ function useSceneryModel() {
   }, [scene])
 }
 
-// Our own lightweight "campus" ground: a big circular plaza with a paved
-// central square, a little landmark "building" behind every mission NPC (so
-// each zone of the map reads as a distinct place), and a low wall ringing the
-// edge so the player can't wander off into the void. Returns the same shape
-// as useSceneryModel so <Player> doesn't care which one it's walking on.
+// Full procedural campus — a large university world built entirely from
+// THREE.js primitives (no GLTF) for GPU safety. Uses InstancedMesh for the
+// many repeated objects (trees, lamp posts, wall segments) so the scene has
+// lots of visual variety without exploding the draw-call count.
 function useTestGround() {
   return useMemo(() => {
     const group = new THREE.Group()
 
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(GROUND_RADIUS, 64),
-      new THREE.MeshStandardMaterial({ color: '#5a8f5a' }),
-    )
+    // ── Shared materials (one instance reused across many meshes) ──────────
+    const matGrass     = new THREE.MeshStandardMaterial({ color: '#4a8f4a' })
+    const matGrassOuter= new THREE.MeshStandardMaterial({ color: '#3d7a3d' })
+    const matPlaza     = new THREE.MeshStandardMaterial({ color: '#caa46c' })
+    const matPave      = new THREE.MeshStandardMaterial({ color: '#b09878' })
+    const matRoad      = new THREE.MeshStandardMaterial({ color: '#8a8078' })
+    const matSports    = new THREE.MeshStandardMaterial({ color: '#2d6ea5' })
+    const matFieldGrass= new THREE.MeshStandardMaterial({ color: '#2d6e2d' })
+    const matLine      = new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.75 })
+    const matTrunk     = new THREE.MeshStandardMaterial({ color: '#6b4226' })
+    const matFoliageA  = new THREE.MeshStandardMaterial({ color: '#3a7a3a' })
+    const matFoliageB  = new THREE.MeshStandardMaterial({ color: '#2e6630' })
+    const matPole      = new THREE.MeshStandardMaterial({ color: '#252525' })
+    const matBulb      = new THREE.MeshStandardMaterial({ color: '#ffe9a8', emissive: '#ffe9a8', emissiveIntensity: 1.4 })
+    const matWall      = new THREE.MeshStandardMaterial({ color: '#8a7a68' })
+    const matGatePost  = new THREE.MeshStandardMaterial({ color: '#c0a880' })
+    const matWater     = new THREE.MeshStandardMaterial({ color: '#4488cc', emissive: '#2266aa', emissiveIntensity: 0.3 })
+    const matBench     = new THREE.MeshStandardMaterial({ color: '#8b6914' })
+    const matStep      = new THREE.MeshStandardMaterial({ color: '#b0a898' })
+    const matHedge     = new THREE.MeshStandardMaterial({ color: '#2e7a2e' })
+
+    // ── Helper: flat paved path from [x1,z1] to [x2,z2] ───────────────────
+    // Creates a properly-rotated PlaneGeometry (no stepping-stones, a real
+    // smooth path). Correct rotation derived from: after rotX(-PI/2) the
+    // plane's length axis points toward world -Z; rotating the parent Group
+    // by atan2(-dx, -dz) around Y then aligns that axis toward the target.
+    const addPath = (x1, z1, x2, z2, width, mat = matPave) => {
+      const dx = x2 - x1
+      const dz = z2 - z1
+      const len = Math.hypot(dx, dz)
+      if (len < 0.01) return
+      const g = new THREE.Group()
+      g.position.set((x1 + x2) / 2, 0.014, (z1 + z2) / 2)
+      g.rotation.y = Math.atan2(-dx, -dz)
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(width, len), mat)
+      plane.rotation.x = -Math.PI / 2
+      plane.userData.isFloor = true
+      g.add(plane)
+      group.add(g)
+    }
+
+    // ── Ground disc ─────────────────────────────────────────────────────────
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(GROUND_RADIUS, 64), matGrass)
     ground.rotation.x = -Math.PI / 2
-    // Flat floor meshes shouldn't count as "obstacles" for the camera
-    // collision raycast below — otherwise looking down (negative pitch) or
-    // zooming out always hits the floor a couple of units away and the
-    // camera gets stuck close to the player.
     ground.userData.isFloor = true
     group.add(ground)
 
-    const grid = new THREE.GridHelper(GROUND_RADIUS * 2, GROUND_RADIUS, '#3f6e3f', '#4f7f4f')
-    grid.position.y = 0.01
-    // GridHelper is made of THREE.Line segments, which use a large default
-    // raycast threshold (1 world unit). Without disabling this, the
-    // horizontal collision rays in <Player> hit the grid lines almost
-    // immediately at chest height and the player can never move — only
-    // jump (which doesn't use this raycast).
+    // Outer grass ring (darker shade, reads as park/perimeter)
+    const outerGrass = new THREE.Mesh(new THREE.RingGeometry(65, GROUND_RADIUS, 64), matGrassOuter)
+    outerGrass.rotation.x = -Math.PI / 2
+    outerGrass.position.y = 0.005
+    outerGrass.userData.isFloor = true
+    group.add(outerGrass)
+
+    // Subtle grid overlay (non-raycastable — blocks movement otherwise)
+    const grid = new THREE.GridHelper(GROUND_RADIUS * 2, Math.floor(GROUND_RADIUS / 5), '#4a7a4a', '#528052')
+    grid.position.y = 0.008
     grid.raycast = () => {}
     group.add(grid)
 
-    // Paved central plaza, so the spawn point reads as a town square rather
-    // than open grass.
-    const plaza = new THREE.Mesh(
-      new THREE.CircleGeometry(5.5, 32),
-      new THREE.MeshStandardMaterial({ color: '#caa46c' }),
-    )
+    // ── Ring roads ──────────────────────────────────────────────────────────
+    // Inner ring (r=22-25): connects NPC zone buildings
+    const ringA = new THREE.Mesh(new THREE.RingGeometry(22, 25, 64), matPave)
+    ringA.rotation.x = -Math.PI / 2
+    ringA.position.y = 0.012
+    ringA.userData.isFloor = true
+    group.add(ringA)
+    // Middle ring (r=48-52): separates inner campus from outer campus
+    const ringB = new THREE.Mesh(new THREE.RingGeometry(48, 52, 64), matRoad)
+    ringB.rotation.x = -Math.PI / 2
+    ringB.position.y = 0.012
+    ringB.userData.isFloor = true
+    group.add(ringB)
+    // Outer ring (r=75-78): perimeter road just inside the wall
+    const ringC = new THREE.Mesh(new THREE.RingGeometry(75, 78, 64), matRoad)
+    ringC.rotation.x = -Math.PI / 2
+    ringC.position.y = 0.012
+    ringC.userData.isFloor = true
+    group.add(ringC)
+
+    // ── Central Plaza (octagonal paving, 8 sides) ───────────────────────────
+    const plaza = new THREE.Mesh(new THREE.CircleGeometry(9, 8), matPlaza)
     plaza.rotation.x = -Math.PI / 2
-    plaza.position.y = 0.02
+    plaza.position.y = 0.018
     plaza.userData.isFloor = true
     group.add(plaza)
 
-    // One landmark "building" behind each NPC, positioned further from the
-    // plaza than the NPC itself so the NPC stands in front of its building.
+    // Decorative inner circle (slightly different tone)
+    const plazaInner = new THREE.Mesh(new THREE.CircleGeometry(5, 32), new THREE.MeshStandardMaterial({ color: '#d4ae78' }))
+    plazaInner.rotation.x = -Math.PI / 2
+    plazaInner.position.y = 0.02
+    plazaInner.userData.isFloor = true
+    group.add(plazaInner)
+
+    // ── Central Fountain ────────────────────────────────────────────────────
+    const fountainBaseMat = new THREE.MeshStandardMaterial({ color: '#c0a888' })
+    const fBase = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.6, 0.35, 20), fountainBaseMat)
+    fBase.position.set(0, 0.175, 0)
+    group.add(fBase)
+    const fBowl = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.25, 20, 1, true), matWater)
+    fBowl.position.set(0, 0.475, 0)
+    group.add(fBowl)
+    const fSurface = new THREE.Mesh(new THREE.CircleGeometry(1.85, 20), matWater)
+    fSurface.rotation.x = -Math.PI / 2
+    fSurface.position.set(0, 0.48, 0)
+    fSurface.userData.isFloor = true
+    group.add(fSurface)
+    const fSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, 1.4, 8), fountainBaseMat)
+    fSpire.position.set(0, 1.1, 0)
+    group.add(fSpire)
+    const fTop = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), matWater)
+    fTop.position.set(0, 1.88, 0)
+    group.add(fTop)
+
+    // ── Wide paved paths ────────────────────────────────────────────────────
+    // 4 main avenues from plaza to perimeter (N/S/E/W) — 7 units wide
+    addPath(0, 0, 0, -GROUND_RADIUS * 0.9, 7, matPave)
+    addPath(0, 0, 0,  GROUND_RADIUS * 0.9, 7, matPave)
+    addPath(0, 0,  GROUND_RADIUS * 0.9, 0, 7, matPave)
+    addPath(0, 0, -GROUND_RADIUS * 0.9, 0, 7, matPave)
+    // Diagonal paths to NPC zones (5 units wide)
+    VR_NPCS.forEach((npc) => {
+      const [nx, , nz] = npc.position
+      const dist = Math.hypot(nx, nz)
+      // Extend path 2× past NPC to reach the inner ring road
+      addPath(0, 0, nx * (50 / dist), nz * (50 / dist), 5, matPave)
+    })
+
+    // ── NPC landmark buildings ───────────────────────────────────────────────
+    const roofMat = new THREE.MeshStandardMaterial({ color: '#8b5e3c' })
     VR_NPCS.forEach((npc, i) => {
       const [x, , z] = npc.position
-      const buildingHeight = 2.6 + (i % 3) * 0.6
-      const building = new THREE.Mesh(
-        new THREE.BoxGeometry(BUILDING_SIZE, buildingHeight, BUILDING_SIZE),
+      const h = 3.2 + (i % 3) * 0.9
+      const bld = new THREE.Mesh(
+        new THREE.BoxGeometry(BUILDING_SIZE + 0.4, h, BUILDING_SIZE + 0.4),
         new THREE.MeshStandardMaterial({ color: npc.color }),
       )
-      building.position.set(x * NPC_BUILDING_OFFSET, buildingHeight / 2, z * NPC_BUILDING_OFFSET)
-      group.add(building)
-
-      // Small roof accent so the buildings don't look like plain boxes.
-      const roof = new THREE.Mesh(
-        new THREE.ConeGeometry(2.5, 1.4, 4),
-        new THREE.MeshStandardMaterial({ color: '#9b5a3a' }),
-      )
-      roof.position.set(x * NPC_BUILDING_OFFSET, buildingHeight + 0.7, z * NPC_BUILDING_OFFSET)
+      bld.position.set(x * NPC_BUILDING_OFFSET, h / 2, z * NPC_BUILDING_OFFSET)
+      group.add(bld)
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(2.9, 1.8, 4), roofMat)
+      roof.position.set(x * NPC_BUILDING_OFFSET, h + 0.9, z * NPC_BUILDING_OFFSET)
       roof.rotation.y = Math.PI / 4
       group.add(roof)
-    })
-
-    // Paved stepping-stone paths leading from the plaza out to each NPC's
-    // landmark building, so the campus reads as connected zones instead of
-    // floating buildings on open grass.
-    const pathMaterial = new THREE.MeshStandardMaterial({ color: '#b08968' })
-    VR_NPCS.forEach((npc) => {
-      const [x, , z] = npc.position
-      for (let s = 1; s <= PATH_STEPS; s += 1) {
-        const t = s / (PATH_STEPS + 1)
-        const stone = new THREE.Mesh(new THREE.CircleGeometry(1.1, 16), pathMaterial)
-        stone.rotation.x = -Math.PI / 2
-        stone.position.set(x * t, 0.015, z * t)
-        stone.userData.isFloor = true
-        group.add(stone)
-      }
-    })
-
-    // Trees: a simple trunk + cone of "foliage" scattered around the campus,
-    // reusing the same two geometries/materials for every tree to keep the
-    // draw count low.
-    const trunkGeometry = new THREE.CylinderGeometry(0.18, 0.22, 1.4, 8)
-    const trunkMaterial = new THREE.MeshStandardMaterial({ color: '#6b4226' })
-    const foliageGeometry = new THREE.ConeGeometry(1.1, 2.2, 8)
-    const foliageMaterial = new THREE.MeshStandardMaterial({ color: '#3f6e3f' })
-    TREE_POSITIONS.forEach(([x, z]) => {
-      const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial)
-      trunk.position.set(x, 0.7, z)
-      group.add(trunk)
-
-      const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial)
-      foliage.position.set(x, 2.1, z)
-      group.add(foliage)
-    })
-
-    // Lamp posts ringing the plaza: a thin pole topped with a glowing sphere
-    // (emissive material, no extra dynamic lights, to stay GPU-cheap).
-    const poleGeometry = new THREE.CylinderGeometry(0.07, 0.07, 2.4, 8)
-    const poleMaterial = new THREE.MeshStandardMaterial({ color: '#3a3a3a' })
-    const bulbGeometry = new THREE.SphereGeometry(0.22, 12, 12)
-    const bulbMaterial = new THREE.MeshStandardMaterial({
-      color: '#ffe9a8',
-      emissive: '#ffe9a8',
-      emissiveIntensity: 1.2,
-    })
-    LAMP_POSITIONS.forEach(([x, z]) => {
-      const pole = new THREE.Mesh(poleGeometry, poleMaterial)
-      pole.position.set(x, 1.2, z)
-      group.add(pole)
-
-      const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial)
-      bulb.position.set(x, 2.5, z)
-      group.add(bulb)
-    })
-
-    // Low ring wall around the edge of the plaza so the player can't wander
-    // off the campus into empty space.
-    const wallSegments = 24
-    for (let i = 0; i < wallSegments; i += 1) {
-      const angle = (i / wallSegments) * Math.PI * 2
-      const wall = new THREE.Mesh(
-        new THREE.BoxGeometry(GROUND_RADIUS * 0.3, 1.4, 0.6),
-        new THREE.MeshStandardMaterial({ color: '#7d8597' }),
+      // Small entrance steps
+      const stepAngle = Math.atan2(x, z)
+      const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.28, 1.2), matStep)
+      stepMesh.position.set(
+        x * NPC_BUILDING_OFFSET - Math.sin(stepAngle) * (BUILDING_SIZE / 2 + 0.7),
+        0.14,
+        z * NPC_BUILDING_OFFSET - Math.cos(stepAngle) * (BUILDING_SIZE / 2 + 0.7),
       )
-      wall.position.set(Math.sin(angle) * GROUND_RADIUS, 0.7, Math.cos(angle) * GROUND_RADIUS)
-      wall.rotation.y = angle
-      group.add(wall)
-    }
+      group.add(stepMesh)
+    })
 
-    return { model: group, groundRayHeight: 14 }
+    // ── Major Academic Buildings ─────────────────────────────────────────────
+    const academicRoofMat = new THREE.MeshStandardMaterial({ color: '#3a3028' })
+    CAMPUS_ACADEMIC.forEach(({ pos, color, w, d, h }) => {
+      const [bx, , bz] = pos
+      const bld = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color }),
+      )
+      bld.position.set(bx, h / 2, bz)
+      group.add(bld)
+      // Flat roof with slight overhang
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.5, d + 0.5), academicRoofMat)
+      roof.position.set(bx, h + 0.25, bz)
+      group.add(roof)
+      // Windows strip (thin box in a lighter shade)
+      const winMat = new THREE.MeshStandardMaterial({ color: '#8eb8d8', emissive: '#6090b0', emissiveIntensity: 0.2 })
+      const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, h * 0.25, 0.12), winMat)
+      win.position.set(bx, h * 0.55, bz + d / 2 + 0.06)
+      group.add(win)
+      // Entrance steps (face toward plaza origin)
+      const ang = Math.atan2(bx, bz)
+      const stepsW = Math.min(w, d) * 0.55
+      const steps = new THREE.Mesh(new THREE.BoxGeometry(stepsW, 0.32, 2.0), matStep)
+      steps.position.set(bx - Math.sin(ang) * (d / 2 + 1.1), 0.16, bz - Math.cos(ang) * (d / 2 + 1.1))
+      group.add(steps)
+    })
+
+    // ── Dormitory Blocks ─────────────────────────────────────────────────────
+    const dormW = 7; const dormD = 12; const dormH = 5.5
+    const dormRoofMat = new THREE.MeshStandardMaterial({ color: '#4a3828' })
+    CAMPUS_DORMS.forEach(({ pos, color }) => {
+      const [bx, , bz] = pos
+      const dorm = new THREE.Mesh(
+        new THREE.BoxGeometry(dormW, dormH, dormD),
+        new THREE.MeshStandardMaterial({ color }),
+      )
+      dorm.position.set(bx, dormH / 2, bz)
+      group.add(dorm)
+      const dormRoof = new THREE.Mesh(new THREE.BoxGeometry(dormW + 0.4, 0.4, dormD + 0.4), dormRoofMat)
+      dormRoof.position.set(bx, dormH + 0.2, bz)
+      group.add(dormRoof)
+    })
+
+    // ── Sports Complex (east side, r≈65-80) ─────────────────────────────────
+    // Soccer/football field
+    const field = new THREE.Mesh(new THREE.PlaneGeometry(55, 34), matFieldGrass)
+    field.rotation.x = -Math.PI / 2
+    field.position.set(72, 0.016, 0)
+    field.userData.isFloor = true
+    group.add(field)
+    // Field center circle
+    const centerRing = new THREE.Mesh(new THREE.RingGeometry(4, 4.4, 32), matLine)
+    centerRing.rotation.x = -Math.PI / 2
+    centerRing.position.set(72, 0.02, 0)
+    group.add(centerRing)
+    // Center line
+    const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 34), matLine)
+    centerLine.rotation.x = -Math.PI / 2
+    centerLine.position.set(72, 0.02, 0)
+    group.add(centerLine)
+    // Goal boxes
+    ;[-1, 1].forEach((side) => {
+      const goalBox = new THREE.Mesh(new THREE.PlaneGeometry(11, 5.5), matLine)
+      goalBox.rotation.x = -Math.PI / 2
+      goalBox.position.set(72 + side * 24.5, 0.02, 0)
+      group.add(goalBox)
+    })
+    // Field border
+    const fieldBorderMat = new THREE.MeshStandardMaterial({ color: '#c8c8c8' })
+    ;[27.9, -27.9].forEach((side) => {
+      const border = new THREE.Mesh(new THREE.BoxGeometry(55.4, 0.8, 0.35), fieldBorderMat)
+      border.position.set(72, 0.4, side)
+      group.add(border)
+    })
+
+    // Basketball court (west side)
+    const bball = new THREE.Mesh(new THREE.PlaneGeometry(22, 14), matSports)
+    bball.rotation.x = -Math.PI / 2
+    bball.position.set(-68, 0.016, 0)
+    bball.userData.isFloor = true
+    group.add(bball)
+    // Court center circle
+    const bbRing = new THREE.Mesh(new THREE.RingGeometry(1.8, 2.1, 24), matLine)
+    bbRing.rotation.x = -Math.PI / 2
+    bbRing.position.set(-68, 0.02, 0)
+    group.add(bbRing)
+    // Three-point arcs (simplified as rings, half shown)
+    const arc3pt = new THREE.Mesh(new THREE.RingGeometry(5, 5.3, 24), matLine)
+    arc3pt.rotation.x = -Math.PI / 2
+    arc3pt.position.set(-68, 0.02, 0)
+    group.add(arc3pt)
+
+    // ── Hedges / low decorative greenery ────────────────────────────────────
+    // Plaza border hedge (8-sided, matching plaza shape)
+    for (let i = 0; i < 8; i += 1) {
+      const a = (i / 8) * Math.PI * 2 + Math.PI / 8
+      const hedge = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.0, 0.7), matHedge)
+      hedge.position.set(Math.cos(a) * 10.2, 0.5, Math.sin(a) * 10.2)
+      hedge.rotation.y = a + Math.PI / 2
+      group.add(hedge)
+    }
+    // Hedges along academic building entrances
+    CAMPUS_ACADEMIC.forEach(({ pos, d }) => {
+      const [bx, , bz] = pos
+      const ang = Math.atan2(bx, bz)
+      ;[-1, 1].forEach((side) => {
+        const h = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 3.5), matHedge)
+        h.position.set(
+          bx - Math.sin(ang) * (d / 2 + 2) + Math.cos(ang) * side * 3.5,
+          0.55,
+          bz - Math.cos(ang) * (d / 2 + 2) - Math.sin(ang) * side * 3.5,
+        )
+        group.add(h)
+      })
+    })
+
+    // ── Benches around plaza ─────────────────────────────────────────────────
+    const benchSeatGeo  = new THREE.BoxGeometry(2.2, 0.22, 0.6)
+    const benchLegGeo   = new THREE.BoxGeometry(0.18, 0.52, 0.6)
+    const benchLegMat   = new THREE.MeshStandardMaterial({ color: '#5a4030' })
+    const benchAngles   = [0, Math.PI / 4, Math.PI / 2, Math.PI * 3 / 4, Math.PI, Math.PI * 5 / 4, Math.PI * 3 / 2, Math.PI * 7 / 4]
+    benchAngles.forEach((a) => {
+      const bx = Math.cos(a) * 12
+      const bz = Math.sin(a) * 12
+      const seat = new THREE.Mesh(benchSeatGeo, matBench)
+      seat.position.set(bx, 0.52, bz)
+      seat.rotation.y = a + Math.PI / 2
+      group.add(seat)
+      ;[-0.75, 0.75].forEach((off) => {
+        const leg = new THREE.Mesh(benchLegGeo, benchLegMat)
+        leg.position.set(bx + Math.cos(a + Math.PI / 2) * off, 0.26, bz + Math.sin(a + Math.PI / 2) * off)
+        leg.rotation.y = a + Math.PI / 2
+        group.add(leg)
+      })
+    })
+
+    // ── Trees (InstancedMesh — all trees = 3 draw calls total) ──────────────
+    // Deterministic "random" placement seeded by index so the scene is
+    // identical on every mount without storing the positions in state.
+    const rng = (seed) => { const v = Math.sin(seed * 127.1) * 43758.5453; return v - Math.floor(v) }
+
+    const rawTrees = []
+    for (let i = 0; i < 90; i += 1) {
+      const angle = rng(i * 3.7) * Math.PI * 2
+      const outer = i >= 45
+      const r = outer ? (55 + rng(i * 9.1) * 28) : (14 + rng(i * 7.3) * 32)
+      // Skip slots that would land very close to a cardinal avenue (avoids
+      // blocking the N/S/E/W main roads visually)
+      const nearCardinal = [0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].some(
+        (ca) => Math.abs(((angle % (Math.PI * 2)) - ca + Math.PI * 4) % (Math.PI * 2)) < 0.18,
+      )
+      if (nearCardinal && r < 50) continue
+      rawTrees.push({ x: Math.cos(angle) * r, z: Math.sin(angle) * r, s: 0.8 + rng(i * 11.7) * 0.5, cone: i % 3 !== 0 })
+    }
+    const coneTrees   = rawTrees.filter((t) => t.cone)
+    const sphereTrees = rawTrees.filter((t) => !t.cone)
+
+    const trunkGeo   = new THREE.CylinderGeometry(0.22, 0.28, 1.9, 8)
+    const foliageGeoC = new THREE.ConeGeometry(1.35, 2.8, 8)
+    const foliageGeoS = new THREE.SphereGeometry(1.15, 8, 6)
+    const dummy = new THREE.Object3D()
+
+    const trunkInst = new THREE.InstancedMesh(trunkGeo, matTrunk, rawTrees.length)
+    const coneInst  = new THREE.InstancedMesh(foliageGeoC, matFoliageA, coneTrees.length)
+    const sphInst   = new THREE.InstancedMesh(foliageGeoS, matFoliageB, sphereTrees.length)
+    // Trees are decorative — disable raycasting so they don't block movement
+    // or confuse the ground-height ray.
+    trunkInst.raycast = () => {}
+    coneInst.raycast  = () => {}
+    sphInst.raycast   = () => {}
+
+    rawTrees.forEach(({ x, z, s }, i) => {
+      dummy.position.set(x, 0.95 * s, z)
+      dummy.scale.setScalar(s)
+      dummy.updateMatrix()
+      trunkInst.setMatrixAt(i, dummy.matrix)
+    })
+    coneTrees.forEach(({ x, z, s }, i) => {
+      dummy.position.set(x, 3.0 * s, z)
+      dummy.scale.setScalar(s)
+      dummy.updateMatrix()
+      coneInst.setMatrixAt(i, dummy.matrix)
+    })
+    sphereTrees.forEach(({ x, z, s }, i) => {
+      dummy.position.set(x, 2.6 * s, z)
+      dummy.scale.setScalar(s)
+      dummy.updateMatrix()
+      sphInst.setMatrixAt(i, dummy.matrix)
+    })
+    trunkInst.instanceMatrix.needsUpdate = true
+    coneInst.instanceMatrix.needsUpdate  = true
+    sphInst.instanceMatrix.needsUpdate   = true
+    group.add(trunkInst)
+    group.add(coneInst)
+    group.add(sphInst)
+
+    // ── Lamp Posts (InstancedMesh — 2 draw calls for all lamps) ─────────────
+    const lampPositions = []
+    // Around the inner ring road
+    for (let i = 0; i < 16; i += 1) {
+      const a = (i / 16) * Math.PI * 2
+      lampPositions.push(new THREE.Vector3(Math.cos(a) * 23.5, 0, Math.sin(a) * 23.5))
+    }
+    // Along the 4 main avenues (both sides)
+    ;[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].forEach((a) => {
+      ;[15, 30, 44, 60, 72].forEach((r) => {
+        const perp = a + Math.PI / 2
+        lampPositions.push(
+          new THREE.Vector3(Math.cos(a) * r + Math.cos(perp) * 4.2, 0, Math.sin(a) * r + Math.sin(perp) * 4.2),
+          new THREE.Vector3(Math.cos(a) * r - Math.cos(perp) * 4.2, 0, Math.sin(a) * r - Math.sin(perp) * 4.2),
+        )
+      })
+    })
+
+    const poleGeo  = new THREE.CylinderGeometry(0.07, 0.07, 3.5, 8)
+    const bulbGeo  = new THREE.SphereGeometry(0.24, 10, 8)
+    const poleInst = new THREE.InstancedMesh(poleGeo, matPole, lampPositions.length)
+    const bulbInst = new THREE.InstancedMesh(bulbGeo, matBulb, lampPositions.length)
+    lampPositions.forEach((pos, i) => {
+      dummy.position.set(pos.x, 1.75, pos.z)
+      dummy.scale.setScalar(1)
+      dummy.rotation.set(0, 0, 0)
+      dummy.updateMatrix()
+      poleInst.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(pos.x, 3.6, pos.z)
+      dummy.updateMatrix()
+      bulbInst.setMatrixAt(i, dummy.matrix)
+    })
+    poleInst.instanceMatrix.needsUpdate = true
+    bulbInst.instanceMatrix.needsUpdate = true
+    group.add(poleInst)
+    group.add(bulbInst)
+
+    // ── Perimeter Wall + Gates (InstancedMesh) ───────────────────────────────
+    const WALL_SEGS  = 72
+    const wallArcLen = (2 * Math.PI * GROUND_RADIUS) / WALL_SEGS * 1.03
+    const wallGeo    = new THREE.BoxGeometry(wallArcLen, 3.2, 0.7)
+    // Gate gaps at the 4 cardinal avenues — skip 2 consecutive segments each
+    const gateSegments = new Set()
+    ;[0, 18, 36, 54].forEach((base) => { gateSegments.add(base); gateSegments.add((base + 1) % WALL_SEGS) })
+    const wallIndices = Array.from({ length: WALL_SEGS }, (_, i) => i).filter((i) => !gateSegments.has(i))
+    const wallInst = new THREE.InstancedMesh(wallGeo, matWall, wallIndices.length)
+    wallIndices.forEach((idx, i) => {
+      const a = (idx / WALL_SEGS) * Math.PI * 2
+      dummy.position.set(Math.sin(a) * GROUND_RADIUS, 1.6, Math.cos(a) * GROUND_RADIUS)
+      dummy.rotation.set(0, a, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      wallInst.setMatrixAt(i, dummy.matrix)
+    })
+    wallInst.instanceMatrix.needsUpdate = true
+    group.add(wallInst)
+
+    // Gate posts + arches at each cardinal direction
+    const postGeo = new THREE.BoxGeometry(1.3, 5.0, 1.3)
+    const archGeo = new THREE.BoxGeometry(14, 0.5, 0.5)
+    ;[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].forEach((a) => {
+      const sx = Math.sin(a)
+      const cz = Math.cos(a)
+      const px = Math.cos(a)
+      const pz = -Math.sin(a)
+      ;[-5, 5].forEach((off) => {
+        const post = new THREE.Mesh(postGeo, matGatePost)
+        post.position.set(sx * GROUND_RADIUS + px * off, 2.5, cz * GROUND_RADIUS + pz * off)
+        group.add(post)
+      })
+      const arch = new THREE.Mesh(archGeo, matGatePost)
+      arch.position.set(sx * GROUND_RADIUS, 5.1, cz * GROUND_RADIUS)
+      arch.rotation.y = a
+      group.add(arch)
+    })
+
+    return { model: group, groundRayHeight: 22 }
   }, [])
 }
 
@@ -1351,16 +1647,22 @@ function RemotePlayers({ transformsRef, onSelectPlayer }) {
 // A glowing torus "portal" ring that detects when the player walks within
 // PORTAL_INTERACT_RADIUS and reports it via onNearbyChange, so VRPage can
 // show the "press E" prompt outside the canvas and handle the navigation.
-// The ring slowly spins on its Y axis to make it visually distinct from
-// static scenery objects.
+// Elaborate arch-style portal: stone gate posts + bar, dual counter-rotating
+// rings, animated glowing disc, and a raised base platform. The arch gives the
+// portal a physical presence; the spinning rings make it impossible to miss.
 function Portal({ position, color, label, playerPositionRef, onNearbyChange }) {
   const portalVec = useRef(new THREE.Vector3(...position))
-  const ringRef = useRef()
+  const ring1Ref = useRef()
+  const ring2Ref = useRef()
+  const discRef  = useRef()
   const lastNear = useRef(false)
 
   useFrame((_, delta) => {
-    if (ringRef.current) ringRef.current.rotation.y += delta * 0.8
-
+    if (ring1Ref.current) ring1Ref.current.rotation.y += delta * 1.1
+    if (ring2Ref.current) ring2Ref.current.rotation.y -= delta * 0.7
+    if (discRef.current) {
+      discRef.current.material.emissiveIntensity = 0.2 + Math.abs(Math.sin(Date.now() * 0.0018)) * 0.15
+    }
     const pos = playerPositionRef?.current
     if (!pos) return
     const near = pos.distanceTo(portalVec.current) <= PORTAL_INTERACT_RADIUS
@@ -1372,16 +1674,56 @@ function Portal({ position, color, label, playerPositionRef, onNearbyChange }) {
 
   return (
     <group position={position}>
-      <mesh ref={ringRef} position={[0, 1.2, 0]}>
-        <torusGeometry args={[1, 0.12, 16, 48]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} />
+      {/* Base platform */}
+      <mesh position={[0, 0.12, 0]}>
+        <cylinderGeometry args={[1.55, 1.75, 0.24, 24]} />
+        <meshStandardMaterial color="#c0a880" />
       </mesh>
-      {/* Inner glow disc */}
-      <mesh position={[0, 1.2, 0]}>
-        <circleGeometry args={[0.9, 32]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} transparent opacity={0.35} side={THREE.DoubleSide} />
+
+      {/* Gate arch posts */}
+      {[-1.2, 1.2].map((side, i) => (
+        <group key={i}>
+          <mesh position={[side, 2.2, 0]}>
+            <boxGeometry args={[0.38, 4.2, 0.38]} />
+            <meshStandardMaterial color="#c0a880" />
+          </mesh>
+          <mesh position={[side, 4.45, 0]}>
+            <sphereGeometry args={[0.24, 8, 6]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.7} />
+          </mesh>
+        </group>
+      ))}
+      {/* Top arch crossbar */}
+      <mesh position={[0, 4.5, 0]}>
+        <boxGeometry args={[2.95, 0.34, 0.34]} />
+        <meshStandardMaterial color="#c0a880" />
       </mesh>
-      <Html position={[0, 2.7, 0]} center distanceFactor={10}>
+
+      {/* Outer ring — rotates clockwise */}
+      <mesh ref={ring1Ref} position={[0, 2.2, 0]}>
+        <torusGeometry args={[1.08, 0.10, 14, 52]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.1} />
+      </mesh>
+      {/* Inner ring — rotates counter-clockwise */}
+      <mesh ref={ring2Ref} position={[0, 2.2, 0]}>
+        <torusGeometry args={[0.76, 0.07, 12, 36]} />
+        <meshStandardMaterial color="#ffffff" emissive={color} emissiveIntensity={0.8} />
+      </mesh>
+
+      {/* Portal disc (animated emissive) */}
+      <mesh ref={discRef} position={[0, 2.2, 0]}>
+        <circleGeometry args={[0.7, 32]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.22}
+          transparent
+          opacity={0.45}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Html position={[0, 5.3, 0]} center distanceFactor={14}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
           {label}
         </div>
@@ -1904,6 +2246,69 @@ function CameraSettingsMenu() {
   )
 }
 
+// Full-screen transport picker: 4 world cards (2 available, 2 locked future
+// destinations). Opened by clicking/pressing E at the campus portal.
+const TRANSPORT_WORLDS = [
+  { id: 'campus',  emoji: '🏫', name: 'Campus Principal', desc: 'El mundo universitario', available: true,  path: '/vr' },
+  { id: 'room',    emoji: '🏠', name: 'Mi Room',           desc: 'Tu espacio privado',     available: true,  path: '/vr/room' },
+  { id: 'lab',     emoji: '🔬', name: 'Laboratorio',       desc: 'Próximamente…',          available: false, path: null },
+  { id: 'ciudad',  emoji: '🌆', name: 'Ciudad',            desc: 'Próximamente…',          available: false, path: null },
+]
+
+function TransportMenu({ onNavigate, onClose }) {
+  return (
+    <div
+      className="absolute inset-0 z-40 flex items-center justify-center bg-background/75 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-sm font-bold text-text">🌀 Portal de Transporte</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-text-muted hover:text-text"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {TRANSPORT_WORLDS.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              disabled={!w.available}
+              onClick={() => w.available && onNavigate(w.path)}
+              className={[
+                'flex flex-col items-center gap-1.5 rounded-xl border p-4 text-center transition-colors',
+                w.available
+                  ? 'cursor-pointer border-border bg-background hover:bg-surface-hover'
+                  : 'cursor-not-allowed border-border/40 bg-background/40 opacity-50',
+              ].join(' ')}
+            >
+              <span className="text-3xl">{w.emoji}</span>
+              <span className="text-xs font-semibold text-text">{w.name}</span>
+              <span className="text-xs text-text-muted">{w.desc}</span>
+              {!w.available && (
+                <span className="mt-0.5 rounded-full bg-border/50 px-2 py-0.5 text-[10px] text-text-muted">🔒 Bloqueado</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-4 text-center text-xs text-text-muted">
+          Pulsa <kbd className="rounded bg-border px-1 py-0.5 font-mono text-[10px]">Esc</kbd> o haz clic fuera para cerrar
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // Top-down overview of the campus: the plaza, every NPC's zone, and a live
 // marker for the player's position. Opened/closed with the M key.
 function WorldMap({ open, onClose, playerPositionRef }) {
@@ -1943,11 +2348,70 @@ function WorldMap({ open, onClose, playerPositionRef }) {
           </button>
         </div>
         <svg
-          viewBox={`-${GROUND_RADIUS + 2} -${GROUND_RADIUS + 2} ${(GROUND_RADIUS + 2) * 2} ${(GROUND_RADIUS + 2) * 2}`}
-          className="h-[60vh] w-[60vh] max-w-[90vw]"
+          viewBox={`-${GROUND_RADIUS + 4} -${GROUND_RADIUS + 4} ${(GROUND_RADIUS + 4) * 2} ${(GROUND_RADIUS + 4) * 2}`}
+          className="h-[64vh] w-[64vh] max-w-[90vw]"
         >
-          <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#5a8f5a" stroke="#3f6e3f" strokeWidth="0.4" />
-          <circle cx="0" cy="0" r="5.5" fill="#caa46c" />
+          {/* Campus grass */}
+          <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#4a8f4a" />
+          {/* Outer perimeter (darker grass) */}
+          <circle cx="0" cy="0" r={GROUND_RADIUS} fill="none" stroke="#3d7a3d" strokeWidth="12" />
+          {/* Ring roads */}
+          <circle cx="0" cy="0" r="23.5" fill="none" stroke="#b09878" strokeWidth="3" opacity="0.8" />
+          <circle cx="0" cy="0" r="50" fill="none" stroke="#8a8078" strokeWidth="3.5" opacity="0.75" />
+          <circle cx="0" cy="0" r="76.5" fill="none" stroke="#8a8078" strokeWidth="2.5" opacity="0.7" />
+          {/* Cardinal avenues */}
+          {[0, 90, 180, 270].map((deg) => {
+            const rad = (deg * Math.PI) / 180
+            return (
+              <line
+                key={deg}
+                x1={Math.sin(rad) * 9}
+                y1={Math.cos(rad) * 9}
+                x2={Math.sin(rad) * (GROUND_RADIUS - 2)}
+                y2={Math.cos(rad) * (GROUND_RADIUS - 2)}
+                stroke="#b09878"
+                strokeWidth="6"
+                opacity="0.55"
+              />
+            )
+          })}
+          {/* Central plaza */}
+          <circle cx="0" cy="0" r="9" fill="#caa46c" />
+          <circle cx="0" cy="0" r="5" fill="#d4ae78" />
+          {/* Fountain dot */}
+          <circle cx="0" cy="0" r="2" fill="#4488cc" opacity="0.8" />
+
+          {/* Academic buildings */}
+          {CAMPUS_ACADEMIC.map(({ pos, color, w, d, name, label }) => {
+            const [bx, , bz] = pos
+            return (
+              <g key={name}>
+                <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill={color} opacity="0.85" rx="0.5" />
+                <text x={bx} y={bz + 0.6} fontSize="4" textAnchor="middle" dominantBaseline="middle">
+                  {label}
+                </text>
+                <text x={bx} y={bz + d / 2 + 3.2} fontSize="2.2" textAnchor="middle" fill="#ffffff" opacity="0.8">
+                  {name}
+                </text>
+              </g>
+            )
+          })}
+
+          {/* Dormitory blocks */}
+          {CAMPUS_DORMS.map(({ pos, color }, i) => {
+            const [bx, , bz] = pos
+            return (
+              <rect key={i} x={bx - 3.5} y={bz - 6} width={7} height={12} fill={color} opacity="0.7" rx="0.5" />
+            )
+          })}
+
+          {/* Sports zones (soccer field E, basketball W) */}
+          <rect x="44.5" y="-17" width="55" height="34" fill="#2d6e2d" opacity="0.6" rx="1" />
+          <text x="72" y="0.6" fontSize="3.5" textAnchor="middle" dominantBaseline="middle">⚽</text>
+          <rect x="-79" y="-7" width="22" height="14" fill="#2d6ea5" opacity="0.55" rx="1" />
+          <text x="-68" y="0.6" fontSize="3.5" textAnchor="middle" dominantBaseline="middle">🏀</text>
+
+          {/* NPC zones */}
           {VR_NPCS.map((npc) => {
             const [x, , z] = npc.position
             return (
@@ -1955,19 +2419,42 @@ function WorldMap({ open, onClose, playerPositionRef }) {
                 <rect
                   x={x * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
                   y={z * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
-                  width={BUILDING_SIZE}
-                  height={BUILDING_SIZE}
+                  width={BUILDING_SIZE + 0.4}
+                  height={BUILDING_SIZE + 0.4}
                   fill={npc.color}
-                  opacity="0.55"
+                  opacity="0.6"
                 />
-                <circle cx={x} cy={z} r="1.3" fill={npc.color} stroke="#fff" strokeWidth="0.3" />
-                <text x={x} y={z - 2.4} fontSize="2.4" textAnchor="middle">
+                <circle cx={x} cy={z} r="1.4" fill={npc.color} stroke="#fff" strokeWidth="0.3" />
+                <text x={x} y={z - 2.6} fontSize="2.6" textAnchor="middle">
                   {npc.emoji}
                 </text>
               </g>
             )
           })}
-          <circle ref={playerMarkerRef} cx="0" cy="0" r="1" fill="#e74c3c" stroke="#fff" strokeWidth="0.4" />
+
+          {/* Portal marker */}
+          {(() => {
+            const [px, , pz] = ROOM_PORTAL_POSITION
+            return (
+              <g>
+                <circle cx={px} cy={pz} r="2.2" fill="#a78bfa" opacity="0.85" />
+                <text x={px} y={pz - 3.4} fontSize="3" textAnchor="middle">🌀</text>
+              </g>
+            )
+          })()}
+
+          {/* Perimeter wall indicator */}
+          <circle cx="0" cy="0" r={GROUND_RADIUS - 1} fill="none" stroke="#8a7a68" strokeWidth="1.5" opacity="0.6" strokeDasharray="3 2" />
+
+          {/* Gate markers */}
+          {[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].map((a, i) => (
+            <text key={i} x={Math.sin(a) * (GROUND_RADIUS - 4)} y={Math.cos(a) * (GROUND_RADIUS - 4)} fontSize="4" textAnchor="middle" dominantBaseline="middle">
+              🏛️
+            </text>
+          ))}
+
+          {/* Player position marker (updated every frame) */}
+          <circle ref={playerMarkerRef} cx="0" cy="0" r="2" fill="#e74c3c" stroke="#fff" strokeWidth="0.5" />
         </svg>
         <p className="mt-2 text-center text-xs text-text-muted">
           Pulsa <strong>M</strong> para cerrar el mapa
@@ -2206,6 +2693,7 @@ export default function VRPage({ roomMode = false }) {
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [nearPortal, setNearPortal] = useState(false)
+  const [portalMenuOpen, setPortalMenuOpen] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatPrefill, setChatPrefill] = useState(null)
@@ -2233,12 +2721,15 @@ export default function VRPage({ roomMode = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 'E' interacts with nearby portals (campus → Room, or Room → campus).
+  // 'E' near a portal: room mode exits straight to campus; campus mode opens
+  // the transport menu so the player can choose their destination. Esc closes.
   useEffect(() => {
     const handleDown = (e) => {
       if (isTypingTarget(e.target)) return
+      if (e.key === 'Escape') { setPortalMenuOpen(false); return }
       if (e.key.toLowerCase() === 'e' && nearPortal) {
-        navigate(roomMode ? '/vr' : '/vr/room')
+        if (roomMode) navigate('/vr')
+        else setPortalMenuOpen(true)
       }
     }
     window.addEventListener('keydown', handleDown)
@@ -2265,9 +2756,11 @@ export default function VRPage({ roomMode = false }) {
     setActiveNpcId((current) => (current === nearbyNpcId ? null : nearbyNpcId))
   }
 
-  // Room gets a warm interior background; campus keeps the dusk-sky palette.
-  const bgColor = roomMode ? '#f5ede0' : '#3b2a1f'
-  const fogArgs = roomMode ? ['#f5ede0', 8, 22] : ['#d98e4a', 12, 48]
+  // Room gets a warm interior background; campus uses a soft afternoon sky
+  // with fog that starts at r≈35 and fades fully by r≈140 so the full 90-unit
+  // campus stays visible before blending into the horizon.
+  const bgColor = roomMode ? '#f5ede0' : '#89a0c4'
+  const fogArgs = roomMode ? ['#f5ede0', 8, 22] : ['#89a0c4', 35, 145]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -2318,11 +2811,20 @@ export default function VRPage({ roomMode = false }) {
           </Suspense>
         </Canvas>
 
-        {/* Portal prompt — shown whenever the player is within range of a portal */}
-        {nearPortal && (
-          <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
-            {roomMode ? '🌀 Pulsa E para volver al Campus' : '🚪 Pulsa E para entrar a tu Room'}
-          </div>
+        {/* Portal prompt — clickable button when near a portal */}
+        {nearPortal && !portalMenuOpen && (
+          <button
+            type="button"
+            onClick={() => roomMode ? navigate('/vr') : setPortalMenuOpen(true)}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-20"
+          >
+            {roomMode ? '🌀 Haz clic o pulsa E para volver al Campus' : '🌀 Haz clic o pulsa E para abrir el portal'}
+          </button>
+        )}
+
+        {/* Transport destination picker — opens when clicking/pressing E at campus portal */}
+        {portalMenuOpen && !roomMode && (
+          <TransportMenu onNavigate={(path) => navigate(path)} onClose={() => setPortalMenuOpen(false)} />
         )}
 
         {/* NPC mission card / nearby-NPC hint (campus only) */}
