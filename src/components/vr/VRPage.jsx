@@ -312,103 +312,132 @@ function useIsTouchDevice() {
   return isTouch
 }
 
-// On-screen D-pad for phones/tablets: holds the same key flags the keyboard
-// listener uses, so <Player> doesn't need to know where the input came from.
-// Hidden while the world chat is open (the chat box covers this corner and
-// competes for taps). Each button captures its pointer on press so a finger
-// that drifts slightly off the button (very common on real touchscreens)
-// doesn't fire `pointerleave` and silently stop the movement — only
-// `pointerup`/`pointercancel` release it now.
-function TouchControls({ keysRef, chatOpen, onOpenChat }) {
+// Analog virtual joystick for phones/tablets. A draggable knob inside a fixed
+// outer ring translates its (x,y) offset from center into WASD movement flags,
+// so Player sees the exact same input as a physical keyboard. Pointer capture
+// keeps tracking even when the finger drifts outside the ring.
+function VirtualJoystick({ keysRef, hidden }) {
   const isTouch = useIsTouchDevice()
-  if (!isTouch || chatOpen) return null
+  const outerRef = useRef(null)
+  const knobRef  = useRef(null)
+  const activeId = useRef(null)
+  const DEAD = 0.28 // fraction of radius below which movement is ignored
 
-  const releaseCapture = (e) => {
-    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    }
+  const getPos = (e) => {
+    const el = outerRef.current
+    if (!el) return { nx: 0, ny: 0, px: 0, py: 0 }
+    const rect = el.getBoundingClientRect()
+    const r    = rect.width / 2
+    const dx   = e.clientX - (rect.left + r)
+    const dy   = e.clientY - (rect.top  + r)
+    const dist = Math.min(Math.hypot(dx, dy), r)
+    const ang  = Math.atan2(dy, dx)
+    const px   = Math.cos(ang) * dist
+    const py   = Math.sin(ang) * dist
+    return { nx: px / r, ny: py / r, px, py }
   }
 
-  const setKeys = (direction, value) => (e) => {
+  const applyKeys = (nx, ny) => {
+    DIRECTION_KEYS.up.forEach((k)    => { keysRef.current[k] = ny < -DEAD })
+    DIRECTION_KEYS.down.forEach((k)  => { keysRef.current[k] = ny >  DEAD })
+    DIRECTION_KEYS.left.forEach((k)  => { keysRef.current[k] = nx < -DEAD })
+    DIRECTION_KEYS.right.forEach((k) => { keysRef.current[k] = nx >  DEAD })
+  }
+
+  const moveKnob = (px, py) => {
+    if (knobRef.current)
+      knobRef.current.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`
+  }
+
+  const onDown = (e) => {
+    if (activeId.current !== null) return
     e.preventDefault()
-    e.stopPropagation()
-    if (value) {
-      e.currentTarget.setPointerCapture?.(e.pointerId)
-    } else {
-      releaseCapture(e)
-    }
-    DIRECTION_KEYS[direction].forEach((key) => {
-      keysRef.current[key] = value
-    })
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
+    activeId.current = e.pointerId
+    const { nx, ny, px, py } = getPos(e)
+    moveKnob(px, py)
+    applyKeys(nx, ny)
   }
 
-  const setJump = (value) => (e) => {
+  const onMove = (e) => {
+    if (activeId.current !== e.pointerId) return
     e.preventDefault()
-    e.stopPropagation()
-    if (value) {
-      e.currentTarget.setPointerCapture?.(e.pointerId)
-    } else {
-      releaseCapture(e)
-    }
-    keysRef.current[' '] = value
+    const { nx, ny, px, py } = getPos(e)
+    moveKnob(px, py)
+    applyKeys(nx, ny)
   }
 
-  const Pad = ({ direction, label, className = '' }) => (
-    <button
-      type="button"
-      onPointerDown={setKeys(direction, true)}
-      onPointerUp={setKeys(direction, false)}
-      onPointerCancel={setKeys(direction, false)}
-      onContextMenu={(e) => e.preventDefault()}
-      style={{ touchAction: 'none' }}
-      className={`flex h-16 w-16 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30 ${className}`}
-      aria-label={direction}
-    >
-      {label}
-    </button>
-  )
+  const onUp = (e) => {
+    if (activeId.current !== e.pointerId) return
+    activeId.current = null
+    moveKnob(0, 0)
+    applyKeys(0, 0)
+  }
+
+  if (!isTouch || hidden) return null
 
   return (
-    <>
-      <div className="pointer-events-none absolute bottom-6 left-1/2 grid -translate-x-1/2 grid-cols-3 grid-rows-2 gap-1">
-        <div className="pointer-events-auto col-start-2">
-          <Pad direction="up" label="⬆️" />
-        </div>
-        <div className="pointer-events-auto col-start-1 row-start-2">
-          <Pad direction="left" label="⬅️" />
-        </div>
-        <div className="pointer-events-auto col-start-2 row-start-2">
-          <Pad direction="down" label="⬇️" />
-        </div>
-        <div className="pointer-events-auto col-start-3 row-start-2">
-          <Pad direction="right" label="➡️" />
-        </div>
-      </div>
+    <div
+      ref={outerRef}
+      className="pointer-events-auto absolute bottom-6 left-5 z-20 h-28 w-28 rounded-full border-2 border-white/30 bg-black/30 backdrop-blur-sm"
+      style={{ touchAction: 'none' }}
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {/* dead-zone indicator */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20" />
+      {/* draggable knob */}
+      <div
+        ref={knobRef}
+        className="pointer-events-none absolute left-1/2 top-1/2 h-12 w-12 rounded-full bg-white/70 shadow-xl"
+        style={{ transform: 'translate(-50%, -50%)' }}
+      />
+    </div>
+  )
+}
 
-      <div className="pointer-events-none absolute bottom-6 right-4 flex flex-col items-center gap-2">
-        <button
-          type="button"
-          onPointerDown={setJump(true)}
-          onPointerUp={setJump(false)}
-          onPointerCancel={setJump(false)}
-          onContextMenu={(e) => e.preventDefault()}
-          style={{ touchAction: 'none' }}
-          className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full bg-surface/80 text-2xl text-text shadow-lg backdrop-blur active:bg-primary/30"
-          aria-label="jump"
-        >
-          ⤴️
-        </button>
-        <button
-          type="button"
-          onClick={onOpenChat}
-          onContextMenu={(e) => e.preventDefault()}
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface/80 text-xl text-text shadow-lg backdrop-blur active:bg-primary/30"
-          aria-label="chat"
-        >
-          💬
-        </button>
-      </div>
-    </>
+// Jump + Chat buttons for mobile, bottom-right corner.
+// Hidden when the chat input is open to prevent accidental taps.
+function MobileButtons({ keysRef, hidden, onOpenChat }) {
+  const isTouch = useIsTouchDevice()
+  if (!isTouch || hidden) return null
+
+  const setJump = (v) => (e) => {
+    e.preventDefault()
+    try {
+      if (v) e.currentTarget.setPointerCapture(e.pointerId)
+      else   e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {}
+    keysRef.current[' '] = v
+  }
+
+  return (
+    <div className="pointer-events-none absolute bottom-6 right-4 z-20 flex flex-col items-center gap-2">
+      <button
+        type="button"
+        onPointerDown={setJump(true)}
+        onPointerUp={setJump(false)}
+        onPointerCancel={setJump(false)}
+        onContextMenu={(e) => e.preventDefault()}
+        style={{ touchAction: 'none' }}
+        className="pointer-events-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/30 bg-black/30 text-2xl text-white shadow-xl backdrop-blur-sm active:bg-primary/50"
+        aria-label="saltar"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        onClick={onOpenChat}
+        onContextMenu={(e) => e.preventDefault()}
+        className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/30 text-xl text-white shadow-lg backdrop-blur-sm active:bg-primary/40"
+        aria-label="chat"
+      >
+        💬
+      </button>
+    </div>
   )
 }
 
@@ -2505,11 +2534,29 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
   const sendMessage = useWorldChatStore((s) => s.sendMessage)
   const addSystemMessage = useWorldChatStore((s) => s.addSystemMessage)
   const players = useVrPresenceStore((s) => s.players)
+  const isTouch = useIsTouchDevice()
   const [text, setText] = useState('')
   const [tab, setTab] = useState('general')
   const inputRef = useRef(null)
   const lastSeenWhisperIdRef = useRef(null)
   const [hasUnreadWhisper, setHasUnreadWhisper] = useState(false)
+  // Start minimized on touch so it doesn't overlap the joystick/controls
+  const [minimized, setMinimized] = useState(
+    () => typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || 'ontouchstart' in window),
+  )
+  const lastReadLenRef = useRef(0)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Track unread messages while minimized
+  useEffect(() => {
+    if (!minimized) {
+      lastReadLenRef.current = messages.length
+      setUnreadCount(0)
+    } else {
+      const n = messages.length - lastReadLenRef.current
+      if (n > 0) setUnreadCount(n)
+    }
+  }, [messages.length, minimized])
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
@@ -2590,9 +2637,42 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
 
   const visibleMessages = tab === 'whispers' ? whisperMessages : generalMessages
 
+  // Minimized: float as a small pill bubble so touch controls have room
+  if (minimized) {
+    return (
+      <button
+        type="button"
+        onClick={() => setMinimized(false)}
+        className={[
+          'absolute z-20 flex items-center gap-2 rounded-full border border-border bg-surface/90 px-3 py-2 text-sm text-text shadow-xl backdrop-blur transition-colors hover:bg-surface',
+          isTouch ? 'bottom-[148px] left-5' : 'bottom-20 left-4',
+        ].join(' ')}
+      >
+        <span>💬</span>
+        {unreadCount > 0 && (
+          <span className="min-w-[18px] rounded-full bg-primary px-1 text-center text-xs font-bold text-background">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+        <span className="text-xs text-text-muted">Chat</span>
+        {hasUnreadWhisper && (
+          <span className="h-2 w-2 rounded-full bg-fuchsia-400" />
+        )}
+      </button>
+    )
+  }
+
+  // Expanded panel — wider + above controls on mobile, fixed left on desktop
   return (
-    <div className="absolute bottom-20 left-4 z-20 w-72 max-w-[calc(100%-2rem)] rounded-xl border border-border bg-surface/90 p-3 text-sm shadow-xl backdrop-blur sm:bottom-24">
-      <div className="mb-2 flex gap-1 text-xs">
+    <div
+      className={[
+        'absolute z-20 rounded-xl border border-border bg-surface/90 p-3 text-sm shadow-xl backdrop-blur',
+        isTouch
+          ? 'bottom-[148px] left-4 right-4'
+          : 'bottom-20 left-4 w-72 max-w-[calc(100%-2rem)] sm:bottom-24',
+      ].join(' ')}
+    >
+      <div className="mb-2 flex items-center gap-1 text-xs">
         <button
           type="button"
           onClick={() => setTab('general')}
@@ -2613,6 +2693,16 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
           {hasUnreadWhisper && (
             <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-fuchsia-400" />
           )}
+        </button>
+        {/* Minimize button */}
+        <button
+          type="button"
+          onClick={() => setMinimized(true)}
+          className="ml-1 rounded-lg px-2 py-1 text-base leading-none text-text-muted hover:text-text"
+          aria-label="Minimizar chat"
+          title="Minimizar chat"
+        >
+          —
         </button>
       </div>
       <div className="mb-2 flex max-h-40 flex-col gap-1 overflow-y-auto text-xs">
@@ -2647,7 +2737,7 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
           onClick={onOpen}
           className="w-full rounded-lg border border-dashed border-border px-2 py-1.5 text-left text-xs text-text-muted hover:border-primary hover:text-text"
         >
-          Pulsa <strong>C</strong> o toca aquí para chatear…
+          {isTouch ? 'Toca aquí para chatear…' : 'Pulsa C o toca aquí para chatear…'}
         </button>
       )}
     </div>
@@ -2911,7 +3001,8 @@ export default function VRPage({ roomMode = false }) {
           <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
         </div>
 
-        <TouchControls keysRef={keysRef} chatOpen={chatOpen} onOpenChat={() => setChatOpen(true)} />
+        <VirtualJoystick keysRef={keysRef} hidden={chatOpen} />
+        <MobileButtons keysRef={keysRef} hidden={chatOpen} onOpenChat={() => setChatOpen(true)} />
 
         {kicked && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4 text-center">
