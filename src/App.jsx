@@ -1,3 +1,17 @@
+/**
+ * ============================================================================
+ * 🗺️ ENRUTADOR PRINCIPAL Y CORAZÓN DE LA APP (App.jsx)
+ * ============================================================================
+ * Este archivo es una joya arquitectónica. No es solo un archivo de rutas, 
+ * es el "Controlador de Tráfico" y el principal responsable del rendimiento 
+ * inicial de la plataforma.
+ * * 🏗️ PATRONES DE ARQUITECTURA APLICADOS AQUÍ:
+ * 1. CODE SPLITTING (Carga Diferida): La técnica más importante del frontend.
+ * 2. GLOBAL OVERLAYS: Componentes que "flotan" sobre toda la aplicación.
+ * 3. ROUTE GUARDS: Protección centralizada de rutas.
+ * ============================================================================
+ */
+
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './components/landing/LandingPage'
@@ -16,9 +30,17 @@ import AchievementWatcher from './components/achievements/AchievementWatcher'
 import AchievementToast from './components/achievements/AchievementToast'
 import { useLibraryStore } from './stores/useLibraryStore'
 
-// Lazy-loaded: pulls in Three.js / React Three Fiber, kept out of the main
-// bundle since most visitors never reach the learning interface or the
-// mascot's home.
+/**
+ * 📦 CODE SPLITTING (CARGA DIFERIDA)
+ * ----------------------------------------------------------------------------
+ * REGLA DE RENDIMIENTO: Nunca importes componentes pesados de forma normal 
+ * si el usuario no los va a ver en los primeros 3 segundos de entrar a la app.
+ * * - Three.js / React Three Fiber (Mascota, VR): Pesa muchísimo. Se carga solo si entran a /mascota o /vr.
+ * - Epub.js (Lector de libros): Se carga solo si abren la biblioteca.
+ * - LearningInterface: Contiene el reproductor de video pesado.
+ * * Gracias a `lazy()`, el código de la Landing Page y el Login carga en milisegundos 
+ * porque Webpack/Vite empaqueta estos archivos pesados en "chunks" separados.
+ */
 const LearningInterface = lazy(() => import('./components/learning/LearningInterface'))
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
@@ -28,6 +50,10 @@ const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 
+/**
+ * Componente de respaldo visual (Fallback) que se muestra DURANTE 
+ * la descarga de los "chunks" pesados mencionados arriba.
+ */
 function RouteFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-text-muted">
@@ -37,22 +63,45 @@ function RouteFallback() {
 }
 
 export default function App() {
+  // Estado global para saber si el usuario abrió un libro desde cualquier parte de la app.
   const openBookId = useLibraryStore((s) => s.openBookId)
 
   return (
     <BrowserRouter>
+      {/* 🌐 COMPONENTES GLOBALES (Fuera del sistema de Rutas)
+        Al estar fuera de <Routes>, estos componentes NO se desmontan cuando 
+        el usuario cambia de página. 
+        - AchievementWatcher: Escucha los logros en segundo plano silenciosamente.
+        - AchievementToast: Muestra las alertas pop-up de logros en cualquier pantalla.
+      */}
       <AchievementWatcher />
       <AchievementToast />
+      
+      {/* 📖 MODAL GLOBAL DEL LECTOR
+        Si el usuario abre un libro (openBookId existe), el lector se superpone 
+        en la pantalla sin cambiar la URL actual. Usa Suspense porque el lector 
+        (BookReaderModal) está lazy-loaded.
+      */}
       {openBookId && (
         <Suspense fallback={null}>
           <BookReaderModal />
         </Suspense>
       )}
+
+      {/* 🛣️ SISTEMA DE RUTAS */}
       <Routes>
+        {/* === RUTAS PÚBLICAS (No requieren sesión) === */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unlock" element={<PortalPage />} />
+
+        {/* === RUTAS PROTEGIDAS (Requieren sesión) === */}
+        {/* NOTA DE ARQUITECTURA: <ProtectedRoute> es un "Route Guard".
+          Su trabajo es verificar si hay una sesión activa. Si no la hay, 
+          patea al usuario al /login ANTES de intentar renderizar la página interna,
+          evitando que la app crashee por pedir datos de un usuario inexistente.
+        */}
         <Route
           path="/dashboard"
           element={
@@ -61,6 +110,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/mascota"
           element={
@@ -71,6 +121,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/tienda"
           element={
@@ -79,6 +130,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/ajustes"
           element={
@@ -87,6 +139,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/chats"
           element={
@@ -95,6 +148,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/biblioteca"
           element={
@@ -105,6 +159,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/biblioteca/:bookId"
           element={
@@ -115,6 +170,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/misiones"
           element={
@@ -125,6 +181,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/notas"
           element={
@@ -135,6 +192,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
+        {/* === RUTAS DE REALIDAD VIRTUAL (Heavy 3D Load) === */}
         <Route
           path="/vr"
           element={
@@ -165,6 +224,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
+        {/* === RUTAS DE JUEGOS Y APRENDIZAJE === */}
         <Route
           path="/games"
           element={
