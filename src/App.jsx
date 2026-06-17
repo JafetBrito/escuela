@@ -224,6 +224,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/vr/world-tree"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage worldTreeMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
         
         {/* === RUTAS DE JUEGOS Y APRENDIZAJE === */}
         <Route

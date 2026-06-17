@@ -24,6 +24,10 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
+import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
+import { SKILL_REGISTRY } from '../../data/skillRegistry'
+import VrLoadingScreen from './VrLoadingScreen'
+import VrHud from './VrHud'
 
 // While we're designing/testing the world's NPCs and missions, swap the real
 // city model for a simple flat test ground with a few placeholder walls.
@@ -217,6 +221,18 @@ const ANFI_STAGE_NPC_POS = [0, 0, ANFI_STAGE_Z - 7]
 const ANFI_SPAWN = [0, 0, ANFI_HD - 12]
 // Exit portal in lobby (south end)
 const ANFI_EXIT_PORTAL = [0, 0, ANFI_HD - 3]
+
+// ─── Árbol del Mundo constants ───────────────────────────────────────────────
+const WT_SPAWN = [0, 0, 18]          // player starts near south edge, facing tree
+const WT_EXIT_PORTAL = [0, 0, 25]   // exit portal at south edge
+// Class nodes spread in a circle, 12 units from the trunk base
+const WT_CLASS_NODES = {
+  programmer:       { pos: [0, 2.5, -12],         color: '#22c55e' },
+  cyber_strategist: { pos: [11.4, 2.5, -3.7],     color: '#3b82f6' },
+  ai_engineer:      { pos: [7.0, 2.5, 9.7],        color: '#a855f7' },
+  designer:         { pos: [-7.0, 2.5, 9.7],       color: '#f97316' },
+  philosopher:      { pos: [-11.4, 2.5, -3.7],     color: '#eab308' },
+}
 
 // Patrol loops for the background "wandering cats" that bring the campus
 // plaza to life. Each path is a list of [x, y, z] waypoints the cat walks
@@ -1529,6 +1545,200 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
   )
 }
 
+// ── Árbol del Mundo — geometry ────────────────────────────────────────────────
+function useWorldTreeGround() {
+  return useMemo(() => {
+    const g = new THREE.Group()
+
+    // Ground — dark earth circle
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(50, 72),
+      new THREE.MeshStandardMaterial({ color: '#0c1a08', roughness: 0.95 })
+    )
+    ground.rotation.x = -Math.PI / 2
+    ground.userData.isFloor = true
+    g.add(ground)
+
+    // Outer ring path (lighter dirt)
+    const ringPath = new THREE.Mesh(
+      new THREE.RingGeometry(10, 14, 72),
+      new THREE.MeshStandardMaterial({ color: '#1a2e0e', roughness: 0.9 })
+    )
+    ringPath.rotation.x = -Math.PI / 2
+    ringPath.position.y = 0.01
+    g.add(ringPath)
+
+    // ─── Trunk ───────────────────────────────────────────────────────────
+    const trunkMat = new THREE.MeshStandardMaterial({ color: '#2a1005', roughness: 0.9 })
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.4, 16, 14), trunkMat)
+    trunk.position.set(0, 8, 0)
+    g.add(trunk)
+
+    // Large root buttresses
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2
+      const root = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.8, 4, 6), trunkMat)
+      root.position.set(Math.sin(a) * 2.5, 1.8, Math.cos(a) * 2.5)
+      root.rotation.z = -a * 0.4
+      root.rotation.x = 0.4
+      g.add(root)
+    }
+
+    // ─── Main branches (5, one per class) ────────────────────────────────
+    const branchColors = ['#22c55e', '#3b82f6', '#a855f7', '#f97316', '#eab308']
+    const classIds = Object.keys(WT_CLASS_NODES)
+
+    classIds.forEach((cid, i) => {
+      const node = WT_CLASS_NODES[cid]
+      const [nx, , nz] = node.pos
+      const dist = Math.sqrt(nx * nx + nz * nz)
+      const angle = Math.atan2(nx, nz)
+      const branchMat = new THREE.MeshStandardMaterial({ color: '#1e0a02', roughness: 0.85 })
+
+      // Diagonal branch from canopy level to node sphere position
+      const length = Math.sqrt(dist * dist + (node.pos[1] + 12) ** 2) * 0.7
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.4, length, 6), branchMat)
+      const midX = nx * 0.55
+      const midY = 13 + node.pos[1] * 0.3
+      const midZ = nz * 0.55
+      branch.position.set(midX, midY, midZ)
+      branch.rotation.z = -angle
+      branch.rotation.x = Math.atan2(Math.sqrt(nx * nx + nz * nz), 12) * 0.5
+      branch.rotation.y = angle
+      g.add(branch)
+
+      // Leaf cluster (simple flat cone) at branch tip
+      const leafMat = new THREE.MeshStandardMaterial({
+        color: branchColors[i],
+        emissive: branchColors[i],
+        emissiveIntensity: 0.25,
+        transparent: true,
+        opacity: 0.7,
+        roughness: 0.8,
+      })
+      const leafCluster = new THREE.Mesh(new THREE.SphereGeometry(1.8, 10, 8), leafMat)
+      leafCluster.position.set(nx * 0.9, node.pos[1] + 15, nz * 0.9)
+      g.add(leafCluster)
+
+      // Glowing class node sphere
+      const nodeMat = new THREE.MeshStandardMaterial({
+        color: node.color,
+        emissive: node.color,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
+        metalness: 0.2,
+      })
+      const nodeSphere = new THREE.Mesh(new THREE.SphereGeometry(1.0, 20, 16), nodeMat)
+      nodeSphere.position.set(nx, node.pos[1], nz)
+      nodeSphere.name = `wt-node-${cid}`
+      g.add(nodeSphere)
+
+      // Hovering rune ring below sphere
+      const runeMat = new THREE.MeshStandardMaterial({
+        color: node.color,
+        emissive: node.color,
+        emissiveIntensity: 0.6,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0.2,
+      })
+      const rune = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.08, 8, 40), runeMat)
+      rune.position.set(nx, 0.08, nz)
+      rune.rotation.x = -Math.PI / 2
+      g.add(rune)
+
+      // Point light per node
+      const light = new THREE.PointLight(node.color, 1.2, 14)
+      light.position.set(nx, node.pos[1] + 1, nz)
+      g.add(light)
+    })
+
+    // Canopy sphere (top of tree)
+    const canopyMat = new THREE.MeshStandardMaterial({
+      color: '#0f2a06',
+      emissive: '#1a4a0a',
+      emissiveIntensity: 0.15,
+      roughness: 0.85,
+    })
+    const canopy = new THREE.Mesh(new THREE.SphereGeometry(5, 14, 10), canopyMat)
+    canopy.position.set(0, 18, 0)
+    g.add(canopy)
+
+    // Central glow ring at base of trunk
+    const glowMat = new THREE.MeshStandardMaterial({
+      color: '#ffffff',
+      emissive: '#88ffaa',
+      emissiveIntensity: 0.8,
+      transparent: true,
+      opacity: 0.25,
+    })
+    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.12, 8, 48), glowMat)
+    glowRing.rotation.x = -Math.PI / 2
+    glowRing.position.y = 0.05
+    g.add(glowRing)
+
+    return { model: g, groundRayHeight: 6 }
+  }, [])
+}
+
+// Renders El Árbol del Mundo: the class selection hub.
+function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onNearClassNodeChange }) {
+  const { model, groundRayHeight } = useWorldTreeGround()
+
+  // Animate node spheres bobbing and rune rings rotating each frame
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    model.traverse((child) => {
+      if (child.name?.startsWith('wt-node-')) {
+        const cid = child.name.replace('wt-node-', '')
+        const node = WT_CLASS_NODES[cid]
+        if (node) child.position.y = node.pos[1] + Math.sin(t * 1.2 + Object.keys(WT_CLASS_NODES).indexOf(cid)) * 0.3
+      }
+    })
+  })
+
+  // Detect player proximity to class nodes
+  useFrame(() => {
+    const pos = playerPositionRef?.current
+    if (!pos) return
+    let nearest = null
+    let nearestDist = 4.5
+    for (const [cid, node] of Object.entries(WT_CLASS_NODES)) {
+      const dx = pos.x - node.pos[0]
+      const dz = pos.z - node.pos[2]
+      const d = Math.sqrt(dx * dx + dz * dz)
+      if (d < nearestDist) { nearestDist = d; nearest = cid }
+    }
+    onNearClassNodeChange?.(nearest)
+  })
+
+  return (
+    <>
+      <primitive object={model} />
+      <Player
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        positionRef={playerPositionRef}
+        rotationRef={playerRotationRef}
+        groundObjects={[model]}
+        groundRayHeight={groundRayHeight}
+        spawnAt={WT_SPAWN}
+        authorName={authorName}
+        playerId={playerId}
+      />
+      <Portal
+        position={WT_EXIT_PORTAL}
+        color="#22c55e"
+        label="🌀 Volver al Campus"
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
+    </>
+  )
+}
+
 // ── Voice chat ────────────────────────────────────────────────────────────────
 // Captures local mic and broadcasts mute/active state. The VoicePanel
 // component renders a mic toggle button and a list of speaking players.
@@ -2526,7 +2736,7 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
 // the player, NPCs, remote players, and the portal to the player's Room.
-// When roomMode/anfiteatroMode=true, renders the respective world instead (no NPCs/multiplayer).
+// When roomMode/anfiteatroMode/worldTreeMode=true, renders the respective world.
 function World({
   mascot,
   skin,
@@ -2537,12 +2747,31 @@ function World({
   remoteTransformsRef,
   onNearbyNpcChange,
   onNearPortalChange,
+  onNearClassNodeChange,
   authorName,
   playerId,
   onSelectPlayer,
   roomMode,
   anfiteatroMode,
+  worldTreeMode,
 }) {
+  if (worldTreeMode) {
+    return (
+      <WorldTreeWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+        onNearClassNodeChange={onNearClassNodeChange}
+      />
+    )
+  }
+
   if (anfiteatroMode) {
     return (
       <AnfiteatroWorld
@@ -3028,6 +3257,7 @@ const TRANSPORT_WORLDS = [
   { id: 'campus',     emoji: '🏫', name: 'Campus Principal', desc: 'El mundo universitario',     available: true,  path: '/vr' },
   { id: 'room',       emoji: '🏠', name: 'Mi Room',           desc: 'Tu espacio privado',         available: true,  path: '/vr/room' },
   { id: 'anfiteatro', emoji: '🎭', name: 'Anfiteatro',        desc: 'Teatro con pantalla en vivo', available: true,  path: '/vr/anfiteatro' },
+  { id: 'world-tree', emoji: '🌳', name: 'Árbol del Mundo',  desc: 'Selección de clase RPG',      available: true,  path: '/vr/world-tree' },
   { id: 'ciudad',     emoji: '🌆', name: 'Ciudad',            desc: 'Próximamente…',              available: false, path: null },
 ]
 
@@ -3536,8 +3766,113 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
   )
 }
 
-// roomMode / anfiteatroMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
+// ── Class Preview Card — shown when player nears a class node in WorldTree ─────
+function ClassPreviewCard({ classId, step, playerClass, oliverClass, onSelectPlayer, onSelectOliver, onClose }) {
+  const cls = PLAYER_CLASSES[classId]
+  if (!cls) return null
+
+  const statEntries = Object.entries(cls.stats)
+  const maxStat = 5
+
+  // In 'oliver' step, show Oliver companion class options (all 5)
+  if (step === 'oliver') {
+    return (
+      <div className="absolute bottom-20 left-1/2 z-30 w-80 -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface/95 shadow-2xl backdrop-blur sm:w-96">
+        <div className="border-b border-border px-4 py-3 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Elige la clase de Oliver</p>
+          <p className="mt-0.5 text-sm text-text-muted">Tu clase: <strong style={{ color: cls.color }}>{cls.icon} {cls.name}</strong></p>
+        </div>
+        <div className="flex flex-col gap-2 p-3">
+          {Object.values(OLIVER_CLASSES).map((oc) => (
+            <button
+              key={oc.id}
+              type="button"
+              onClick={() => onSelectOliver(oc.id)}
+              className="flex items-center gap-3 rounded-xl border border-border p-2.5 text-left transition-colors hover:border-primary hover:bg-primary/5"
+              style={{ borderColor: oc.id === OLIVER_CLASSES[Object.keys(OLIVER_CLASSES).find(k => OLIVER_CLASSES[k].pairedWith === classId)]?.id ? `${oc.color}88` : undefined }}
+            >
+              <span className="text-2xl">{oc.icon}</span>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-text">{oc.name}</p>
+                <p className="mt-0.5 text-[10px] text-text-muted leading-tight">{oc.description}</p>
+              </div>
+              {oc.pairedWith === classId && (
+                <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary">Sinergia</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 'player' step
+  return (
+    <div className="absolute bottom-20 left-1/2 z-30 w-72 -translate-x-1/2 overflow-hidden rounded-2xl border bg-surface/95 shadow-2xl backdrop-blur sm:w-80"
+      style={{ borderColor: `${cls.color}66` }}>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3"
+        style={{ background: `linear-gradient(135deg, ${cls.color}22, ${cls.color}08)` }}>
+        <span className="text-4xl">{cls.icon}</span>
+        <div>
+          <p className="text-base font-black text-text">{cls.name}</p>
+          <p className="text-xs text-text-muted">{cls.description}</p>
+        </div>
+        <button type="button" onClick={onClose} className="ml-auto text-text-muted hover:text-text">✕</button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-5 gap-1.5 px-4 py-3">
+        {statEntries.map(([stat, val]) => (
+          <div key={stat} className="flex flex-col items-center gap-1">
+            <div className="flex flex-col-reverse gap-0.5">
+              {Array.from({ length: maxStat }).map((_, i) => (
+                <div key={i} className="h-2.5 w-3 rounded-sm"
+                  style={{ background: i < val ? cls.color : 'rgba(255,255,255,0.08)' }} />
+              ))}
+            </div>
+            <span className="text-[9px] font-bold uppercase text-text-muted">{stat.slice(0, 3)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Starting skills */}
+      <div className="border-t border-border px-4 py-2">
+        <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-text-muted">Habilidades iniciales</p>
+        <div className="flex gap-2">
+          {cls.startSkills.map((sid) => {
+            const skill = SKILL_REGISTRY[sid]
+            return skill ? (
+              <div key={sid} className="flex items-center gap-1.5 rounded-lg border border-border px-2 py-1.5"
+                style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}11` }}>
+                <span className="text-lg">{skill.icon}</span>
+                <div>
+                  <p className="text-[10px] font-bold text-text">{skill.name}</p>
+                  <p className="text-[9px] text-text-muted">{skill.description}</p>
+                </div>
+              </div>
+            ) : null
+          })}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="px-4 pb-4 pt-2">
+        <button
+          type="button"
+          onClick={() => onSelectPlayer(classId)}
+          className="w-full rounded-xl py-2.5 text-sm font-black text-white transition-all hover:scale-105"
+          style={{ background: `linear-gradient(135deg, ${cls.color}, ${cls.color}cc)`, boxShadow: `0 4px 16px ${cls.color}44` }}
+        >
+          Elegir {cls.name}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// roomMode / anfiteatroMode / worldTreeMode come from the route.
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false }) {
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -3560,8 +3895,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
   const playerId = useRef(crypto.randomUUID()).current
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
-  // Room and Anfiteatro are private — no shared presence channel needed.
-  const isPrivateWorld = roomMode || anfiteatroMode
+  // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode
   const { remoteTransformsRef, sendChatMessage, kicked, channelRef } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
@@ -3572,6 +3907,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
     rotationRef: playerRotationRef,
     enabled: !isPrivateWorld,
   })
+  const [vrReady, setVrReady] = useState(false)
+  const [nearClassNodeId, setNearClassNodeId] = useState(null)
+  const [classSelectionStep, setClassSelectionStep] = useState('player') // 'player' | 'oliver' | 'done'
+  const selectPlayerClass = useGameStore((s) => s.selectPlayerClass)
+  const selectOliverClass = useGameStore((s) => s.selectOliverClass)
+  const playerClass = useGameStore((s) => s.player.class)
+  const oliverClass = useGameStore((s) => s.oliver.class)
+  const worldTreeCompleted = useGameStore((s) => s.worldTreeCompleted)
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [nearPortal, setNearPortal] = useState(false)
@@ -3639,9 +3982,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
     setActiveNpcId((current) => (current === nearbyNpcId ? null : nearbyNpcId))
   }
 
-  // Anfiteatro: dark theatre black. Room: warm amber. Campus: summer sky.
-  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : '#87ceeb'
-  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : ['#c8e8f4', 50, 165]
+  // Lighting themes per world mode
+  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#050d08' : '#87ceeb'
+  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#050d08', 18, 70] : ['#c8e8f4', 50, 165]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -3670,19 +4013,21 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
         >
           <color attach="background" args={[bgColor]} />
           <fog attach="fog" args={fogArgs} />
-          {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, Campus = summer sun */}
+          {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, WorldTree = mystic, Campus = summer sun */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : 0.85}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : '#d8eaf8'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 0.15 : 0.85}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#aaffcc' : '#d8eaf8'}
           />
           <directionalLight
             position={[20, 30, 10]}
-            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : 1.1}
-            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : '#fff8d8'}
+            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 0.3 : 1.1}
+            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#fff8d8'}
           />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}
           {anfiteatroMode && <pointLight position={[0, ANFI_H * 0.7, 0]} intensity={0.5} color="#9060ff" distance={80} />}
+          {worldTreeMode && <pointLight position={[0, 22, 0]} intensity={1.5} color="#44ffaa" distance={60} />}
+          {worldTreeMode && <pointLight position={[0, 2, 0]} intensity={0.6} color="#aaffee" distance={20} />}
           <Suspense fallback={null}>
             <World
               mascot={mascot}
@@ -3694,9 +4039,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
               remoteTransformsRef={remoteTransformsRef}
               onNearbyNpcChange={setNearbyNpcId}
               onNearPortalChange={setNearPortal}
+              onNearClassNodeChange={setNearClassNodeId}
               authorName={chatAuthor}
               playerId={playerId}
               onSelectPlayer={setSelectedPlayer}
+              worldTreeMode={worldTreeMode}
               roomMode={roomMode}
               anfiteatroMode={anfiteatroMode}
             />
@@ -3810,6 +4157,44 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
           {!isPrivateWorld && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
           <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
         </div>
+
+        {/* VR HUD: player portrait + skill action bar */}
+        <VrHud hidden={worldTreeMode} />
+
+        {/* WorldTree class selection card */}
+        {worldTreeMode && nearClassNodeId && classSelectionStep !== 'done' && (
+          <ClassPreviewCard
+            classId={nearClassNodeId}
+            step={classSelectionStep}
+            playerClass={playerClass}
+            oliverClass={oliverClass}
+            onSelectPlayer={(id) => {
+              selectPlayerClass(id)
+              setClassSelectionStep('oliver')
+            }}
+            onSelectOliver={(id) => {
+              selectOliverClass(id)
+              setClassSelectionStep('done')
+              setTimeout(() => navigate('/vr'), 1800)
+            }}
+            onClose={() => setNearClassNodeId(null)}
+          />
+        )}
+
+        {/* WorldTree badge */}
+        {worldTreeMode && (
+          <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
+            🌳 Árbol del Mundo
+          </div>
+        )}
+
+        {/* VR Loading Screen — shown until user presses any key */}
+        {!vrReady && (
+          <VrLoadingScreen
+            onEnter={() => setVrReady(true)}
+            worldName={worldTreeMode ? 'Árbol del Mundo' : anfiteatroMode ? 'Anfiteatro' : roomMode ? 'Mi Room' : 'Campus VR'}
+          />
+        )}
 
         <VirtualJoystick keysRef={keysRef} hidden={chatOpen} />
         <MobileButtons keysRef={keysRef} hidden={chatOpen} onOpenChat={() => setChatOpen(true)} />
