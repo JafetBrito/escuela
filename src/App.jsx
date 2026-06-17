@@ -50,6 +50,7 @@ const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
+const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -261,6 +262,16 @@ export default function App() {
           element={
             <ProtectedRoute>
               <GamePlayerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/arbol"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <SkillTreePage />
+              </Suspense>
             </ProtectedRoute>
           }
         />

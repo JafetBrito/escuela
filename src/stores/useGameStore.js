@@ -116,12 +116,14 @@ const DEFAULT_PLAYER = {
   hp: { current: 100, max: 100 },
   energy: { current: 100, max: 100 },
   skills: { unlocked: [], equipped: [null, null, null, null] },
+  talentPoints: 3,
 }
 
 const DEFAULT_OLIVER = {
   class: null,
   hp: { current: 80, max: 80 },
   skills: { unlocked: ['scratch'], equipped: ['scratch', null, null, null] },
+  talentPoints: 3,
 }
 
 export const useGameStore = create((set, get) => ({
@@ -131,6 +133,32 @@ export const useGameStore = create((set, get) => ({
 
   setPlayerAvatar: (avatarId) =>
     set((s) => ({ player: { ...s.player, avatarId } })),
+
+  // Spend a talent point to unlock a skill for 'player' or 'oliver'.
+  spendTalentPoint: (owner, skillId) =>
+    set((s) => {
+      const char = s[owner]
+      if (!char) return s
+      if ((char.talentPoints ?? 0) < 1) return s
+      if (char.skills.unlocked.includes(skillId)) return s
+      return {
+        [owner]: {
+          ...char,
+          talentPoints: char.talentPoints - 1,
+          skills: {
+            ...char.skills,
+            unlocked: [...char.skills.unlocked, skillId],
+          },
+        },
+      }
+    }),
+
+  earnTalentPoints: (owner, amount) =>
+    set((s) => {
+      const char = s[owner]
+      if (!char) return s
+      return { [owner]: { ...char, talentPoints: (char.talentPoints ?? 0) + amount } }
+    }),
 
   selectPlayerClass: (classId) => {
     const cls = PLAYER_CLASSES[classId]

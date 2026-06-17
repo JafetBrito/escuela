@@ -5,6 +5,7 @@ import Logo from './Logo'
 const LINKS = [
   { to: '/dashboard',  label: 'Dashboard', icon: '🏠' },
   { to: '/mascota',    label: 'Mi Equipo', icon: '⚔️' },
+  { to: '/arbol',      label: 'Árbol',     icon: '🌳' },
   { to: '/amigos',     label: 'Amigos',    icon: '👥' },
   { to: '/chats',      label: 'Chats',     icon: '💬' },
   { to: '/misiones',   label: 'Misiones',  icon: '📜' },

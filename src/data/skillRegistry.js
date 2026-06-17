@@ -182,6 +182,361 @@ export const SKILL_REGISTRY = {
     description: 'Principio irrefutable: daño garantizado al jefe.',
     vfxColor: '#fbbf24',
   },
+
+  // ─── Programador — Tier 2 (Nv.5) ────────────────────────────────────────────
+  refactor_slash: {
+    id: 'refactor_slash',
+    name: 'Refactor Slash',
+    icon: '🔨',
+    owner: 'player',
+    cooldownMs: 4000,
+    energyCost: 25,
+    requiredClass: 'programmer',
+    description: 'Rediseña el código del enemigo, reduciendo su defensa 30%.',
+    vfxColor: '#22c55e',
+  },
+  git_revert: {
+    id: 'git_revert',
+    name: 'Git Revert',
+    icon: '↩️',
+    owner: 'player',
+    cooldownMs: 10000,
+    energyCost: 35,
+    requiredClass: 'programmer',
+    description: 'Deshace el último daño recibido (una vez por combate).',
+    vfxColor: '#4ade80',
+  },
+
+  // ─── Programador — Tier 3 Ultimate (Nv.10) ───────────────────────────────
+  kernel_crash: {
+    id: 'kernel_crash',
+    name: 'Kernel Crash',
+    icon: '💥',
+    owner: 'player',
+    cooldownMs: 20000,
+    energyCost: 50,
+    requiredClass: 'programmer',
+    description: 'Sobrecarga el sistema del jefe: daño masivo al núcleo.',
+    vfxColor: '#16a34a',
+  },
+
+  // ─── Ciber-Estratega — Tier 2 (Nv.5) ────────────────────────────────────────
+  firewall_burst: {
+    id: 'firewall_burst',
+    name: 'Firewall Burst',
+    icon: '🔥',
+    owner: 'player',
+    cooldownMs: 6000,
+    energyCost: 28,
+    requiredClass: 'cyber_strategist',
+    description: 'Barrera energética que bloquea el siguiente ataque entrante.',
+    vfxColor: '#3b82f6',
+  },
+  packet_flood: {
+    id: 'packet_flood',
+    name: 'Packet Flood',
+    icon: '🌊',
+    owner: 'player',
+    cooldownMs: 5000,
+    energyCost: 32,
+    requiredClass: 'cyber_strategist',
+    description: 'Satura al enemigo con paquetes falsos, paralizándolo 2s.',
+    vfxColor: '#60a5fa',
+  },
+
+  // ─── Ciber-Estratega — Tier 3 Ultimate (Nv.10) ───────────────────────────
+  zero_day_exploit: {
+    id: 'zero_day_exploit',
+    name: 'Zero-Day Exploit',
+    icon: '☠️',
+    owner: 'player',
+    cooldownMs: 20000,
+    energyCost: 50,
+    requiredClass: 'cyber_strategist',
+    description: 'Vulnerabilidad crítica: ignora toda la defensa del jefe.',
+    vfxColor: '#1d4ed8',
+  },
+
+  // ─── Ingeniero de IA — Tier 2 (Nv.5) ────────────────────────────────────────
+  gradient_descent: {
+    id: 'gradient_descent',
+    name: 'Gradient Descent',
+    icon: '📉',
+    owner: 'player',
+    cooldownMs: 4500,
+    energyCost: 26,
+    requiredClass: 'ai_engineer',
+    description: 'Optimiza tu siguiente respuesta, mostrando +2 pistas.',
+    vfxColor: '#a855f7',
+  },
+  overfitting_shield: {
+    id: 'overfitting_shield',
+    name: 'Overfitting Shield',
+    icon: '🛡️',
+    owner: 'player',
+    cooldownMs: 8000,
+    energyCost: 32,
+    requiredClass: 'ai_engineer',
+    description: 'Tu modelo sobreajustado absorbe el siguiente golpe recibido.',
+    vfxColor: '#c084fc',
+  },
+
+  // ─── Ingeniero de IA — Tier 3 Ultimate (Nv.10) ───────────────────────────
+  singularity_pulse: {
+    id: 'singularity_pulse',
+    name: 'Singularity Pulse',
+    icon: '🌌',
+    owner: 'player',
+    cooldownMs: 20000,
+    energyCost: 50,
+    requiredClass: 'ai_engineer',
+    description: 'La IA alcanza la singularidad: daño exponencial al jefe.',
+    vfxColor: '#7e22ce',
+  },
+
+  // ─── Diseñador — Tier 2 (Nv.5) ──────────────────────────────────────────────
+  pixel_storm: {
+    id: 'pixel_storm',
+    name: 'Pixel Storm',
+    icon: '🎆',
+    owner: 'player',
+    cooldownMs: 4000,
+    energyCost: 24,
+    requiredClass: 'designer',
+    description: 'Lluvia de píxeles que confunde y daña al enemigo.',
+    vfxColor: '#f97316',
+  },
+  wireframe_wall: {
+    id: 'wireframe_wall',
+    name: 'Wireframe Wall',
+    icon: '🔲',
+    owner: 'player',
+    cooldownMs: 7000,
+    energyCost: 30,
+    requiredClass: 'designer',
+    description: 'Muro de estructura alámbrica que absorbe daño moderado.',
+    vfxColor: '#fb923c',
+  },
+
+  // ─── Diseñador — Tier 3 Ultimate (Nv.10) ─────────────────────────────────
+  grand_design: {
+    id: 'grand_design',
+    name: 'Grand Design',
+    icon: '🎨',
+    owner: 'player',
+    cooldownMs: 20000,
+    energyCost: 50,
+    requiredClass: 'designer',
+    description: 'Obra maestra: rediseña el campo de batalla a tu favor.',
+    vfxColor: '#ea580c',
+  },
+
+  // ─── Filósofo — Tier 2 (Nv.5) ───────────────────────────────────────────────
+  dialectic_shield: {
+    id: 'dialectic_shield',
+    name: 'Escudo Dialéctico',
+    icon: '🤔',
+    owner: 'player',
+    cooldownMs: 6000,
+    energyCost: 28,
+    requiredClass: 'philosopher',
+    description: 'Argumento dialéctico que neutraliza el próximo ataque.',
+    vfxColor: '#eab308',
+  },
+  stoic_mind: {
+    id: 'stoic_mind',
+    name: 'Mente Estoica',
+    icon: '🧘',
+    owner: 'player',
+    cooldownMs: 9000,
+    energyCost: 30,
+    requiredClass: 'philosopher',
+    description: 'Calma estoica: inmunidad a debuffs por 4 segundos.',
+    vfxColor: '#facc15',
+  },
+
+  // ─── Filósofo — Tier 3 Ultimate (Nv.10) ──────────────────────────────────
+  eternal_logos: {
+    id: 'eternal_logos',
+    name: 'Logos Eterno',
+    icon: '♾️',
+    owner: 'player',
+    cooldownMs: 20000,
+    energyCost: 50,
+    requiredClass: 'philosopher',
+    description: 'La verdad absoluta como arma: daño crítico al jefe.',
+    vfxColor: '#ca8a04',
+  },
+
+  // ─── Oliver Bug Hunter — Tier 2 (Nv.5) ──────────────────────────────────────
+  tail_whip: {
+    id: 'tail_whip',
+    name: 'Cola Látigo',
+    icon: '🐾',
+    owner: 'oliver',
+    cooldownMs: 3500,
+    energyCost: 18,
+    description: 'Golpe de cola que aturde al enemigo por 1.5 segundos.',
+    vfxColor: '#22c55e',
+  },
+  bug_sniff: {
+    id: 'bug_sniff',
+    name: 'Olfato de Bug',
+    icon: '👃',
+    owner: 'oliver',
+    cooldownMs: 6000,
+    energyCost: 22,
+    description: 'Oliver detecta el error más grave del jefe y lo expone.',
+    vfxColor: '#4ade80',
+  },
+
+  // ─── Oliver Bug Hunter — Tier 3 Ultimate (Nv.10) ─────────────────────────
+  null_pointer_strike: {
+    id: 'null_pointer_strike',
+    name: 'Null Pointer Strike',
+    icon: '💀',
+    owner: 'oliver',
+    cooldownMs: 20000,
+    energyCost: 45,
+    description: 'Acceso a memoria inválida: daño catastrófico al sistema.',
+    vfxColor: '#15803d',
+  },
+
+  // ─── Oliver Shadow Scout — Tier 2 (Nv.5) ────────────────────────────────────
+  camouflage_coat: {
+    id: 'camouflage_coat',
+    name: 'Pelaje Camuflaje',
+    icon: '🫥',
+    owner: 'oliver',
+    cooldownMs: 7000,
+    energyCost: 22,
+    description: 'Oliver se camufla con el entorno por 4 segundos.',
+    vfxColor: '#3b82f6',
+  },
+  scan_perimeter: {
+    id: 'scan_perimeter',
+    name: 'Escaneo Perimetral',
+    icon: '🔭',
+    owner: 'oliver',
+    cooldownMs: 5000,
+    energyCost: 20,
+    description: 'Revela todos los enemigos ocultos en el campo de batalla.',
+    vfxColor: '#60a5fa',
+  },
+
+  // ─── Oliver Shadow Scout — Tier 3 Ultimate (Nv.10) ──────────────────────
+  ghost_form: {
+    id: 'ghost_form',
+    name: 'Forma Fantasmal',
+    icon: '👻',
+    owner: 'oliver',
+    cooldownMs: 20000,
+    energyCost: 45,
+    description: 'Oliver se vuelve espectral: atraviesa barreras y daña directamente.',
+    vfxColor: '#1d4ed8',
+  },
+
+  // ─── Oliver Oracle Feline — Tier 2 (Nv.5) ───────────────────────────────────
+  data_scan: {
+    id: 'data_scan',
+    name: 'Data Scan',
+    icon: '📊',
+    owner: 'oliver',
+    cooldownMs: 5000,
+    energyCost: 22,
+    description: 'Analiza al jefe y expone sus habilidades ocultas.',
+    vfxColor: '#a855f7',
+  },
+  vision_burst: {
+    id: 'vision_burst',
+    name: 'Vision Burst',
+    icon: '👁️',
+    owner: 'oliver',
+    cooldownMs: 4500,
+    energyCost: 20,
+    description: 'Oliver proyecta datos futuros: predice el próximo movimiento del jefe.',
+    vfxColor: '#c084fc',
+  },
+
+  // ─── Oliver Oracle Feline — Tier 3 Ultimate (Nv.10) ─────────────────────
+  omniscient_roar: {
+    id: 'omniscient_roar',
+    name: 'Rugido Omnisciente',
+    icon: '🔮',
+    owner: 'oliver',
+    cooldownMs: 20000,
+    energyCost: 45,
+    description: 'Visión total del combate: elimina toda incertidumbre del jefe.',
+    vfxColor: '#7e22ce',
+  },
+
+  // ─── Oliver Mystic Artisan — Tier 2 (Nv.5) ──────────────────────────────────
+  art_blast: {
+    id: 'art_blast',
+    name: 'Art Blast',
+    icon: '💫',
+    owner: 'oliver',
+    cooldownMs: 4000,
+    energyCost: 20,
+    description: 'Explosión artística que daña y confunde al enemigo.',
+    vfxColor: '#f97316',
+  },
+  illusion_dance: {
+    id: 'illusion_dance',
+    name: 'Danza de Ilusiones',
+    icon: '🪄',
+    owner: 'oliver',
+    cooldownMs: 7000,
+    energyCost: 25,
+    description: 'Oliver genera 3 copias ilusorias que distraen al jefe.',
+    vfxColor: '#fb923c',
+  },
+
+  // ─── Oliver Mystic Artisan — Tier 3 Ultimate (Nv.10) ─────────────────────
+  masterpiece_strike: {
+    id: 'masterpiece_strike',
+    name: 'Golpe Obra Maestra',
+    icon: '🖼️',
+    owner: 'oliver',
+    cooldownMs: 20000,
+    energyCost: 45,
+    description: 'La obra definitiva de Oliver: daño inmenso de arte puro.',
+    vfxColor: '#ea580c',
+  },
+
+  // ─── Oliver Ancient Guardian — Tier 2 (Nv.5) ────────────────────────────────
+  ancient_roar: {
+    id: 'ancient_roar',
+    name: 'Rugido Ancestral',
+    icon: '🦁',
+    owner: 'oliver',
+    cooldownMs: 6000,
+    energyCost: 24,
+    description: 'Rugido que aturde a todos los enemigos del campo.',
+    vfxColor: '#eab308',
+  },
+  wisdom_barrier: {
+    id: 'wisdom_barrier',
+    name: 'Barrera de Sabiduría',
+    icon: '🌙',
+    owner: 'oliver',
+    cooldownMs: 8000,
+    energyCost: 28,
+    description: 'Barrera de sabiduría ancestral que absorbe el 50% del daño.',
+    vfxColor: '#facc15',
+  },
+
+  // ─── Oliver Ancient Guardian — Tier 3 Ultimate (Nv.10) ──────────────────
+  eternal_protection: {
+    id: 'eternal_protection',
+    name: 'Protección Eterna',
+    icon: '🌟',
+    owner: 'oliver',
+    cooldownMs: 20000,
+    energyCost: 45,
+    description: 'Escudo eterno ancestral: inmortalidad temporal por 3 segundos.',
+    vfxColor: '#ca8a04',
+  },
 }
 
 export function getSkillById(id) {

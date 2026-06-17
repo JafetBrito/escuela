@@ -24,7 +24,7 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
-import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
+import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import VrLoadingScreen from './VrLoadingScreen'
 import VrHud from './VrHud'
@@ -2011,6 +2011,44 @@ function ChatBubble({ text, y, color = '#ffffff' }) {
   )
 }
 
+// Humanoid avatar body for the local player and remote players.
+// Renders using simple Three.js primitives — head/torso/legs — colored by
+// the player's chosen avatar from PLAYER_AVATARS. Symmetric around y=0 so it
+// slots into the same mesh group as MascotMesh (which is also centered at y=0).
+function PlayerAvatarBody({ avatarId }) {
+  const avatar = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
+  const color = avatar.color
+  return (
+    <group>
+      {/* Head */}
+      <mesh position={[0, 0.72, 0]}>
+        <sphereGeometry args={[0.22, 8, 6]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {/* Torso */}
+      <mesh position={[0, 0.22, 0]}>
+        <cylinderGeometry args={[0.2, 0.22, 0.5, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {/* Hips */}
+      <mesh position={[0, -0.07, 0]}>
+        <cylinderGeometry args={[0.22, 0.18, 0.15, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {/* Left leg */}
+      <mesh position={[-0.12, -0.5, 0]}>
+        <cylinderGeometry args={[0.1, 0.1, 0.65, 6]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {/* Right leg */}
+      <mesh position={[0.12, -0.5, 0]}>
+        <cylinderGeometry args={[0.1, 0.1, 0.65, 6]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    </group>
+  )
+}
+
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
@@ -2042,6 +2080,7 @@ function Player({
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const fov = useVrSettingsStore((s) => s.fov)
   const noClip = useVrSettingsStore((s) => s.noClip)
+  const avatarId = useGameStore((s) => s.player.avatarId)
 
   // Applies the player's FOV setting (used by both first- and third-person
   // modes) whenever it changes, instead of the Canvas's hardcoded default.
@@ -2265,7 +2304,11 @@ function Player({
   return (
     <group ref={group}>
       <group ref={meshGroup} scale={PLAYER_SCALE}>
-        <MascotMesh mascot={mascot} skin={skin} />
+        <PlayerAvatarBody avatarId={avatarId} />
+        {/* Mascot companion walks slightly to the side */}
+        <group position={[1.2, 0, 0]} scale={0.65}>
+          <MascotMesh mascot={mascot} skin={skin} />
+        </group>
       </group>
       <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(playerId)} />
     </group>
@@ -2539,7 +2582,10 @@ function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
   return (
     <group ref={group}>
       <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
-        <MascotMesh mascot={mascot} skin={skin} />
+        <PlayerAvatarBody avatarId={player?.avatarId || 'scholar'} />
+        <group position={[1.2, 0, 0]} scale={0.65}>
+          <MascotMesh mascot={mascot} skin={skin} />
+        </group>
       </group>
       <Html position={[0, PLAYER_HEIGHT + 0.5, 0]} center distanceFactor={10}>
         <button
@@ -3942,11 +3988,13 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
   const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode
+  const vrAvatarId = useGameStore((s) => s.player.avatarId)
   const { remoteTransformsRef, sendChatMessage, kicked, channelRef } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
     mascotId: mascot.id,
     skinId: skin.id,
+    avatarId: vrAvatarId,
     accountId: session?.user?.id ?? null,
     positionRef: playerPositionRef,
     rotationRef: playerRotationRef,

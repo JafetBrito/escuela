@@ -24,7 +24,7 @@ export function isVrRealtimeAvailable() {
 // Returns `{ remoteTransformsRef, sendChatMessage }`. When Realtime isn't
 // configured, this is a no-op: the store stays disconnected/empty and
 // sendChatMessage does nothing, so the world plays fine single-player.
-export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, positionRef, rotationRef, enabled = true }) {
+export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, accountId, positionRef, rotationRef, enabled = true }) {
   const remoteTransformsRef = useRef(new Map())
   const channelRef = useRef(null)
   const joinedAtRef = useRef(Date.now())
@@ -64,7 +64,7 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
       for (const [id, presences] of Object.entries(state)) {
         if (id === playerId) continue
         const meta = presences[0]
-        if (meta) players[id] = { name: meta.name, mascotId: meta.mascotId, skinId: meta.skinId }
+        if (meta) players[id] = { name: meta.name, mascotId: meta.mascotId, skinId: meta.skinId, avatarId: meta.avatarId }
       }
       setPlayers(players)
 
@@ -93,7 +93,7 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnected(true)
-        channel.track({ name, mascotId, skinId, accountId, joinedAt: joinedAtRef.current })
+        channel.track({ name, mascotId, skinId, avatarId, accountId, joinedAt: joinedAtRef.current })
       }
     })
 
@@ -114,8 +114,8 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
   useEffect(() => {
     const channel = channelRef.current
     if (!channel) return
-    channel.track({ name, mascotId, skinId, accountId, joinedAt: joinedAtRef.current })
-  }, [name, mascotId, skinId, accountId])
+    channel.track({ name, mascotId, skinId, avatarId, accountId, joinedAt: joinedAtRef.current })
+  }, [name, mascotId, skinId, avatarId, accountId])
 
   // Broadcast this player's position/rotation at a fixed interval. Reads
   // straight from the refs (mutated every frame by <Player>) so this effect
