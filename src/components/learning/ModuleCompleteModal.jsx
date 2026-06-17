@@ -1,9 +1,26 @@
+/**
+ * ============================================================================
+ * 🎊 MODAL DE FINALIZACIÓN DE MÓDULO (ModuleCompleteModal.jsx)
+ * ============================================================================
+ * Este componente actúa como un "punto de control" emocional. Se dispara 
+ * automáticamente cuando el estudiante completa las misiones de una clase.
+ * * 🏗️ LÓGICA DE ESTADO (Renderizado condicional):
+ * - Escenario A: Si `nextModule` existe, muestra un avance de lo que sigue.
+ * - Escenario B: Si `nextModule` es null, renderiza la pantalla de "Fin de Curso",
+ * calculando visualmente el impacto (medalla + XP) para el usuario.
+ * ============================================================================
+ */
+
 import { useNavigate } from 'react-router-dom'
 
-// Celebration popup shown after completing all MISIONES of a module, with a
-// preview of what's coming up in the next class. When there's no next module
-// (course finished), shows a bigger "fin de curso" screen with the medal and
-// rewards earned.
+/**
+ * @param {Object} props
+ * @param {Object} props.completedModule - Objeto del módulo que acaba de terminar.
+ * @param {Object|null} props.nextModule - Objeto del siguiente módulo o null si es el final.
+ * @param {string} props.courseTitle - Título del curso para contextos finales.
+ * @param {Function} props.onContinue - Trigger para mover al estudiante a la siguiente clase.
+ * @param {Function} props.onClose - Trigger para cerrar el modal y mantener al usuario en la clase actual.
+ */
 export default function ModuleCompleteModal({
   completedModule,
   nextModule,
@@ -13,6 +30,7 @@ export default function ModuleCompleteModal({
 }) {
   const navigate = useNavigate()
 
+  // --- 1. VISTA DE FINAL DE CURSO (FINALES) ---
   if (!nextModule) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
@@ -25,6 +43,7 @@ export default function ModuleCompleteModal({
           </p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {/* Resumen de logros obtenidos */}
             <div className="rounded-xl border border-border bg-background p-4 text-left">
               <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
                 Medalla obtenida
@@ -66,6 +85,7 @@ export default function ModuleCompleteModal({
     )
   }
 
+  // --- 2. VISTA DE "SIGUIENTE CLASE" (INTERMEDIO) ---
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 text-center">
@@ -75,6 +95,7 @@ export default function ModuleCompleteModal({
           Terminaste "{completedModule.title}". Tu mascota guardó tu progreso.
         </p>
 
+        {/* Preview del siguiente reto para generar curiosidad */}
         <div className="mt-4 rounded-xl border border-border bg-background p-4 text-left">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
             Siguiente clase
