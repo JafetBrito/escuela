@@ -73,8 +73,9 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
 
   return (
     <div
-      className="absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-400"
+      className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-400"
       style={{
+        zIndex: 9999,
         background: 'linear-gradient(160deg, #0a0e1a 0%, #0f172a 50%, #0e0a1f 100%)',
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? 'auto' : 'none',

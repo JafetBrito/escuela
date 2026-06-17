@@ -3,17 +3,18 @@ import { Link, useLocation } from 'react-router-dom'
 import Logo from './Logo'
 
 const LINKS = [
-  { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
-  { to: '/mascota', label: 'Mi mascota', icon: '🐾' },
-  { to: '/chats', label: 'Chats', icon: '💬' },
-  { to: '/misiones', label: 'Misiones', icon: '📜' },
-  { to: '/notas', label: 'Notas', icon: '📝' },
-  { to: '/biblioteca', label: 'Librería', icon: '📚' },
-  { to: '/tienda', label: 'Tienda', icon: '🛒' },
-  { to: '/logros', label: 'Logros', icon: '🏅' },
-  { to: '/games', label: 'Games', icon: '🎮' },
-  { to: '/vr', label: 'VR', icon: '🕶️' },
-  { to: '/ajustes', label: 'Ajustes', icon: '⚙️' },
+  { to: '/dashboard',  label: 'Dashboard', icon: '🏠' },
+  { to: '/mascota',    label: 'Mi Equipo', icon: '⚔️' },
+  { to: '/amigos',     label: 'Amigos',    icon: '👥' },
+  { to: '/chats',      label: 'Chats',     icon: '💬' },
+  { to: '/misiones',   label: 'Misiones',  icon: '📜' },
+  { to: '/notas',      label: 'Notas',     icon: '📝' },
+  { to: '/biblioteca', label: 'Librería',  icon: '📚' },
+  { to: '/tienda',     label: 'Tienda',    icon: '🛒' },
+  { to: '/logros',     label: 'Logros',    icon: '🏅' },
+  { to: '/games',      label: 'Games',     icon: '🎮' },
+  { to: '/vr',         label: 'VR',        icon: '🕶️' },
+  { to: '/ajustes',    label: 'Ajustes',   icon: '⚙️' },
 ]
 
 // Persistent navigation bar for the protected app.

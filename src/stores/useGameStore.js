@@ -101,8 +101,18 @@ export const OLIVER_CLASSES = {
   },
 }
 
+export const PLAYER_AVATARS = [
+  { id: 'scholar',  icon: '📖', color: '#3b82f6', label: 'Erudito' },
+  { id: 'valiant',  icon: '🛡️', color: '#ef4444', label: 'Valiente' },
+  { id: 'mystic',   icon: '🔮', color: '#a855f7', label: 'Místico' },
+  { id: 'swift',    icon: '⚡', color: '#eab308', label: 'Veloz' },
+  { id: 'shadow',   icon: '🌑', color: '#64748b', label: 'Sombra' },
+  { id: 'nature',   icon: '🌿', color: '#22c55e', label: 'Natural' },
+]
+
 const DEFAULT_PLAYER = {
   class: null,
+  avatarId: 'scholar',
   hp: { current: 100, max: 100 },
   energy: { current: 100, max: 100 },
   skills: { unlocked: [], equipped: [null, null, null, null] },
@@ -118,6 +128,9 @@ export const useGameStore = create((set, get) => ({
   player: { ...DEFAULT_PLAYER },
   oliver: { ...DEFAULT_OLIVER },
   worldTreeCompleted: false,
+
+  setPlayerAvatar: (avatarId) =>
+    set((s) => ({ player: { ...s.player, avatarId } })),
 
   selectPlayerClass: (classId) => {
     const cls = PLAYER_CLASSES[classId]
@@ -159,5 +172,22 @@ export const useGameStore = create((set, get) => ({
       oliver: { ...DEFAULT_OLIVER, ...(data.oliver ?? {}) },
       worldTreeCompleted: data.worldTreeCompleted ?? false,
     })
+  },
+
+  // Force-save to Supabase immediately (used at end of onboarding)
+  forceSyncToCloud: async () => {
+    const { buildProgressSnapshot } = await import('../services/persistence/progressSnapshot.js')
+    const { supabase, isSupabaseConfigured } = await import('../services/supabase/client.js')
+    const { useAuthStore } = await import('./useAuthStore.js')
+    const { saveLocalSnapshot } = await import('../services/persistence/localStore.js')
+    const snapshot = buildProgressSnapshot()
+    saveLocalSnapshot(snapshot)
+    if (!isSupabaseConfigured()) return
+    const { user } = useAuthStore.getState()
+    if (!user) return
+    await supabase
+      .from('profiles')
+      .update({ snapshot, updated_at: new Date().toISOString() })
+      .eq('id', user.id)
   },
 }))

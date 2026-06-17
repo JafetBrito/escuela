@@ -49,6 +49,7 @@ const VRPage = lazy(() => import('./components/vr/VRPage'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
+const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -140,6 +141,17 @@ export default function App() {
           }
         />
         
+        <Route
+          path="/amigos"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <FriendsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/chats"
           element={

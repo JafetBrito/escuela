@@ -17,6 +17,7 @@ import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
+import { useGameStore } from '../../stores/useGameStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
 import { supabase, isSupabaseConfigured } from '../supabase/client'
@@ -41,6 +42,7 @@ const STORES = [
   useAchievementsStore,
   useFriendsStore,
   useVrSettingsStore,
+  useGameStore,
 ]
 
 // Restores the user's account (license, progress, coins, settings, chat

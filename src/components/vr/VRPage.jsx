@@ -1068,7 +1068,7 @@ function useRoomGround() {
     // ── Ceiling + maple beams ──────────────────────────────────────────────
     const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), matCeiling)
     ceiling.rotation.x = Math.PI / 2; ceiling.position.y = ROOM_HEIGHT
-    ceiling.userData.isFloor = true; group.add(ceiling)
+    group.add(ceiling)
     for (let bx = -hw + 3.5; bx < hw; bx += 5) {
       const beam = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.3, ROOM_SIZE), matBeam)
       beam.position.set(bx, ROOM_HEIGHT - 0.16, 0); group.add(beam)
@@ -1550,10 +1550,10 @@ function useWorldTreeGround() {
   return useMemo(() => {
     const g = new THREE.Group()
 
-    // Ground — dark earth circle
+    // Ground — dark earth circle (emissive so it's visible without light)
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(50, 72),
-      new THREE.MeshStandardMaterial({ color: '#0c1a08', roughness: 0.95 })
+      new THREE.MeshStandardMaterial({ color: '#1a3a0c', roughness: 0.85, emissive: '#0a1e06', emissiveIntensity: 0.4 })
     )
     ground.rotation.x = -Math.PI / 2
     ground.userData.isFloor = true
@@ -1562,14 +1562,14 @@ function useWorldTreeGround() {
     // Outer ring path (lighter dirt)
     const ringPath = new THREE.Mesh(
       new THREE.RingGeometry(10, 14, 72),
-      new THREE.MeshStandardMaterial({ color: '#1a2e0e', roughness: 0.9 })
+      new THREE.MeshStandardMaterial({ color: '#2a4a12', roughness: 0.9, emissive: '#142408', emissiveIntensity: 0.3 })
     )
     ringPath.rotation.x = -Math.PI / 2
     ringPath.position.y = 0.01
     g.add(ringPath)
 
     // ─── Trunk ───────────────────────────────────────────────────────────
-    const trunkMat = new THREE.MeshStandardMaterial({ color: '#2a1005', roughness: 0.9 })
+    const trunkMat = new THREE.MeshStandardMaterial({ color: '#4a2010', roughness: 0.85, emissive: '#1a0a04', emissiveIntensity: 0.2 })
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.4, 16, 14), trunkMat)
     trunk.position.set(0, 8, 0)
     g.add(trunk)
@@ -1718,12 +1718,12 @@ function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
       <Player
         mascot={mascot}
         skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
         keysRef={keysRef}
         cameraRef={cameraRef}
-        positionRef={playerPositionRef}
-        rotationRef={playerRotationRef}
-        groundObjects={[model]}
-        groundRayHeight={groundRayHeight}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
         spawnAt={WT_SPAWN}
         authorName={authorName}
         playerId={playerId}
@@ -1857,7 +1857,8 @@ function VoicePanel({ playerId, name, channelRef }) {
 function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
   raycaster.set(new THREE.Vector3(x, groundRayHeight, z), DOWN)
   const hits = raycaster.intersectObject(scenery, true)
-  return hits.length > 0 ? hits[0].point.y : 0
+  const hit = hits.find(h => h.object.userData.isFloor)
+  return hit ? hit.point.y : 0
 }
 
 // Casts a ray from the player's chest in a horizontal direction to check for
@@ -3257,7 +3258,6 @@ const TRANSPORT_WORLDS = [
   { id: 'campus',     emoji: '🏫', name: 'Campus Principal', desc: 'El mundo universitario',     available: true,  path: '/vr' },
   { id: 'room',       emoji: '🏠', name: 'Mi Room',           desc: 'Tu espacio privado',         available: true,  path: '/vr/room' },
   { id: 'anfiteatro', emoji: '🎭', name: 'Anfiteatro',        desc: 'Teatro con pantalla en vivo', available: true,  path: '/vr/anfiteatro' },
-  { id: 'world-tree', emoji: '🌳', name: 'Árbol del Mundo',  desc: 'Selección de clase RPG',      available: true,  path: '/vr/world-tree' },
   { id: 'ciudad',     emoji: '🌆', name: 'Ciudad',            desc: 'Próximamente…',              available: false, path: null },
 ]
 
@@ -3551,6 +3551,50 @@ function ChatLine({ message }) {
 // C opens the input box, Escape (or sending a message) closes it again.
 // Messages broadcast over Realtime via useVrMultiplayer (see onSend).
 // Supports whispers via "/w <nombre> <mensaje>".
+function MicButton({ onTranscript }) {
+  const [listening, setListening] = useState(false)
+  const recogRef = useRef(null)
+  const hasApi = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+  if (!hasApi) return null
+
+  const toggle = () => {
+    if (listening) {
+      recogRef.current?.stop()
+      setListening(false)
+      return
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    const r = new SR()
+    r.lang = 'es-ES'
+    r.continuous = false
+    r.interimResults = false
+    r.onresult = (e) => {
+      const t = Array.from(e.results).map(res => res[0].transcript).join(' ')
+      onTranscript(t)
+    }
+    r.onend = () => setListening(false)
+    r.onerror = () => setListening(false)
+    r.start()
+    recogRef.current = r
+    setListening(true)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={listening ? 'Detener micrófono' : 'Hablar (mic)'}
+      className={`rounded-lg px-2 py-1.5 text-base transition-all ${
+        listening
+          ? 'bg-red-500/20 text-red-400 ring-1 ring-red-400 animate-pulse'
+          : 'text-text-muted hover:text-text'
+      }`}
+    >
+      {listening ? '🔴' : '🎤'}
+    </button>
+  )
+}
+
 function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefill }) {
   const messages = useWorldChatStore((s) => s.messages)
   const sendMessage = useWorldChatStore((s) => s.sendMessage)
@@ -3737,7 +3781,7 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
         )}
       </div>
       {open ? (
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-1">
           <input
             ref={inputRef}
             value={text}
@@ -3746,6 +3790,7 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
             placeholder="Mensaje global, o /w nombre mensaje para susurrar…"
             className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
           />
+          <MicButton onTranscript={(t) => setText(prev => prev ? prev + ' ' + t : t)} />
           <button
             type="submit"
             className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
@@ -3969,6 +4014,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
   })
 
+  // Class is now selected during account creation onboarding — no auto-redirect needed.
+
   useEffect(() => {
     if (!whisperTarget) return
     setChatPrefill({ text: `/w ${whisperTarget} `, key: Date.now() })
@@ -3983,8 +4030,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   }
 
   // Lighting themes per world mode
-  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#050d08' : '#87ceeb'
-  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#050d08', 18, 70] : ['#c8e8f4', 50, 165]
+  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#87ceeb'
+  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#c8e8f4', 50, 165]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -4015,19 +4062,22 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <fog attach="fog" args={fogArgs} />
           {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, WorldTree = mystic, Campus = summer sun */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 0.15 : 0.85}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#aaffcc' : '#d8eaf8'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0.85}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#d8eaf8'}
           />
           <directionalLight
             position={[20, 30, 10]}
-            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 0.3 : 1.1}
+            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : 1.1}
             color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#fff8d8'}
           />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}
           {anfiteatroMode && <pointLight position={[0, ANFI_H * 0.7, 0]} intensity={0.5} color="#9060ff" distance={80} />}
-          {worldTreeMode && <pointLight position={[0, 22, 0]} intensity={1.5} color="#44ffaa" distance={60} />}
-          {worldTreeMode && <pointLight position={[0, 2, 0]} intensity={0.6} color="#aaffee" distance={20} />}
+          {worldTreeMode && <hemisphereLight args={['#44ffaa', '#0d2a0a', 1.2]} />}
+          {worldTreeMode && <pointLight position={[0, 6, 0]} intensity={6.0} color="#88ffaa" distance={60} decay={1.5} />}
+          {worldTreeMode && <pointLight position={[0, 22, 0]} intensity={3.0} color="#44ffaa" distance={80} />}
+          {worldTreeMode && <pointLight position={[0, 3, 18]} intensity={2.0} color="#aaffee" distance={35} />}
+          {worldTreeMode && <directionalLight position={[0, 8, 20]} intensity={0.8} color="#ccffdd" />}
           <Suspense fallback={null}>
             <World
               mascot={mascot}
