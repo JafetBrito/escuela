@@ -1532,48 +1532,39 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
 // ── Voice chat ────────────────────────────────────────────────────────────────
 // Captures local mic and broadcasts mute/active state. The VoicePanel
 // component renders a mic toggle button and a list of speaking players.
-function useVoiceChat({ enabled, playerId, name, channel }) {
+function useVoiceChat({ playerId, name, channelRef }) {
   const [micActive, setMicActive] = useState(false)
   const [speaking, setSpeaking] = useState({}) // playerId -> name
   const [micError, setMicError] = useState(null)
   const streamRef  = useRef(null)
-  const analyserRef = useRef(null)
-  const rafRef     = useRef(null)
 
   // Activate / deactivate mic
   const toggleMic = useCallback(async () => {
+    const ch = channelRef?.current
     if (micActive) {
       streamRef.current?.getTracks().forEach((t) => t.stop())
       streamRef.current = null
-      analyserRef.current = null
-      cancelAnimationFrame(rafRef.current)
       setMicActive(false)
       useVrSettingsStore.getState().setMicEnabled(false)
-      // Broadcast mic-off
-      channel?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: false } })
+      ch?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: false } })
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         streamRef.current = stream
-        const ctx = new AudioContext()
-        const src = ctx.createMediaStreamSource(stream)
-        const analyser = ctx.createAnalyser()
-        analyser.fftSize = 256
-        src.connect(analyser)
-        analyserRef.current = analyser
         setMicActive(true)
         setMicError(null)
         useVrSettingsStore.getState().setMicEnabled(true)
-        channel?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: true } })
+        ch?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: true } })
       } catch (err) {
-        setMicError('Sin acceso al micrófono: ' + err.message)
+        setMicError('Sin acceso al micrófono: ' + (err?.message ?? err))
       }
     }
-  }, [micActive, playerId, name, channel])
+  }, [micActive, playerId, name, channelRef])
 
   // Listen for other players' voice state via channel
   useEffect(() => {
-    if (!channel) return
+    const ch = channelRef?.current
+    if (!ch) return
     const handler = (msg) => {
       if (msg.event !== 'voice') return
       const { id, name: n, active } = msg.payload ?? {}
@@ -1583,22 +1574,20 @@ function useVoiceChat({ enabled, playerId, name, channel }) {
         const next = { ...prev }; delete next[id]; return next
       })
     }
-    channel.on('broadcast', { event: 'voice' }, handler)
-  }, [channel])
+    ch.on('broadcast', { event: 'voice' }, handler)
+  }, [channelRef])
 
   // Clean up on unmount
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
-    cancelAnimationFrame(rafRef.current)
-    window.speechSynthesis?.cancel()
   }, [])
 
   return { micActive, speaking, micError, toggleMic }
 }
 
 // Mic toggle button + speaking player list, shown in the VR HUD.
-function VoicePanel({ playerId, name, channel }) {
-  const { micActive, speaking, micError, toggleMic } = useVoiceChat({ enabled: true, playerId, name, channel })
+function VoicePanel({ playerId, name, channelRef }) {
+  const { micActive, speaking, micError, toggleMic } = useVoiceChat({ playerId, name, channelRef })
   const [open, setOpen] = useState(false)
   const speakingList = Object.values(speaking)
 
@@ -3547,9 +3536,8 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
   )
 }
 
-// roomMode=true is passed from the /vr/room route — renders the private Room
-// instead of the campus (no NPCs, no remote players, exit portal back to /vr).
-export default function VRPage({ roomMode = false }) {
+// roomMode / anfiteatroMode come from the route.
+export default function VRPage({ roomMode = false, anfiteatroMode = false }) {
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -3572,8 +3560,9 @@ export default function VRPage({ roomMode = false }) {
   const playerId = useRef(crypto.randomUUID()).current
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
-  // Room is private — no shared presence channel needed.
-  const { remoteTransformsRef, sendChatMessage, kicked } = useVrMultiplayer({
+  // Room and Anfiteatro are private — no shared presence channel needed.
+  const isPrivateWorld = roomMode || anfiteatroMode
+  const { remoteTransformsRef, sendChatMessage, kicked, channelRef } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
     mascotId: mascot.id,
@@ -3581,7 +3570,7 @@ export default function VRPage({ roomMode = false }) {
     accountId: session?.user?.id ?? null,
     positionRef: playerPositionRef,
     rotationRef: playerRotationRef,
-    enabled: !roomMode,
+    enabled: !isPrivateWorld,
   })
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
@@ -3607,27 +3596,28 @@ export default function VRPage({ roomMode = false }) {
   }, [nearbyNpcId, activeNpcId])
 
   useEffect(() => {
-    const motd = roomMode
-      ? `Tu Room privada, ${chatAuthor}. Aquí solo apareces tú. Acércate al portal 🌀 y pulsa E para volver al Campus.`
-      : `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`
+    const motd = anfiteatroMode
+      ? `🎭 Anfiteatro Oliver, ${chatAuthor}. Disfruta el espectáculo. Pulsa E junto al portal para volver al Campus.`
+      : roomMode
+        ? `Tu Room privada, ${chatAuthor}. Aquí solo apareces tú. Acércate al portal 🌀 y pulsa E para volver al Campus.`
+        : `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`
     useWorldChatStore.getState().addSystemMessage(motd)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 'E' near a portal: room mode exits straight to campus; campus mode opens
-  // the transport menu so the player can choose their destination. Esc closes.
+  // 'E' near a portal: private worlds exit to campus; campus opens transport menu.
   useEffect(() => {
     const handleDown = (e) => {
       if (isTypingTarget(e.target)) return
       if (e.key === 'Escape') { setPortalMenuOpen(false); return }
       if (e.key.toLowerCase() === 'e' && nearPortal) {
-        if (roomMode) navigate('/vr')
+        if (isPrivateWorld) navigate('/vr')
         else setPortalMenuOpen(true)
       }
     }
     window.addEventListener('keydown', handleDown)
     return () => window.removeEventListener('keydown', handleDown)
-  }, [nearPortal, roomMode, navigate])
+  }, [nearPortal, isPrivateWorld, navigate])
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
@@ -3649,10 +3639,9 @@ export default function VRPage({ roomMode = false }) {
     setActiveNpcId((current) => (current === nearbyNpcId ? null : nearbyNpcId))
   }
 
-  // Room: warm amber firelight interior. Campus: overcast Canadian winter sky
-  // (grey-blue), fog starts at r=38 and fades by r=148 (full campus visible).
-  const bgColor = roomMode ? '#3d2a1c' : '#87ceeb'
-  const fogArgs = roomMode ? ['#3d2a1c', 12, 36] : ['#c8e8f4', 50, 165]
+  // Anfiteatro: dark theatre black. Room: warm amber. Campus: summer sky.
+  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : '#87ceeb'
+  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : ['#c8e8f4', 50, 165]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -3681,10 +3670,19 @@ export default function VRPage({ roomMode = false }) {
         >
           <color attach="background" args={[bgColor]} />
           <fog attach="fog" args={fogArgs} />
-          {/* Campus: cold overcast northern light. Room: warm firelight fill. */}
-          <ambientLight intensity={roomMode ? 0.55 : 0.85} color={roomMode ? '#ffcc88' : '#d8eaf8'} />
-          <directionalLight position={[20, 30, 10]} intensity={roomMode ? 0.4 : 1.1} color={roomMode ? '#ffaa44' : '#fff8d8'} />
+          {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, Campus = summer sun */}
+          <ambientLight
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : 0.85}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : '#d8eaf8'}
+          />
+          <directionalLight
+            position={[20, 30, 10]}
+            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : 1.1}
+            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : '#fff8d8'}
+          />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
+          {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}
+          {anfiteatroMode && <pointLight position={[0, ANFI_H * 0.7, 0]} intensity={0.5} color="#9060ff" distance={80} />}
           <Suspense fallback={null}>
             <World
               mascot={mascot}
@@ -3700,6 +3698,7 @@ export default function VRPage({ roomMode = false }) {
               playerId={playerId}
               onSelectPlayer={setSelectedPlayer}
               roomMode={roomMode}
+              anfiteatroMode={anfiteatroMode}
             />
           </Suspense>
         </Canvas>
@@ -3708,20 +3707,20 @@ export default function VRPage({ roomMode = false }) {
         {nearPortal && !portalMenuOpen && (
           <button
             type="button"
-            onClick={() => roomMode ? navigate('/vr') : setPortalMenuOpen(true)}
+            onClick={() => isPrivateWorld ? navigate('/vr') : setPortalMenuOpen(true)}
             className="absolute bottom-24 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-20"
           >
-            {roomMode ? '🌀 Haz clic o pulsa E para volver al Campus' : '🌀 Haz clic o pulsa E para abrir el portal'}
+            {isPrivateWorld ? '🌀 Haz clic o pulsa E para volver al Campus' : '🌀 Haz clic o pulsa E para abrir el portal'}
           </button>
         )}
 
         {/* Transport destination picker — opens when clicking/pressing E at campus portal */}
-        {portalMenuOpen && !roomMode && (
+        {portalMenuOpen && !isPrivateWorld && (
           <TransportMenu onNavigate={(path) => navigate(path)} onClose={() => setPortalMenuOpen(false)} />
         )}
 
         {/* NPC mission card / nearby-NPC hint (campus only) */}
-        {!roomMode && (
+        {!isPrivateWorld && (
           activeNpcId ? (
             <NpcMissionCard
               npcId={activeNpcId}
@@ -3741,7 +3740,7 @@ export default function VRPage({ roomMode = false }) {
           )
         )}
 
-        {!roomMode && (
+        {!isPrivateWorld && (
           <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
         )}
         <WorldChat
@@ -3754,7 +3753,7 @@ export default function VRPage({ roomMode = false }) {
           prefill={chatPrefill}
         />
 
-        {!roomMode && selectedPlayer && (
+        {!isPrivateWorld && selectedPlayer && (
           <PlayerMenu
             player={selectedPlayer}
             isFriend={friends.includes(selectedPlayer.name)}
@@ -3776,8 +3775,11 @@ export default function VRPage({ roomMode = false }) {
 
         <CameraSettingsMenu />
 
-        {/* Connection status badge — hidden in Room (no multiplayer) */}
-        {!roomMode && (
+        {/* Voice chat panel — always available */}
+        <VoicePanel playerId={playerId} name={chatAuthor} channelRef={channelRef} />
+
+        {/* Connection status badge — hidden in private worlds */}
+        {!isPrivateWorld && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
             {isVrRealtimeAvailable() ? (
               connected ? (
@@ -3791,7 +3793,12 @@ export default function VRPage({ roomMode = false }) {
           </div>
         )}
 
-        {/* Room badge */}
+        {/* World badge */}
+        {anfiteatroMode && (
+          <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
+            🎭 Anfiteatro Oliver
+          </div>
+        )}
         {roomMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
             🏠 Mi Room (privada)
@@ -3800,7 +3807,7 @@ export default function VRPage({ roomMode = false }) {
 
         <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
           <strong>W A S D</strong> o flechas para moverte · <strong>espacio</strong> saltar ·{' '}
-          {!roomMode && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
+          {!isPrivateWorld && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
           <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
         </div>
 

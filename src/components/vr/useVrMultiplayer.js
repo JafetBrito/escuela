@@ -156,5 +156,5 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, accountId, 
     })
   }
 
-  return { remoteTransformsRef, sendChatMessage, kicked }
+  return { remoteTransformsRef, sendChatMessage, kicked, channelRef }
 }
