@@ -1,4 +1,12 @@
 {
+  "_documentacion_para_creadores": {
+    "ADVERTENCIA": "NO cambies la estructura de las llaves ni agregues comas extra al final de las listas. Esto romperá la carga del curso.",
+    "courseId": "Identificador único en kebab-case (letras minúsculas y guiones). Debe ser único en toda la plataforma.",
+    "aiInstructions": "Este es el PROMPT MAESTRO para la IA. Define la personalidad de Oliver y cómo debe responder a los alumnos ESPECÍFICAMENTE en este curso.",
+    "modules": "Cada módulo es una clase. El 'id' debe ser único dentro de este archivo. El 'order' dicta en qué posición aparece.",
+    "videoId": "Solo pon el ID del video de YouTube, NO la URL completa (ej: 'dQw4w9WgXcQ' en lugar de 'youtube.com/watch?v=...').",
+    "exercises_y_quiz": "Las 'misiones' de la clase. El alumno debe completarlas todas para avanzar."
+  },
   "courseId": "course-demo",
   "title": "Curso Demo: Cómo usar Oliver School",
   "description": "5 clases cortas que te enseñan a usar la plataforma de punta a punta: navegación, tu mascota, misiones, objetos, tienda, chats y logros. Termínalo para ver la pantalla de fin de curso.",
@@ -25,7 +33,11 @@
         }
       ],
       "resources": [
-        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+        {
+          "label": "oliver.escuela",
+          "url": "https://oliver.escuela",
+          "type": "link"
+        }
       ],
       "quiz": {
         "question": "¿Cuál de estas opciones NO aparece en el menú principal de la plataforma?",
@@ -60,7 +72,11 @@
         }
       ],
       "resources": [
-        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+        {
+          "label": "oliver.escuela",
+          "url": "https://oliver.escuela",
+          "type": "link"
+        }
       ],
       "quiz": {
         "question": "¿Dónde puedes ver tu nivel y tu barra de experiencia (XP)?",
@@ -95,7 +111,11 @@
         }
       ],
       "resources": [
-        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+        {
+          "label": "oliver.escuela",
+          "url": "https://oliver.escuela",
+          "type": "link"
+        }
       ],
       "quiz": {
         "question": "¿Qué necesitas hacer para avanzar a la siguiente clase?",
@@ -136,7 +156,11 @@
         }
       ],
       "resources": [
-        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+        {
+          "label": "oliver.escuela",
+          "url": "https://oliver.escuela",
+          "type": "link"
+        }
       ],
       "quiz": {
         "question": "¿Qué encuentras en la sección \"Chats\" del menú principal?",
@@ -171,7 +195,11 @@
         }
       ],
       "resources": [
-        { "label": "oliver.escuela", "url": "https://oliver.escuela", "type": "link" }
+        {
+          "label": "oliver.escuela",
+          "url": "https://oliver.escuela",
+          "type": "link"
+        }
       ],
       "quiz": {
         "question": "Al completar todas las clases de un curso, tu mascota debería...",

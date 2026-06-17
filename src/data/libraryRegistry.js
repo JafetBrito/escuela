@@ -1,10 +1,45 @@
-// Catálogo de la Biblioteca. Cada libro es un archivo .epub o .pdf colocado
-// en public/epub/ o public/pdf/, organizado por la misma categoría usada en
-// el Dashboard (ver src/data/categoryMeta.js). Para agregar un libro:
-//   1. Copia el archivo a public/epub/ (.epub) o public/pdf/ (.pdf)
-//   2. Agrega una entrada aquí con "file" apuntando a "/epub/tu-archivo.epub"
-//      o "/pdf/tu-archivo.pdf", y "type: 'epub'" o "type: 'pdf'"
-// Si "file" es null, el libro se muestra como "Próximamente".
+/**
+ * ============================================================================
+ * 📚 CATÁLOGO PRINCIPAL DE LA BIBLIOTECA (LIBRARY_BOOKS)
+ * ============================================================================
+ * ¡ALTO AHÍ! Si vas a agregar un libro nuevo a la plataforma, lee esto primero.
+ * Esta es la fuente de la verdad para todos los libros, PDFs y EPUBs de oliver.escuela.
+ * 
+ * 🛠️ GUÍA PASO A PASO PARA AGREGAR UN LIBRO:
+ * 
+ * PASO 1: Sube el archivo físico
+ *   - Toma tu archivo `.epub` o `.pdf`.
+ *   - Pégalo exactamente dentro de la carpeta `public/epub/` o `public/pdf/`.
+ * 
+ * PASO 2: Crea el registro aquí abajo
+ *   - Copia uno de los bloques existentes y pégalo al final del arreglo.
+ *   - Llena los datos. OJO con el campo `file`, aquí todos se equivocan:
+ *     ✅ BIEN: file: '/epub/mi-libro.epub' (Astro quita el "public" en producción).
+ *     ❌ MAL:  file: 'public/epub/mi-libro.epub' (Esto romperá la descarga).
+ * 
+ * PASO 3: Define el estado de venta del libro
+ *   - ¿Es un "Próximamente"?: Pon `file: null`. No importa si tiene precio, la plataforma lo bloqueará.
+ *   - ¿Es de paga?: Asegúrate de que `file` tenga la ruta correcta Y agrega `price: 30000` (valor numérico).
+ *   - ¿Es gratis?: Simplemente omite el atributo `price` o asegúrate de que no exista.
+ * ============================================================================
+ */
+
+/**
+ * Definición del esquema de un Libro para que el editor te de autocompletado.
+ * @typedef {Object} Book
+ * @property {string} id - Identificador único en kebab-case (ej: 'guia-oliver-school').
+ * @property {string} title - Título visible del libro.
+ * @property {string} author - Autor del libro (ej: 'Oliver School' o 'Jafet Brito').
+ * @property {string} category - Categoría exacta usada en el Dashboard (ver src/data/categoryMeta.js).
+ * @property {string} icon - Emoji representativo para la UI.
+ * @property {string} color - Código HEX para el color de fondo/acento de la tarjeta.
+ * @property {string} description - Resumen corto (máximo 2 líneas recomendado).
+ * @property {'epub'|'pdf'} type - Formato del archivo.
+ * @property {string|null} file - Ruta al archivo empezando con / (ej: '/pdf/archivo.pdf'). Null = Próximamente.
+ * @property {number} [price] - (Opcional) Precio en centavos o moneda base. Si no está, el libro no se vende.
+ */
+
+/** @type {Book[]} */
 export const LIBRARY_BOOKS = [
   {
     id: 'guia-oliver-school',
@@ -39,7 +74,7 @@ export const LIBRARY_BOOKS = [
     type: 'epub',
     file: null,
   },
-    {
+  {
     id: 'prompts=principiantes',
     title: 'Prompts para principiantes',
     author: 'Jafet Brito',
@@ -85,7 +120,7 @@ export const LIBRARY_BOOKS = [
     file: null,
     price: 2000,
   },
-    {
+  {
     id: 'catalan-1',
     title: 'Catalan para principiantes',
     author: 'Jafet Brito',
@@ -122,12 +157,23 @@ export const LIBRARY_BOOKS = [
   },
 ]
 
+/**
+ * Busca un libro específico dentro del catálogo.
+ * 
+ * @param {string} id - El identificador único del libro (ej: 'linux-bible').
+ * @returns {Book | undefined} El objeto del libro encontrado o undefined si no existe.
+ */
 export function getBookById(id) {
   return LIBRARY_BOOKS.find((b) => b.id === id)
 }
 
-// A book is purchasable once its file exists; "Próximamente" books (file:
-// null) have no price and can't be bought yet.
+/**
+ * Evalúa si un libro cumple con las reglas de negocio para poder ser comprado.
+ * Regla: El archivo físico debe existir (file !== null) Y debe tener un precio asignado.
+ * 
+ * @param {Book} book - El objeto completo del libro a evaluar.
+ * @returns {boolean} True si está listo para la venta, False si es "Próximamente" o no tiene precio.
+ */
 export function isBookPurchasable(book) {
   return !!book.file && typeof book.price === 'number'
 }
