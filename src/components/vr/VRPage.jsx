@@ -2278,8 +2278,7 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
 // top-right of the VR page. Lets the player switch between 3rd/1st person
 // and tune mouse sensitivity / vertical inversion — all persisted via
 // useVrSettingsStore + progressSnapshot.
-function CameraSettingsMenu() {
-  const [open, setOpen] = useState(false)
+function CameraSettingsMenu({ open, onClose }) {
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const setCameraMode = useVrSettingsStore((s) => s.setCameraMode)
   const mouseSensitivity = useVrSettingsStore((s) => s.mouseSensitivity)
@@ -2305,20 +2304,12 @@ function CameraSettingsMenu() {
   const npcVoice = useVrSettingsStore((s) => s.npcVoice)
   const setNpcVoice = useVrSettingsStore((s) => s.setNpcVoice)
 
-  return (
-    <div className="absolute right-4 top-14 z-20 flex flex-col items-end gap-2">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="rounded-full bg-surface/90 px-3 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-primary/30"
-      >
-        📷 Cámara
-      </button>
-      {open && (
-        <div className="w-64 rounded-xl border border-border bg-surface/95 p-3 text-sm text-text shadow-xl backdrop-blur">
+  return open ? (
+    <div className="absolute right-2 top-16 z-30 flex flex-col items-end gap-2 md:right-4 md:top-14">
+      <div className="w-64 rounded-xl border border-border bg-surface/95 p-3 text-sm text-text shadow-xl backdrop-blur">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-semibold">Cámara y controles</p>
-            <button type="button" onClick={() => setOpen(false)} className="text-text-muted hover:text-text" aria-label="Cerrar">
+            <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
               ✕
             </button>
           </div>
@@ -2515,9 +2506,8 @@ function CameraSettingsMenu() {
             </label>
           </div>
         </div>
-      )}
     </div>
-  )
+) : null
 }
 
 // Full-screen transport picker: 4 world cards (2 available, 2 locked future
@@ -3239,6 +3229,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [portalMenuOpen, setPortalMenuOpen] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [hudVisible, setHudVisible] = useState(true)
+  const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
+  const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
   const [chatPrefill, setChatPrefill] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const friends = useFriendsStore((s) => s.friends)
@@ -3307,6 +3300,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     setChatOpen(true)
   }
 
+  // Auto-dismiss the control hint after 12s, then never show again
+  useEffect(() => {
+    if (!showHint) return
+    const t = setTimeout(() => {
+      localStorage.setItem('vr-hint-seen', '1')
+      setShowHint(false)
+    }, 12000)
+    return () => clearTimeout(t)
+  }, [showHint])
+
   // Lighting themes per world mode
   const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#87ceeb'
   const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#c8e8f4', 50, 165]
@@ -3329,11 +3332,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {vrReady && <Canvas
           camera={{ position: [0, 1.6, 3.4], fov: 58 }}
           dpr={[1, 1.5]}
-          gl={{ powerPreference: 'default', antialias: true }}
+          gl={{ powerPreference: 'high-performance', antialias: true }}
           onCreated={({ gl }) => {
             const canvas = gl.domElement
-            const handleLost = (e) => e.preventDefault()
-            canvas.addEventListener('webglcontextlost', handleLost, false)
+            canvas.addEventListener('webglcontextlost', (e) => e.preventDefault(), false)
+            // Context loss is unrecoverable in Three.js — reload is the only reliable fix
+            canvas.addEventListener('webglcontextrestored', () => window.location.reload(), false)
           }}
         >
           <color attach="background" args={[bgColor]} />
@@ -3466,13 +3470,13 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           />
         )}
 
-        <CameraSettingsMenu />
+        <CameraSettingsMenu open={cameraMenuOpen} onClose={() => setCameraMenuOpen(false)} />
 
         {/* Voice chat panel — always available */}
         <VoicePanel playerId={playerId} name={chatAuthor} channelRef={channelRef} />
 
-        {/* Connection status badge — hidden in private worlds */}
-        {!isPrivateWorld && (
+        {/* Connection status badge — hidden in private worlds or when HUD is off */}
+        {hudVisible && !isPrivateWorld && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
             {isVrRealtimeAvailable() ? (
               connected ? (
@@ -3487,25 +3491,38 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         )}
 
         {/* World badge */}
-        {anfiteatroMode && (
+        {hudVisible && anfiteatroMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
             🎭 Anfiteatro Oliver
           </div>
         )}
-        {roomMode && (
+        {hudVisible && roomMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
             🏠 Mi Room (privada)
           </div>
         )}
 
-        <div className="pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-sm text-text shadow-lg backdrop-blur sm:block">
-          <strong>W A S D</strong> o flechas para moverte · <strong>espacio</strong> saltar ·{' '}
-          {!isPrivateWorld && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
-          <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
-        </div>
+        {showHint && (
+          <div
+            className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-xs text-text shadow-lg backdrop-blur sm:text-sm"
+            style={{ maxWidth: '90vw' }}
+          >
+            <strong>W A S D</strong> o flechas para moverte · <strong>espacio</strong> saltar ·{' '}
+            {!isPrivateWorld && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
+            <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
+          </div>
+        )}
 
-        {/* VR HUD: player portrait + skill action bar */}
-        <VrHud hidden={worldTreeMode} />
+        {/* VR HUD: player portrait + skill action bar + utility strip */}
+        <VrHud
+          hidden={worldTreeMode}
+          hudVisible={hudVisible}
+          setHudVisible={setHudVisible}
+          onOpenSettings={() => setCameraMenuOpen(true)}
+          onOpenChat={() => setChatOpen(true)}
+          onOpenMap={() => setMapOpen(true)}
+          isPrivateWorld={isPrivateWorld}
+        />
 
         {/* WorldTree class selection card */}
         {worldTreeMode && nearClassNodeId && classSelectionStep !== 'done' && (
@@ -3528,7 +3545,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         )}
 
         {/* WorldTree badge */}
-        {worldTreeMode && (
+        {hudVisible && worldTreeMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
             🌳 Árbol del Mundo
           </div>

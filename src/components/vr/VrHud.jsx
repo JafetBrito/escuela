@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
+import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
 
 // ─── Cooldown hook ─────────────────────────────────────────────────────────
@@ -23,7 +25,7 @@ function useCooldown(cooldownMs) {
 }
 
 // ─── Circular skill button (BDM-style) ─────────────────────────────────────
-const BTN = 54  // button diameter px
+const BTN = 54
 
 function SkillBtn({ skillId, hotkey, dim = false, size = BTN }) {
   const skill = getSkillById(skillId)
@@ -65,39 +67,19 @@ function SkillBtn({ skillId, hotkey, dim = false, size = BTN }) {
       }}
     >
       <span style={{ fontSize: size * 0.42, lineHeight: 1 }}>{skill.icon}</span>
-
-      {/* Hotkey corner label */}
-      <span
-        className="absolute font-bold text-white/40"
-        style={{ fontSize: 9, bottom: 3, right: 5 }}
-      >
+      <span className="absolute font-bold text-white/40" style={{ fontSize: 9, bottom: 3, right: 5 }}>
         {hotkey}
       </span>
-
-      {/* Cooldown arc sweep */}
       {onCooldown && (
         <>
-          <div
-            className="absolute inset-0 flex items-center justify-center rounded-full"
-            style={{ background: 'rgba(0,0,0,0.55)' }}
-          >
-            <span className="font-bold text-white" style={{ fontSize: 11 }}>
-              {(remaining / 1000).toFixed(1)}s
-            </span>
+          <div className="absolute inset-0 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.55)' }}>
+            <span className="font-bold text-white" style={{ fontSize: 11 }}>{(remaining / 1000).toFixed(1)}s</span>
           </div>
-          <svg
-            className="absolute inset-0 -rotate-90"
-            style={{ width: size, height: size }}
-            viewBox={`0 0 ${size} ${size}`}
-          >
+          <svg className="absolute inset-0 -rotate-90" style={{ width: size, height: size }} viewBox={`0 0 ${size} ${size}`}>
             <circle
               cx={size / 2} cy={size / 2} r={r}
-              fill="none"
-              stroke={skill.vfxColor}
-              strokeWidth="2.5"
-              strokeDasharray={circ}
-              strokeDashoffset={circ * (1 - pct)}
-              strokeLinecap="round"
+              fill="none" stroke={skill.vfxColor} strokeWidth="2.5"
+              strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)} strokeLinecap="round"
               style={{ transition: 'stroke-dashoffset 0.05s linear' }}
             />
           </svg>
@@ -116,11 +98,7 @@ function ThinBar({ current, max, color, label }) {
       <div className="relative flex-1 overflow-hidden rounded-full bg-black/40" style={{ height: 6 }}>
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-          style={{
-            width: `${pct * 100}%`,
-            background: `linear-gradient(90deg, ${color}cc, ${color})`,
-            boxShadow: `0 0 5px ${color}88`,
-          }}
+          style={{ width: `${pct * 100}%`, background: `linear-gradient(90deg, ${color}cc, ${color})`, boxShadow: `0 0 5px ${color}88` }}
         />
       </div>
       <span className="text-white/35 tabular-nums" style={{ fontSize: 9, minWidth: 28, textAlign: 'right' }}>
@@ -137,13 +115,17 @@ function PortraitHud() {
   const hp = useGameStore((s) => s.player.hp)
   const energy = useGameStore((s) => s.player.energy)
   const oliverHp = useGameStore((s) => s.oliver.hp)
+  const mascotId = useMascotStore((s) => s.mascot)
 
   const cls = playerClass ? PLAYER_CLASSES[playerClass] : null
   const oCls = oliverClass ? OLIVER_CLASSES[oliverClass] : null
 
+  const MASCOT_EMOJI = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
+  const mascotEmoji = MASCOT_EMOJI[mascotId] ?? '🐱'
+
   return (
     <div
-      className="flex flex-col gap-1 rounded-xl px-3 py-2"
+      className="relative flex flex-col gap-1 rounded-xl px-3 py-2"
       style={{
         background: 'linear-gradient(135deg, rgba(0,0,0,0.72), rgba(0,0,0,0.45))',
         backdropFilter: 'blur(10px)',
@@ -151,13 +133,20 @@ function PortraitHud() {
         boxShadow: cls ? `0 0 18px ${cls.color}18` : 'none',
       }}
     >
+      {/* Mascot mini badge */}
+      <div
+        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/70 text-sm shadow-md"
+        title="Tu mascota"
+      >
+        {mascotEmoji}
+      </div>
+
       {/* Top row: portrait circle + class name */}
       <div className="flex items-center gap-2">
         <div
           className="flex shrink-0 items-center justify-center rounded-full text-xl"
           style={{
-            width: 38,
-            height: 38,
+            width: 38, height: 38,
             background: cls ? `${cls.color}22` : 'rgba(255,255,255,0.06)',
             border: `2px solid ${cls?.color ?? 'rgba(255,255,255,0.15)'}`,
             boxShadow: cls ? `0 0 10px ${cls.color}44` : 'none',
@@ -170,30 +159,16 @@ function PortraitHud() {
             {cls ? cls.name : 'Sin clase'}
           </span>
           {oCls && (
-            <span
-              className="rounded px-1 font-bold"
-              style={{
-                fontSize: 9,
-                background: `${oCls.color}28`,
-                color: oCls.color,
-                marginTop: 1,
-              }}
-            >
+            <span className="rounded px-1 font-bold" style={{ fontSize: 9, background: `${oCls.color}28`, color: oCls.color, marginTop: 1 }}>
               {oCls.icon} {oCls.name}
             </span>
           )}
         </div>
       </div>
 
-      {/* HP bar (player) */}
       <ThinBar current={hp.current} max={hp.max} color="#ef4444" label="HP" />
-      {/* Energy bar (player) */}
       <ThinBar current={energy.current} max={energy.max} color="#22c55e" label="EN" />
-
-      {/* Oliver HP — only shown when Oliver has a class */}
-      {oCls && (
-        <ThinBar current={oliverHp.current} max={oliverHp.max} color="#f97316" label="🐱" />
-      )}
+      {oCls && <ThinBar current={oliverHp.current} max={oliverHp.max} color="#f97316" label={mascotEmoji} />}
     </div>
   )
 }
@@ -216,60 +191,103 @@ function SkillBar() {
         border: '1px solid rgba(255,255,255,0.07)',
       }}
     >
-      {/* Oliver row */}
       <div className="flex items-center gap-1.5">
-        <span
-          className="rounded-full px-1.5 font-bold text-white/50"
-          style={{ fontSize: 8, background: oCls ? `${oCls.color}22` : 'transparent' }}
-        >
+        <span className="rounded-full px-1.5 font-bold text-white/50" style={{ fontSize: 8, background: oCls ? `${oCls.color}22` : 'transparent' }}>
           {oCls ? `${oCls.icon}` : '🐱'}
         </span>
-        {oliverSkills.map((id, i) => (
-          <SkillBtn key={`o${i}`} skillId={id} hotkey={String(i + 1)} size={50} />
-        ))}
+        {oliverSkills.map((id, i) => <SkillBtn key={`o${i}`} skillId={id} hotkey={String(i + 1)} size={50} />)}
       </div>
-
-      {/* Divider */}
       <div className="w-full" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-
-      {/* Player row */}
       <div className="flex items-center gap-1.5">
-        <span
-          className="rounded-full px-1.5 font-bold text-white/50"
-          style={{ fontSize: 8, background: cls ? `${cls.color}22` : 'transparent' }}
-        >
+        <span className="rounded-full px-1.5 font-bold text-white/50" style={{ fontSize: 8, background: cls ? `${cls.color}22` : 'transparent' }}>
           {cls ? `${cls.icon}` : '⚔️'}
         </span>
-        {playerSkills.map((id, i) => (
-          <SkillBtn key={`p${i}`} skillId={id} hotkey={String(i + 5)} dim={!playerClass} size={50} />
-        ))}
+        {playerSkills.map((id, i) => <SkillBtn key={`p${i}`} skillId={id} hotkey={String(i + 5)} dim={!playerClass} size={50} />)}
       </div>
-
-      {/* Hints */}
       <p className="text-white/20" style={{ fontSize: 8 }}>1–4 Oliver · 5–8 Jugador</p>
     </div>
   )
 }
 
-// ─── Main HUD export ───────────────────────────────────────────────────────
-export default function VrHud({ hidden = false }) {
-  if (hidden) return null
+// ─── Utility strip (right side) — Settings / Hide / Audio / Chat / Map / Friends / Arena ──
+function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, hudVisible, setHudVisible, isPrivateWorld }) {
+  const [muted, setMuted] = useState(() => localStorage.getItem('vr-muted') === '1')
+  const navigate = useNavigate()
+
+  const toggleMute = () => {
+    const m = !muted
+    setMuted(m)
+    localStorage.setItem('vr-muted', m ? '1' : '0')
+  }
+
+  const BTNS = [
+    { icon: hudVisible ? '👁️' : '🙈', title: hudVisible ? 'Ocultar HUD' : 'Mostrar HUD', onClick: () => setHudVisible(v => !v) },
+    { icon: '📷', title: 'Ajustes de cámara', onClick: onOpenSettings, hidden: !hudVisible },
+    { icon: muted ? '🔇' : '🔊', title: muted ? 'Activar audio' : 'Silenciar', onClick: toggleMute, hidden: !hudVisible },
+    { icon: '💬', title: 'Chat', onClick: onOpenChat, hidden: !hudVisible },
+    { icon: '🗺️', title: 'Mapa', onClick: onOpenMap, hidden: !hudVisible || isPrivateWorld },
+    { icon: '👥', title: 'Amigos', onClick: () => navigate('/amigos'), hidden: !hudVisible },
+    { icon: '⚔️', title: 'Arena', onClick: () => navigate('/arena'), hidden: !hudVisible },
+  ]
 
   return (
-    <>
-      {/* Top-left: compact portrait */}
-      <div className="pointer-events-none absolute left-3 top-3 z-20 sm:left-4 sm:top-4">
-        <div className="pointer-events-auto">
-          <PortraitHud />
-        </div>
-      </div>
+    <div className="pointer-events-none absolute right-2 top-16 z-20 flex flex-col items-end gap-1.5 md:right-3 md:top-14">
+      {BTNS.filter(b => !b.hidden).map(({ icon, title, onClick }) => (
+        <button
+          key={title}
+          type="button"
+          onClick={onClick}
+          title={title}
+          aria-label={title}
+          className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/55 shadow-lg backdrop-blur-sm transition-all active:scale-90 hover:bg-black/80 md:h-9 md:w-9"
+          style={{ fontSize: 15 }}
+        >
+          {icon}
+        </button>
+      ))}
+    </div>
+  )
+}
 
-      {/* Bottom-right: circular skill bar */}
-      <div className="pointer-events-none absolute bottom-20 right-3 z-20 sm:bottom-16 sm:right-4">
-        <div className="pointer-events-auto">
-          <SkillBar />
-        </div>
-      </div>
+// ─── Main HUD export ───────────────────────────────────────────────────────
+export default function VrHud({
+  hidden = false,
+  hudVisible = true,
+  setHudVisible,
+  onOpenSettings,
+  onOpenChat,
+  onOpenMap,
+  isPrivateWorld = false,
+}) {
+  return (
+    <>
+      {/* Utility strip — always rendered so the eye button is accessible */}
+      <VrUtilBar
+        onOpenSettings={onOpenSettings}
+        onOpenChat={onOpenChat}
+        onOpenMap={onOpenMap}
+        hudVisible={hudVisible}
+        setHudVisible={setHudVisible}
+        isPrivateWorld={isPrivateWorld}
+      />
+
+      {!hidden && hudVisible && (
+        <>
+          {/* Top-left: compact portrait + mascot avatar */}
+          <div className="pointer-events-none absolute left-3 top-3 z-20 sm:left-4 sm:top-4">
+            <div className="pointer-events-auto">
+              <PortraitHud />
+            </div>
+          </div>
+
+          {/* Bottom-right: skill bar */}
+          <div className="pointer-events-none absolute bottom-20 right-3 z-20 sm:bottom-16 sm:right-4">
+            <div className="pointer-events-auto">
+              <SkillBar />
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }
