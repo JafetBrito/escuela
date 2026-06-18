@@ -77,7 +77,8 @@ function DescTooltip({ mascot, onClose }) {
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 
-export default function VrMascotOnboarding() {
+// onDone: optional callback called after finish (used by VrArbol tutorial)
+export default function VrMascotOnboarding({ onDone } = {}) {
   const [step, setStep]               = useState(0)   // 0: choose mascot, 1: oliver class
   const [mascotId, setMascotId]       = useState(SELECTABLE_MASCOTS[0]?.id ?? 8)
   const [petName, setPetName]         = useState('')
@@ -102,7 +103,7 @@ export default function VrMascotOnboarding() {
     selectOliverClass(oliverClassId)
     setWorldTreeCompleted(true)
     try { await forceSyncToCloud() } catch { /* best effort */ }
-    // oliverClass is now set → parent component hides this overlay
+    onDone?.()
   }
 
   const oCls = oliverClassId ? OLIVER_CLASSES[oliverClassId] : null

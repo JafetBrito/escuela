@@ -46,6 +46,7 @@ const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 const VRPage = lazy(() => import('./components/vr/VRPage'))
+const VrArbol = lazy(() => import('./components/vr/VrArbol'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
@@ -207,6 +208,16 @@ export default function App() {
         />
         
         {/* === RUTAS DE REALIDAD VIRTUAL (Heavy 3D Load) === */}
+        <Route
+          path="/vr-arbol"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VrArbol />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/vr"
           element={

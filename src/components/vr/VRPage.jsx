@@ -28,6 +28,8 @@ import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '..
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import VrLoadingScreen from './VrLoadingScreen'
 import VrMascotOnboarding from './VrMascotOnboarding'
+import BattleScreen from '../battle/BattleScreen'
+import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 
 // While we're designing/testing the world's NPCs and missions, swap the real
@@ -2963,10 +2965,27 @@ function useCameraControls() {
 // Bottom-center card shown when the player right-clicks a nearby NPC: their
 // dialogue plus the mission they're handing out, with the right action
 // button depending on accepted/completed/claimed state.
-function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onClaim, onClose }) {
+function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onClaim, onClose, onBattle }) {
   const npc = getVrNpcById(npcId)
   const mission = npc && getGlobalMissionById(npc.missionId)
-  if (!npc || !mission) return null
+  if (!npc) return null
+  // Battle-only NPC (no mission)
+  if (!mission) {
+    if (!npc.battle) return null
+    return (
+      <div className="absolute bottom-24 left-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-border bg-surface/95 p-4 text-sm text-text shadow-xl backdrop-blur sm:bottom-20">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-bold">{npc.emoji} {npc.name} <span className="ml-1 text-xs text-yellow-400">Nv.{npc.battleStats?.level}</span></p>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-text">✕</button>
+        </div>
+        <p className="mt-1 text-text-muted">"{npc.dialogue}"</p>
+        <button type="button" onClick={() => { onBattle(npc); onClose() }}
+          className="mt-3 w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-400">
+          ⚔️ ¡Desafiar!
+        </button>
+      </div>
+    )
+  }
 
   const isAccepted = accepted.includes(mission.id)
   const isClaimed = claimed.includes(mission.id)
@@ -3014,6 +3033,12 @@ function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onCl
           </button>
         )}
         {isClaimed && <p className="text-center text-xs font-semibold text-text-muted">✅ Completada</p>}
+        {npc.battle && (
+          <button type="button" onClick={() => { onBattle(npc); onClose() }}
+            className="mt-2 w-full rounded-lg border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 transition hover:bg-red-500/10">
+            ⚔️ ¡Desafiar a duelo!
+          </button>
+        )}
       </div>
     </div>
   )
@@ -4009,6 +4034,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
   const worldTreeCompleted = useGameStore((s) => s.worldTreeCompleted)
+  const startBattle = useCombatStore((s) => s.startBattle)
+  const combatActive = useCombatStore((s) => s.active)
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [nearPortal, setNearPortal] = useState(false)
@@ -4170,6 +4197,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           activeNpcId ? (
             <NpcMissionCard
               npcId={activeNpcId}
+              onBattle={(npc) => startBattle(npc)}
               accepted={accepted}
               claimed={claimed}
               missionState={missionState}
@@ -4323,6 +4351,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
       {/* VR mascot onboarding — shown when user hasn't chosen their companion yet */}
       {!oliverClass && <VrMascotOnboarding />}
+
+      {/* Turn-based battle overlay */}
+      <BattleScreen />
     </div>
   )
 }

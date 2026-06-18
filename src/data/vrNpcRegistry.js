@@ -64,6 +64,53 @@ export const VR_NPCS = [
     dialogue: 'Cambia el aspecto de tu mascota y muéstramelo con orgullo.',
     missionId: 'cambia-apariencia',
   },
+
+  // ── Battle NPCs ──────────────────────────────────────────────────────────
+  {
+    id: 'guardiana-codigo',
+    emoji: '⚔️',
+    name: 'Guardiana del Código',
+    color: '#22c55e',
+    position: [7, 0, -28],
+    mascotId: 12,
+    dialogue: '¡Solo quien domine la programación podrá pasar! ¿Te atreves a desafiarme?',
+    battle: true,
+    battleStats: {
+      level: 3, hp: 80, minDamage: 6, maxDamage: 14,
+      xpReward: 80, coinReward: 800,
+      questionCategory: 'programming',
+    },
+  },
+  {
+    id: 'oraculo-cyber',
+    emoji: '🔮',
+    name: 'Oráculo Cyber',
+    color: '#818cf8',
+    position: [-7, 0, -28],
+    mascotId: 10,
+    dialogue: 'Los secretos de la red están aquí. Solo quien sepa enfrentarlos podrá avanzar.',
+    battle: true,
+    battleStats: {
+      level: 5, hp: 110, minDamage: 10, maxDamage: 20,
+      xpReward: 120, coinReward: 1200,
+      questionCategory: 'cyber',
+    },
+  },
+  {
+    id: 'maestro-ia',
+    emoji: '🤖',
+    name: 'Maestro de la IA',
+    color: '#f59e0b',
+    position: [0, 0, -40],
+    mascotId: 11,
+    dialogue: 'La inteligencia artificial no es magia… pero para derrotarme, casi lo necesitas.',
+    battle: true,
+    battleStats: {
+      level: 8, hp: 150, minDamage: 14, maxDamage: 28,
+      xpReward: 180, coinReward: 1800,
+      questionCategory: 'ai',
+    },
+  },
 ]
 
 export function getVrNpcById(id) {

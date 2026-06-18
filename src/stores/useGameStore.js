@@ -113,6 +113,8 @@ export const PLAYER_AVATARS = [
 const DEFAULT_PLAYER = {
   class: null,
   avatarId: 'scholar',
+  avatarRegistryId: 8,  // id en mascotRegistry (modelo 3D del jugador)
+  nickname: '',
   hp: { current: 100, max: 100 },
   energy: { current: 100, max: 100 },
   skills: { unlocked: [], equipped: [null, null, null, null] },
@@ -133,6 +135,12 @@ export const useGameStore = create((set, get) => ({
 
   setPlayerAvatar: (avatarId) =>
     set((s) => ({ player: { ...s.player, avatarId } })),
+
+  setAvatarRegistryId: (avatarRegistryId) =>
+    set((s) => ({ player: { ...s.player, avatarRegistryId } })),
+
+  setPlayerNickname: (nickname) =>
+    set((s) => ({ player: { ...s.player, nickname } })),
 
   // Spend a talent point to unlock a skill for 'player' or 'oliver'.
   spendTalentPoint: (owner, skillId) =>
@@ -201,6 +209,8 @@ export const useGameStore = create((set, get) => ({
       worldTreeCompleted: data.worldTreeCompleted ?? false,
     })
   },
+
+  setCurrentHp: (val) => set(s => ({ player: { ...s.player, hp: { ...s.player.hp, current: Math.max(0, val) } } })),
 
   // Force-save to Supabase immediately (used at end of onboarding)
   forceSyncToCloud: async () => {
