@@ -90,6 +90,15 @@
     "locked": true
   },
   {
+    "id": "course-filo-001",
+    "title": "Introducción a la Filosofía",
+    "description": "Explora las grandes preguntas de la humanidad con Jafet Brito. Desde Platón hasta el mundo digital, cada lección combina teoría con experiencias VR únicas.",
+    "icon": "🏛️",
+    "color": "#eab308",
+    "category": "Filosofía",
+    "locked": false
+  },
+  {
     "id": "course-demo",
     "title": "Curso Demo: Cómo usar Oliver School",
     "description": "5 clases que te enseñan a usar la plataforma de punta a punta: navegación, mascota, misiones, objetos, tienda, chats y logros.",

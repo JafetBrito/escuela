@@ -1,0 +1,117 @@
+{
+  "courseId": "course-filo-001",
+  "title": "Introducción a la Filosofía",
+  "description": "Explora las grandes preguntas de la humanidad con Jafet Brito como guía. Cada clase combina teoría y experiencias inmersivas en mundos VR.",
+  "aiInstructions": "Este curso introduce la filosofía occidental clásica. La clase 1 es una introducción general. La clase 2 es una experiencia VR de la Alegoría de la Cueva de Platón, donde el estudiante adopta el rol de prisionero y luego se libera. Cuando el estudiante pregunte sobre Platón, la alegoría de la cueva, el mundo de las ideas o la epistemología, explica con claridad y relaciona con la experiencia VR. Guía al estudiante con preguntas reflexivas.",
+  "welcome": {
+    "topicIntro": "La filosofía es el arte de hacerse las preguntas correctas. Con Jafet Brito como guía, explorarás las ideas que han moldeado la civilización occidental — desde Platón hasta el mundo moderno.",
+    "requirements": [
+      "Mente abierta y curiosidad genuina",
+      "Conexión a internet estable",
+      "Auriculares recomendados para la experiencia VR",
+      "Unos 20-30 minutos por clase"
+    ]
+  },
+  "modules": [
+    {
+      "id": 1,
+      "title": "¿Qué es la filosofía?",
+      "order": 1,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Jafet Brito te introduce al mundo de la filosofía: qué es, por qué importa, y cómo ha cambiado la forma en que los humanos entienden la realidad.",
+      "exercises": [
+        {
+          "id": "filo-1-1",
+          "type": "challenge",
+          "prompt": "🤔 Misión: La Gran Pregunta. Escribe en el chat 3 preguntas filosóficas que tú mismo te has hecho a lo largo de tu vida.",
+          "solution": ""
+        }
+      ],
+      "quiz": [
+        {
+          "id": "filo-1-q1",
+          "question": "¿Qué significa la palabra 'filosofía' en griego?",
+          "options": ["Amor a la sabiduría", "Estudio de la mente", "Arte del debate", "Ciencia del ser"],
+          "correct": 0
+        },
+        {
+          "id": "filo-1-q2",
+          "question": "¿Cuál es la actitud fundamental del filósofo?",
+          "options": ["La duda reflexiva", "La certeza absoluta", "La obediencia ciega", "La acumulación de datos"],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "La Cueva de Platón — Experiencia VR",
+      "order": 2,
+      "type": "vr",
+      "vrRoute": "/vr/cueva-platon",
+      "vrWorldName": "La Cueva de Platón",
+      "description": "Entra al mundo VR de la Cueva de Platón. Adopta el rol de un prisionero, vive la alegoría desde adentro, y usa tus habilidades para liberar a los demás.",
+      "exercises": [
+        {
+          "id": "filo-2-1",
+          "type": "challenge",
+          "prompt": "🏛️ Reflexión post-VR: Después de vivir la alegoría de la cueva, escribe en el chat qué cosas en tu vida cotidiana podrían ser 'sombras' — ilusiones que confundes con la realidad.",
+          "solution": ""
+        }
+      ],
+      "quiz": [
+        {
+          "id": "filo-2-q1",
+          "question": "En la alegoría de la cueva, ¿qué representan las sombras en la pared?",
+          "options": ["Las apariencias y el mundo sensible", "La verdad absoluta", "Los sueños del prisionero", "El fuego de la sabiduría"],
+          "correct": 0
+        },
+        {
+          "id": "filo-2-q2",
+          "question": "¿Qué representa el sol cuando el prisionero sale de la cueva?",
+          "options": ["La idea del Bien / la Verdad", "El mundo físico real", "La sociedad moderna", "La muerte"],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": 3, "title": "Sócrates y el método socrático", "order": 3, "videoId": "", "locked": true,
+      "description": "Próximamente — Aprende el método de la mayéutica socrática y cómo Sócrates revolucionó el pensamiento occidental."
+    },
+    {
+      "id": 4, "title": "Aristóteles: la lógica y el ser", "order": 4, "videoId": "", "locked": true,
+      "description": "Próximamente — La metafísica, la ética y la lógica aristotélica."
+    },
+    {
+      "id": 5, "title": "El estoicismo: vivir con razón", "order": 5, "videoId": "", "locked": true,
+      "description": "Próximamente — Marco Aurelio, Epicteto y Séneca en la filosofía de vida estoica."
+    },
+    {
+      "id": 6, "title": "El existencialismo", "order": 6, "videoId": "", "locked": true,
+      "description": "Próximamente — Sartre, Camus y la libertad radical."
+    },
+    {
+      "id": 7, "title": "La ética: ¿qué está bien y qué está mal?", "order": 7, "videoId": "", "locked": true,
+      "description": "Próximamente — Kant, el utilitarismo y los dilemas morales."
+    },
+    {
+      "id": 8, "title": "Filosofía de la mente", "order": 8, "videoId": "", "locked": true,
+      "description": "Próximamente — ¿Qué es la conciencia? Dualismo, materialismo y el problema difícil."
+    },
+    {
+      "id": 9, "title": "Epistemología: ¿cómo sabemos lo que sabemos?", "order": 9, "videoId": "", "locked": true,
+      "description": "Próximamente — Descartes, Hume y los límites del conocimiento humano."
+    },
+    {
+      "id": 10, "title": "Filosofía política", "order": 10, "videoId": "", "locked": true,
+      "description": "Próximamente — El contrato social, el poder y la justicia."
+    },
+    {
+      "id": 11, "title": "Filosofía del lenguaje", "order": 11, "videoId": "", "locked": true,
+      "description": "Próximamente — Wittgenstein y cómo el lenguaje construye la realidad."
+    },
+    {
+      "id": 12, "title": "Filosofía contemporánea y ética digital", "order": 12, "videoId": "", "locked": true,
+      "description": "Próximamente — IA, privacidad, identidad digital y los nuevos dilemas filosóficos del siglo XXI."
+    }
+  ]
+}

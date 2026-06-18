@@ -32,7 +32,7 @@ de escritorio (VideoPlayer) y uno completamente distinto para celulares (Vertica
  */
 
 import { useEffect, useRef } from 'react'
-import { useParams, Navigate, Link } from 'react-router-dom'
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom'
 import { getCourseData, hasCourseData } from '../../data/courseRegistry'
 import TopBar from './TopBar'
 import ModuleList from './ModuleList'
@@ -46,6 +46,38 @@ import AppTopBar from '../shared/AppTopBar'
 import { useProgressStore, EMPTY_ARRAY } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useChatStore } from '../../stores/useChatStore'
+
+// ── VR module launcher card ───────────────────────────────────────────────────
+function VrModuleLauncher({ module: mod }) {
+  const navigate = useNavigate()
+  return (
+    <div
+      className="flex flex-col items-center justify-center gap-5 rounded-2xl p-8 text-center"
+      style={{
+        background: 'linear-gradient(160deg, #1a0f2e 0%, #0c0814 100%)',
+        border: '1px solid rgba(124,58,237,0.4)',
+        minHeight: '340px',
+      }}
+    >
+      <div className="text-6xl">🏛️</div>
+      <div>
+        <p className="text-xl font-black text-white">{mod.vrWorldName ?? mod.title}</p>
+        <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{mod.description}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => navigate(mod.vrRoute)}
+        className="rounded-2xl px-8 py-3 text-base font-black transition-all hover:scale-105 active:scale-95"
+        style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}
+      >
+        🌍 Entrar al Mundo VR
+      </button>
+      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        Se abrirá la experiencia VR de esta clase
+      </p>
+    </div>
+  )
+}
 
 export default function LearningInterface() {
   // --- 1. LECTURA DE URL Y RUTAS ---
@@ -140,16 +172,21 @@ export default function LearningInterface() {
           {/* COLUMNA IZQUIERDA: Área de Aprendizaje */}
           <div className="flex flex-col gap-4">
             
-            {/* 🎬 REPRODUCTOR DE VIDEO (Responsive) */}
-            {/* Escritorio: Oculto en móviles (hidden), visible en pantallas medianas o mayores (md:block) */}
-            <div className="hidden md:block">
-              <VideoPlayer videoId={currentModule.videoId} className="w-full" />
-            </div>
-            
-            {/* Móvil: Formato vertical estilo TikTok. Oculto en escritorio (md:hidden) */}
-            <div className="md:hidden">
-              <VerticalVideo module={currentModule} />
-            </div>
+            {/* 🎬 REPRODUCTOR / LAUNCHER */}
+            {currentModule.type === 'vr' ? (
+              <VrModuleLauncher module={currentModule} />
+            ) : (
+              <>
+                {/* Escritorio: Oculto en móviles (hidden), visible en pantallas medianas o mayores (md:block) */}
+                <div className="hidden md:block">
+                  <VideoPlayer videoId={currentModule.videoId} className="w-full" />
+                </div>
+                {/* Móvil: Formato vertical estilo TikTok. Oculto en escritorio (md:hidden) */}
+                <div className="md:hidden">
+                  <VerticalVideo module={currentModule} />
+                </div>
+              </>
+            )}
 
             {/* 📚 RECURSOS Y TAREAS */}
             <ModuleResources module={currentModule} className="min-h-[200px]" />

@@ -537,6 +537,41 @@ export const SKILL_REGISTRY = {
     description: 'Escudo eterno ancestral: inmortalidad temporal por 3 segundos.',
     vfxColor: '#ca8a04',
   },
+
+  // ─── Habilidades exclusivas: La Cueva de Platón (course-filo-001) ───────
+  no_cuestionar: {
+    id: 'no_cuestionar',
+    name: 'No Cuestionar Nada',
+    icon: '🔒',
+    owner: 'player',
+    cooldownMs: 3000,
+    energyCost: 0,
+    description: 'Acepta la realidad tal como se presenta. El poder del prisionero que nunca dudó.',
+    vfxColor: '#6b7280',
+    courseId: 'course-filo-001',
+  },
+  seguir_corriente: {
+    id: 'seguir_corriente',
+    name: 'Seguir la Corriente',
+    icon: '🌊',
+    owner: 'player',
+    cooldownMs: 4000,
+    energyCost: 0,
+    description: 'Fluye con el pensamiento colectivo. Nadie cuestionará tu presencia en la caverna.',
+    vfxColor: '#4b5563',
+    courseId: 'course-filo-001',
+  },
+  despertar_demas: {
+    id: 'despertar_demas',
+    name: 'Despertar a los Demás',
+    icon: '☀️',
+    owner: 'player',
+    cooldownMs: 5000,
+    energyCost: 20,
+    description: 'Usa la luz del conocimiento para liberar a un prisionero de la ilusión de la caverna.',
+    vfxColor: '#f59e0b',
+    courseId: 'course-filo-001',
+  },
 }
 
 export function getSkillById(id) {

@@ -48,6 +48,7 @@ const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 const VRPage = lazy(() => import('./components/vr/VRPage'))
 const VrArbol      = lazy(() => import('./components/vr/VrArbol'))
+const VrCueva      = lazy(() => import('./components/vr/VrCueva'))
 const AdminSetupPage = lazy(() => import('./components/admin/AdminSetupPage'))
 const ArenaPage = lazy(() => import('./components/arena/ArenaPage'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
@@ -279,6 +280,17 @@ export default function App() {
           }
         />
         
+        <Route
+          path="/vr/cueva-platon"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VrCueva />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
         {/* === RUTAS DE JUEGOS Y APRENDIZAJE === */}
         <Route
           path="/games"
