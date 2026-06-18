@@ -60,10 +60,9 @@ export const MASCOTS = [
     icon: '🐱',
     geometry: 'cat',
     color: '#f97316',
+    description: 'El gato legendario de Oliver School. Ágil, curioso y siempre a tu lado en cada aventura de aprendizaje.',
     modelPath: '/orange_cat.glb',
     modelSourceUrl: 'https://sketchfab.com/3d-models/orange-cat-2b722183b60e4fcfbe3c2263536d2fa6',
-    // Calibración 3D: El modelo original se exportó de espaldas. Math.PI lo rota 180° hacia el frente.
-    // El offset de -0.35 lo empuja hacia abajo para que se asiente correctamente en el Viewport.
     modelRotationY: Math.PI,
     modelOffsetY: -0.35,
   },
@@ -73,6 +72,7 @@ export const MASCOTS = [
     icon: '🧙',
     geometry: 'cat',
     color: '#a78bfa',
+    description: 'Un hechicero con poderes arcanos. Transforma el conocimiento en magia pura y guía al estudiante por senderos misteriosos.',
     modelPath: '/mage.glb',
   },
   {
@@ -81,6 +81,7 @@ export const MASCOTS = [
     icon: '🧙‍♂️',
     geometry: 'cat',
     color: '#818cf8',
+    description: 'Sabio ancestral lleno de sabiduría milenaria. Guía con paciencia y serenidad a todo el que busca el conocimiento.',
     modelPath: '/mage_elder.glb',
   },
   {
@@ -89,6 +90,7 @@ export const MASCOTS = [
     icon: '🦊',
     geometry: 'cat',
     color: '#fb923c',
+    description: 'Astuto y veloz, este zorro combina magia y astucia para superar cualquier obstáculo del camino.',
     modelPath: '/mage_fox.glb',
   },
   {
@@ -97,6 +99,7 @@ export const MASCOTS = [
     icon: '🦎',
     geometry: 'cat',
     color: '#34d399',
+    description: 'Guardián de los secretos naturales. Adaptable y poderoso en cualquier terreno; nunca se rinde.',
     modelPath: '/lizard_mage.glb',
   },
   {
@@ -105,6 +108,7 @@ export const MASCOTS = [
     icon: '🐶',
     geometry: 'cat',
     color: '#f472b6',
+    description: 'Alegre e inquebrantable. Su energía positiva te mantendrá motivado ante cualquier desafío académico.',
     modelPath: '/balloon_dog.glb',
   },
 ]

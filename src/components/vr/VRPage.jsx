@@ -27,6 +27,7 @@ import { formatCurrency } from '../../utils/currency'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import VrLoadingScreen from './VrLoadingScreen'
+import VrMascotOnboarding from './VrMascotOnboarding'
 import VrHud from './VrHud'
 
 // While we're designing/testing the world's NPCs and missions, swap the real
@@ -4319,6 +4320,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       </div>
 
       <MascotCompanion hideViewport />
+
+      {/* VR mascot onboarding — shown when user hasn't chosen their companion yet */}
+      {!oliverClass && <VrMascotOnboarding />}
     </div>
   )
 }
