@@ -11,7 +11,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
-import { VR_NPCS, getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
+import { VR_NPCS, getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC } from '../../data/vrNpcRegistry'
 import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
@@ -45,7 +45,7 @@ import { useWorldTreeGround, WT_CLASS_NODES } from './worlds/useWorldTreeGround'
 const USE_TEST_SCENERY = true
 
 const SIMPLE_MODE = false
-const ACTIVE_VR_NPCS = [] // disabled until missions are ready
+const ACTIVE_VR_NPCS = VR_NPCS.filter((n) => !n.battle)
 
 const MOVE_SPEED = 5.5
 const TURN_SPEED = 10
@@ -1490,16 +1490,15 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 // has no mascotId (shouldn't happen, but keeps things from disappearing
 // silently if the registry entry is incomplete).
 function VrNpc({ npc, playerPositionRef }) {
-  const mascot = getMascotById(npc.mascotId)
-  // Face the central plaza, so every NPC looks "inward" toward the player's
-  // spawn point instead of all facing the same world direction.
-  const facing = Math.atan2(-npc.position[0], -npc.position[2])
-  const npcPos = useMemo(() => new THREE.Vector3(...npc.position), [npc.position])
-
-  // Start far so every NPC spawns as its cheap marker; <Player> writes the
-  // real position into playerPositionRef on its first frame, and the check
-  // below promotes nearby NPCs to their full model shortly after.
-  const [near, setNear] = useState(false)
+  const mascot  = getMascotById(npc.mascotId)
+  const facing  = Math.atan2(-npc.position[0], -npc.position[2])
+  const npcPos  = useMemo(() => new THREE.Vector3(...npc.position), [npc.position])
+  const [near, setNear]     = useState(false)
+  const [bubbles, setBubbles] = useState([])
+  const bubbleIdRef = useRef(1)
+  const accepted = useGlobalMissionsStore((s) => s.accepted)
+  const mission  = useMemo(() => getGlobalMissionById(npc.missionId), [npc.missionId])
+  const hasQuest = mission && !accepted.includes(mission.id)
 
   useFrame(() => {
     const pos = playerPositionRef?.current
@@ -1508,8 +1507,29 @@ function VrNpc({ npc, playerPositionRef }) {
     if (shouldBeNear !== near) setNear(shouldBeNear)
   })
 
+  const sayDialogue = useCallback(() => {
+    const text = npc.dialogue
+    if (!text) return
+    const id = bubbleIdRef.current++
+    setBubbles((cur) => [...cur, { id, text }].slice(-MAX_STACKED_BUBBLES))
+    setTimeout(() => setBubbles((cur) => cur.filter((b) => b.id !== id)), CHAT_BUBBLE_DURATION)
+    if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
+    const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
+    if (!clean) return
+    window.speechSynthesis.cancel()
+    const utt = new SpeechSynthesisUtterance(clean)
+    utt.lang = 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
+    window.speechSynthesis.speak(utt)
+  }, [npc.dialogue])
+
   return (
-    <group position={npc.position} rotation={[0, facing, 0]}>
+    <group position={npc.position} rotation={[0, facing, 0]}
+      onClick={(e) => { e.stopPropagation(); sayDialogue() }}>
+      {/* Transparent hitbox so click works even before model loads */}
+      <mesh position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.35, 0.35, 1.6, 8]} />
+        <meshBasicMaterial transparent opacity={0.01} depthWrite={false} />
+      </mesh>
       {near && mascot ? (
         <Suspense
           fallback={
@@ -1531,98 +1551,68 @@ function VrNpc({ npc, playerPositionRef }) {
       )}
       {near && (
         <Html position={[0, 2.1, 0]} center distanceFactor={10}>
-          <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-            {npc.emoji} {npc.name}
+          <div className="pointer-events-none flex flex-col items-center gap-0.5">
+            {hasQuest && (
+              <span className="animate-bounce text-xl leading-none drop-shadow-lg" style={{ color: '#facc15', textShadow: '0 0 8px #f59e0b' }}>❗</span>
+            )}
+            <div className="whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+              {npc.emoji} {npc.name}
+            </div>
           </div>
         </Html>
       )}
+      <BubbleStack bubbles={bubbles} baseY={NPC_SCALE * 2 + 1.0} color={npc.color} />
     </group>
   )
 }
 
-// How close the player must be to an idle NPC before it starts talking.
-const IDLE_NPC_TALK_RADIUS = 9
-
-// Generic "always-present" idle NPC.  Only speaks when the player is within
-// IDLE_NPC_TALK_RADIUS to avoid NPCs shouting across an empty campus.
+// NPCs only speak when left-clicked — no auto-speech.
 function IdleNpc({ config, playerPositionRef }) {
-  const mascot   = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
-  const npcVec   = useMemo(() => new THREE.Vector3(...config.position), [config.position])
+  const mascot      = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
   const [bubbles, setBubbles] = useState([])
-  const [near, setNear]       = useState(false)
   const lineIndexRef = useRef(0)
   const bubbleIdRef  = useRef(1)
-  const intervalRef  = useRef(null)
 
-  // Proximity gate — only start/stop the speech interval when crossing the radius
-  useFrame(() => {
-    const pos = playerPositionRef?.current
-    if (!pos) return
-    const shouldBeNear = pos.distanceTo(npcVec) <= IDLE_NPC_TALK_RADIUS
-    if (shouldBeNear !== near) setNear(shouldBeNear)
-  })
-
-  useEffect(() => {
-    if (!near) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-      return
-    }
-
-    let cancelled = false
-
-    const nextLine = async () => {
-      if (config.aiPrompt) {
-        const { minimaxApiKey, deepseekApiKey, chatModel } = useSettingsStore.getState()
-        const provider = getModelProvider(chatModel)
-        const apiKey = provider === 'deepseek' ? deepseekApiKey : minimaxApiKey
-        if (apiKey && !apiKey.startsWith('mx-mock')) {
-          try {
-            const reply = await sendNpcMessage({
-              npcPrompt: config.aiPrompt,
-              content: 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
-            })
-            if (reply) return reply.trim()
-          } catch { /* fall through */ }
-        }
+  const sayOneLine = useCallback(async () => {
+    let text
+    if (config.aiPrompt) {
+      const { minimaxApiKey, deepseekApiKey, chatModel } = useSettingsStore.getState()
+      const provider = getModelProvider(chatModel)
+      const apiKey = provider === 'deepseek' ? deepseekApiKey : minimaxApiKey
+      if (apiKey && !apiKey.startsWith('mx-mock')) {
+        try {
+          const reply = await sendNpcMessage({
+            npcPrompt: config.aiPrompt,
+            content: 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
+          })
+          if (reply) text = reply.trim()
+        } catch { /* fall through to static lines */ }
       }
-      const text = config.lines[lineIndexRef.current % config.lines.length]
+    }
+    if (!text) {
+      text = config.lines[lineIndexRef.current % config.lines.length]
       lineIndexRef.current += 1
-      return text
     }
-
-    const speakText = (text) => {
-      if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
-      const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
-      if (!clean) return
-      window.speechSynthesis.cancel()
-      const utt = new SpeechSynthesisUtterance(clean)
-      utt.lang = 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
-      window.speechSynthesis.speak(utt)
-    }
-
-    const tick = async () => {
-      const text = await nextLine()
-      if (cancelled) return
-      const id = bubbleIdRef.current++
-      setBubbles((cur) => [...cur, { id, text }].slice(-MAX_STACKED_BUBBLES))
-      speakText(text)
-      setTimeout(() => { if (!cancelled) setBubbles((cur) => cur.filter((b) => b.id !== id)) }, CHAT_BUBBLE_DURATION)
-    }
-
-    tick()
-    intervalRef.current = setInterval(tick, config.intervalMs)
-
-    return () => {
-      cancelled = true
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-      window.speechSynthesis?.cancel()
-    }
-  }, [near, config])
+    const id = bubbleIdRef.current++
+    setBubbles((cur) => [...cur, { id, text }].slice(-MAX_STACKED_BUBBLES))
+    setTimeout(() => setBubbles((cur) => cur.filter((b) => b.id !== id)), CHAT_BUBBLE_DURATION)
+    if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
+    const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
+    if (!clean) return
+    window.speechSynthesis.cancel()
+    const utt = new SpeechSynthesisUtterance(clean)
+    utt.lang = 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
+    window.speechSynthesis.speak(utt)
+  }, [config])
 
   return (
-    <group position={config.position}>
+    <group position={config.position}
+      onClick={(e) => { e.stopPropagation(); sayOneLine() }}>
+      {/* Transparent hitbox so click works even before model loads */}
+      <mesh position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.35, 0.35, 1.6, 8]} />
+        <meshBasicMaterial transparent opacity={0.01} depthWrite={false} />
+      </mesh>
       <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <MascotMesh mascot={mascot} />
       </group>
@@ -1881,10 +1871,11 @@ const ALL_NPC_POSITIONS = [
   OLIVER_NPC,
   EINSTEIN_NPC,
   JAFET_NPC,
+  SHOPKEEPER_NPC,
 ].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) }))
 
 // Ids that belong to idle (non-mission) NPCs — used to decide which card to show.
-const IDLE_NPC_IDS = new Set([OLIVER_NPC.id, EINSTEIN_NPC.id, JAFET_NPC.id])
+const IDLE_NPC_IDS = new Set([OLIVER_NPC.id, EINSTEIN_NPC.id, JAFET_NPC.id, SHOPKEEPER_NPC.id])
 
 function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
   const lastId = useRef(null)
@@ -1917,19 +1908,20 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 // Shown when the player right-clicks while standing next to Oliver, Einstein or
 // Jafet. Displays a greeting from the NPC and a few action buttons.
 const IDLE_NPC_CONFIGS = {
-  [OLIVER_NPC.id]:   OLIVER_NPC,
-  [EINSTEIN_NPC.id]: EINSTEIN_NPC,
-  [JAFET_NPC.id]:    JAFET_NPC,
+  [OLIVER_NPC.id]:      OLIVER_NPC,
+  [EINSTEIN_NPC.id]:    EINSTEIN_NPC,
+  [JAFET_NPC.id]:       JAFET_NPC,
+  [SHOPKEEPER_NPC.id]:  SHOPKEEPER_NPC,
 }
 
 function IdleNpcCard({ npcId, onClose, onChat }) {
   const cfg  = IDLE_NPC_CONFIGS[npcId]
+  const navigate = useNavigate()
   const line = useMemo(() => {
     if (!cfg) return ''
     return cfg.lines[Math.floor(Math.random() * cfg.lines.length)]
   }, [cfg])
 
-  // Speak the line when the card first appears
   useEffect(() => {
     if (!cfg || !line || !window.speechSynthesis) return
     const { npcVoice } = useVrSettingsStore.getState()
@@ -1945,28 +1937,61 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
 
   if (!cfg) return null
   return (
-    <div className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 rounded-3xl border border-border bg-surface/98 p-5 shadow-2xl backdrop-blur sm:bottom-20">
-      <button type="button" onClick={onClose}
-        className="absolute right-3 top-3 text-text-muted hover:text-text text-lg leading-none">✕</button>
-      <div className="flex items-center gap-3 mb-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-3xl bg-surface border border-border">
+    <div
+      className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 overflow-hidden rounded-2xl shadow-2xl sm:bottom-20"
+      style={{ background: 'linear-gradient(160deg, #1a0f2e 0%, #0f0818 100%)', border: '1px solid rgba(124,58,237,0.45)' }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2.5"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-3xl"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
           {cfg.emoji}
-        </span>
-        <div>
-          <p className="font-black text-text">{cfg.name}</p>
-          <p className="text-[10px] text-text-muted uppercase tracking-wide">NPC del Campus</p>
         </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-black truncate" style={{ color: '#fcd34d' }}>{cfg.name}</p>
+          <p className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            {cfg.shopAction ? 'Mercader · Campus' : 'NPC del Campus'}
+          </p>
+        </div>
+        <button type="button" onClick={onClose}
+          className="shrink-0 text-lg leading-none transition"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}>
+          ✕
+        </button>
       </div>
-      <p className="mb-4 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-sm italic text-text-muted leading-relaxed">
+
+      {/* Dialogue */}
+      <p className="px-4 py-3 text-sm italic leading-relaxed"
+        style={{ color: '#d4b483', borderBottom: '1px solid rgba(245,158,11,0.18)' }}>
         "{line}"
       </p>
-      <div className="flex gap-2">
-        <button type="button" onClick={() => { onChat(); onClose() }}
-          className="flex-1 rounded-xl bg-primary/10 border border-primary/30 py-2 text-xs font-bold text-primary transition hover:bg-primary/20">
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2 p-3">
+        {cfg.shopAction && (
+          <button
+            type="button"
+            onClick={() => { navigate('/tienda'); onClose() }}
+            className="w-full rounded-xl py-2.5 text-sm font-bold transition active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#1a0a00' }}
+          >
+            🛒 Ver tienda
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => { onChat(); onClose() }}
+          className="w-full rounded-xl py-2 text-xs font-bold transition active:scale-95"
+          style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.4)', color: '#c4b5fd' }}
+        >
           💬 Iniciar chat
         </button>
         <button type="button" onClick={onClose}
-          className="flex-1 rounded-xl bg-background border border-border py-2 text-xs font-bold text-text-muted transition hover:text-text">
+          className="w-full rounded-xl py-1.5 text-xs font-semibold transition"
+          style={{ color: 'rgba(255,255,255,0.3)' }}>
           Cerrar
         </button>
       </div>
@@ -2154,9 +2179,10 @@ function World({
         authorName={authorName}
         playerId={playerId}
       />
-      <IdleNpc config={OLIVER_NPC}   playerPositionRef={playerPositionRef} />
-      <IdleNpc config={EINSTEIN_NPC} playerPositionRef={playerPositionRef} />
-      <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
+      <IdleNpc config={OLIVER_NPC}      playerPositionRef={playerPositionRef} />
+      <IdleNpc config={EINSTEIN_NPC}   playerPositionRef={playerPositionRef} />
+      <IdleNpc config={JAFET_NPC}      playerPositionRef={playerPositionRef} />
+      <IdleNpc config={SHOPKEEPER_NPC} playerPositionRef={playerPositionRef} />
       {ACTIVE_VR_NPCS.map((npc) => (
         <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />
       ))}
@@ -2249,84 +2275,129 @@ function useCameraControls() {
   return { camera, onPointerDown, onPointerMove, onPointerUp, onWheel }
 }
 
-// Bottom-center card shown when the player right-clicks a nearby NPC: their
-// dialogue plus the mission they're handing out, with the right action
-// button depending on accepted/completed/claimed state.
+// WoW-style NPC dialogue card for mission NPCs (right-click / E key).
 function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onClaim, onClose, onBattle }) {
   const npc = getVrNpcById(npcId)
   const mission = npc && getGlobalMissionById(npc.missionId)
   if (!npc) return null
-  // Battle-only NPC (no mission)
-  if (!mission) {
-    if (!npc.battle) return null
-    return (
-      <div className="absolute bottom-24 left-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-border bg-surface/95 p-4 text-sm text-text shadow-xl backdrop-blur sm:bottom-20">
-        <div className="flex items-start justify-between gap-2">
-          <p className="font-bold">{npc.emoji} {npc.name} <span className="ml-1 text-xs text-yellow-400">Nv.{npc.battleStats?.level}</span></p>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text">✕</button>
-        </div>
-        <p className="mt-1 text-text-muted">"{npc.dialogue}"</p>
-        <button type="button" onClick={() => { onBattle(npc); onClose() }}
-          className="mt-3 w-full rounded-lg bg-red-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-400">
-          ⚔️ ¡Desafiar!
-        </button>
-      </div>
-    )
-  }
 
-  const isAccepted = accepted.includes(mission.id)
-  const isClaimed = claimed.includes(mission.id)
-  const isCompleted = mission.check(missionState)
+  const isAccepted  = mission ? accepted.includes(mission.id) : false
+  const isClaimed   = mission ? claimed.includes(mission.id)  : false
+  const isCompleted = mission ? mission.check(missionState)   : false
 
   return (
-    <div className="absolute bottom-24 left-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-border bg-surface/95 p-4 text-sm text-text shadow-xl backdrop-blur sm:bottom-20">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-bold">
-          {npc.emoji} {npc.name}
-        </p>
-        <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
+    <div
+      className="absolute bottom-24 left-1/2 z-30 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 overflow-hidden rounded-2xl shadow-2xl sm:bottom-20"
+      style={{ background: 'linear-gradient(160deg, #1a0f2e 0%, #0c0814 100%)', border: '1px solid rgba(124,58,237,0.45)' }}
+    >
+      {/* NPC portrait row */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-4xl"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+          {npc.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-black truncate" style={{ color: '#fcd34d' }}>{npc.name}</p>
+          {npc.battle && (
+            <span className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+              style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+              ⚔️ Nv.{npc.battleStats?.level}
+            </span>
+          )}
+          {!npc.battle && (
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>NPC Misiones</p>
+          )}
+        </div>
+        <button type="button" onClick={onClose}
+          className="shrink-0 text-lg leading-none transition"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}>
           ✕
         </button>
       </div>
-      <p className="mt-1 text-text-muted">"{npc.dialogue}"</p>
-      <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 py-2">
-        <p className="flex items-center gap-1.5 font-semibold">
-          <span>{mission.icon}</span>
-          <span>{mission.title}</span>
-        </p>
-        <p className="whitespace-nowrap text-xs text-text-muted">🪙 {formatCurrency(mission.reward)}</p>
-      </div>
 
-      <div className="mt-3">
-        {!isAccepted && (
-          <button
-            type="button"
-            onClick={() => onAccept(mission.id)}
-            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
-          >
-            📜 Aceptar misión
-          </button>
-        )}
-        {isAccepted && !isCompleted && (
-          <p className="text-center text-xs font-semibold text-text-muted">🕓 En progreso</p>
-        )}
-        {isAccepted && isCompleted && !isClaimed && (
-          <button
-            type="button"
-            onClick={() => onClaim(mission.id)}
-            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
-          >
-            🎁 Reclamar recompensa
-          </button>
-        )}
-        {isClaimed && <p className="text-center text-xs font-semibold text-text-muted">✅ Completada</p>}
-        {npc.battle && (
+      {/* Dialogue */}
+      <p className="px-4 py-3 text-sm italic leading-relaxed"
+        style={{ color: '#d4b483', borderBottom: '1px solid rgba(245,158,11,0.18)' }}>
+        "{npc.dialogue}"
+      </p>
+
+      {/* Mission section */}
+      {mission && (
+        <div className="p-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest"
+            style={{ color: 'rgba(255,255,255,0.35)' }}>📜 Misiones disponibles</p>
+          <div className="rounded-xl p-3"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            {/* Mission title + icon */}
+            <div className="flex items-start gap-2.5 mb-2">
+              <span className="text-2xl shrink-0">{mission.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white text-sm">{mission.title}</p>
+                {mission.description && (
+                  <p className="text-xs leading-relaxed mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {mission.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* Rewards row */}
+            <div className="flex items-center gap-4 text-xs mt-2 mb-3">
+              <span style={{ color: '#fbbf24' }}>🪙 {formatCurrency(mission.reward)}</span>
+              {mission.xpReward && <span style={{ color: '#a78bfa' }}>✨ {mission.xpReward} XP</span>}
+            </div>
+            {/* Action button */}
+            {!isAccepted && (
+              <button type="button" onClick={() => onAccept(mission.id)}
+                className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
+                📜 Aceptar misión
+              </button>
+            )}
+            {isAccepted && !isCompleted && (
+              <p className="text-center text-xs py-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                🕓 Misión en progreso…
+              </p>
+            )}
+            {isAccepted && isCompleted && !isClaimed && (
+              <button type="button" onClick={() => onClaim(mission.id)}
+                className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                🎁 Reclamar recompensa
+              </button>
+            )}
+            {isClaimed && (
+              <p className="text-center text-xs font-bold py-1" style={{ color: '#4ade80' }}>
+                ✅ Misión completada
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Battle option */}
+      {npc.battle && (
+        <div className="px-4 pb-4">
           <button type="button" onClick={() => { onBattle(npc); onClose() }}
-            className="mt-2 w-full rounded-lg border border-red-500/40 px-4 py-2 text-sm font-bold text-red-400 transition hover:bg-red-500/10">
+            className="w-full rounded-xl py-2 text-sm font-bold transition active:scale-95"
+            style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}>
             ⚔️ ¡Desafiar a duelo!
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Close without mission */}
+      {!mission && !npc.battle && (
+        <div className="px-4 pb-4">
+          <button type="button" onClick={onClose}
+            className="w-full rounded-xl py-2 text-xs font-semibold transition"
+            style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Cerrar
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -3339,6 +3410,25 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const missionState = useMissionState()
   const openPanel = useMascotCompanionStore((s) => s.openPanel)
 
+  // Player TTS — speak every message the local player sends in world chat
+  const worldMessages = useWorldChatStore((s) => s.messages)
+  const lastSpokenMsgRef = useRef(null)
+  useEffect(() => {
+    if (!worldMessages.length) return
+    const last = worldMessages[worldMessages.length - 1]
+    if (!last || last.id === lastSpokenMsgRef.current) return
+    if (last.authorId !== playerId) return
+    if (last.whisperTo) return // don't TTS whispers
+    lastSpokenMsgRef.current = last.id
+    if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
+    const clean = last.text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
+    if (!clean) return
+    window.speechSynthesis.cancel()
+    const utt = new SpeechSynthesisUtterance(clean)
+    utt.lang = 'es-ES'; utt.rate = 1.0; utt.pitch = 1.0
+    window.speechSynthesis.speak(utt)
+  }, [worldMessages, playerId])
+
   useEffect(() => {
     if (nearbyNpcId !== activeNpcId) setActiveNpcId(null)
   }, [nearbyNpcId, activeNpcId])
@@ -3362,7 +3452,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       if (e.key === 'Escape') { setPortalMenuOpen(false); setActiveNpcId(null); return }
       if (e.key.toLowerCase() === 'e') {
         if (nearDailyReward) { setDailyRewardsOpen(true); return }
-        if (nearbyNpcId && IDLE_NPC_IDS.has(nearbyNpcId)) {
+        if (nearbyNpcId) {
           setActiveNpcId((cur) => (cur === nearbyNpcId ? null : nearbyNpcId))
           return
         }
@@ -3489,14 +3579,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           </Physics>
         </Canvas>}
 
-        {/* Idle NPC proximity prompt */}
-        {nearbyNpcId && IDLE_NPC_IDS.has(nearbyNpcId) && !activeNpcId && (
+        {/* NPC proximity prompt — any NPC type */}
+        {nearbyNpcId && !activeNpcId && (
           <button
             type="button"
             onClick={() => setActiveNpcId(nearbyNpcId)}
             className="absolute bottom-40 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-36"
           >
-            {IDLE_NPC_CONFIGS[nearbyNpcId]?.emoji} E o clic para hablar con {IDLE_NPC_CONFIGS[nearbyNpcId]?.name}
+            {(IDLE_NPC_CONFIGS[nearbyNpcId] ?? getVrNpcById(nearbyNpcId))?.emoji}{' '}
+            Clic derecho o E para hablar con{' '}
+            {(IDLE_NPC_CONFIGS[nearbyNpcId] ?? getVrNpcById(nearbyNpcId))?.name}
           </button>
         )}
 
@@ -3548,16 +3640,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
                 onClose={() => setActiveNpcId(null)}
               />
             )
-          ) : (
-            nearbyNpcId && !nearPortal && (
-              <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
-                {IDLE_NPC_IDS.has(nearbyNpcId)
-                  ? `${IDLE_NPC_CONFIGS[nearbyNpcId]?.emoji ?? ''} Clic derecho para hablar con ${IDLE_NPC_CONFIGS[nearbyNpcId]?.name ?? nearbyNpcId}`
-                  : `${getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con ${getVrNpcById(nearbyNpcId)?.name}`
-                }
-              </div>
-            )
-          )
+          ) : null
         )}
 
         {/* Presentation video screen modal */}
