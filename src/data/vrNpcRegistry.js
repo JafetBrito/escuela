@@ -117,6 +117,30 @@ export function getVrNpcById(id) {
   return VR_NPCS.find((npc) => npc.id === id)
 }
 
+// Shopkeeper — always present in the campus plaza.
+// Right-click opens the shop; left-click makes them say a line.
+export const SHOPKEEPER_NPC = {
+  id: 'shopkeeper',
+  emoji: '🛒',
+  name: 'Mercader Korin',
+  mascotId: 9,
+  position: [0, 0, 7],
+  bubbleColor: '#fde68a',
+  dialogue: '¡Bienvenido, viajero! Soy Korin, el mercader del Campus. Tengo objetos únicos para tu aventura. ¿Quieres ver mi mercancía?',
+  lines: [
+    '¡Bienvenido a mi puesto! Tengo los mejores objetos del campus. 🛒',
+    '¿Buscas algo especial? Habla conmigo para ver la tienda.',
+    '¡Hoy tengo ofertas especiales. No te las pierdas!',
+    '¡Las monedas del campus son bienvenidas aquí! 🪙',
+    '¿Ya compraste la cámara? Es el acceso a la galería de fotos. 📷',
+    '¡Con los objetos correctos, tu aventura es mucho más divertida!',
+    'El radio del campus tiene la mejor música del metaverso. 🎵',
+    '¿Sabías que los objetos activos te dan ventajas en tus misiones?',
+  ],
+  shopAction: true,
+  intervalMs: 30000,
+}
+
 // Jafet: the wise mage guardian of Oliver School. Stands near the north road,
 // between the plaza and the Grand Hall, visible as soon as you walk north.
 export const JAFET_NPC = {
