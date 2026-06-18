@@ -117,6 +117,37 @@ export function getVrNpcById(id) {
   return VR_NPCS.find((npc) => npc.id === id)
 }
 
+// Jafet: the wise mage guardian of Oliver School. Stands near the north road,
+// between the plaza and the Grand Hall, visible as soon as you walk north.
+export const JAFET_NPC = {
+  id: 'jafet',
+  emoji: '🧙‍♂️',
+  name: 'Jafet',
+  mascotId: 10,          // mage_elder.glb
+  position: [0, 0, -11], // North-center, near the Grand Hall road
+  bubbleColor: '#c4b5fd',
+  lines: [
+    'Bienvenido al campus. Tu aventura comienza aquí. 🌟',
+    'Cada día que estudias es un hechizo que se graba en tu memoria. ✨',
+    '¿Ya completaste las misiones del día? El conocimiento te espera.',
+    'Domina una habilidad a la vez. La maestría es cuestión de práctica.',
+    'El Campus Virtual tiene muchos secretos. ¡Explora cada rincón!',
+    'La magia y el código tienen algo en común: ambos requieren precisión.',
+    '¿Sabes que puedes cambiar el aspecto de tu mascota en Mi Equipo?',
+    'El árbol del mundo guarda el camino hacia las clases más avanzadas.',
+    'Recuerda: el conocimiento que adquieras aquí es tuyo para siempre.',
+    'No hay atajos en la magia. Tampoco en la programación. 🪄',
+    'Cada error es una lección disfrazada. Aprende de él y sigue adelante.',
+    '¿Ya visitaste el Anfiteatro? Hay experiencias que solo se viven en directo.',
+  ],
+  aiPrompt:
+    'Eres Jafet, el mago guardián del campus virtual de Oliver School. ' +
+    'Eres sabio, enigmático y amigable. Guías a los estudiantes en su aventura de aprendizaje digital. ' +
+    'Hablas en español con un tono misterioso pero accesible. Una sola frase corta con emojis. ' +
+    'Nunca menciones que eres una IA.',
+  intervalMs: 30000,
+}
+
 // Oliver: a friendly NPC who hangs out near the plaza and periodically says
 // one of these lines as a floating speech bubble, Habbo-style — independent
 // of the mission system (rendered even in SIMPLE_MODE).

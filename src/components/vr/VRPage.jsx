@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
+import { Physics, RigidBody, CapsuleCollider, useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
@@ -10,7 +11,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
-import { VR_NPCS, getVrNpcById, OLIVER_NPC, EINSTEIN_NPC } from '../../data/vrNpcRegistry'
+import { VR_NPCS, getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
@@ -37,20 +38,8 @@ import VrHud from './VrHud'
 // Flip this back to `false` to return to /fondo_azteca.glb.
 const USE_TEST_SCENERY = true
 
-// Temporary "stable core" mode: skips most mission NPCs, wandering cats,
-// and the mission UI entirely, leaving just the campus ground, the player,
-// multiplayer presence and world chat. Lets us confirm the core
-// movement/connection/chat loop works on its own while the NPC/mission
-// side is reworked separately. Flip back to `false` once that's done.
-const SIMPLE_MODE = true
-
-// While SIMPLE_MODE is on, only these mission NPCs (and their mission UI)
-// are rendered, so we can test the mission flow end-to-end without loading
-// every NPC's GLTF model.
-const ACTIVE_VR_NPC_IDS = ['mago-misiones']
-const ACTIVE_VR_NPCS = SIMPLE_MODE
-  ? VR_NPCS.filter((npc) => ACTIVE_VR_NPC_IDS.includes(npc.id))
-  : VR_NPCS
+const SIMPLE_MODE = false
+const ACTIVE_VR_NPCS = VR_NPCS
 
 const MOVE_SPEED = 5.5
 const TURN_SPEED = 10
@@ -135,9 +124,8 @@ const GAMEPAD_DEADZONE = 0.18
 const GAMEPAD_LOOK_SPEED = 2.2
 const GAMEPAD_ZOOM_SPEED = 12
 
-// Scale for NPC models (slightly bigger than the player so they stand out)
-// and for the background "wandering cats" that wander the test ground.
-const NPC_SCALE = 0.16
+// Scale for NPC models — increased so they stand out clearly in the campus.
+const NPC_SCALE = 0.26
 const WANDER_CAT_SCALE = 0.1
 const WANDER_CAT_SPEED = 1.1
 
@@ -1742,58 +1730,180 @@ function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   )
 }
 
-// ── Voice chat ────────────────────────────────────────────────────────────────
-// Captures local mic and broadcasts mute/active state. The VoicePanel
-// component renders a mic toggle button and a list of speaking players.
+// ── Voice chat (WebRTC peer-to-peer) ─────────────────────────────────────────
+// Uses Supabase broadcast as a signaling channel to exchange SDP offers/answers
+// and ICE candidates. Audio streams flow directly peer-to-peer via WebRTC —
+// Supabase never carries audio data, only the tiny signaling handshake.
+//
+// Protocol events (all scoped to `event: 'voice:*'`):
+//   voice:ring   – broadcast: "I just activated my mic, please send me an offer"
+//   voice:offer  – unicast {from, to, sdp}
+//   voice:answer – unicast {from, to, sdp}
+//   voice:ice    – unicast {from, to, candidate}
+//   voice:bye    – broadcast: "I deactivated my mic, close your connection to me"
+const STUN = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
+
 function useVoiceChat({ playerId, name, channelRef }) {
   const [micActive, setMicActive] = useState(false)
-  const [speaking, setSpeaking] = useState({}) // playerId -> name
+  const [speaking, setSpeaking] = useState({})
   const [micError, setMicError] = useState(null)
-  const streamRef  = useRef(null)
+  const localStreamRef = useRef(null)
+  const peersRef       = useRef(new Map()) // remoteId -> RTCPeerConnection
+  const audioElsRef    = useRef(new Map()) // remoteId -> HTMLAudioElement
 
-  // Activate / deactivate mic
+  // Build (or reuse) a peer connection to `remoteId`.
+  const getOrCreatePeer = useCallback((remoteId) => {
+    if (peersRef.current.has(remoteId)) return peersRef.current.get(remoteId)
+    const pc = new RTCPeerConnection(STUN)
+
+    // Attach local tracks if mic is already active
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((t) => pc.addTrack(t, localStreamRef.current))
+    }
+
+    // Play remote audio as soon as a track arrives
+    pc.ontrack = (ev) => {
+      const stream = ev.streams[0] || new MediaStream([ev.track])
+      let el = audioElsRef.current.get(remoteId)
+      if (!el) {
+        el = new Audio()
+        el.autoplay = true
+        audioElsRef.current.set(remoteId, el)
+      }
+      el.srcObject = stream
+      el.play().catch(() => {})
+    }
+
+    // Relay ICE candidates through the channel
+    pc.onicecandidate = (ev) => {
+      if (ev.candidate) {
+        channelRef.current?.send({
+          type: 'broadcast', event: 'voice:ice',
+          payload: { from: playerId, to: remoteId, candidate: ev.candidate },
+        })
+      }
+    }
+
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        peersRef.current.delete(remoteId)
+        audioElsRef.current.get(remoteId)?.pause()
+        audioElsRef.current.delete(remoteId)
+        setSpeaking((p) => { const n = { ...p }; delete n[remoteId]; return n })
+      }
+    }
+
+    peersRef.current.set(remoteId, pc)
+    return pc
+  }, [playerId, channelRef])
+
+  const closePeer = useCallback((remoteId) => {
+    peersRef.current.get(remoteId)?.close()
+    peersRef.current.delete(remoteId)
+    const el = audioElsRef.current.get(remoteId)
+    if (el) { el.pause(); el.srcObject = null }
+    audioElsRef.current.delete(remoteId)
+    setSpeaking((p) => { const n = { ...p }; delete n[remoteId]; return n })
+  }, [])
+
+  // Signaling listener
+  useEffect(() => {
+    const ch = channelRef?.current
+    if (!ch) return
+
+    const handleMsg = async (msg) => {
+      const { event, payload } = msg
+      if (!payload) return
+
+      // Someone activated their mic — if we also have mic on, send them an offer
+      if (event === 'voice:ring') {
+        const { from, name: n } = payload
+        if (from === playerId) return
+        setSpeaking((p) => ({ ...p, [from]: n }))
+        if (!localStreamRef.current) return  // we don't have mic, skip offer
+        try {
+          const pc = getOrCreatePeer(from)
+          const offer = await pc.createOffer()
+          await pc.setLocalDescription(offer)
+          ch.send({ type: 'broadcast', event: 'voice:offer', payload: { from: playerId, to: from, sdp: offer, name } })
+        } catch {}
+        return
+      }
+
+      // Only process unicast messages addressed to us
+      if (payload.to && payload.to !== playerId) return
+
+      if (event === 'voice:offer') {
+        const { from, sdp, name: n } = payload
+        setSpeaking((p) => ({ ...p, [from]: n }))
+        try {
+          const pc = getOrCreatePeer(from)
+          await pc.setRemoteDescription(sdp)
+          const answer = await pc.createAnswer()
+          await pc.setLocalDescription(answer)
+          ch.send({ type: 'broadcast', event: 'voice:answer', payload: { from: playerId, to: from, sdp: answer } })
+        } catch {}
+        return
+      }
+
+      if (event === 'voice:answer') {
+        const { from, sdp } = payload
+        try {
+          const pc = peersRef.current.get(from)
+          if (pc && pc.signalingState !== 'stable') await pc.setRemoteDescription(sdp)
+        } catch {}
+        return
+      }
+
+      if (event === 'voice:ice') {
+        const { from, candidate } = payload
+        try {
+          const pc = peersRef.current.get(from)
+          if (pc) await pc.addIceCandidate(candidate)
+        } catch {}
+        return
+      }
+
+      if (event === 'voice:bye') {
+        const { from } = payload
+        closePeer(from)
+      }
+    }
+
+    ;['voice:ring', 'voice:offer', 'voice:answer', 'voice:ice', 'voice:bye'].forEach((ev) => {
+      ch.on('broadcast', { event: ev }, handleMsg)
+    })
+  }, [channelRef, playerId, name, getOrCreatePeer, closePeer])
+
   const toggleMic = useCallback(async () => {
     const ch = channelRef?.current
     if (micActive) {
-      streamRef.current?.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
+      localStreamRef.current?.getTracks().forEach((t) => t.stop())
+      localStreamRef.current = null
+      peersRef.current.forEach((_, id) => closePeer(id))
+      peersRef.current.clear()
       setMicActive(false)
       useVrSettingsStore.getState().setMicEnabled(false)
-      ch?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: false } })
+      ch?.send({ type: 'broadcast', event: 'voice:bye', payload: { from: playerId } })
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        streamRef.current = stream
+        localStreamRef.current = stream
         setMicActive(true)
         setMicError(null)
         useVrSettingsStore.getState().setMicEnabled(true)
-        ch?.send({ type: 'broadcast', event: 'voice', payload: { id: playerId, name, active: true } })
+        // Let everyone online know we have mic — they'll send us offers
+        ch?.send({ type: 'broadcast', event: 'voice:ring', payload: { from: playerId, name } })
       } catch (err) {
         setMicError('Sin acceso al micrófono: ' + (err?.message ?? err))
       }
     }
-  }, [micActive, playerId, name, channelRef])
+  }, [micActive, playerId, name, channelRef, closePeer])
 
-  // Listen for other players' voice state via channel
-  useEffect(() => {
-    const ch = channelRef?.current
-    if (!ch) return
-    const handler = (msg) => {
-      if (msg.event !== 'voice') return
-      const { id, name: n, active } = msg.payload ?? {}
-      if (!id) return
-      setSpeaking((prev) => {
-        if (active) return { ...prev, [id]: n }
-        const next = { ...prev }; delete next[id]; return next
-      })
-    }
-    ch.on('broadcast', { event: 'voice' }, handler)
-  }, [channelRef])
-
-  // Clean up on unmount
   useEffect(() => () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop())
-  }, [])
+    localStreamRef.current?.getTracks().forEach((t) => t.stop())
+    peersRef.current.forEach((_, id) => closePeer(id))
+  }, [closePeer])
 
   return { micActive, speaking, micError, toggleMic }
 }
@@ -2071,7 +2181,9 @@ function Player({
 }) {
   const group = useRef()
   const meshGroup = useRef()
+  const bodyRef = useRef()
   const { camera } = useThree()
+  const { world } = useRapier()
   const cameraTarget = useRef(new THREE.Vector3())
   const walkCycle = useRef(0)
   const velocityY = useRef(0)
@@ -2084,6 +2196,18 @@ function Player({
   const fov = useVrSettingsStore((s) => s.fov)
   const noClip = useVrSettingsStore((s) => s.noClip)
   const avatarId = useGameStore((s) => s.player.avatarId)
+
+  const controller = useMemo(() => {
+    const c = world.createCharacterController(0.02)
+    c.setApplyImpulsesToDynamicBodies(true)
+    c.setMaxSlopeClimbAngle(55 * Math.PI / 180)
+    c.setMinSlopeSlideAngle(30 * Math.PI / 180)
+    c.enableAutostep(0.5, 0.2, true)
+    c.enableSnapToGround(0.4)
+    return c
+  }, [world])
+
+  useEffect(() => () => { try { world.removeCharacterController(controller) } catch {} }, [world, controller])
 
   // Applies the player's FOV setting (used by both first- and third-person
   // modes) whenever it changes, instead of the Canvas's hardcoded default.
@@ -2105,12 +2229,13 @@ function Player({
       playerPositionRef.current = pos
     }
 
-    // Drop the player onto the real scenery surface the first time we run.
-    // If spawnAt is provided (e.g. room mode), teleport x/z first so the
-    // player starts inside the room rather than at world origin.
-    if (!initialized.current) {
-      if (spawnAt) { pos.x = spawnAt[0]; pos.z = spawnAt[2] }
-      pos.y = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
+    // Snap to real ground height on first frame, then Rapier takes over.
+    if (!initialized.current && bodyRef.current) {
+      const sx = spawnAt ? spawnAt[0] : 0
+      const sz = spawnAt ? spawnAt[2] : 0
+      const sy = getGroundY(raycaster, scenery, groundRayHeight, sx, sz)
+      bodyRef.current.setTranslation({ x: sx, y: sy + 0.2, z: sz })
+      group.current.position.set(sx, sy, sz)
       initialized.current = true
     }
 
@@ -2149,61 +2274,44 @@ function Player({
     let stepX = velocityXZ.current.x * delta
     let stepZ = velocityXZ.current.z * delta
 
-    if (stepX !== 0 || stepZ !== 0) {
-      // Chest-height origin for wall checks, at the player's current spot.
-      const chestY = pos.y + PLAYER_HEIGHT * 0.6
-      const originX = new THREE.Vector3(pos.x, chestY, pos.z)
-      const originZ = new THREE.Vector3(pos.x, chestY, pos.z)
-
-      // Resolve each axis separately so the player can slide along walls
-      // instead of getting stuck the moment one axis is blocked.
-      // noClip skips all collision so the player can walk through walls.
-      if (!noClip) {
-        if (stepX !== 0) {
-          const dir = stepX > 0 ? AXIS_X : AXIS_X.clone().negate()
-          if (isBlocked(raycaster, scenery, originX, dir, Math.abs(stepX))) {
-            stepX = 0
-            velocityXZ.current.x = 0
-          }
-        }
-        if (stepZ !== 0) {
-          const dir = stepZ > 0 ? AXIS_Z : AXIS_Z.clone().negate()
-          if (isBlocked(raycaster, scenery, originZ, dir, Math.abs(stepZ))) {
-            stepZ = 0
-            velocityXZ.current.z = 0
-          }
-        }
-      }
-
-      if (stepX !== 0 || stepZ !== 0) {
-        pos.x += stepX
-        pos.z += stepZ
-
-        const targetAngle = Math.atan2(velocityXZ.current.x, velocityXZ.current.z)
-        let angleDiff = targetAngle - group.current.rotation.y
-        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
-        group.current.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
-
-        walkCycle.current += delta * WALK_CYCLE_SPEED
-      } else {
-        walkCycle.current = 0
-      }
+    // Turn + walk-cycle animation (based on input, not on whether movement was resolved)
+    if (isMoving) {
+      const targetAngle = Math.atan2(velocityXZ.current.x, velocityXZ.current.z)
+      let angleDiff = targetAngle - group.current.rotation.y
+      angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
+      group.current.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
+      walkCycle.current += delta * WALK_CYCLE_SPEED
     } else {
       walkCycle.current = 0
     }
 
-    // Jump + gravity, relative to the scenery's real ground height beneath
-    // the player's (possibly new) x/z position.
-    const groundY = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
-    if (pos.y <= groundY) {
-      pos.y = groundY
-      velocityY.current = 0
-      if (keys[' '] || keys['spacebar'] || gamepad?.jump) {
-        velocityY.current = JUMP_SPEED
+    // Movement + collision via Rapier character controller.
+    // noClip bypasses physics so the player can fly through everything.
+    const body = bodyRef.current
+    if (body) {
+      const desired = { x: stepX, y: velocityY.current * delta, z: stepZ }
+      if (noClip) {
+        const t = body.translation()
+        body.setNextKinematicTranslation({ x: t.x + desired.x, y: t.y + desired.y, z: t.z + desired.z })
+        velocityY.current += GRAVITY * delta
+      } else {
+        controller.computeColliderMovement(body.collider(0), desired)
+        const mv = controller.computedMovement()
+        const t = body.translation()
+        pos.x = t.x + mv.x
+        pos.y = t.y + mv.y
+        pos.z = t.z + mv.z
+        body.setNextKinematicTranslation({ x: pos.x, y: pos.y, z: pos.z })
+
+        if (controller.computedGrounded()) {
+          velocityY.current = 0
+          if (keys[' '] || keys['spacebar'] || gamepad?.jump) velocityY.current = JUMP_SPEED
+        } else {
+          velocityY.current += GRAVITY * delta
+        }
       }
+      group.current.position.set(pos.x, pos.y, pos.z)
     }
-    velocityY.current += GRAVITY * delta
-    pos.y += velocityY.current * delta
 
     if (meshGroup.current) {
       const bob = isMoving ? Math.abs(Math.sin(walkCycle.current)) * WALK_BOB_HEIGHT : 0
@@ -2305,16 +2413,24 @@ function Player({
   const bubbles = useChatBubbles(playerId)
 
   return (
-    <group ref={group}>
-      <group ref={meshGroup} scale={PLAYER_SCALE}>
-        <PlayerAvatarBody avatarId={avatarId} />
-        {/* Mascot companion walks slightly to the side */}
-        <group position={[1.2, 0, 0]} scale={0.65}>
-          <MascotMesh mascot={mascot} skin={skin} />
+    <>
+      {/* Physics body — invisible capsule collider that the character controller moves */}
+      <RigidBody ref={bodyRef} type="kinematicPosition" colliders={false}
+        enabledRotations={[false, false, false]}>
+        <CapsuleCollider args={[0.08, 0.10]} position={[0, 0.18, 0]} />
+      </RigidBody>
+      {/* Visual group — camera target + mesh + chat bubbles */}
+      <group ref={group}>
+        <group ref={meshGroup} scale={PLAYER_SCALE}>
+          <PlayerAvatarBody avatarId={avatarId} />
+          {/* Mascot companion walks slightly to the side */}
+          <group position={[1.2, 0, 0]} scale={0.65}>
+            <MascotMesh mascot={mascot} skin={skin} />
+          </group>
         </group>
+        <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(playerId)} />
       </group>
-      <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(playerId)} />
-    </group>
+    </>
   )
 }
 
@@ -2325,7 +2441,9 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 
   return (
     <>
-      <primitive object={model} />
+      <RigidBody type="fixed" colliders="trimesh">
+        <primitive object={model} />
+      </RigidBody>
       <Player
         mascot={mascot}
         skin={skin}
@@ -2342,6 +2460,19 @@ function CityWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
   )
 }
 
+// Falling apple — dynamic physics object that rolls and bounces on the campus.
+// Spawned near maple trees; Oliver can push them with the character controller.
+function FallingApple({ position }) {
+  return (
+    <RigidBody type="dynamic" restitution={0.45} friction={0.9} linearDamping={0.4} position={position}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.14, 8, 8]} />
+        <meshStandardMaterial color="#c0392b" roughness={0.6} />
+      </mesh>
+    </RigidBody>
+  )
+}
+
 // Same as <CityWorld>, but walking on the procedural test ground instead of
 // the real city model (see USE_TEST_SCENERY).
 function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
@@ -2349,7 +2480,17 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 
   return (
     <>
-      <primitive object={model} />
+      {/* Static campus geometry — Rapier trimesh so the player collides with it */}
+      <RigidBody type="fixed" colliders="trimesh">
+        <primitive object={model} />
+      </RigidBody>
+      {/* A handful of apples near the maple trees in the northwest forest */}
+      <FallingApple position={[-7, 3, -6]} />
+      <FallingApple position={[-8.5, 4, -7.5]} />
+      <FallingApple position={[-6, 3.5, -8]} />
+      <FallingApple position={[-9, 2.5, -5]} />
+      <FallingApple position={[7, 3, -6]} />
+      <FallingApple position={[8, 4, -8]} />
       <Player
         mascot={mascot}
         skin={skin}
@@ -2421,23 +2562,35 @@ function VrNpc({ npc, playerPositionRef }) {
   )
 }
 
-// Generic "always-present" idle NPC (independent of SIMPLE_MODE/missions)
-// that stands at `config.position` and periodically says something as a
-// floating speech bubble — used for Oliver, Albert Einstein, and any future
-// "NPC of the week".
-//
-// When the account has a real DeepSeek/Minimax API key configured (see
-// useSettingsStore), each line is generated live via sendNpcMessage using
-// `config.aiPrompt` as the NPC's personality, so it feels "alive". If no key
-// is configured, the API call errors, or `config.aiPrompt` is missing, it
-// falls back to cycling through `config.lines`.
-function IdleNpc({ config }) {
-  const mascot = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
+// How close the player must be to an idle NPC before it starts talking.
+const IDLE_NPC_TALK_RADIUS = 9
+
+// Generic "always-present" idle NPC.  Only speaks when the player is within
+// IDLE_NPC_TALK_RADIUS to avoid NPCs shouting across an empty campus.
+function IdleNpc({ config, playerPositionRef }) {
+  const mascot   = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
+  const npcVec   = useMemo(() => new THREE.Vector3(...config.position), [config.position])
   const [bubbles, setBubbles] = useState([])
+  const [near, setNear]       = useState(false)
   const lineIndexRef = useRef(0)
-  const bubbleIdRef = useRef(1)
+  const bubbleIdRef  = useRef(1)
+  const intervalRef  = useRef(null)
+
+  // Proximity gate — only start/stop the speech interval when crossing the radius
+  useFrame(() => {
+    const pos = playerPositionRef?.current
+    if (!pos) return
+    const shouldBeNear = pos.distanceTo(npcVec) <= IDLE_NPC_TALK_RADIUS
+    if (shouldBeNear !== near) setNear(shouldBeNear)
+  })
 
   useEffect(() => {
+    if (!near) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+      return
+    }
+
     let cancelled = false
 
     const nextLine = async () => {
@@ -2449,13 +2602,10 @@ function IdleNpc({ config }) {
           try {
             const reply = await sendNpcMessage({
               npcPrompt: config.aiPrompt,
-              content:
-                'Comenta algo breve, espontáneo y en personaje para los estudiantes que pasan cerca (una sola frase corta).',
+              content: 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
             })
             if (reply) return reply.trim()
-          } catch {
-            // Fall back to a static line below on any API error.
-          }
+          } catch { /* fall through */ }
         }
       }
       const text = config.lines[lineIndexRef.current % config.lines.length]
@@ -2464,16 +2614,12 @@ function IdleNpc({ config }) {
     }
 
     const speakText = (text) => {
-      if (!useVrSettingsStore.getState().npcVoice) return
-      if (!window.speechSynthesis) return
-      // Strip emoji for cleaner TTS
+      if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
       const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
       if (!clean) return
       window.speechSynthesis.cancel()
       const utt = new SpeechSynthesisUtterance(clean)
-      utt.lang = 'es-ES'
-      utt.rate = 0.95
-      utt.pitch = 1.1
+      utt.lang = 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
       window.speechSynthesis.speak(utt)
     }
 
@@ -2481,34 +2627,33 @@ function IdleNpc({ config }) {
       const text = await nextLine()
       if (cancelled) return
       const id = bubbleIdRef.current++
-      setBubbles((current) => [...current, { id, text }].slice(-MAX_STACKED_BUBBLES))
+      setBubbles((cur) => [...cur, { id, text }].slice(-MAX_STACKED_BUBBLES))
       speakText(text)
-      setTimeout(() => {
-        if (cancelled) return
-        setBubbles((current) => current.filter((b) => b.id !== id))
-      }, CHAT_BUBBLE_DURATION)
+      setTimeout(() => { if (!cancelled) setBubbles((cur) => cur.filter((b) => b.id !== id)) }, CHAT_BUBBLE_DURATION)
     }
 
     tick()
-    const interval = setInterval(tick, config.intervalMs)
+    intervalRef.current = setInterval(tick, config.intervalMs)
+
     return () => {
       cancelled = true
-      clearInterval(interval)
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
       window.speechSynthesis?.cancel()
     }
-  }, [config])
+  }, [near, config])
 
   return (
     <group position={config.position}>
       <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <MascotMesh mascot={mascot} />
       </group>
-      <Html position={[0, PLAYER_HEIGHT + 0.5, 0]} center distanceFactor={10}>
+      <Html position={[0, NPC_SCALE * 2 + 0.6, 0]} center distanceFactor={10}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
           {config.emoji} {config.name}
         </div>
       </Html>
-      <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={config.bubbleColor} />
+      <BubbleStack bubbles={bubbles} baseY={NPC_SCALE * 2 + 1.0} color={config.bubbleColor} />
     </group>
   )
 }
@@ -2751,14 +2896,20 @@ function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 }
 
 // Watches the distance from the player to every NPC and reports the closest
-// one within INTERACT_RADIUS (or null) via `onNearbyChange`, so VRPage can
-// show its mission card outside the canvas.
+// Tracks the nearest NPC (mission NPCs + idle NPCs: Oliver, Einstein, Jafet).
+// Reports the nearest one within INTERACT_RADIUS via onNearbyChange.
+const ALL_NPC_POSITIONS = [
+  ...ACTIVE_VR_NPCS,
+  OLIVER_NPC,
+  EINSTEIN_NPC,
+  JAFET_NPC,
+].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) }))
+
+// Ids that belong to idle (non-mission) NPCs — used to decide which card to show.
+const IDLE_NPC_IDS = new Set([OLIVER_NPC.id, EINSTEIN_NPC.id, JAFET_NPC.id])
+
 function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
   const lastId = useRef(null)
-  const npcPositions = useMemo(
-    () => ACTIVE_VR_NPCS.map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
-    [],
-  )
 
   useFrame(() => {
     const pos = playerPositionRef.current
@@ -2766,7 +2917,7 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 
     let nearestId = null
     let nearestDist = Infinity
-    for (const { id, vec } of npcPositions) {
+    for (const { id, vec } of ALL_NPC_POSITIONS) {
       const dist = pos.distanceTo(vec)
       if (dist < nearestDist) {
         nearestDist = dist
@@ -2784,6 +2935,146 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
   return null
 }
 
+// ── Idle NPC right-click card ─────────────────────────────────────────────────
+// Shown when the player right-clicks while standing next to Oliver, Einstein or
+// Jafet. Displays a greeting from the NPC and a few action buttons.
+const IDLE_NPC_CONFIGS = {
+  [OLIVER_NPC.id]:   OLIVER_NPC,
+  [EINSTEIN_NPC.id]: EINSTEIN_NPC,
+  [JAFET_NPC.id]:    JAFET_NPC,
+}
+
+function IdleNpcCard({ npcId, onClose, onChat }) {
+  const cfg  = IDLE_NPC_CONFIGS[npcId]
+  const line = useMemo(() => {
+    if (!cfg) return ''
+    return cfg.lines[Math.floor(Math.random() * cfg.lines.length)]
+  }, [cfg])
+  if (!cfg) return null
+  return (
+    <div className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 rounded-3xl border border-border bg-surface/98 p-5 shadow-2xl backdrop-blur sm:bottom-20">
+      <button type="button" onClick={onClose}
+        className="absolute right-3 top-3 text-text-muted hover:text-text text-lg leading-none">✕</button>
+      <div className="flex items-center gap-3 mb-3">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-3xl bg-surface border border-border">
+          {cfg.emoji}
+        </span>
+        <div>
+          <p className="font-black text-text">{cfg.name}</p>
+          <p className="text-[10px] text-text-muted uppercase tracking-wide">NPC del Campus</p>
+        </div>
+      </div>
+      <p className="mb-4 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-sm italic text-text-muted leading-relaxed">
+        "{line}"
+      </p>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { onChat(); onClose() }}
+          className="flex-1 rounded-xl bg-primary/10 border border-primary/30 py-2 text-xs font-bold text-primary transition hover:bg-primary/20">
+          💬 Iniciar chat
+        </button>
+        <button type="button" onClick={onClose}
+          className="flex-1 rounded-xl bg-background border border-border py-2 text-xs font-bold text-text-muted transition hover:text-text">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Giant presentation screen ─────────────────────────────────────────────────
+// A large billboard near the Grand Hall north road. Right-clicking it (or
+// clicking the on-screen prompt) opens a full-screen video modal.
+// The PRESENTATION_VIDEO_URL can be changed in one place below.
+const PRESENTATION_VIDEO_URL = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1'
+
+function CampusVideoScreen({ onOpen }) {
+  const meshRef  = useRef()
+  const glowRef  = useRef()
+
+  useFrame((_, delta) => {
+    if (glowRef.current) {
+      glowRef.current.material.emissiveIntensity =
+        0.35 + Math.abs(Math.sin(Date.now() * 0.0015)) * 0.2
+    }
+  })
+
+  return (
+    // Positioned north of the plaza, in front of the Grand Hall avenue tree-line
+    <group position={[0, 0, -28]} rotation={[0, 0, 0]}>
+      {/* Frame posts */}
+      {[-7.2, 7.2].map((x) => (
+        <mesh key={x} position={[x, 4.5, 0]}>
+          <cylinderGeometry args={[0.28, 0.35, 9, 8]} />
+          <meshStandardMaterial color="#2a2830" />
+        </mesh>
+      ))}
+      {/* Crossbar */}
+      <mesh position={[0, 9.2, 0]}>
+        <boxGeometry args={[15.2, 0.45, 0.45]} />
+        <meshStandardMaterial color="#2a2830" />
+      </mesh>
+      {/* Screen backing */}
+      <mesh position={[0, 5.5, -0.12]}>
+        <boxGeometry args={[14.2, 8.2, 0.18]} />
+        <meshStandardMaterial color="#0a0a14" />
+      </mesh>
+      {/* Glowing screen face */}
+      <mesh ref={glowRef} position={[0, 5.5, 0]}>
+        <planeGeometry args={[13.5, 7.5]} />
+        <meshStandardMaterial
+          color="#1a1a3a"
+          emissive="#2244aa"
+          emissiveIntensity={0.45}
+        />
+      </mesh>
+      {/* Clickable Html overlay */}
+      <Html position={[0, 5.5, 0.02]} center distanceFactor={18}>
+        <div
+          className="flex flex-col items-center justify-center gap-2 cursor-pointer"
+          style={{ width: '340px', height: '190px' }}
+          onClick={onOpen}
+          onContextMenu={(e) => { e.preventDefault(); onOpen() }}
+        >
+          <span className="text-5xl">▶️</span>
+          <p className="text-white font-black text-sm drop-shadow">Video de presentación</p>
+          <p className="text-white/60 text-[10px]">Clic para ver</p>
+        </div>
+      </Html>
+      {/* Label */}
+      <Html position={[0, 10.0, 0]} center distanceFactor={18}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          🎬 Pantalla del Campus
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+// Full-screen video modal opened from the campus screen or its right-click menu.
+function VideoScreenModal({ onClose }) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+      onClick={onClose}>
+      <div className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}>
+        <button type="button" onClick={onClose}
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white text-lg hover:bg-black/80">
+          ✕
+        </button>
+        <div className="aspect-video w-full">
+          <iframe
+            src={PRESENTATION_VIDEO_URL}
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title="Video de presentación"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
 // the player, NPCs, remote players, and the portal to the player's Room.
 // When roomMode/anfiteatroMode/worldTreeMode=true, renders the respective world.
@@ -2798,6 +3089,7 @@ function World({
   onNearbyNpcChange,
   onNearPortalChange,
   onNearClassNodeChange,
+  onOpenVideoScreen,
   authorName,
   playerId,
   onSelectPlayer,
@@ -2868,13 +3160,14 @@ function World({
         authorName={authorName}
         playerId={playerId}
       />
-      <IdleNpc config={OLIVER_NPC} />
-      <IdleNpc config={EINSTEIN_NPC} />
+      <IdleNpc config={OLIVER_NPC}   playerPositionRef={playerPositionRef} />
+      <IdleNpc config={EINSTEIN_NPC} playerPositionRef={playerPositionRef} />
+      <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
       {ACTIVE_VR_NPCS.map((npc) => (
         <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />
       ))}
-      {!SIMPLE_MODE &&
-        WANDER_CAT_PATHS.map((path, i) => <WanderingCat key={i} path={path} />)}
+      {WANDER_CAT_PATHS.map((path, i) => <WanderingCat key={i} path={path} />)}
+      <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <Portal
         position={ROOM_PORTAL_POSITION}
         color="#a78bfa"
@@ -4027,6 +4320,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     enabled: !isPrivateWorld,
   })
   const [vrReady, setVrReady] = useState(false)
+  const [videoScreenOpen, setVideoScreenOpen] = useState(false)
   const [nearClassNodeId, setNearClassNodeId] = useState(null)
   const [classSelectionStep, setClassSelectionStep] = useState('player') // 'player' | 'oliver' | 'done'
   const selectPlayerClass = useGameStore((s) => s.selectPlayerClass)
@@ -4105,6 +4399,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     setActiveNpcId((current) => (current === nearbyNpcId ? null : nearbyNpcId))
   }
 
+  const openIdleNpcChat = () => {
+    setChatPrefill({ text: '', key: Date.now() })
+    setChatOpen(true)
+  }
+
   // Lighting themes per world mode
   const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#87ceeb'
   const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#c8e8f4', 50, 165]
@@ -4124,7 +4423,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         onWheel={onWheel}
         onContextMenu={handleContextMenu}
       >
-        <Canvas
+        {vrReady && <Canvas
           camera={{ position: [0, 1.6, 3.4], fov: 58 }}
           dpr={[1, 1.5]}
           gl={{ powerPreference: 'default', antialias: true }}
@@ -4154,6 +4453,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           {worldTreeMode && <pointLight position={[0, 22, 0]} intensity={3.0} color="#44ffaa" distance={80} />}
           {worldTreeMode && <pointLight position={[0, 3, 18]} intensity={2.0} color="#aaffee" distance={35} />}
           {worldTreeMode && <directionalLight position={[0, 8, 20]} intensity={0.8} color="#ccffdd" />}
+          <Physics gravity={[0, -20, 0]}>
           <Suspense fallback={null}>
             <World
               mascot={mascot}
@@ -4166,6 +4466,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               onNearbyNpcChange={setNearbyNpcId}
               onNearPortalChange={setNearPortal}
               onNearClassNodeChange={setNearClassNodeId}
+              onOpenVideoScreen={() => setVideoScreenOpen(true)}
               authorName={chatAuthor}
               playerId={playerId}
               onSelectPlayer={setSelectedPlayer}
@@ -4174,7 +4475,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               anfiteatroMode={anfiteatroMode}
             />
           </Suspense>
-        </Canvas>
+          </Physics>
+        </Canvas>}
 
         {/* Portal prompt — clickable button when near a portal */}
         {nearPortal && !portalMenuOpen && (
@@ -4195,24 +4497,38 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* NPC mission card / nearby-NPC hint (campus only) */}
         {!isPrivateWorld && (
           activeNpcId ? (
-            <NpcMissionCard
-              npcId={activeNpcId}
-              onBattle={(npc) => startBattle(npc)}
-              accepted={accepted}
-              claimed={claimed}
-              missionState={missionState}
-              onAccept={acceptMission}
-              onClaim={claimReward}
-              onClose={() => setActiveNpcId(null)}
-            />
+            IDLE_NPC_IDS.has(activeNpcId) ? (
+              <IdleNpcCard
+                npcId={activeNpcId}
+                onClose={() => setActiveNpcId(null)}
+                onChat={openIdleNpcChat}
+              />
+            ) : (
+              <NpcMissionCard
+                npcId={activeNpcId}
+                onBattle={(npc) => startBattle(npc)}
+                accepted={accepted}
+                claimed={claimed}
+                missionState={missionState}
+                onAccept={acceptMission}
+                onClaim={claimReward}
+                onClose={() => setActiveNpcId(null)}
+              />
+            )
           ) : (
             nearbyNpcId && !nearPortal && (
               <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-surface/90 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur sm:bottom-20">
-                {getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con {getVrNpcById(nearbyNpcId)?.name}
+                {IDLE_NPC_IDS.has(nearbyNpcId)
+                  ? `${IDLE_NPC_CONFIGS[nearbyNpcId]?.emoji ?? ''} Clic derecho para hablar con ${IDLE_NPC_CONFIGS[nearbyNpcId]?.name ?? nearbyNpcId}`
+                  : `${getVrNpcById(nearbyNpcId)?.emoji} Clic derecho para hablar con ${getVrNpcById(nearbyNpcId)?.name}`
+                }
               </div>
             )
           )
         )}
+
+        {/* Presentation video screen modal */}
+        {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
 
         {!isPrivateWorld && (
           <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
