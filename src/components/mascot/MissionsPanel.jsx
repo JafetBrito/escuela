@@ -78,6 +78,33 @@ function GlobalMissionsSection() {
   )
 }
 
+function CodeMissionInput({ expectedCode, onSuccess }) {
+  const [val, setVal] = useState('')
+  const [err, setErr] = useState(false)
+  const submit = () => {
+    if (val.trim().toUpperCase() === expectedCode) { onSuccess() }
+    else { setErr(true); setTimeout(() => setErr(false), 1500) }
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        value={val}
+        onChange={e => { setVal(e.target.value); setErr(false) }}
+        onKeyDown={e => e.key === 'Enter' && submit()}
+        placeholder="Código secreto…"
+        className={`rounded-lg border px-2 py-1 text-xs outline-none w-36 ${err ? 'border-red-400 bg-red-50' : 'border-border bg-background text-text'}`}
+      />
+      <button
+        onClick={submit}
+        className="rounded-lg border border-primary px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+      >
+        Ingresar 🔑
+      </button>
+      {err && <span className="text-xs text-red-500">Código incorrecto</span>}
+    </div>
+  )
+}
+
 export default function MissionsPanel({ courseId, module, className = '' }) {
   if (!module) {
     return (
@@ -178,12 +205,19 @@ function ModuleMissionsPanel({ courseId, module, className = '' }) {
                   {mission.type === 'fun' && !isDone && (
                     <div className="mt-2 flex flex-col gap-2">
                       <p className="text-xs text-text-muted">{mission.hint}</p>
-                      <button
-                        onClick={() => completeMission(courseId, module.id, mission.id)}
-                        className="self-start rounded-lg border border-primary px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
-                      >
-                        Ya la cumplí ✅
-                      </button>
+                      {mission.codeRequired ? (
+                        <CodeMissionInput
+                          expectedCode={mission.codeRequired}
+                          onSuccess={() => completeMission(courseId, module.id, mission.id)}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => completeMission(courseId, module.id, mission.id)}
+                          className="self-start rounded-lg border border-primary px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                        >
+                          Ya la cumplí ✅
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

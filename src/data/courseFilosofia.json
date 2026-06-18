@@ -49,15 +49,18 @@
           "solution": ""
         }
       ],
+      "noItem": true,
       "missions": {
         "chat": {
           "label": "Reflexiona con tu mascota: ¿qué es la filosofía para ti?",
           "hint": "Abre el Chat y cuéntale a tu mascota qué significa la filosofía en tu propia vida."
-        },
-        "item": {
-          "label": "Activa un objeto de tu inventario para estudiar con más comodidad"
         }
       },
+      "resources": [
+        { "label": "¿Qué es la filosofía? — Wikipedia en español", "url": "https://es.wikipedia.org/wiki/Filosof%C3%ADa" },
+        { "label": "Historia de la filosofía occidental — línea del tiempo", "url": "https://es.wikipedia.org/wiki/Historia_de_la_filosof%C3%ADa" },
+        { "label": "Las grandes preguntas filosóficas — Stanford Encyclopedia", "url": "https://plato.stanford.edu/entries/kant/" }
+      ],
       "funMissions": [
         {
           "id": "ver-video-filo-1",
@@ -84,22 +87,25 @@
           "solution": ""
         }
       ],
+      "noChat": true,
       "missions": {
-        "chat": {
-          "label": "Reflexiona con tu mascota sobre la alegoría de la cueva",
-          "hint": "Después de vivir la experiencia VR, comparte en el Chat qué sombras identificas en tu propia vida."
-        },
         "item": {
-          "label": "Activa un objeto de tu inventario durante la experiencia"
+          "label": "Activa un objeto de tu inventario antes de entrar al mundo VR"
         }
       },
+      "resources": [
+        { "label": "La Alegoría de la Caverna — Wikipedia en español", "url": "https://es.wikipedia.org/wiki/Aleg%C3%B3rica_de_la_caverna" },
+        { "label": "Platón: La República (Libro VII, texto completo)", "url": "https://es.wikipedia.org/wiki/La_Rep%C3%BAblica_(Plat%C3%B3n)" },
+        { "label": "Epistemología: ¿cómo conocemos el mundo?", "url": "https://es.wikipedia.org/wiki/Epistemolog%C3%ADa" }
+      ],
       "funMissions": [
         {
           "id": "entrar-vr-cueva",
           "icon": "🏛️",
           "title": "Entrar al mundo VR de la Cueva de Platón",
-          "prompt": "Haz clic en 'Entrar al Mundo VR', completa la experiencia y regresa. Luego haz clic en 'Ya la cumplí'.",
-          "reward": 2000
+          "prompt": "Completa la experiencia VR de la Cueva de Platón. Al terminar, recibirás un código secreto. Introdúcelo aquí para completar la misión.",
+          "reward": 2000,
+          "codeRequired": "CUEVA380AC"
         }
       ]
     },

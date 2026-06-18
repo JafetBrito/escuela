@@ -10,6 +10,9 @@ import * as THREE from 'three'
 import { useNavigate } from 'react-router-dom'
 import { getMascotById } from '../../data/mascotRegistry'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import MascotCompanion from '../mascot/MascotCompanion'
+import courseFilosofia from '../../data/courseFilosofia.json'
 import { sendNpcMessage } from '../../services/chat/npcTransport'
 import { useSettingsStore, getModelProvider } from '../../stores/useSettingsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
@@ -19,6 +22,9 @@ import {
   WORLD_CINEMATIC, CAVE_MISSIONS, STAGE_SKILLS, NPC_CONFIGS,
   JAFET_OUTSIDE_PROMPT, CHECKPOINT_KEY, CAVE_SOUVENIR_ITEM,
 } from './cuevaData'
+
+const FILO_MODULE_2 = courseFilosofia.modules.find(m => m.id === 2)
+const VR_CODE = 'CUEVA380AC'
 
 // ── Assign GLB models to prisoners ────────────────────────────────────────────
 const PRISONER_MODELS = {
@@ -337,7 +343,7 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, playerMascot, o
         ))}
         {/* Player's mascot as 4th prisoner */}
         {playerMascot && (
-          <GlbPrisonerNpc cfg={{ id:'mascota', position:[2.5,0,1], color:'#a78bfa' }}
+          <GlbPrisonerNpc cfg={{ id:'mascota', position:[-2,0,1], color:'#a78bfa' }}
             freed={freedIds.includes('mascota')} canFree={canFree}
             modelPath={playerMascot.modelPath ?? '/orange_cat.glb'} modelRotY={playerMascot.modelRotationY ?? 0}
             onTalk={onTalkNpc} onFree={onFreeNpc} isSpecial/>
@@ -345,17 +351,17 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, playerMascot, o
         {stage >= 2 && <EscepticoNpcMesh stage={stage} onTalk={onTalkNpc}/>}
         <CustodioMesh cfg={NPC_CONFIGS.custodio_mayor} onClick={onTalkNpc}/>
         <CustodioMesh cfg={NPC_CONFIGS.custodio_joven} onClick={onTalkNpc}/>
-        <CaveExitPortal visible={stage >= 3} onEnter={onExitCave}/>
+        <CaveExitPortal visible={stage >= 4} onEnter={onExitCave}/>
       </>)}
     </>
   )
 }
 
-// WASD + pointer lock first-person controller
-function FirstPersonController({ lockedRef, teleportRef, onMove }) {
+// WASD + pointer-lock + touch first-person controller
+function FirstPersonController({ lockedRef, teleportRef, touchMoveRef, touchYawRef, onMove }) {
   const { camera, gl } = useThree()
   const keys = useRef({})
-  const yaw = useRef(0) // 0 = facing -Z (into cave)
+  const yaw = useRef(0)
   const pointerLocked = useRef(false)
   const initialized = useRef(false)
 
@@ -378,7 +384,13 @@ function FirstPersonController({ lockedRef, teleportRef, onMove }) {
   useEffect(() => {
     const onChange = () => { pointerLocked.current = document.pointerLockElement === gl.domElement }
     const onM = e => { if (!pointerLocked.current || lockedRef.current) return; yaw.current -= e.movementX * 0.0022 }
-    const onClick = () => { if (!lockedRef.current && document.pointerLockElement !== gl.domElement) gl.domElement.requestPointerLock() }
+    // Only lock pointer on canvas click when no NPC dialogue is open and user clicked the canvas itself
+    const onClick = e => {
+      if (lockedRef.current) return
+      if (document.pointerLockElement !== gl.domElement && e.target === gl.domElement) {
+        gl.domElement.requestPointerLock()
+      }
+    }
     document.addEventListener('pointerlockchange', onChange)
     document.addEventListener('mousemove', onM)
     gl.domElement.addEventListener('click', onClick)
@@ -386,13 +398,17 @@ function FirstPersonController({ lockedRef, teleportRef, onMove }) {
   }, [gl, lockedRef])
 
   useFrame((_, delta) => {
-    // Handle teleport request
     if (teleportRef.current) {
       camera.position.set(...teleportRef.current)
       yaw.current = 0
       teleportRef.current = null
     }
     if (lockedRef.current) return
+    // Apply touch yaw delta
+    if (touchYawRef?.current) {
+      yaw.current -= touchYawRef.current
+      touchYawRef.current = 0
+    }
     const speed = 5.5 * delta
     const euler = new THREE.Euler(0, yaw.current, 0, 'YXZ')
     const fwd   = new THREE.Vector3(0, 0, -1).applyEuler(euler)
@@ -404,6 +420,12 @@ function FirstPersonController({ lockedRef, teleportRef, onMove }) {
     if (keys.current['KeyD'])                              p.addScaledVector(right, speed)
     if (keys.current['ArrowLeft'])  yaw.current += 1.8 * delta
     if (keys.current['ArrowRight']) yaw.current -= 1.8 * delta
+    // Touch joystick movement
+    const tm = touchMoveRef?.current
+    if (tm && (tm.x !== 0 || tm.z !== 0)) {
+      p.addScaledVector(fwd, -tm.z * speed * 1.5)
+      p.addScaledVector(right, tm.x * speed * 1.5)
+    }
     p.x = Math.max(-7, Math.min(7, p.x))
     p.z = Math.max(-14, Math.min(25, p.z))
     p.y = 2.0
@@ -448,7 +470,7 @@ function ProximityDetector({ stage, onNearby }) {
   const { camera } = useThree()
   const prevRef = useRef(null)
   const ALL_NPC_IDS = ['creyente','sonador','miedoso','mascota','custodio_mayor','custodio_joven', ...(stage >= 2 ? ['esceptico'] : []), ...(stage >= 4 ? ['jafet'] : [])]
-  const POSITIONS = { creyente:[-3.5,0,-2], sonador:[0,0,-3], miedoso:[3.5,0,-2], mascota:[2.5,0,1], custodio_mayor:[-2,0,-11], custodio_joven:[2,0,-11], esceptico:[1.5,0,-1], jafet:[0,2,20] }
+  const POSITIONS = { creyente:[-5.5,0,-2], sonador:[0,0,-5], miedoso:[5.5,0,-2], mascota:[-2,0,1], custodio_mayor:[-3,0,-11], custodio_joven:[3,0,-11], esceptico:[3,0,1], jafet:[0,2,20] }
 
   useFrame(() => {
     let closest = null; let closestDist = 3.8
@@ -467,13 +489,20 @@ function ProximityDetector({ stage, onNearby }) {
 // UI COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
+const FILO_EMOJIS = ['🏛️','📜','🧠','💡','🔍','🦉','⚗️','🎭','⚖️','🌍','🔥','⛓️','✨','🌙','🤔','🗝️','🌀','🪬','🐚','🕯️']
+
 function StartScreen({ onStart, onBack }) {
   return (
-    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6" style={{ background:'linear-gradient(to bottom,rgba(10,5,3,0.92),rgba(10,5,3,0.98))' }}>
-      <div className="flex max-w-lg flex-col items-center gap-8 text-center">
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6 overflow-hidden" style={{ background:'linear-gradient(to bottom,rgba(10,5,3,0.92),rgba(10,5,3,0.98))' }}>
+      {/* Floating philosophy emojis */}
+      <style>{`@keyframes floatPhi{0%{transform:translateY(0) rotate(-5deg);opacity:.18}50%{opacity:.28}100%{transform:translateY(-100px) rotate(8deg);opacity:0}}`}</style>
+      {FILO_EMOJIS.map((e,i) => (
+        <div key={i} className="pointer-events-none absolute select-none text-2xl" style={{ left:`${(i*4.8+3)%93}%`, bottom:`${(i*7.3+5)%70}%`, animation:`floatPhi ${4+(i%4)}s ${(i*0.55)%5}s linear infinite` }}>{e}</div>
+      ))}
+      <div className="relative flex max-w-lg flex-col items-center gap-8 text-center z-10">
         <div><p className="mb-3 text-7xl">🏛️</p><h1 className="text-4xl font-black tracking-tight" style={{ color:'#eab308', textShadow:'0 0 50px rgba(234,179,8,0.35)' }}>La Cueva de Platón</h1><p className="mt-2 text-base" style={{ color:'rgba(255,255,255,0.4)' }}>Experiencia filosófica interactiva · ~20 min</p></div>
         <div className="rounded-2xl px-5 py-4 text-left w-full" style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)' }}>
-          <p className="text-sm leading-relaxed" style={{ color:'rgba(255,255,255,0.6)' }}>Vivirás la Alegoría de la Cueva de Platón desde adentro. Muévete con <strong style={{color:'rgba(255,255,255,0.8)'}}>WASD</strong> + <strong style={{color:'rgba(255,255,255,0.8)'}}>ratón</strong>, habla con los prisioneros y tu mascota también está atrapada — tendrán que liberarse juntos.</p>
+          <p className="text-sm leading-relaxed" style={{ color:'rgba(255,255,255,0.6)' }}>Vivirás la Alegoría de la Cueva de Platón desde adentro. <strong style={{color:'rgba(255,255,255,0.8)'}}>WASD + ratón</strong> en escritorio · <strong style={{color:'rgba(255,255,255,0.8)'}}>joystick táctil</strong> en móvil. Habla con los prisioneros y libera a tu mascota — tendrán que ayudarse el uno al otro.</p>
           <p className="mt-2 text-xs" style={{ color:'rgba(255,255,255,0.22)' }}>🎧 Activa el volumen · Progreso guardado automáticamente</p>
         </div>
         <button type="button" onClick={onStart} className="rounded-2xl px-14 py-4 text-xl font-black transition-all hover:scale-105 active:scale-95" style={{ background:'linear-gradient(135deg,#eab308,#f97316)', color:'#0a0600', boxShadow:'0 0 50px rgba(234,179,8,0.35)' }}>🏛️ Iniciar Misión</button>
@@ -486,21 +515,27 @@ function StartScreen({ onStart, onBack }) {
 function IntroCinematicOverlay({ onDone }) {
   const [idx, setIdx] = useState(0)
   const [vis, setVis] = useState(false)
+  const [ready, setReady] = useState(false) // user can click next once TTS started
   const skipRef = useRef(false)
   const LINES = DIALOGUES.introLines
 
-  useEffect(() => { setVis(false); const t = setTimeout(() => setVis(true), 100); return () => clearTimeout(t) }, [idx])
+  useEffect(() => { setVis(false); setReady(false); const t = setTimeout(() => setVis(true), 100); return () => clearTimeout(t) }, [idx])
 
+  // Start TTS — no auto-advance; user clicks Siguiente
   useEffect(() => {
     if (skipRef.current) return
-    const cancel = speakLine(LINES[idx], () => {
-      if (skipRef.current) return
-      if (idx >= LINES.length - 1) setTimeout(onDone, 900)
-      else setTimeout(() => { if (!skipRef.current) setIdx(p => p + 1) }, 350)
-    })
-    return () => { skipRef.current = false; cancel() }
+    const cancel = speakLine(LINES[idx], () => { if (!skipRef.current) setReady(true) })
+    // Allow next button after 1.5s regardless (safety for no-audio)
+    const t = setTimeout(() => setReady(true), 1500)
+    return () => { cancel(); clearTimeout(t) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx])
+
+  const goNext = () => {
+    window.speechSynthesis?.cancel()
+    if (idx >= LINES.length - 1) { skipRef.current = true; onDone() }
+    else { setIdx(p => p + 1) }
+  }
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center" style={{ background:'rgba(4,2,8,0.97)' }}>
@@ -512,10 +547,12 @@ function IntroCinematicOverlay({ onDone }) {
         <p className="text-xl font-light leading-relaxed sm:text-2xl" style={{ color:'rgba(255,255,255,0.92)', fontStyle:'italic', lineHeight:1.75 }}>&ldquo;{LINES[idx]}&rdquo;</p>
         <p className="mt-6 text-[11px] tracking-widest" style={{ color:'rgba(255,255,255,0.15)' }}>{idx+1} / {LINES.length}</p>
       </div>
-      <div className="absolute bottom-8 flex items-center gap-3 rounded-2xl px-5 py-3" style={{ background:'rgba(20,10,35,0.9)', border:'1px solid rgba(234,179,8,0.22)' }}>
+      <div className="absolute bottom-8 flex items-center gap-4 rounded-2xl px-5 py-3" style={{ background:'rgba(20,10,35,0.9)', border:'1px solid rgba(234,179,8,0.22)' }}>
         <div className="flex h-10 w-10 items-center justify-center rounded-full text-xl" style={{ background:'rgba(234,179,8,0.12)', border:'1px solid rgba(234,179,8,0.35)' }}>🎓</div>
         <div><p className="text-xs font-black" style={{ color:'#fcd34d' }}>Jafet Brito</p><p className="text-[10px]" style={{ color:'rgba(255,255,255,0.3)' }}>Filósofo y Guía</p></div>
-        <div className="ml-3 flex items-end gap-0.5 pb-0.5">{[0,1,2,3].map(i => <div key={i} className="animate-bounce rounded-full" style={{ width:3, height:3+i*2, background:'#eab308', animationDelay:`${i*0.12}s`, animationDuration:'0.7s' }}/>)}</div>
+        <button type="button" onClick={goNext} disabled={!ready} className="ml-2 rounded-xl px-4 py-2 text-xs font-black transition-all disabled:opacity-30" style={{ background:'rgba(234,179,8,0.28)', color:'#fcd34d', border:'1px solid rgba(234,179,8,0.4)' }}>
+          {idx >= LINES.length - 1 ? 'Entrar →' : 'Siguiente →'}
+        </button>
       </div>
     </div>
   )
@@ -649,14 +686,15 @@ function SkillBar({ stage, done, usedLaPregunta, onUse }) {
   if (!skills.length) return null
   return (
     <div className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center gap-2">
-      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color:'rgba(255,255,255,0.3)' }}>Habilidades · Etapa {stage}</p>
+      <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color:'rgba(255,255,255,0.3)' }}>Habilidades · Etapa {stage} · <span className="normal-case">teclas 1/2/3</span></p>
       <div className="flex gap-4">
-        {skills.map(sk => {
+        {skills.map((sk, i) => {
           const isDone = sk.id === 'la_pregunta' ? usedLaPregunta >= 2 : (sk.missionId && done.includes(sk.missionId))
           return (
-            <button key={sk.id} type="button" onClick={() => !isDone && onUse(sk)} title={sk.name} className="flex flex-col items-center gap-1.5 transition active:scale-90">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-xl" style={{ background:`radial-gradient(circle at 38% 36%,${sk.color}44,${sk.color}18)`, border:`2px solid ${isDone?'rgba(74,222,128,0.6)':sk.color+'99'}`, boxShadow:isDone?'0 0 14px rgba(74,222,128,0.3)':`0 0 14px ${sk.color}44`, opacity:isDone?0.55:1 }}>
+            <button key={sk.id} type="button" onClick={() => !isDone && onUse(sk)} title={`${sk.name} [${i+1}]`} className="flex flex-col items-center gap-1.5 transition active:scale-90">
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-xl" style={{ background:`radial-gradient(circle at 38% 36%,${sk.color}44,${sk.color}18)`, border:`2px solid ${isDone?'rgba(74,222,128,0.6)':sk.color+'99'}`, boxShadow:isDone?'0 0 14px rgba(74,222,128,0.3)':`0 0 14px ${sk.color}44`, opacity:isDone?0.55:1 }}>
                 {isDone?'✅':sk.icon}
+                <span className="absolute top-1 left-1.5 text-[9px] font-black" style={{ color:'rgba(255,255,255,0.35)' }}>{i+1}</span>
               </div>
               <span className="text-center text-[9px] font-semibold leading-tight" style={{ color:'rgba(255,255,255,0.55)', maxWidth:64 }}>{sk.name}</span>
             </button>
@@ -677,15 +715,119 @@ function SkillVfx({ skill, onDone }) {
   )
 }
 
-function NpcPrompt({ npcId, playerMascotName }) {
+function NpcPrompt({ npcId, playerMascotName, onTalk }) {
   const name = npcId === 'mascota' ? (playerMascotName ?? 'Tu Mascota') : npcId === 'jafet' ? 'Jafet Brito' : (NPC_CONFIGS[npcId]?.name ?? '?')
   return (
-    <div className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2 pointer-events-none">
-      <div className="rounded-full px-4 py-2 text-xs font-bold backdrop-blur-sm animate-pulse" style={{ background:'rgba(12,6,4,0.88)', border:'1px solid rgba(234,179,8,0.45)', color:'#eab308' }}>
-        F — Hablar con {name}
-      </div>
+    <div className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2">
+      <button type="button" onClick={onTalk} className="rounded-full px-4 py-2 text-xs font-bold backdrop-blur-sm animate-pulse touch-manipulation" style={{ background:'rgba(12,6,4,0.88)', border:'1px solid rgba(234,179,8,0.45)', color:'#eab308' }}>
+        <span className="hidden sm:inline">F — </span>Hablar con {name}
+      </button>
     </div>
   )
+}
+
+// Admin dev panel: jump between stages for testing
+function DevPanel({ stage, isOutside, onSetStage }) {
+  const profile = useAuthStore(s => s.profile)
+  const user = useAuthStore(s => s.user)
+  const isAdmin = profile?.role === 'admin' || user?.email === 'wjafte28@gmail.com'
+  const [open, setOpen] = useState(false)
+  if (!isAdmin) return null
+  return (
+    <div className="absolute top-14 right-4 z-50">
+      <button type="button" onClick={() => setOpen(o => !o)} className="rounded-xl px-3 py-1.5 text-xs font-black" style={{ background:'rgba(0,0,0,0.85)', border:'1px solid rgba(251,146,60,0.6)', color:'#fb923c' }}>🔧 Dev</button>
+      {open && (
+        <div className="absolute right-0 top-9 rounded-2xl p-3 flex flex-col gap-1.5 shadow-2xl" style={{ background:'rgba(10,5,2,0.95)', border:'1px solid rgba(251,146,60,0.4)', minWidth:140 }}>
+          <p className="text-[10px] font-black mb-1" style={{ color:'#fb923c' }}>STAGE JUMP</p>
+          {[1,2,3,4,5].map(s => (
+            <button key={s} type="button" onClick={() => { onSetStage(s); setOpen(false) }}
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-left transition"
+              style={{ background:stage===s?'rgba(251,146,60,0.3)':'rgba(255,255,255,0.06)', color:stage===s?'#fb923c':'rgba(255,255,255,0.5)', border:`1px solid ${stage===s?'rgba(251,146,60,0.5)':'rgba(255,255,255,0.08)'}` }}>
+              {stage===s?'→ ':''}{['','🔗 Prisionero','🤔 La Duda','🔥 El Fuego','🌅 La Salida','↩️ El Regreso'][s]}
+            </button>
+          ))}
+          <p className="text-[9px] mt-1" style={{ color:'rgba(255,165,0,0.4)' }}>{isOutside ? '📍 Exterior' : '📍 Cueva'}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Virtual joystick for mobile movement
+function VirtualJoystick({ touchMoveRef }) {
+  const stickRef = useRef(null)
+  const activeTouch = useRef(null)
+  const basePos = useRef({ x: 0, y: 0 })
+
+  const handleStart = e => {
+    if (activeTouch.current !== null) return
+    const t = e.changedTouches[0]
+    activeTouch.current = t.identifier
+    basePos.current = { x: t.clientX, y: t.clientY }
+    if (stickRef.current) stickRef.current.style.transform = 'translate(0,0)'
+  }
+  const handleMove = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier !== activeTouch.current) continue
+      const dx = (t.clientX - basePos.current.x) / 40
+      const dy = (t.clientY - basePos.current.y) / 40
+      const len = Math.sqrt(dx*dx + dy*dy)
+      const nx = len > 1 ? dx/len : dx
+      const ny = len > 1 ? dy/len : dy
+      if (touchMoveRef) touchMoveRef.current = { x: nx, z: ny }
+      if (stickRef.current) stickRef.current.style.transform = `translate(${nx*20}px,${ny*20}px)`
+    }
+  }
+  const handleEnd = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier !== activeTouch.current) continue
+      activeTouch.current = null
+      if (touchMoveRef) touchMoveRef.current = { x: 0, z: 0 }
+      if (stickRef.current) stickRef.current.style.transform = 'translate(0,0)'
+    }
+  }
+
+  return (
+    <div className="absolute bottom-8 left-6 z-20 sm:hidden touch-none" style={{ width:80, height:80 }}
+      onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd} onTouchCancel={handleEnd}>
+      <div className="absolute inset-0 rounded-full" style={{ background:'rgba(255,255,255,0.08)', border:'2px solid rgba(255,255,255,0.2)' }}/>
+      <div ref={stickRef} className="absolute rounded-full transition-none" style={{ width:32, height:32, top:'50%', left:'50%', marginTop:-16, marginLeft:-16, background:'rgba(234,179,8,0.45)', border:'2px solid rgba(234,179,8,0.7)', transform:'translate(0,0)' }}/>
+    </div>
+  )
+}
+
+// Touch camera look (right side of screen)
+function TouchLook({ touchYawRef, lockedRef, activeNpc }) {
+  const lastTouch = useRef(null)
+  useEffect(() => {
+    const el = document.getElementById('vr-canvas-wrap')
+    if (!el) return
+    const onStart = e => {
+      for (const t of e.changedTouches) {
+        if (t.clientX > window.innerWidth / 2) lastTouch.current = { id: t.identifier, x: t.clientX }
+      }
+    }
+    const onMove = e => {
+      if (lockedRef?.current || activeNpc) return
+      for (const t of e.changedTouches) {
+        if (lastTouch.current && t.identifier === lastTouch.current.id) {
+          const dx = t.clientX - lastTouch.current.x
+          if (touchYawRef) touchYawRef.current += dx * 0.003
+          lastTouch.current.x = t.clientX
+        }
+      }
+    }
+    const onEnd = e => {
+      for (const t of e.changedTouches) {
+        if (lastTouch.current?.id === t.identifier) lastTouch.current = null
+      }
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: true })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => { el.removeEventListener('touchstart', onStart); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onEnd) }
+  }, [touchYawRef, lockedRef, activeNpc])
+  return null
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -696,6 +838,10 @@ export default function VrCueva() {
   const addXp = useLevelStore(s => s.addXp)
   const selectedMascotId = useMascotStore(s => s.selectedMascotId)
   const playerMascot = getMascotById(selectedMascotId)
+
+  // Touch refs shared between React UI and Canvas controller
+  const touchMoveRef = useRef({ x: 0, z: 0 })
+  const touchYawRef  = useRef(0)
 
   // ── Phase + stage ──────────────────────────────────────────────────────────
   const [phase, setPhase] = useState('start')
@@ -765,21 +911,24 @@ export default function VrCueva() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, phase])
 
-  // ── F key: talk to nearby NPC ─────────────────────────────────────────────
+  // ── F key + 1/2/3 skill shortcuts ────────────────────────────────────────
   useEffect(() => {
     const handler = e => {
       if (e.code === 'KeyF' && nearbyNpc && !activeNpc && phase === 'play') {
-        setActiveNpc(nearbyNpc)
-        if (['creyente','sonador','miedoso','mascota'].includes(nearbyNpc)) completeMission('talk_prisoner')
-        if (nearbyNpc === 'esceptico') completeMission('meet_esceptico')
-        if (nearbyNpc === 'custodio_mayor' || nearbyNpc === 'custodio_joven') completeMission('talk_custodio')
-        if (nearbyNpc === 'jafet') completeMission('talk_jafet_outside')
+        handleTalkNpc(nearbyNpc)
       }
       if (e.code === 'Escape' && activeNpc) setActiveNpc(null)
+      if (phase === 'play' && !activeNpc) {
+        const skills = STAGE_SKILLS[stage] ?? []
+        if (e.code === 'Digit1' && skills[0]) handleUseSkill(skills[0])
+        if (e.code === 'Digit2' && skills[1]) handleUseSkill(skills[1])
+        if (e.code === 'Digit3' && skills[2]) handleUseSkill(skills[2])
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [nearbyNpc, activeNpc, phase, completeMission])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearbyNpc, activeNpc, phase, stage])
 
   // ── Player movement: proximity auto-missions ──────────────────────────────
   const handlePlayerMove = useCallback(([x,,z]) => {
@@ -810,6 +959,7 @@ export default function VrCueva() {
   // ── Free prisoner (4 total including mascot) ──────────────────────────────
   function handleFreePrisoner(id) {
     if (freedIds.includes(id)) return
+    document.exitPointerLock?.()
     const next = [...freedIds, id]
     setFreedIds(next)
     const despSk = STAGE_SKILLS[5]?.[0]
@@ -828,10 +978,24 @@ export default function VrCueva() {
     if (sk.missionId) completeMission(sk.missionId)
     if (sk.id === 'la_pregunta') setUsedLaPregunta(p => p + 1)
     if (sk.id === 'la_pregunta' && usedLaPregunta + 1 >= 2) completeMission('use_la_pregunta')
+    // Despertar skill in stage 5: free the nearest unfree prisoner
+    if (sk.id === 'despertar' && stage === 5 && nearbyNpc && ['creyente','sonador','miedoso','mascota'].includes(nearbyNpc)) {
+      handleFreePrisoner(nearbyNpc)
+    }
   }
 
-  // ── NPC click from 3D ─────────────────────────────────────────────────────
+  // ── Admin dev stage jump ──────────────────────────────────────────────────
+  function handleDevSetStage(s) {
+    setStage(s)
+    setIsOutside(s === 4) // stage 4 starts outside
+    if (s === 4) teleportRef.current = [0, 2, 12]
+    else if (s === 5) { setIsOutside(false); teleportRef.current = [0, 2, 3] }
+    else teleportRef.current = [0, 2, 4]
+  }
+
+  // ── NPC click from 3D — also releases pointer lock ────────────────────────
   function handleTalkNpc(id) {
+    document.exitPointerLock?.() // ← release mouse so player can use dialogue UI
     setActiveNpc(id)
     if (['creyente','sonador','miedoso','mascota'].includes(id)) completeMission('talk_prisoner')
     else if (id === 'esceptico') completeMission('meet_esceptico')
@@ -861,7 +1025,9 @@ export default function VrCueva() {
   const canFree = stage === 5
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden" style={{ background: isOutside ? '#6ba3d6' : '#1a0e06' }}>
+    <div id="vr-canvas-wrap" className="relative h-screen w-screen overflow-hidden" style={{ background: isOutside ? '#6ba3d6' : '#1a0e06' }}>
+      {/* Touch look handler (right-side drag → yaw) */}
+      {phase === 'play' && <TouchLook touchYawRef={touchYawRef} lockedRef={cineLocked} activeNpc={activeNpc}/>}
 
       {/* ── Canvas ── */}
       <Canvas camera={{ position:[0,2,4], fov:65 }} className="absolute inset-0">
@@ -873,7 +1039,7 @@ export default function VrCueva() {
           onExitCave={handleExitCave} onReturnCave={handleReturnCave}
         />
         {phase === 'play' && <>
-          <FirstPersonController lockedRef={cineLocked} teleportRef={teleportRef} onMove={handlePlayerMove}/>
+          <FirstPersonController lockedRef={cineLocked} teleportRef={teleportRef} touchMoveRef={touchMoveRef} touchYawRef={touchYawRef} onMove={handlePlayerMove}/>
           <ProximityDetector stage={stage} onNearby={setNearbyNpc}/>
         </>}
         <CinematicRig active={phase==='world_cinematic'} keyframes={WORLD_CINEMATIC} onSubtitle={setWorldSubtitle} onDone={() => { setPhase('play'); setStage(1) }}/>
@@ -906,7 +1072,7 @@ export default function VrCueva() {
                 {stage===1&&'Etapa 1: El Prisionero — habla, observa, usa tus habilidades'}
                 {stage===2&&'Etapa 2: La Duda — encuentra al Escéptico, usa ❓ 2 veces'}
                 {stage===3&&'Etapa 3: El Fuego — acompaña al Escéptico, habla con el Custodio'}
-                {stage===4&&`Etapa 4: La Salida — habla con Jafet. Luego decides si vuelves.`}
+                {stage===4&&`Etapa 4: La Salida — habla con Jafet. Luego decide si vuelves.`}
                 {stage===5&&`Etapa 5: El Regreso — libera a todos (${freedIds.length}/4) · incluida tu mascota`}
               </p>
             </div>
@@ -915,10 +1081,16 @@ export default function VrCueva() {
           <PrisonerModeHud stage={stage}/>
           <MissionPanel done={done} stage={stage}/>
           {!activeNpc && <SkillBar stage={stage} done={done} usedLaPregunta={usedLaPregunta} onUse={handleUseSkill}/>}
-          {nearbyNpc && !activeNpc && <NpcPrompt npcId={nearbyNpc} playerMascotName={playerMascot?.name}/>}
+          {nearbyNpc && !activeNpc && <NpcPrompt npcId={nearbyNpc} playerMascotName={playerMascot?.name} onTalk={() => handleTalkNpc(nearbyNpc)}/>}
           <div className="pointer-events-none absolute bottom-3 right-4 z-10 text-right">
-            <p className="text-[9px]" style={{ color:'rgba(255,255,255,0.2)' }}>WASD mover · Ratón girar · F hablar · ESC cerrar</p>
+            <p className="text-[9px]" style={{ color:'rgba(255,255,255,0.2)' }}>WASD mover · Ratón girar · F hablar · 1/2/3 habilidades · ESC cerrar</p>
           </div>
+          {/* Dev panel (admin only) */}
+          <DevPanel stage={stage} isOutside={isOutside} onSetStage={handleDevSetStage}/>
+          {/* Mobile virtual joystick */}
+          {!activeNpc && <VirtualJoystick touchMoveRef={touchMoveRef}/>}
+          {/* MascotCompanion overlay — full character menu in VR */}
+          <MascotCompanion courseId="course-filo-001" module={FILO_MODULE_2}/>
         </>
       )}
 
@@ -932,8 +1104,8 @@ export default function VrCueva() {
 
       {/* ── COMPLETION ── */}
       {phase === 'complete' && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-6" style={{ background:'linear-gradient(160deg,rgba(4,2,8,0.96),rgba(10,5,2,0.99))' }}>
-          <div className="flex max-w-lg flex-col items-center gap-6 text-center">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center px-6 overflow-y-auto" style={{ background:'linear-gradient(160deg,rgba(4,2,8,0.96),rgba(10,5,2,0.99))' }}>
+          <div className="flex max-w-lg flex-col items-center gap-6 text-center py-8">
             <p className="text-7xl">🏛️</p>
             <div><h1 className="text-3xl font-black" style={{ color:'#eab308' }}>¡La Cueva Completada!</h1><p className="mt-2 text-base" style={{ color:'rgba(255,255,255,0.5)' }}>Has vivido la Alegoría de la Cueva y liberaste a todos los prisioneros — incluyendo a tu mascota.</p></div>
             <div className="rounded-2xl px-5 py-4 w-full" style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(234,179,8,0.2)' }}>
@@ -946,6 +1118,12 @@ export default function VrCueva() {
                   <span className="text-2xl">{CAVE_SOUVENIR_ITEM.icon}</span><div className="text-left"><p className="text-sm font-black" style={{ color:'rgba(255,255,255,0.8)' }}>{CAVE_SOUVENIR_ITEM.name}</p><p className="text-[10px]" style={{ color:'rgba(255,255,255,0.35)' }}>{CAVE_SOUVENIR_ITEM.description}</p></div>
                 </div>
               </div>
+            </div>
+            {/* Secret VR code — student copies this to unlock the course mission */}
+            <div className="rounded-2xl px-5 py-4 w-full" style={{ background:'rgba(234,179,8,0.07)', border:'1px solid rgba(234,179,8,0.35)' }}>
+              <p className="text-xs font-black mb-2" style={{ color:'rgba(255,255,255,0.4)' }}>🔑 CÓDIGO SECRETO — cópialo en tu clase</p>
+              <p className="text-2xl font-black tracking-[0.25em] select-all" style={{ color:'#fcd34d', letterSpacing:'0.3em' }}>{VR_CODE}</p>
+              <p className="text-[10px] mt-1" style={{ color:'rgba(255,255,255,0.25)' }}>Introdúcelo en la misión "Entrar al mundo VR" de la Clase 2 para completarla.</p>
             </div>
             <button type="button" onClick={() => navigate(-1)} className="rounded-2xl px-10 py-4 text-lg font-black transition-all hover:scale-105" style={{ background:'linear-gradient(135deg,#eab308,#f97316)', color:'#0a0600' }}>📚 Volver al curso</button>
             <button type="button" onClick={() => navigate('/vr')} className="text-xs transition" style={{ color:'rgba(255,255,255,0.25)' }}>🌍 Ir al Campus VR</button>

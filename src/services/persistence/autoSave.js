@@ -87,4 +87,23 @@ export function startAutoSave() {
   }
 
   STORES.forEach((store) => store.subscribe(scheduleSave))
+
+  // Flush to cloud immediately when tab closes — avoids losing the last few seconds of progress
+  window.addEventListener('beforeunload', () => {
+    const { user, session } = useAuthStore.getState()
+    if (!isSupabaseConfigured() || !user || !session?.access_token) return
+    const snapshot = buildProgressSnapshot()
+    // keepalive ensures the browser sends this even as the page unloads
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({ snapshot, updated_at: new Date().toISOString() }),
+      keepalive: true,
+    })
+  })
 }

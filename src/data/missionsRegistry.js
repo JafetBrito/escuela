@@ -50,8 +50,12 @@ export function getModuleMissions(module) {
   if (module?.quiz) {
     missions.push({ id: 'quiz', type: 'quiz', ...MISSION_TYPES.quiz, ...(overrides.quiz ?? {}) })
   }
-  missions.push({ id: 'chat', type: 'chat', ...MISSION_TYPES.chat, ...(overrides.chat ?? {}) })
-  missions.push({ id: 'item', type: 'item', ...MISSION_TYPES.item, ...(overrides.item ?? {}) })
+  if (!module?.noChat) {
+    missions.push({ id: 'chat', type: 'chat', ...MISSION_TYPES.chat, ...(overrides.chat ?? {}) })
+  }
+  if (!module?.noItem) {
+    missions.push({ id: 'item', type: 'item', ...MISSION_TYPES.item, ...(overrides.item ?? {}) })
+  }
 
   for (const fun of module?.funMissions ?? []) {
     missions.push({

@@ -58,12 +58,12 @@ export const STAGE_SKILLS = {
 // ── NPC definitions — dialogue text comes from cuevaDialogues.json ───────────
 const D = DIALOGUES.npcs
 export const NPC_CONFIGS = {
-  creyente:        { id: 'creyente',        name: 'El Creyente',        type: 'prisoner',  position: [-3.5, 0, -2],  color: '#b8956a', dialogue: D.creyente },
-  sonador:         { id: 'sonador',         name: 'El Soñador',         type: 'prisoner',  position: [0,    0, -3],  color: '#9b7eb8', dialogue: D.sonador },
-  miedoso:         { id: 'miedoso',         name: 'El Miedoso',         type: 'prisoner',  position: [3.5,  0, -2],  color: '#7a8a6a', dialogue: D.miedoso },
-  esceptico:       { id: 'esceptico',       name: 'El Escéptico',       type: 'esceptico', position: [1.5,  0, -1],  color: '#c4a87a', dialogue: D.esceptico },
-  custodio_mayor:  { id: 'custodio_mayor',  name: 'El Custodio Mayor',  type: 'custodio',  position: [-2,   0, -11], color: '#2a2020', dialogue: D.custodio_mayor },
-  custodio_joven:  { id: 'custodio_joven',  name: 'El Custodio Joven',  type: 'custodio',  position: [2,    0, -11], color: '#3a2828', dialogue: D.custodio_joven },
+  creyente:        { id: 'creyente',        name: 'El Creyente',        type: 'prisoner',  position: [-5.5, 0, -2],  color: '#b8956a', dialogue: D.creyente },
+  sonador:         { id: 'sonador',         name: 'El Soñador',         type: 'prisoner',  position: [0,    0, -5],  color: '#9b7eb8', dialogue: D.sonador },
+  miedoso:         { id: 'miedoso',         name: 'El Miedoso',         type: 'prisoner',  position: [5.5,  0, -2],  color: '#7a8a6a', dialogue: D.miedoso },
+  esceptico:       { id: 'esceptico',       name: 'El Escéptico',       type: 'esceptico', position: [3,    0, 1],   color: '#c4a87a', dialogue: D.esceptico },
+  custodio_mayor:  { id: 'custodio_mayor',  name: 'El Custodio Mayor',  type: 'custodio',  position: [-3,   0, -11], color: '#2a2020', dialogue: D.custodio_mayor },
+  custodio_joven:  { id: 'custodio_joven',  name: 'El Custodio Joven',  type: 'custodio',  position: [3,    0, -11], color: '#3a2828', dialogue: D.custodio_joven },
 }
 
 // ── JAFET outside-cave AI system prompt ───────────────────────────────────────
