@@ -8,30 +8,18 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useNavigate } from 'react-router-dom'
-import { getMascotById } from '../../data/mascotRegistry'
 import { sendNpcMessage } from '../../services/chat/npcTransport'
 import { useSettingsStore, getModelProvider } from '../../stores/useSettingsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
-import MascotMesh from '../mascot/MascotMesh'
+import DIALOGUES from './cuevaDialogues.json'
 import {
   WORLD_CINEMATIC, CAVE_MISSIONS, STAGE_SKILLS, NPC_CONFIGS,
   JAFET_OUTSIDE_PROMPT, CHECKPOINT_KEY, CAVE_SOUVENIR_ITEM,
 } from './cuevaData'
 
-// ── Intro cinematic (text-only, ~2 min) ───────────────────────────────────────
-const INTRO_LINES = [
-  '380 años antes de Cristo, el filósofo griego Platón escribió uno de los pasajes más influyentes de toda la historia del pensamiento humano.',
-  'Lo llamó la Alegoría de la Cueva. Una historia que cambiaría para siempre la forma en que los seres humanos entienden lo que es real.',
-  'Imagina una caverna profunda bajo la tierra. En su interior viven personas encadenadas desde su nacimiento. No pueden moverse. No pueden girar la cabeza.',
-  'Detrás de ellos arde una hoguera. Entre el fuego y los prisioneros, otros seres hacen pasar figuras y objetos, proyectando sombras sobre la pared del fondo.',
-  'Para los prisioneros, esas sombras lo son todo. Son los árboles, los animales, las personas. Son el mundo entero. Nunca han visto nada más.',
-  'Nunca se preguntan de dónde vienen esas sombras. Nunca cuestionan lo que ven. ¿Por qué habrían de hacerlo? Es todo lo que conocen. Es todo lo que son.',
-  '¿Y si nosotros somos esos prisioneros? ¿Y si lo que llamamos realidad es tan solo el reflejo de algo más profundo, algo que aún no hemos tenido el valor de mirar de frente?',
-  'Hoy vas a vivir esa pregunta desde adentro. Serás uno de esos prisioneros. Sentirás el peso de las cadenas. Aprenderás a no cuestionar, a seguir la corriente.',
-  'Pero en algún momento, algo te llamará desde el fondo de la caverna. Una luz. Y tendrás que decidir si tienes el valor de caminar hacia ella.',
-  'Soy Jafet Brito, y seré tu guía en este viaje filosófico. Bienvenido... a La Cueva de Platón.',
-]
+// ── Intro cinematic lines — edit in cuevaDialogues.json ──────────────────────
+const INTRO_LINES = DIALOGUES.introLines
 
 // ── TTS helper ────────────────────────────────────────────────────────────────
 function speakLine(text, onDone) {
@@ -171,18 +159,28 @@ function EscepticoNpcMesh({ stage, onTalk }) {
   )
 }
 
-// Jafet outside cave (mascot mesh)
+// Jafet outside cave — simple primitive humanoid (profesor con capa)
 function JafetOutdoorNpc({ onTalk }) {
-  const mascot = getMascotById(10)
-  const g = useRef()
+  const g = useRef(); const [hov, setHov] = useState(false)
   useFrame(({ clock }) => {
     if (!g.current) return
     g.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.5) * 0.2
     g.current.position.y = Math.sin(clock.getElapsedTime() * 1.1) * 0.06
   })
+  const c = hov ? '#a78bfa' : '#7c3aed'
   return (
-    <group ref={g} position={[0, 0, 20]} scale={0.18} onClick={e => { e.stopPropagation(); onTalk('jafet') }}>
-      <Suspense fallback={null}><MascotMesh mascot={mascot} /></Suspense>
+    <group ref={g} position={[0, 0, 20]} onClick={e => { e.stopPropagation(); onTalk('jafet') }}
+      onPointerOver={() => setHov(true)} onPointerOut={() => setHov(false)}>
+      {/* Cuerpo / capa */}
+      <mesh position={[0, 0.85, 0]}><cylinderGeometry args={[0.35, 0.48, 1.7, 8]}/><meshStandardMaterial color={c} roughness={0.7}/></mesh>
+      {/* Cabeza */}
+      <mesh position={[0, 1.88, 0]}><sphereGeometry args={[0.26, 12, 10]}/><meshStandardMaterial color="#f5c8a0" roughness={0.8}/></mesh>
+      {/* Birrete / sombrero académico */}
+      <mesh position={[0, 2.22, 0]}><cylinderGeometry args={[0.3, 0.28, 0.18, 8]}/><meshStandardMaterial color="#1e1b4b" roughness={0.9}/></mesh>
+      <mesh position={[0, 2.32, 0]}><boxGeometry args={[0.65, 0.06, 0.65]}/><meshStandardMaterial color="#1e1b4b" roughness={0.9}/></mesh>
+      {/* Glow cuando hovered */}
+      {hov && <mesh rotation={[-Math.PI/2,0,0]} position={[0,0.02,0]}><ringGeometry args={[0.5,0.9,24]}/><meshBasicMaterial color="#a78bfa" transparent opacity={0.35}/></mesh>}
+      <pointLight color="#a78bfa" intensity={hov?5:2} distance={6}/>
     </group>
   )
 }
