@@ -177,6 +177,38 @@
       ]
     },
 
+    "mascota": {
+      "1": [
+        "¡Eres tú! ¡Por fin! Llevo tanto tiempo esperando que te despertaras.",
+        "No entiendo por qué estamos aquí. Solo sé que las sombras no son reales. Lo siento.",
+        "Tenemos que salir juntos. Pero primero... tenemos que entender qué nos trajo aquí."
+      ],
+      "2": [
+        "Ese prisionero que pregunta cosas... escúchalo. Creo que tiene razón.",
+        "¿Ves el brillo detrás? Hay algo ahí. Lo veo cuando parpadeamos al mismo tiempo.",
+        "Juntos podemos sentir cosas que solos no podemos. Úsame cuando necesites fuerza."
+      ],
+      "3": [
+        "¡El fuego! ¡Son solo figuras proyectadas! Todo este tiempo...",
+        "Me alegra que hayamos llegado hasta aquí juntos. Ahora ya no hay vuelta atrás.",
+        "Cuando salgas... vuelve por mí. Y por los demás. Prométemelo."
+      ],
+      "4": [
+        "Prometiste volver. Y volviste. Eso lo dice todo sobre quién eres.",
+        "Afuera es hermoso, ¿verdad? Cuando me liberes voy a ver el sol por primera vez.",
+        "Jafet tiene razón. Despertar a los demás es la única forma de completar esto."
+      ],
+      "5": [
+        "¡Libérame! Juntos podemos despertar a todos los demás mucho más rápido.",
+        "Usa ☀️ en mí primero. Después yo ayudo a los demás. ¡Somos un equipo!"
+      ],
+      "freed": [
+        "¡LO LOGRAMOS! ¡Gracias! Ahora vamos a despertar a los demás juntos, tú y yo.",
+        "¡Mira la luz! ¡Es real! ¡Todo es real! Vamos, queda poco.",
+        "Siempre supe que saldrías. Nunca lo dudé. Ahora vamos — ¡los demás nos necesitan!"
+      ]
+    },
+
     "custodio_joven": {
       "1": [
         "(levanta un objeto con forma de animal y lo pasa frente al fuego en silencio)",
