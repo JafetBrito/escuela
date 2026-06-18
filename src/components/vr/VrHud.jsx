@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
+import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 
 // ─── Cooldown hook ─────────────────────────────────────────────────────────
 function useCooldown(cooldownMs) {
@@ -214,10 +215,20 @@ function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, 
   const [muted, setMuted] = useState(() => localStorage.getItem('vr-muted') === '1')
   const navigate = useNavigate()
 
+  // Sync initial mute state to npcVoice store on first render
+  useEffect(() => {
+    if (localStorage.getItem('vr-muted') === '1') {
+      useVrSettingsStore.getState().setNpcVoice(false)
+    }
+  }, [])
+
   const toggleMute = () => {
     const m = !muted
     setMuted(m)
     localStorage.setItem('vr-muted', m ? '1' : '0')
+    // Silence NPC TTS when muted
+    useVrSettingsStore.getState().setNpcVoice(!m)
+    if (m) window.speechSynthesis?.cancel()
   }
 
   const BTNS = [

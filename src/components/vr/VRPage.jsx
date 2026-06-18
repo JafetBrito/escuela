@@ -33,6 +33,7 @@ import BattleScreen from '../battle/BattleScreen'
 import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
+import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS } from './worlds/useCampusGround'
 import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
 import { useAnfiteatroGround, ANFI_H, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
@@ -1377,6 +1378,76 @@ function FallingApple({ position }) {
   )
 }
 
+// 3D gift box that bobs in the air. Glows gold when claimable, grey when already
+// claimed today. Calls onNearChange(bool) as the player approaches/leaves.
+const REWARD_BOX_POS = new THREE.Vector3(6, 1.5, 8)
+const REWARD_BOX_RADIUS = 3.5
+
+function DailyRewardBox({ playerPositionRef, onNearChange }) {
+  const meshRef = useRef()
+  const lightRef = useRef()
+  const canClaim = useDailyRewardsStore((s) => s.canClaim)
+  const claimable = canClaim()
+  const nearRef = useRef(false)
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    if (meshRef.current) {
+      meshRef.current.position.y = REWARD_BOX_POS.y + Math.sin(t * 1.6) * 0.18
+      meshRef.current.rotation.y = t * 0.5
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = claimable ? 1.2 + Math.sin(t * 3) * 0.4 : 0
+    }
+    const pos = playerPositionRef?.current
+    if (pos) {
+      const flat = new THREE.Vector3(pos.x, REWARD_BOX_POS.y, pos.z)
+      const isNear = flat.distanceTo(REWARD_BOX_POS) <= REWARD_BOX_RADIUS
+      if (isNear !== nearRef.current) {
+        nearRef.current = isNear
+        onNearChange?.(isNear)
+      }
+    }
+  })
+
+  const color = claimable ? '#f59e0b' : '#6b7280'
+  const emissive = claimable ? '#92400e' : '#000000'
+
+  return (
+    <group position={[REWARD_BOX_POS.x, REWARD_BOX_POS.y, REWARD_BOX_POS.z]}>
+      <pointLight ref={lightRef} color="#fbbf24" intensity={1.2} distance={8} />
+      <group ref={meshRef} position={[0, 0, 0]}>
+        {/* Box body */}
+        <mesh castShadow>
+          <boxGeometry args={[0.55, 0.55, 0.55]} />
+          <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.6} roughness={0.3} metalness={0.5} />
+        </mesh>
+        {/* Ribbon H */}
+        <mesh position={[0, 0, 0.28]}>
+          <boxGeometry args={[0.56, 0.1, 0.02]} />
+          <meshStandardMaterial color={claimable ? '#dc2626' : '#374151'} />
+        </mesh>
+        {/* Ribbon V */}
+        <mesh position={[0, 0, 0.28]}>
+          <boxGeometry args={[0.1, 0.56, 0.02]} />
+          <meshStandardMaterial color={claimable ? '#dc2626' : '#374151'} />
+        </mesh>
+        {/* Bow sphere */}
+        <mesh position={[0, 0.32, 0.28]}>
+          <sphereGeometry args={[0.09, 8, 8]} />
+          <meshStandardMaterial color={claimable ? '#ef4444' : '#4b5563'} emissive={claimable ? '#7f1d1d' : '#000'} emissiveIntensity={0.5} />
+        </mesh>
+        {/* Floating label */}
+        <Html center position={[0, 0.65, 0]} style={{ pointerEvents: 'none', userSelect: 'none' }}>
+          <div style={{ fontSize: 18, filter: claimable ? 'none' : 'grayscale(1)', opacity: claimable ? 1 : 0.45 }}>
+            {claimable ? '🎁' : '✅'}
+          </div>
+        </Html>
+      </group>
+    </group>
+  )
+}
+
 // Same as <CityWorld>, but walking on the procedural test ground instead of
 // the real city model (see USE_TEST_SCENERY).
 function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
@@ -1389,6 +1460,8 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[200, 0.5, 200]} position={[0, -0.5, 0]} />
       </RigidBody>
+      {/* Warm point light for the torch monument */}
+      <pointLight position={[-7, 10.5, 0]} color="#ff8800" intensity={4} distance={18} decay={2} />
       {/* Apples near maple trees — dynamic, fall and can be pushed */}
       <FallingApple position={[-7, 3, -6]} />
       <FallingApple position={[-8.5, 4, -7.5]} />
@@ -1855,6 +1928,21 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
     if (!cfg) return ''
     return cfg.lines[Math.floor(Math.random() * cfg.lines.length)]
   }, [cfg])
+
+  // Speak the line when the card first appears
+  useEffect(() => {
+    if (!cfg || !line || !window.speechSynthesis) return
+    const { npcVoice } = useVrSettingsStore.getState()
+    if (!npcVoice) return
+    const clean = line.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
+    if (!clean) return
+    window.speechSynthesis.cancel()
+    const utt = new SpeechSynthesisUtterance(clean)
+    utt.lang = 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
+    window.speechSynthesis.speak(utt)
+    return () => window.speechSynthesis.cancel()
+  }, [cfg, line])
+
   if (!cfg) return null
   return (
     <div className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 rounded-3xl border border-border bg-surface/98 p-5 shadow-2xl backdrop-blur sm:bottom-20">
@@ -1994,6 +2082,7 @@ function World({
   onNearbyNpcChange,
   onNearPortalChange,
   onNearClassNodeChange,
+  onNearDailyRewardChange,
   onOpenVideoScreen,
   authorName,
   playerId,
@@ -2083,6 +2172,7 @@ function World({
       {NEXUS_PORTALS.map((p) => (
         <Portal key={p.id} position={p.pos} color={p.color} label={`🔒 ${p.label}`} />
       ))}
+      <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
       <RemotePlayers transformsRef={remoteTransformsRef} onSelectPlayer={onSelectPlayer} />
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
@@ -3197,6 +3287,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const playerPositionRef = useRef(null)
   const playerRotationRef = useRef(0)
   const playerId = useRef(crypto.randomUUID()).current
+  const motdSentRef = useRef(false)
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
@@ -3227,6 +3318,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [nearPortal, setNearPortal] = useState(false)
+  const [nearDailyReward, setNearDailyReward] = useState(false)
   const [portalMenuOpen, setPortalMenuOpen] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
@@ -3252,6 +3344,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   }, [nearbyNpcId, activeNpcId])
 
   useEffect(() => {
+    if (motdSentRef.current) return
+    motdSentRef.current = true
     const motd = anfiteatroMode
       ? `🎭 Anfiteatro Oliver, ${chatAuthor}. Disfruta el espectáculo. Pulsa E junto al portal para volver al Campus.`
       : roomMode
@@ -3261,19 +3355,26 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 'E' near a portal: private worlds exit to campus; campus opens transport menu.
+  // 'E' near a portal, idle NPC, or daily reward box
   useEffect(() => {
     const handleDown = (e) => {
       if (isTypingTarget(e.target)) return
-      if (e.key === 'Escape') { setPortalMenuOpen(false); return }
-      if (e.key.toLowerCase() === 'e' && nearPortal) {
-        if (isPrivateWorld) navigate('/vr')
-        else setPortalMenuOpen(true)
+      if (e.key === 'Escape') { setPortalMenuOpen(false); setActiveNpcId(null); return }
+      if (e.key.toLowerCase() === 'e') {
+        if (nearDailyReward) { setDailyRewardsOpen(true); return }
+        if (nearbyNpcId && IDLE_NPC_IDS.has(nearbyNpcId)) {
+          setActiveNpcId((cur) => (cur === nearbyNpcId ? null : nearbyNpcId))
+          return
+        }
+        if (nearPortal) {
+          if (isPrivateWorld) navigate('/vr')
+          else setPortalMenuOpen(true)
+        }
       }
     }
     window.addEventListener('keydown', handleDown)
     return () => window.removeEventListener('keydown', handleDown)
-  }, [nearPortal, isPrivateWorld, navigate])
+  }, [nearPortal, nearDailyReward, nearbyNpcId, isPrivateWorld, navigate])
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
@@ -3375,6 +3476,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               onNearbyNpcChange={setNearbyNpcId}
               onNearPortalChange={setNearPortal}
               onNearClassNodeChange={setNearClassNodeId}
+              onNearDailyRewardChange={setNearDailyReward}
               onOpenVideoScreen={() => setVideoScreenOpen(true)}
               authorName={chatAuthor}
               playerId={playerId}
@@ -3386,6 +3488,28 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           </Suspense>
           </Physics>
         </Canvas>}
+
+        {/* Idle NPC proximity prompt */}
+        {nearbyNpcId && IDLE_NPC_IDS.has(nearbyNpcId) && !activeNpcId && (
+          <button
+            type="button"
+            onClick={() => setActiveNpcId(nearbyNpcId)}
+            className="absolute bottom-40 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-36"
+          >
+            {IDLE_NPC_CONFIGS[nearbyNpcId]?.emoji} E o clic para hablar con {IDLE_NPC_CONFIGS[nearbyNpcId]?.name}
+          </button>
+        )}
+
+        {/* Daily reward box prompt */}
+        {nearDailyReward && !dailyRewardsOpen && (
+          <button
+            type="button"
+            onClick={() => setDailyRewardsOpen(true)}
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
+          >
+            🎁 Haz clic o pulsa E para reclamar recompensa diaria
+          </button>
+        )}
 
         {/* Portal prompt — clickable button when near a portal */}
         {nearPortal && !portalMenuOpen && (
@@ -3511,7 +3635,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           >
             <strong>W A S D</strong> o flechas para moverte · <strong>espacio</strong> saltar ·{' '}
             {!isPrivateWorld && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
-            <strong>E</strong> portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
+            <strong>E</strong> hablar/portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
           </div>
         )}
 

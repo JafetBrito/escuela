@@ -117,7 +117,7 @@ export function useCampusGround() {
     plazaRing.position.y = 0.022
     group.add(plazaRing)
 
-    // ── 5. MAPLE LEAF MONUMENT ────────────────────────────────────────────
+    // ── 5. TORCH MONUMENT ────────────────────────────────────────────────────
     ;[[3.8, 0.35, 0.175], [2.6, 0.35, 0.525], [1.7, 0.35, 0.875]].forEach(([r, h, cy]) => {
       const step = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.14, h, 12), matGranite)
       step.position.set(-7, cy, 0)
@@ -129,32 +129,31 @@ export function useCampusGround() {
     const goldCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.74, 0.26, 16), matGold)
     goldCollar.position.set(-7, 8.63, 0)
     group.add(goldCollar)
-    const mapleLG = new THREE.Group()
-    mapleLG.position.set(-7, 9.8, 0)
-    mapleLG.rotation.x = -Math.PI / 8
-    const leafDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.20, 14), matRedCA)
-    leafDisc.rotation.x = Math.PI / 2
-    mapleLG.add(leafDisc)
-    const addLobe = (deg, dist, r, h) => {
-      const rad = (deg * Math.PI) / 180
-      const lobe = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), matRedCA)
-      lobe.position.set(Math.sin(rad) * dist, Math.cos(rad) * dist, 0)
-      lobe.rotation.z = -rad
-      mapleLG.add(lobe)
-    }
-    addLobe(0,   1.12, 0.26, 0.82)
-    addLobe(-28, 1.02, 0.23, 0.72)
-    addLobe( 28, 1.02, 0.23, 0.72)
-    addLobe(-60, 0.98, 0.21, 0.66)
-    addLobe( 60, 0.98, 0.21, 0.66)
-    addLobe(-92, 0.86, 0.20, 0.58)
-    addLobe( 92, 0.86, 0.20, 0.58)
-    addLobe(-135, 0.68, 0.17, 0.48)
-    addLobe( 135, 0.68, 0.17, 0.48)
-    const mapleStem = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.10, 0.72, 6), matRedCA)
-    mapleStem.position.set(0, -1.28, 0)
-    mapleLG.add(mapleStem)
-    group.add(mapleLG)
+    // Torch cup
+    const torchCup = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.34, 0.72, 12, 1, true), matGold)
+    torchCup.position.set(-7, 9.12, 0)
+    group.add(torchCup)
+    const torchRim = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.08, 8, 20), matGold)
+    torchRim.rotation.x = Math.PI / 2; torchRim.position.set(-7, 9.48, 0)
+    group.add(torchRim)
+    const torchBase = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.12, 12), matGold)
+    torchBase.position.set(-7, 8.82, 0)
+    group.add(torchBase)
+    // Flame (emissive — readable as fire even without animation)
+    const matFlameOuter = new THREE.MeshStandardMaterial({ color: '#ff5500', emissive: '#ff3300', emissiveIntensity: 1.8, transparent: true, opacity: 0.92 })
+    const matFlameInner = new THREE.MeshStandardMaterial({ color: '#ffcc00', emissive: '#ffaa00', emissiveIntensity: 2.8, transparent: true, opacity: 0.97 })
+    const flameGlow = new THREE.Mesh(new THREE.SphereGeometry(0.48, 9, 7), matFlameOuter)
+    flameGlow.scale.set(1, 1.25, 1); flameGlow.position.set(-7, 9.95, 0)
+    group.add(flameGlow)
+    const flameTip = new THREE.Mesh(new THREE.ConeGeometry(0.30, 1.35, 8), matFlameOuter)
+    flameTip.position.set(-7, 10.85, 0)
+    group.add(flameTip)
+    const flameCore = new THREE.Mesh(new THREE.SphereGeometry(0.26, 8, 6), matFlameInner)
+    flameCore.scale.set(1, 1.3, 1); flameCore.position.set(-7, 9.9, 0)
+    group.add(flameCore)
+    const flameCoreTip = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.9, 7), matFlameInner)
+    flameCoreTip.position.set(-7, 10.65, 0)
+    group.add(flameCoreTip)
 
     // ── 6. FOUNTAIN ───────────────────────────────────────────────────────
     const fBase = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.8, 0.45, 20), matFount)
