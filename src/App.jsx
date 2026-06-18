@@ -28,6 +28,7 @@ import AchievementsPage from './components/achievements/AchievementsPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import AchievementWatcher from './components/achievements/AchievementWatcher'
 import AchievementToast from './components/achievements/AchievementToast'
+import PatchNotesModal from './components/shared/PatchNotesModal'
 import { useLibraryStore } from './stores/useLibraryStore'
 
 /**
@@ -81,6 +82,7 @@ export default function App() {
       */}
       <AchievementWatcher />
       <AchievementToast />
+      <PatchNotesModal />
       
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 

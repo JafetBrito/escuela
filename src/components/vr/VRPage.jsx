@@ -32,6 +32,7 @@ import VrMascotOnboarding from './VrMascotOnboarding'
 import BattleScreen from '../battle/BattleScreen'
 import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
+import DailyRewardsBoard from './DailyRewardsBoard'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS } from './worlds/useCampusGround'
 import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
 import { useAnfiteatroGround, ANFI_H, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
@@ -3231,6 +3232,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [chatOpen, setChatOpen] = useState(false)
   const [hudVisible, setHudVisible] = useState(true)
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
+  const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
   const [chatPrefill, setChatPrefill] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -3521,8 +3523,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenSettings={() => setCameraMenuOpen(true)}
           onOpenChat={() => setChatOpen(true)}
           onOpenMap={() => setMapOpen(true)}
+          onOpenDailyRewards={() => setDailyRewardsOpen(true)}
           isPrivateWorld={isPrivateWorld}
         />
+
+        {/* Daily rewards board overlay */}
+        {dailyRewardsOpen && (
+          <DailyRewardsBoard onClose={() => setDailyRewardsOpen(false)} />
+        )}
 
         {/* WorldTree class selection card */}
         {worldTreeMode && nearClassNodeId && classSelectionStep !== 'done' && (

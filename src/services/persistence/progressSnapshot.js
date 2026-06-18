@@ -20,6 +20,7 @@ import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
+import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -121,6 +122,7 @@ export function buildProgressSnapshot() {
     },
     gameState: { player: gamePlayer, oliver: gameOliver, worldTreeCompleted },
     tutorial: useTutorialStore.getState(),
+    dailyRewards: useDailyRewardsStore.getState(),
     lastSaved: new Date().toISOString(),
   }
 }
@@ -172,4 +174,5 @@ export function applyProgressSnapshot(snapshot) {
   useVrSettingsStore.getState().loadVrSettings(snapshot.vrSettings ?? {})
   useGameStore.getState().loadGameState(snapshot.gameState ?? null)
   useTutorialStore.getState().loadTutorial(snapshot.tutorial ?? null)
+  useDailyRewardsStore.getState().loadDailyRewards(snapshot.dailyRewards ?? {})
 }

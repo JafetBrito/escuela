@@ -1,19 +1,24 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
+import PatchNotesModal from '../shared/PatchNotesModal'
 import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
+import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const progress = useProgressStore((s) => s.progress)
   const license = useAuthStore((s) => s.license)
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
+  const [patchNotesOpen, setPatchNotesOpen] = useState(false)
+
+  const latest = PATCH_NOTES[0]
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -59,6 +64,71 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
+
+          {/* ── Tablón de anuncios (última versión) ── */}
+          <div
+            className="mt-6 rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1030 100%)',
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
+            {/* Header del tablón */}
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{ background: 'linear-gradient(90deg, rgba(124,58,237,0.25), rgba(59,130,246,0.15))', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{latest.emoji}</span>
+                <div>
+                  <span
+                    className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest mr-2"
+                    style={{ background: `${latest.tagColor}22`, color: latest.tagColor, border: `1px solid ${latest.tagColor}33` }}
+                  >
+                    {latest.tag}
+                  </span>
+                  <span className="text-sm font-bold text-white">{latest.title}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/30">{latest.date}</span>
+                <button
+                  type="button"
+                  onClick={() => setPatchNotesOpen(true)}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  📋 Ver historial
+                </button>
+              </div>
+            </div>
+
+            {/* Cambios de la última versión */}
+            <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
+              {latest.changes.slice(0, 6).map((c, i) => (
+                <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
+                  style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <span className="shrink-0">{c.icon}</span>
+                  <span className="leading-snug">{c.text}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Footer */}
+            <div className="px-4 pb-3 flex items-center justify-between">
+              <span className="text-[10px] text-white/20">v{LATEST_VERSION}</span>
+              <button
+                type="button"
+                onClick={() => navigate('/vr')}
+                className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/30"
+              >
+                🌍 Ir al Campus VR →
+              </button>
+            </div>
+          </div>
+
+          {patchNotesOpen && (
+            <PatchNotesModal open={patchNotesOpen} onClose={() => setPatchNotesOpen(false)} />
+          )}
 
           {categories.map(([category, categoryCourses]) => {
             const meta = CATEGORY_META[category] ?? CATEGORY_META.Otros
