@@ -46,7 +46,9 @@ const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 const VRPage = lazy(() => import('./components/vr/VRPage'))
-const VrArbol = lazy(() => import('./components/vr/VrArbol'))
+const VrArbol      = lazy(() => import('./components/vr/VrArbol'))
+const AdminSetupPage = lazy(() => import('./components/admin/AdminSetupPage'))
+const ArenaPage = lazy(() => import('./components/arena/ArenaPage'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
@@ -98,6 +100,11 @@ export default function App() {
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unlock" element={<PortalPage />} />
+        <Route path="/admin-setup" element={
+          <Suspense fallback={<RouteFallback />}>
+            <AdminSetupPage />
+          </Suspense>
+        } />
 
         {/* === RUTAS PROTEGIDAS (Requieren sesión) === */}
         {/* NOTA DE ARQUITECTURA: <ProtectedRoute> es un "Route Guard".
@@ -207,6 +214,17 @@ export default function App() {
           }
         />
         
+        <Route
+          path="/arena"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <ArenaPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
         {/* === RUTAS DE REALIDAD VIRTUAL (Heavy 3D Load) === */}
         <Route
           path="/vr-arbol"

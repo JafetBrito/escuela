@@ -8,6 +8,7 @@ export default function ProtectedRoute({ children }) {
   const authReady  = useAuthStore((s) => s.authReady)
   const session    = useAuthStore((s) => s.session)
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
+  const isAdmin    = useAuthStore((s) => s.isAdmin)
   const playerClass = useGameStore((s) => s.player.class)
   const location   = useLocation()
 
@@ -26,8 +27,9 @@ export default function ProtectedRoute({ children }) {
   }
 
   // Account exists but onboarding was never finished (avatar + class not set).
-  // Redirect to the registration wizard so the user can complete setup.
-  if (!playerClass && location.pathname !== '/crear-cuenta') {
+  // Admins bypass this check — they can use /admin-setup to configure quickly.
+  const adminBypass = isAdmin?.() ?? false
+  if (!playerClass && !adminBypass && location.pathname !== '/crear-cuenta') {
     return <Navigate to="/crear-cuenta" replace />
   }
 

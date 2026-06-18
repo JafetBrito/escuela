@@ -12,13 +12,44 @@ import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/
 
 const FACEBOOK_ENABLED = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true'
 
-// Only show models that have an actual .glb file (no geometric placeholders)
-const AVATAR_MODELS = MASCOTS.filter((m) => m.modelPath)
+// Only show first 4 real models: Gato Naranja, Mago, Mago Ancestral, Zorro Mago
+const AVATAR_MODELS = MASCOTS.filter((m) => m.modelPath).slice(0, 4)
 
 // Welcome video embed URL — leave empty for the Oliver 3D placeholder
 const WELCOME_VIDEO_URL = ''
 
 const OLIVER = getMascotById(8)
+
+// Rich class detail shown during registration — presentation only, not in the store
+const CLASS_DETAIL = {
+  programmer: {
+    lore: 'Maestro del código y la lógica computacional. Velocidad de pensamiento superior y precisión milimétrica en cada solución. Cuando el tiempo apremia, el Programador ejecuta mientras otros aún leen el enunciado.',
+    specialty: 'Velocidad y precisión',
+    topStats: ['speed', 'intellect'],
+  },
+  cyber_strategist: {
+    lore: 'Táctico nato de las redes digitales. Analiza amenazas, construye defensas y maneja el flujo de información con maestría. Donde otros ven caos, el Ciber-Estratega ve patrones y oportunidades.',
+    specialty: 'Control táctico',
+    topStats: ['intellect', 'creativity'],
+  },
+  ai_engineer: {
+    lore: 'Arquitecto de sistemas que aprenden solos. Convierte datos en predicciones, automatiza lo imposible y anticipa resultados con modelos de alta precisión. El futuro del aprendizaje está en sus manos.',
+    specialty: 'Predicción y automatización',
+    topStats: ['intellect', 'wisdom'],
+  },
+  designer: {
+    lore: 'Creador de experiencias que trascienden lo visual. Fusiona arte con funcionalidad para generar soluciones que las personas entienden antes de leerlas. La creatividad no es adorno — es su arma principal.',
+    specialty: 'Arte y funcionalidad',
+    topStats: ['creativity', 'intellect'],
+  },
+  philosopher: {
+    lore: 'Pensador crítico que cuestiona todo. La sabiduría y la ética son sus herramientas para desmontar argumentos falsos y construir verdades sólidas. En un mundo de ruido, el Filósofo encuentra la señal.',
+    specialty: 'Sabiduría y ética',
+    topStats: ['wisdom', 'intellect'],
+  },
+}
+
+const STAT_LABEL = { power: 'Poder', speed: 'Velocidad', intellect: 'Intelecto', creativity: 'Creatividad', wisdom: 'Sabiduría' }
 
 const STEPS = [
   { label: 'Bienvenida', icon: '🌟' },
@@ -359,42 +390,91 @@ export default function CreateAccountPage() {
             <div className="rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
               <h2 className="mb-1 text-2xl font-black">Elige tu clase</h2>
               <p className="mb-5 text-sm text-text-muted">
-                Define tu estilo en el campus. Desbloquea habilidades únicas conforme subes de nivel.
+                Tu clase define tu camino en Oliver School. Cada una tiene habilidades únicas,
+                stats propios y un compañero mágico especializado.
               </p>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {Object.values(PLAYER_CLASSES).map((cls) => {
-                  const active = playerClassId === cls.id
+                  const active  = playerClassId === cls.id
+                  const detail  = CLASS_DETAIL[cls.id]
+                  const topS    = detail?.topStats ?? []
                   return (
                     <button key={cls.id} type="button" onClick={() => setPlayerClassId(cls.id)}
-                      className="flex flex-col gap-3 rounded-2xl border-2 p-4 text-left transition-all hover:scale-[1.02]"
+                      className="flex flex-col gap-3 rounded-2xl border-2 p-4 text-left transition-all hover:scale-[1.01]"
                       style={{
                         borderColor: active ? cls.color : 'var(--color-border)',
-                        background:  active ? `${cls.color}14` : 'var(--color-background)',
-                        boxShadow:   active ? `0 0 20px ${cls.color}33` : 'none',
+                        background:  active ? `${cls.color}12` : 'var(--color-background)',
+                        boxShadow:   active ? `0 0 24px ${cls.color}33` : 'none',
                       }}>
+
+                      {/* Header row */}
                       <div className="flex items-center gap-3">
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-3xl"
-                          style={{ background: `${cls.color}22` }}>
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl"
+                          style={{ background: `${cls.color}22`, border: `2px solid ${cls.color}44` }}>
                           {cls.icon}
                         </span>
-                        <div className="min-w-0">
-                          <p className="font-black text-text">{cls.name}</p>
-                          <p className="text-xs text-text-muted">{cls.description}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-black text-text text-base">{cls.name}</p>
+                            {detail && (
+                              <span className="rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide"
+                                style={{ background: `${cls.color}22`, color: cls.color }}>
+                                {detail.specialty}
+                              </span>
+                            )}
+                            {active && (
+                              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-green-400">
+                                ✓ Seleccionada
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">
+                            {detail?.lore ?? cls.description}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(cls.stats).map(([stat, val]) => (
-                          <div key={stat} className="flex flex-col items-center gap-0.5">
-                            <div className="flex gap-0.5">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <div key={i} className="h-1.5 w-2 rounded-sm"
-                                  style={{ background: i < val ? cls.color : 'rgba(128,128,128,0.2)' }} />
-                              ))}
+
+                      {/* Stat bars */}
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {Object.entries(cls.stats).map(([stat, val]) => {
+                          const isTop = topS.includes(stat)
+                          return (
+                            <div key={stat} className="flex flex-col items-center gap-1">
+                              <div className="flex flex-col gap-0.5 w-full">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <div key={i} className="h-1.5 w-full rounded-sm transition-all"
+                                    style={{
+                                      background: i < val
+                                        ? (isTop ? cls.color : `${cls.color}88`)
+                                        : 'rgba(128,128,128,0.18)',
+                                      boxShadow:  i < val && isTop ? `0 0 4px ${cls.color}88` : 'none',
+                                    }} />
+                                ))}
+                              </div>
+                              <span className="text-[8px] font-bold uppercase tracking-wide"
+                                style={{ color: isTop ? cls.color : 'var(--color-text-muted)' }}>
+                                {(STAT_LABEL[stat] ?? stat).slice(0, 3)}
+                              </span>
                             </div>
-                            <span className="text-[8px] uppercase text-text-muted">{stat.slice(0, 3)}</span>
-                          </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Starting skills + passive */}
+                      <div className="flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
+                        <span className="text-[9px] uppercase tracking-wide text-text-muted">Inicio:</span>
+                        {cls.startSkills?.map((sk) => (
+                          <span key={sk} className="rounded-lg border px-1.5 py-0.5 text-[10px] font-bold"
+                            style={{ borderColor: `${cls.color}44`, color: cls.color }}>
+                            {sk.replace(/_/g, ' ')}
+                          </span>
                         ))}
+                        {cls.passiveAura && (
+                          <span className="ml-auto rounded-lg bg-white/5 px-1.5 py-0.5 text-[9px] text-text-muted">
+                            ✦ {cls.passiveAura.replace(/_/g, ' ')}
+                          </span>
+                        )}
                       </div>
                     </button>
                   )

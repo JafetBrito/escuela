@@ -13,6 +13,7 @@ const LINKS = [
   { to: '/biblioteca', label: 'Librería',  icon: '📚' },
   { to: '/tienda',     label: 'Tienda',    icon: '🛒' },
   { to: '/logros',     label: 'Logros',    icon: '🏅' },
+  { to: '/arena',      label: 'Arena',     icon: '⚔️' },
   { to: '/games',      label: 'Games',     icon: '🎮' },
   { to: '/vr',         label: 'VR',        icon: '🕶️' },
   { to: '/ajustes',    label: 'Ajustes',   icon: '⚙️' },
