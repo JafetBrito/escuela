@@ -59,14 +59,15 @@ export default function WelcomeModal({ courseId }) {
   // "how the mascot menu works" explainer — that's covered by the demo
   // course — and instead end with an AI-generated study plan.
   const hasWelcome = !!courseData.welcome
+  const placementQuestions = courseData.welcome?.placementQuestions ?? PLACEMENT_QUESTIONS
 
   const totalSteps = hasWelcome
-    ? 1 + PLACEMENT_QUESTIONS.length + 1
-    : 3 + PLACEMENT_QUESTIONS.length
+    ? 1 + placementQuestions.length + 1
+    : 3 + placementQuestions.length
   const questionStartStep = hasWelcome ? 1 : 3
   const isQuestionStep =
-    step >= questionStartStep && step < questionStartStep + PLACEMENT_QUESTIONS.length
-  const currentQuestion = PLACEMENT_QUESTIONS[step - questionStartStep]
+    step >= questionStartStep && step < questionStartStep + placementQuestions.length
+  const currentQuestion = placementQuestions[step - questionStartStep]
   const isPlanStep = hasWelcome && step === totalSteps - 1
   const isLastStep = step === totalSteps - 1
 
@@ -75,7 +76,7 @@ export default function WelcomeModal({ courseId }) {
 
     setPlanStatus('loading')
 
-    const answersText = PLACEMENT_QUESTIONS.map(
+    const answersText = placementQuestions.map(
       (q) => `- ${q.prompt} → ${answers[q.id] ?? 'sin respuesta'}`,
     ).join('\n')
     const moduleList = courseData.modules.map((m) => `${m.order}. ${m.title}`).join('\n')

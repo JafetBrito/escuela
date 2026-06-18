@@ -10,6 +10,28 @@
       "Conexión a internet estable",
       "Auriculares recomendados para la experiencia VR",
       "Unos 20-30 minutos por clase"
+    ],
+    "placementQuestions": [
+      {
+        "id": "q1",
+        "prompt": "¿Has estudiado filosofía antes?",
+        "options": ["Nunca", "Algo en el bachillerato", "Sí, he tomado cursos formales"]
+      },
+      {
+        "id": "q2",
+        "prompt": "¿Qué filósofo reconoces aunque sea de nombre?",
+        "options": ["Ninguno todavía", "Platón o Sócrates", "Varios: Aristóteles, Kant, Nietzsche…"]
+      },
+      {
+        "id": "q3",
+        "prompt": "Cuando te preguntas '¿por qué existe algo en vez de nada?', ¿qué sientes?",
+        "options": ["Me parece una pregunta sin respuesta", "Curiosidad genuina", "Ya tengo mis propias ideas al respecto"]
+      },
+      {
+        "id": "q4",
+        "prompt": "¿Qué esperas llevarte de este curso?",
+        "options": ["Entender los conceptos básicos", "Cuestionar mis propias creencias", "Aplicar la filosofía a mi vida cotidiana"]
+      }
     ]
   },
   "modules": [
@@ -27,18 +49,22 @@
           "solution": ""
         }
       ],
-      "quiz": [
-        {
-          "id": "filo-1-q1",
-          "question": "¿Qué significa la palabra 'filosofía' en griego?",
-          "options": ["Amor a la sabiduría", "Estudio de la mente", "Arte del debate", "Ciencia del ser"],
-          "correct": 0
+      "missions": {
+        "chat": {
+          "label": "Reflexiona con tu mascota: ¿qué es la filosofía para ti?",
+          "hint": "Abre el Chat y cuéntale a tu mascota qué significa la filosofía en tu propia vida."
         },
+        "item": {
+          "label": "Activa un objeto de tu inventario para estudiar con más comodidad"
+        }
+      },
+      "funMissions": [
         {
-          "id": "filo-1-q2",
-          "question": "¿Cuál es la actitud fundamental del filósofo?",
-          "options": ["La duda reflexiva", "La certeza absoluta", "La obediencia ciega", "La acumulación de datos"],
-          "correct": 0
+          "id": "ver-video-filo-1",
+          "icon": "🎬",
+          "title": "Ver el video de introducción a la filosofía",
+          "prompt": "Mira el video completo. Cuando termines, haz clic en 'Ya la cumplí'.",
+          "reward": 1500
         }
       ]
     },
@@ -58,18 +84,22 @@
           "solution": ""
         }
       ],
-      "quiz": [
-        {
-          "id": "filo-2-q1",
-          "question": "En la alegoría de la cueva, ¿qué representan las sombras en la pared?",
-          "options": ["Las apariencias y el mundo sensible", "La verdad absoluta", "Los sueños del prisionero", "El fuego de la sabiduría"],
-          "correct": 0
+      "missions": {
+        "chat": {
+          "label": "Reflexiona con tu mascota sobre la alegoría de la cueva",
+          "hint": "Después de vivir la experiencia VR, comparte en el Chat qué sombras identificas en tu propia vida."
         },
+        "item": {
+          "label": "Activa un objeto de tu inventario durante la experiencia"
+        }
+      },
+      "funMissions": [
         {
-          "id": "filo-2-q2",
-          "question": "¿Qué representa el sol cuando el prisionero sale de la cueva?",
-          "options": ["La idea del Bien / la Verdad", "El mundo físico real", "La sociedad moderna", "La muerte"],
-          "correct": 0
+          "id": "entrar-vr-cueva",
+          "icon": "🏛️",
+          "title": "Entrar al mundo VR de la Cueva de Platón",
+          "prompt": "Haz clic en 'Entrar al Mundo VR', completa la experiencia y regresa. Luego haz clic en 'Ya la cumplí'.",
+          "reward": 2000
         }
       ]
     },
