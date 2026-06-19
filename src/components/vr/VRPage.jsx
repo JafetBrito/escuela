@@ -1194,8 +1194,11 @@ function Player({
 
     // Gravity + jump via Rapier character controller (only Y axis).
     // The CC detects the flat ground CuboidCollider; raycasts handle walls above.
+    // Guard: body.collider(0) returns undefined during the first Rapier tick before
+    // colliders are fully initialized — passing undefined crashes the controller and
+    // kills the WebGL context. Fall through to the raycast fallback in that case.
     const body = bodyRef.current
-    if (body) {
+    if (body && body.numColliders() > 0) {
       const t = body.translation()
       // Sync XZ from our raycast-resolved position, apply CC only for Y
       const desiredY = { x: 0, y: velocityY.current * delta, z: 0 }
