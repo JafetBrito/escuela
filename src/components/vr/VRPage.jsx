@@ -39,6 +39,7 @@ import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS } fro
 import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
 import { useAnfiteatroGround, ANFI_H, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
 import { useWorldTreeGround, WT_CLASS_NODES } from './worlds/useWorldTreeGround'
+import SceneEffects from '../shared/SceneEffects'
 
 // While we're designing/testing the world's NPCs and missions, swap the real
 // city model for a simple flat test ground with a few placeholder walls.
@@ -3609,8 +3610,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   }, [showHint])
 
   // Lighting themes per world mode
-  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#87ceeb'
-  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#c8e8f4', 50, 165]
+  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#90c8e8'
+  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#d4c8b0', 45, 150]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -3640,15 +3641,20 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         >
           <color attach="background" args={[bgColor]} />
           <fog attach="fog" args={fogArgs} />
-          {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, WorldTree = mystic, Campus = summer sun */}
+          <SceneEffects
+            bloomIntensity={anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : 0.22}
+            vignetteDarkness={0.38}
+            multisampling={0}
+          />
+          {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, WorldTree = mystic, Campus = golden afternoon */}
           <ambientLight
             intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0.85}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#d8eaf8'}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#ffecd8'}
           />
           <directionalLight
             position={[20, 30, 10]}
             intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : 1.1}
-            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#fff8d8'}
+            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#ffdd88'}
           />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}

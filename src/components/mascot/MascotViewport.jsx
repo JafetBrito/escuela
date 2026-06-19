@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import MascotMesh from './MascotMesh'
 import MascotEmotionOverlay from './MascotEmotionOverlay'
+import SceneEffects from '../shared/SceneEffects'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getMascotById } from '../../data/mascotRegistry'
@@ -21,12 +22,13 @@ export default function MascotViewport({ className = '', showEmotions = false })
   return (
     <div className={`relative ${className}`}>
       <Canvas camera={{ position: [0, 0.4, 4.2], fov: 38 }} gl={{ preserveDrawingBuffer: true }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[3, 3, 3]} intensity={1.2} />
-        <directionalLight position={[-3, 1, -2]} intensity={0.4} />
+        <ambientLight color="#ffecd8" intensity={0.95} />
+        <directionalLight position={[3, 3, 3]} color="#ffd9a0" intensity={1.4} />
+        <directionalLight position={[-3, 1, -2]} color="#a0c4ff" intensity={0.28} />
         <Suspense fallback={null}>
           <MascotMesh mascot={mascot} skin={skin} />
         </Suspense>
+        <SceneEffects />
       </Canvas>
       {skin.accessory && (
         <div

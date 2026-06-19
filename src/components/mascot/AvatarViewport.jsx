@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import MascotMesh from './MascotMesh'
+import SceneEffects from '../shared/SceneEffects'
 import { useGameStore } from '../../stores/useGameStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
@@ -18,13 +19,14 @@ export default function AvatarViewport({ className = '' }) {
         camera={{ position: [0, 0.4, 4.2], fov: 38 }}
         gl={{ preserveDrawingBuffer: true }}
       >
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[3, 3, 3]} intensity={1.4} />
-        <directionalLight position={[-3, 1, -2]} intensity={0.5} />
-        <directionalLight position={[0, -2, 1]} intensity={0.2} />
+        <ambientLight color="#ffecd8" intensity={0.95} />
+        <directionalLight position={[3, 3, 3]} color="#ffd9a0" intensity={1.4} />
+        <directionalLight position={[-3, 1, -2]} color="#a0c4ff" intensity={0.28} />
+        <directionalLight position={[0, -2, 1]} intensity={0.15} />
         <Suspense fallback={null}>
           <MascotMesh mascot={mascot} skin={skin} />
         </Suspense>
+        <SceneEffects />
       </Canvas>
     </div>
   )
