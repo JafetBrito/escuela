@@ -7,6 +7,7 @@ import GalleryPanel from './GalleryPanel'
 import BooksPanel from './BooksPanel'
 import AppearancePanel from './AppearancePanel'
 import FriendsPanel from './FriendsPanel'
+import SkillTreePanel from './SkillTreePanel'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -20,6 +21,7 @@ const BASE_MENU = [
   { id: 'chat', label: 'Chat', icon: '💬' },
   { id: 'missions', label: 'Misiones', icon: '🎯' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
+  { id: 'skilltree', label: 'Árbol', icon: '🌳' },
   { id: 'books', label: 'Libros', icon: '📚' },
   { id: 'notes', label: 'Notas', icon: '📝' },
   { id: 'appearance', label: 'Aspecto', icon: '🎨' },
@@ -90,6 +92,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             {panel === 'chat' && <ChatTab courseId={courseId} module={module} className="h-full" />}
             {panel === 'missions' && <MissionsPanel courseId={courseId} module={module} />}
             {panel === 'items' && <ItemsPanel />}
+            {panel === 'skilltree' && <SkillTreePanel />}
             {panel === 'books' && <BooksPanel />}
             {panel === 'notes' && <NotesPanel courseId={courseId} module={module} />}
             {panel === 'appearance' && <AppearancePanel />}

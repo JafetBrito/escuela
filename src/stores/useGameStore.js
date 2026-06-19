@@ -168,6 +168,15 @@ export const useGameStore = create((set, get) => ({
       return { [owner]: { ...char, talentPoints: (char.talentPoints ?? 0) + amount } }
     }),
 
+  equipSkill: (owner, skillId, slot) =>
+    set((s) => {
+      const char = s[owner]
+      if (!char || !char.skills.unlocked.includes(skillId)) return s
+      const equipped = [...char.skills.equipped]
+      equipped[slot] = skillId
+      return { [owner]: { ...char, skills: { ...char.skills, equipped } } }
+    }),
+
   selectPlayerClass: (classId) => {
     const cls = PLAYER_CLASSES[classId]
     if (!cls) return

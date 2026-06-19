@@ -22,6 +22,7 @@ import { sendNpcMessage } from '../../services/chat/npcTransport'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
+import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
@@ -1081,6 +1082,8 @@ function Player({
   const fov = useVrSettingsStore((s) => s.fov)
   const noClip = useVrSettingsStore((s) => s.noClip)
   const avatarId = useGameStore((s) => s.player.avatarId)
+  const activeChar = useVrCharacterStore((s) => s.activeChar)
+  const companionFollows = useVrCharacterStore((s) => s.companionFollows)
 
   const controller = useMemo(() => {
     const c = world.createCharacterController(0.02)
@@ -1329,15 +1332,53 @@ function Player({
       {/* Visual group — camera target + mesh + chat bubbles */}
       <group ref={group}>
         <group ref={meshGroup} scale={PLAYER_SCALE}>
-          <PlayerAvatarBody avatarId={avatarId} />
-          {/* Mascot companion walks slightly to the side */}
-          <group position={[1.2, 0, 0]} scale={0.65}>
-            <MascotMesh mascot={mascot} skin={skin} />
-          </group>
+          {activeChar === 'avatar' ? (
+            <>
+              {/* Avatar is the main character — full size */}
+              <PlayerAvatarBody avatarId={avatarId} />
+              {companionFollows && (
+                <group position={[1.4, 0, 0]} scale={0.55}>
+                  <MascotMesh mascot={mascot} skin={skin} />
+                </group>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Mascot is the main character — scaled up, centered */}
+              <group scale={1.25}>
+                <MascotMesh mascot={mascot} skin={skin} />
+              </group>
+              {companionFollows && (
+                <group position={[1.6, 0, 0]} scale={0.5}>
+                  <PlayerAvatarBody avatarId={avatarId} />
+                </group>
+              )}
+            </>
+          )}
         </group>
         <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(playerId)} />
       </group>
     </>
+  )
+}
+
+// Shows the inactive companion parked at a fixed world position when the player
+// enables "Stay" mode — rendered inside Suspense so MascotMesh can useGLTF.
+function StayedCompanion({ mascot, skin, avatarId }) {
+  const activeChar = useVrCharacterStore((s) => s.activeChar)
+  const stayPosition = useVrCharacterStore((s) => s.stayPosition)
+  if (!stayPosition) return null
+  const pos = [stayPosition.x, stayPosition.y, stayPosition.z]
+  return (
+    <group position={pos}>
+      <group scale={PLAYER_SCALE * 0.9}>
+        {activeChar === 'avatar' ? (
+          <MascotMesh mascot={mascot} skin={skin} />
+        ) : (
+          <PlayerAvatarBody avatarId={avatarId} />
+        )}
+      </group>
+    </group>
   )
 }
 
@@ -3336,6 +3377,63 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, onSelectPla
   )
 }
 
+// Character switcher overlay: toggles avatar ↔ mascot and follow/stay mode.
+// Needs playerPositionRef to snapshot the position when switching to "stay".
+function CharSwitcherHud({ playerPositionRef, hudVisible }) {
+  const activeChar = useVrCharacterStore((s) => s.activeChar)
+  const companionFollows = useVrCharacterStore((s) => s.companionFollows)
+  const toggleChar = useVrCharacterStore((s) => s.toggleChar)
+  const setCompanionFollows = useVrCharacterStore((s) => s.setCompanionFollows)
+  const setStayPosition = useVrCharacterStore((s) => s.setStayPosition)
+
+  if (!hudVisible) return null
+
+  const handleSwitch = () => {
+    toggleChar()
+  }
+
+  const handleFollowToggle = () => {
+    if (companionFollows) {
+      // Switching to Stay — record current player position
+      const pos = playerPositionRef?.current
+      setStayPosition(pos ?? null)
+    } else {
+      // Switching to Follow — clear stay position
+      setStayPosition(null)
+    }
+    setCompanionFollows(!companionFollows)
+  }
+
+  const charLabel = activeChar === 'avatar' ? '🧑 Avatar' : '🐾 Mascota'
+  const companionLabel = activeChar === 'avatar' ? 'Mascota' : 'Avatar'
+
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-black/65 px-3 py-1.5 shadow-lg backdrop-blur">
+        <span className="text-xs font-bold text-white/80">{charLabel}</span>
+        <button
+          type="button"
+          onClick={handleSwitch}
+          title="Cambiar personaje (⇄)"
+          className="rounded-full bg-white/15 px-2.5 py-0.5 text-sm text-white transition-colors hover:bg-white/30 active:scale-95"
+        >
+          ⇄
+        </button>
+        <button
+          type="button"
+          onClick={handleFollowToggle}
+          title={companionFollows ? `${companionLabel} te sigue — clic para dejar quieto` : `${companionLabel} quieto — clic para seguir`}
+          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold text-white transition-colors active:scale-95 ${
+            companionFollows ? 'bg-emerald-600/50 hover:bg-emerald-600/70' : 'bg-amber-600/50 hover:bg-amber-600/70'
+          }`}
+        >
+          {companionFollows ? `${companionLabel} sigue 🐾` : `${companionLabel} quieto 📌`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
 export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false }) {
   const navigate = useNavigate()
@@ -3410,7 +3508,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const missionState = useMissionState()
   const openPanel = useMascotCompanionStore((s) => s.openPanel)
 
-  // Player TTS — speak every message the local player sends in world chat
+  // Player TTS — speak every message the local player sends in world chat.
+  // Voice pitch/rate differs per active character so avatar and mascota sound distinct.
   const worldMessages = useWorldChatStore((s) => s.messages)
   const lastSpokenMsgRef = useRef(null)
   useEffect(() => {
@@ -3425,7 +3524,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = 'es-ES'; utt.rate = 1.0; utt.pitch = 1.0
+    const isMascotActive = useVrCharacterStore.getState().activeChar === 'mascot'
+    utt.lang = 'es-ES'
+    utt.rate = isMascotActive ? 1.15 : 1.0
+    utt.pitch = isMascotActive ? 1.45 : 1.0
     window.speechSynthesis.speak(utt)
   }, [worldMessages, playerId])
 
@@ -3575,9 +3677,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               roomMode={roomMode}
               anfiteatroMode={anfiteatroMode}
             />
+            {/* Parked companion mesh when follow mode is off */}
+            <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
           </Suspense>
           </Physics>
         </Canvas>}
+
+        {/* Character switcher — centered above skill bar */}
+        <CharSwitcherHud playerPositionRef={playerPositionRef} hudVisible={hudVisible} />
 
         {/* NPC proximity prompt — any NPC type */}
         {nearbyNpcId && !activeNpcId && (

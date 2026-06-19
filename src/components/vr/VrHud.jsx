@@ -4,6 +4,7 @@ import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGa
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
+import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 
 // ─── Cooldown hook ─────────────────────────────────────────────────────────
 function useCooldown(cooldownMs) {
@@ -174,38 +175,58 @@ function PortraitHud() {
   )
 }
 
-// ─── Skill bar (bottom-right) — BDM row style ─────────────────────────────
+// ─── Skill bar (bottom-center, draggable) ─────────────────────────────────
 function SkillBar() {
+  const activeChar = useVrCharacterStore((s) => s.activeChar)
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
   const playerSkills = useGameStore((s) => s.player.skills.equipped)
   const oliverSkills = useGameStore((s) => s.oliver.skills.equipped)
-  const cls = playerClass ? PLAYER_CLASSES[playerClass] : null
-  const oCls = oliverClass ? OLIVER_CLASSES[oliverClass] : null
+
+  const isMascot = activeChar === 'mascot'
+  const equippedSkills = isMascot ? oliverSkills : playerSkills
+  const cls = isMascot
+    ? (oliverClass ? OLIVER_CLASSES[oliverClass] : null)
+    : (playerClass ? PLAYER_CLASSES[playerClass] : null)
+
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+
+  function onDragStart(e) {
+    e.preventDefault()
+    const sx = e.clientX - dragOffset.x
+    const sy = e.clientY - dragOffset.y
+    const onMove = (me) => setDragOffset({ x: me.clientX - sx, y: me.clientY - sy })
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
 
   return (
     <div
-      className="flex flex-col items-end gap-2 rounded-2xl p-2"
+      className="pointer-events-auto flex flex-col items-center gap-1.5 rounded-2xl p-2 select-none"
       style={{
-        background: 'linear-gradient(135deg, rgba(0,0,0,0.68), rgba(0,0,0,0.42))',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.72), rgba(0,0,0,0.48))',
+        backdropFilter: 'blur(12px)',
+        border: cls ? `1px solid ${cls.color}33` : '1px solid rgba(255,255,255,0.07)',
+        boxShadow: cls ? `0 0 18px ${cls.color}18` : 'none',
+        cursor: 'grab',
+        transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
       }}
+      onPointerDown={onDragStart}
     >
-      <div className="flex items-center gap-1.5">
-        <span className="rounded-full px-1.5 font-bold text-white/50" style={{ fontSize: 8, background: oCls ? `${oCls.color}22` : 'transparent' }}>
-          {oCls ? `${oCls.icon}` : '🐱'}
+      {cls && (
+        <span className="font-bold text-white/50" style={{ fontSize: 8 }}>
+          {cls.icon} {cls.name}
         </span>
-        {oliverSkills.map((id, i) => <SkillBtn key={`o${i}`} skillId={id} hotkey={String(i + 1)} size={50} />)}
-      </div>
-      <div className="w-full" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+      )}
       <div className="flex items-center gap-1.5">
-        <span className="rounded-full px-1.5 font-bold text-white/50" style={{ fontSize: 8, background: cls ? `${cls.color}22` : 'transparent' }}>
-          {cls ? `${cls.icon}` : '⚔️'}
-        </span>
-        {playerSkills.map((id, i) => <SkillBtn key={`p${i}`} skillId={id} hotkey={String(i + 5)} dim={!playerClass} size={50} />)}
+        {equippedSkills.map((id, i) => (
+          <SkillBtn key={i} skillId={id} hotkey={String(i + 1)} size={50} />
+        ))}
       </div>
-      <p className="text-white/20" style={{ fontSize: 8 }}>1–4 Oliver · 5–8 Jugador</p>
     </div>
   )
 }
@@ -294,11 +315,9 @@ export default function VrHud({
             </div>
           </div>
 
-          {/* Bottom-right: skill bar */}
-          <div className="pointer-events-none absolute bottom-20 right-3 z-20 sm:bottom-16 sm:right-4">
-            <div className="pointer-events-auto">
-              <SkillBar />
-            </div>
+          {/* Bottom-center: skill bar (draggable — drag the panel to reposition) */}
+          <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 sm:bottom-16">
+            <SkillBar />
           </div>
         </>
       )}
