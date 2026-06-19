@@ -45,6 +45,7 @@ export function buildProgressSnapshot() {
     useGlobalMissionsStore.getState()
   const { unlocked: unlockedAchievements } = useAchievementsStore.getState()
   const { friends } = useFriendsStore.getState()
+  const { claimedRewards: gamesClaimedRewards } = useGamesStore.getState()
   const {
     cameraMode,
     mouseSensitivity,
@@ -108,6 +109,7 @@ export function buildProgressSnapshot() {
     globalMissions: { accepted: globalMissionsAccepted, claimed: globalMissionsClaimed },
     unlockedAchievements,
     friends,
+    gamesClaimedRewards,
     vrSettings: {
       cameraMode,
       mouseSensitivity,
@@ -171,6 +173,7 @@ export function applyProgressSnapshot(snapshot) {
   useGlobalMissionsStore.getState().loadGlobalMissions(snapshot.globalMissions ?? {})
   useAchievementsStore.getState().loadUnlocked(snapshot.unlockedAchievements ?? [])
   useFriendsStore.getState().loadFriends(snapshot.friends ?? [])
+  useGamesStore.getState().loadClaimedRewards(snapshot.gamesClaimedRewards ?? {})
   useVrSettingsStore.getState().loadVrSettings(snapshot.vrSettings ?? {})
   useGameStore.getState().loadGameState(snapshot.gameState ?? null)
   useTutorialStore.getState().loadTutorial(snapshot.tutorial ?? null)
