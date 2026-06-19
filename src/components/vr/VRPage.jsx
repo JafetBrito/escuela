@@ -40,6 +40,7 @@ import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
 import { useAnfiteatroGround, ANFI_H, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
 import { useWorldTreeGround, WT_CLASS_NODES } from './worlds/useWorldTreeGround'
 import SceneEffects from '../shared/SceneEffects'
+import DayNightCycle from './DayNightCycle'
 
 // While we're designing/testing the world's NPCs and missions, swap the real
 // city model for a simple flat test ground with a few placeholder walls.
@@ -3646,15 +3647,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             vignetteDarkness={0.38}
             multisampling={0}
           />
-          {/* Lighting: Anfiteatro = moody stage spots, Room = firelight, WorldTree = mystic, Campus = golden afternoon */}
+          {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color */}
+          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode} />
+          {/* Non-campus modes: static lighting (intensity 0 in campus so they don't stack) */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0.85}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#ffecd8'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#000000'}
           />
           <directionalLight
             position={[20, 30, 10]}
-            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : 1.1}
-            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#ffdd88'}
+            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : 0}
+            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#000000'}
           />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}

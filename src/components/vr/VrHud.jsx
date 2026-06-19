@@ -5,6 +5,7 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
+import { useDayNightStore } from '../../stores/useDayNightStore'
 
 // ─── Cooldown hook ─────────────────────────────────────────────────────────
 function useCooldown(cooldownMs) {
@@ -282,6 +283,23 @@ function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, 
   )
 }
 
+// ─── In-game clock ────────────────────────────────────────────────────────
+function DayNightClock() {
+  const t = useDayNightStore((s) => s.timeOfDay)
+  const h = Math.floor(t)
+  const m = Math.floor((t - h) * 60)
+  const label = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  const icon = t >= 20 || t < 5 ? '🌙' : t < 7 ? '🌅' : t < 17 ? '☀️' : '🌇'
+  return (
+    <div
+      className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full px-3 py-1 text-white/90 tabular-nums"
+      style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', fontSize: 13, fontWeight: 700 }}
+    >
+      {icon} {label}
+    </div>
+  )
+}
+
 // ─── Main HUD export ───────────────────────────────────────────────────────
 export default function VrHud({
   hidden = false,
@@ -295,6 +313,7 @@ export default function VrHud({
 }) {
   return (
     <>
+      <DayNightClock />
       {/* Utility strip — always rendered so the eye button is accessible */}
       <VrUtilBar
         onOpenSettings={onOpenSettings}
