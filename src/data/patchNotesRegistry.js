@@ -4,9 +4,24 @@
 //  2. Update LATEST_VERSION to match
 //  The PatchNotesModal shows once per version (gated by localStorage).
 
-export const LATEST_VERSION = '0.4.0'
+export const LATEST_VERSION = '0.5.0'
 
 export const PATCH_NOTES = [
+  {
+    version: '0.5.0',
+    date: '2026-06-19',
+    title: 'Janulingo · Ajedrez · Aprende Idiomas',
+    emoji: '🧩',
+    tag: 'NOVEDAD',
+    tagColor: '#22c55e',
+    changes: [
+      { icon: '🧩', text: 'Janulingo: mini-app completa de idiomas con portada, selección de idioma, mapa de niveles estilo Duolingo y motor de bloques. Ordena Estructura + Verbo + Objeto para construir frases. Inglés (2 niveles), Francés y Catalán.' },
+      { icon: '🔊', text: 'Audio nativo por idioma: selección automática de voz del sistema para cada lengua (corrige el bug que leía catalán con acento inglés). Controles de velocidad 🐌 0.5× / 🚶 0.75× / 🏃 1×.' },
+      { icon: '🌍', text: 'Aprende Idiomas: juego de adivinar palabras con emojis con sistema de pistas progresivas de Oliver, pronuciación con Web Speech API y sistema de puntos.' },
+      { icon: '♟️', text: 'Ajedrez con tablero completo, modo vs IA (un ply) y modo 2 jugadores. Destaque de último movimiento, detección de jaque/jaque mate/tablas.' },
+      { icon: '🐱', text: 'Oliver como oráculo de pistas en ambos juegos: revela estructura, letras y pronunciación de forma progresiva para no arruinar el reto.' },
+    ],
+  },
   {
     version: '0.4.0',
     date: '2026-06-18',
