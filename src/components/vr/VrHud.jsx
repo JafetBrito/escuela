@@ -5,7 +5,6 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
-import { useDayNightStore } from '../../stores/useDayNightStore'
 
 // ─── Cooldown hook ─────────────────────────────────────────────────────────
 function useCooldown(cooldownMs) {
@@ -283,13 +282,16 @@ function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, 
   )
 }
 
-// ─── In-game clock ────────────────────────────────────────────────────────
+// ─── Real-time clock ──────────────────────────────────────────────────────
 function DayNightClock() {
-  const t = useDayNightStore((s) => s.timeOfDay)
-  const h = Math.floor(t)
-  const m = Math.floor((t - h) * 60)
-  const label = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-  const icon = t >= 20 || t < 5 ? '🌙' : t < 7 ? '🌅' : t < 17 ? '☀️' : '🌇'
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const h = now.getHours()
+  const label = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+  const icon = h >= 20 || h < 5 ? '🌙' : h < 7 ? '🌅' : h < 17 ? '☀️' : '🌇'
   return (
     <div
       className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full px-3 py-1 text-white/90 tabular-nums"

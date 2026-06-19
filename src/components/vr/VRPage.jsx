@@ -28,6 +28,8 @@ import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
+import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
+import { useShopStore } from '../../stores/useShopStore'
 import VrLoadingScreen from './VrLoadingScreen'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import BattleScreen from '../battle/BattleScreen'
@@ -3439,6 +3441,41 @@ function CharSwitcherHud({ playerPositionRef, hudVisible }) {
   )
 }
 
+// Spotlight that follows camera direction — rendered when linterna is active.
+const _flashTarget = new THREE.Object3D()
+function FlashlightSpot({ playerPositionRef, cameraRef }) {
+  const lightRef = useRef()
+  const { scene } = useThree()
+  useEffect(() => {
+    scene.add(_flashTarget)
+    return () => scene.remove(_flashTarget)
+  }, [scene])
+  useFrame(() => {
+    if (!lightRef.current || !playerPositionRef.current) return
+    const pos = playerPositionRef.current
+    const { yaw, pitch } = cameraRef.current
+    const ox = pos.x, oy = pos.y + 1.6, oz = pos.z
+    lightRef.current.position.set(ox, oy, oz)
+    const dx = -Math.sin(yaw) * Math.cos(pitch)
+    const dy = -Math.sin(pitch)
+    const dz = -Math.cos(yaw) * Math.cos(pitch)
+    _flashTarget.position.set(ox + dx * 12, oy + dy * 12, oz + dz * 12)
+    _flashTarget.updateMatrixWorld()
+    lightRef.current.target = _flashTarget
+  })
+  return (
+    <spotLight
+      ref={lightRef}
+      color="#fff4cc"
+      intensity={12}
+      angle={Math.PI / 7}
+      penumbra={0.3}
+      distance={35}
+      decay={2}
+    />
+  )
+}
+
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
 export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false }) {
   const navigate = useNavigate()
@@ -3512,6 +3549,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const claimReward = useGlobalMissionsStore((s) => s.claimReward)
   const missionState = useMissionState()
   const openPanel = useMascotCompanionStore((s) => s.openPanel)
+  const flashlightOn = useItemEffectsStore((s) => s.activeItems['linterna'])
+  const flashlightPurchased = useShopStore((s) => s.purchased.includes('linterna'))
 
   // Player TTS — speak every message the local player sends in world chat.
   // Voice pitch/rate differs per active character so avatar and mascota sound distinct.
@@ -3557,6 +3596,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const handleDown = (e) => {
       if (isTypingTarget(e.target)) return
       if (e.key === 'Escape') { setPortalMenuOpen(false); setActiveNpcId(null); return }
+      if (e.key.toLowerCase() === 'f') { useItemEffectsStore.getState().toggleItem('linterna'); return }
       if (e.key.toLowerCase() === 'e') {
         if (nearDailyReward) { setDailyRewardsOpen(true); return }
         if (nearbyNpcId) {
@@ -3649,6 +3689,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           />
           {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color */}
           <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode} />
+          {flashlightOn && flashlightPurchased && (
+            <FlashlightSpot playerPositionRef={playerPositionRef} cameraRef={cameraRef} />
+          )}
           {/* Non-campus modes: static lighting (intensity 0 in campus so they don't stack) */}
           <ambientLight
             intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0}

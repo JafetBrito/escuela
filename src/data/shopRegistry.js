@@ -251,6 +251,17 @@ export const SHOP_ITEMS = [
     kind: 'camera',
   },
   {
+    id: 'linterna',
+    name: 'Linterna',
+    icon: '🔦',
+    rarity: 'common',
+    category: 'objetos',
+    price: 3000,
+    description: 'Ilumina el campus de noche. Actívala en el VR para proyectar un cono de luz desde tu perspectiva.',
+    interactive: true,
+    kind: 'flashlight',
+  },
+  {
     id: 'prompt-tutor-estricto',
     name: 'Personalidad: Tutor Estricto',
     icon: '📏',
