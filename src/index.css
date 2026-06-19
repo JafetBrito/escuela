@@ -88,6 +88,13 @@ body {
 }
 .nav-dropdown { animation: nav-dropdown 0.13s ease; }
 
+@keyframes janulus-shake {
+  0%,100% { transform: translateX(0); }
+  20%,60%  { transform: translateX(-6px); }
+  40%,80%  { transform: translateX(6px); }
+}
+.janulus-shake { animation: janulus-shake 0.42s ease; }
+
 .nefertiti-float {
   top: 0;
   animation-name: nefertiti-drift;

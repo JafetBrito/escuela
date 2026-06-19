@@ -62,6 +62,16 @@ export const GAMES = [
     reward: 250,
   },
   {
+    id: 'janulus-matrices',
+    title: 'Técnica Janulus',
+    icon: '🧩',
+    category: 'Pruebas',
+    description: 'Ordena bloques de frases completas: Estructura + Verbo + Objeto. El método de Powell Janulus — 42 idiomas sin memorizar listas.',
+    type: 'component',
+    component: 'janulus',
+    reward: 200,
+  },
+  {
     id: 'trivia-clases',
     title: 'Trivia por Clase',
     icon: '🎯',
