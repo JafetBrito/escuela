@@ -315,12 +315,8 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     return () => clearTimeout(t)
   }, [learnIdx, phase, celebration]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-speak Oliver tip when celebration appears
-  useEffect(() => {
-    if (!celebration?.tip) return
-    const t = setTimeout(() => doSpeakUI(celebration.tip, 0.88), 300)
-    return () => clearTimeout(t)
-  }, [celebration])
+  // On correct answer: only the word itself is spoken (via speak() in handleLearnSubmit).
+  // Celebration tip/definition/etymology are all optional — user clicks 🔊 to hear them.
 
   const currentItem = learnQueue[learnIdx]
   const speak = useCallback((text) => doSpeak(text ?? round.sentence, lang, rate), [round, lang, rate])
@@ -527,7 +523,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             {isVerb ? '¿Cómo se llama esta acción?' : '¿Cómo se llama este objeto?'}
           </p>
 
-          {/* Definition — auto-spoken, prominent */}
+          {/* Definition + Examples — auto-spoken, prominent */}
           {learnData?.definition && !celebration && (
             <div className="flex w-full max-w-md items-start gap-2 rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5">
               <span className="mt-0.5 shrink-0 text-sm">📘</span>
@@ -538,6 +534,25 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                   className="mt-1 flex items-center gap-1 text-[10px] text-text-muted/40 hover:text-primary">
                   🔊 Escuchar
                 </button>
+
+                {learnData.examples?.length > 0 && (
+                  <div className="mt-2.5 space-y-1.5 border-t border-primary/15 pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
+                    {learnData.examples.map((ex, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <p className="text-[12px] font-medium text-text/85">"{ex.s}"</p>
+                          <p className="text-[11px] text-text-muted/60">{ex.t}</p>
+                        </div>
+                        <button type="button"
+                          onClick={() => doSpeak(ex.s, lang, rate)}
+                          className="mt-0.5 shrink-0 text-[11px] text-text-muted/30 hover:text-primary">
+                          🔊
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -557,16 +572,49 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             </div>
           )}
 
-          {/* Celebration — WAITS for user click, auto-spoken via useEffect */}
+          {/* Celebration — word was auto-spoken in handleLearnSubmit; everything else is click-to-hear */}
           {celebration && (
             <div className="w-full max-w-md space-y-3">
               <p className="text-center text-sm font-bold text-emerald-400">✅ ¡Correcto!</p>
+
+              {/* Definition recap with examples */}
+              {learnData?.definition && (
+                <div className="rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5 text-[12px]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Definición</p>
+                  <p className="mt-0.5 leading-relaxed text-text/90">{learnData.definition}</p>
+                  <button type="button" onClick={() => doSpeakUI(learnData.definition, 0.85)}
+                    className="mt-1 flex items-center gap-1 text-[10px] text-text-muted/40 hover:text-primary">
+                    🔊 Escuchar
+                  </button>
+                  {learnData.examples?.length > 0 && (
+                    <div className="mt-2 space-y-1.5 border-t border-primary/15 pt-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
+                      {learnData.examples.map((ex, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-text/85">"{ex.s}"</p>
+                            <p className="text-[11px] text-text-muted/60">{ex.t}</p>
+                          </div>
+                          <button type="button"
+                            onClick={() => doSpeak(ex.s, lang, rate)}
+                            className="mt-0.5 shrink-0 text-[11px] text-text-muted/30 hover:text-primary">
+                            🔊
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Oliver tip — click-to-hear only */}
               {celebration.tip && (
                 <OliverBubble
                   text={celebration.tip}
                   onRead={() => doSpeakUI(celebration.tip, 0.88)}
                 />
               )}
+
               <div className="flex justify-center">
                 <button type="button" onClick={advanceLearn}
                   className="rounded-xl border-b-4 border-primary/50 bg-primary px-6 py-2.5 text-sm font-bold text-background active:translate-y-0.5 active:border-b-2">
