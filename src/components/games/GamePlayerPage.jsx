@@ -6,6 +6,7 @@ import { useGamesStore } from '../../stores/useGamesStore'
 
 const COMPONENT_MAP = {
   chess: lazy(() => import('./chess/ChessGame')),
+  'emoji-language': lazy(() => import('./emoji-language/EmojiLanguageGame')),
 }
 
 export default function GamePlayerPage() {
