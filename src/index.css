@@ -95,6 +95,64 @@ body {
 }
 .janulus-shake { animation: janulus-shake 0.42s ease; }
 
+/* ── Verb action animations (used by VerbAnimation.jsx) ──────────────── */
+@keyframes verb-search {
+  0%,100% { transform: translate(0,0) rotate(-10deg); }
+  30%     { transform: translate(20px,-18px) rotate(18deg); }
+  65%     { transform: translate(-14px,10px) rotate(-6deg); }
+}
+@keyframes verb-spin {
+  0%,100% { transform: rotate(-38deg); }
+  50%     { transform: rotate(38deg); }
+}
+@keyframes verb-lift {
+  0%,100% { transform: translateY(0) rotate(-8deg); }
+  50%     { transform: translateY(-22px) rotate(8deg); }
+}
+@keyframes verb-swing {
+  0%,100%   { transform: perspective(380px) rotateY(0deg); }
+  35%,65%   { transform: perspective(380px) rotateY(-58deg); }
+}
+@keyframes verb-blink {
+  0%,25%,70%,100% { transform: scaleY(1); }
+  42%,58%          { transform: scaleY(0.08); }
+}
+@keyframes verb-pulse {
+  0%,100% { transform: scale(1) rotate(-5deg); }
+  50%     { transform: scale(1.28) rotate(5deg); }
+}
+@keyframes verb-think {
+  0%,100% { transform: rotate(-9deg) translateY(0); }
+  30%     { transform: rotate(9deg) translateY(-6px); }
+  70%     { transform: rotate(-4deg) translateY(5px); }
+}
+@keyframes verb-flash {
+  0%,100%  { opacity:1; filter:brightness(1); }
+  20%,60%  { opacity:.25; filter:brightness(.4); }
+  40%,80%  { opacity:1; filter:brightness(2.2); }
+}
+@keyframes verb-rise {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-20px) scale(1.18); }
+}
+@keyframes verb-glow {
+  0%,100% { filter: brightness(1) drop-shadow(0 0 0px gold); }
+  50%     { filter: brightness(1.5) drop-shadow(0 0 18px gold); }
+}
+@keyframes verb-wander {
+  0%   { transform: translate(0,0) rotate(-5deg); }
+  25%  { transform: translate(18px,-12px) rotate(6deg); }
+  50%  { transform: translate(32px,6px) rotate(-3deg); }
+  75%  { transform: translate(16px,18px) rotate(8deg); }
+  100% { transform: translate(0,0) rotate(-5deg); }
+}
+@keyframes verb-bounce {
+  0%,100% { transform: translateY(0) scaleY(1); }
+  40%     { transform: translateY(-22px) scaleY(1.08); }
+  60%     { transform: translateY(-14px) scaleY(1); }
+  80%     { transform: translateY(-5px) scaleY(.96); }
+}
+
 .nefertiti-float {
   top: 0;
   animation-name: nefertiti-drift;
