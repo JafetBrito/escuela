@@ -46,7 +46,8 @@ function freshRS(ld) {
   }
 }
 
-// Speak in target language (English, French, Catalan…)
+// ── TTS helpers ───────────────────────────────────────────────────────────────
+
 function doSpeak(text, langCode, rate) {
   const synth = window.speechSynthesis
   if (!synth) return
@@ -63,7 +64,6 @@ function doSpeak(text, langCode, rate) {
   synth.getVoices().length ? fire() : synth.addEventListener('voiceschanged', fire, { once: true })
 }
 
-// Speak in UI language (Spanish for Oliver's explanations, etymology, tips)
 function doSpeakUI(text, rate = 0.85) {
   const synth = window.speechSynthesis
   if (!synth) return
@@ -82,41 +82,111 @@ function doSpeakUI(text, rate = 0.85) {
   synth.getVoices().length ? fire() : synth.addEventListener('voiceschanged', fire, { once: true })
 }
 
-// ─── Post-level conversation script ──────────────────────────────────────────
+// Read English-language text in en-US voice
+function doSpeakEN(text, rate = 0.85) {
+  doSpeak(text, 'en', rate)
+}
+
+// ── Conversation: coherent story prompts ──────────────────────────────────────
+
+function getOliverPrompt(sentence) {
+  const s = sentence.toLowerCase()
+  // vocab-first matching (most specific)
+  if (s.includes('key') || s.includes('clé') || s.includes('clau'))
+    return s.includes('find') || s.includes('trouver') || s.includes('trobar')
+      ? "The door ahead is locked tight! We need to get through. What are you going to do?"
+      : "We have this locked chest right here. Tell me — what can you do with it?"
+  if (s.includes('torch')) return "It's pitch dark in this tunnel. I can't see anything at all! What should we do?"
+  if (s.includes('apple') || s.includes('pomme') || s.includes('poma'))
+    return "After hours of exploring these tunnels, we're both starving. I see a fruit tree over there! What do you want?"
+  if (s.includes('water') || s.includes('eau') || s.includes('aigua'))
+    return "We've been walking for so long in the heat. I'm incredibly thirsty. What do we need right now?"
+  if (s.includes('candle') || s.includes('bougie') || s.includes('espelma'))
+    return "Look — there's a faint flickering light in that dark corner. Tell me, what can you see?"
+  if (s.includes('mirror') || s.includes('miroir') || s.includes('mirall'))
+    return "Something is reflecting light on that old stone wall over there. What do you see?"
+  if (s.includes('bell') || s.includes('cloche') || s.includes('campana'))
+    return "Legend says there's a magic bell hidden somewhere in this tower. What are we looking for?"
+  if (s.includes('compass') || s.includes('boussole') || s.includes('brúixola'))
+    return "We keep going in circles in these tunnels! Do you have any idea how we navigate?"
+  if (s.includes('ladder')) return "The treasure is up on that high ledge — but there's no way up! What do we need?"
+  if (s.includes('bucket') || s.includes('seau'))
+    return "Water is flooding the passage! We need something to bail it out. What do you suggest?"
+  if (s.includes('book') || s.includes('livre') || s.includes('llibre'))
+    return "We found the castle's secret library! Dusty old tomes everywhere. What do you want to do?"
+  if (s.includes('map') || s.includes('mapa'))
+    return "We're completely lost in this maze. We have an old parchment... how can it help us?"
+  // abstract / L2 vocab
+  if (s.includes('language') || s.includes('idioma'))
+    return "Learning a new language is our greatest adventure! What's your biggest goal right now?"
+  if (s.includes('culture') || s.includes('cultura'))
+    return "Every place we visit has its own unique way of life. What do you want to do?"
+  if (s.includes('vocabulary') || s.includes('vocabulario'))
+    return "Words are the keys to every door in this castle! What do you need to work on?"
+  if (s.includes('pronunciation') || s.includes('pronunciación') || s.includes('pronunciation'))
+    return "Speaking a language perfectly is its own kind of adventure. What are you working on?"
+  if (s.includes('grammar') || s.includes('gramática'))
+    return "The rules of language are like a map of the castle — without them you get lost! What's your goal?"
+  if (s.includes('tradition') || s.includes('tradición'))
+    return "Every culture has its ancient customs and secrets. What do you want to discover?"
+  if (s.includes('history') || s.includes('historia'))
+    return "The past holds all the secrets of this place! What do you want to do?"
+  if (s.includes('skill') || s.includes('habilidad'))
+    return "Every day in this adventure makes us stronger. What are you working toward?"
+  if (s.includes('discover') || s.includes('explore'))
+    return "The world beyond this door is full of wonders. What do you want to do?"
+  if (s.includes('remember')) return "Our journey will fill our minds with new knowledge. What do you need to do?"
+  if (s.includes('appreciate')) return "This castle is teaching us to see beauty everywhere. What have you learned to do?"
+  // verb fallbacks
+  if (s.includes('open') || s.includes('ouvrir') || s.includes('obrir'))
+    return "There's a massive door blocking our path forward. What can you do?"
+  if (s.includes('carry') || s.includes('porter') || s.includes('portar'))
+    return "We need to bring supplies for the journey ahead. What are you going to do?"
+  if (s.includes('find') || s.includes('trouver') || s.includes('trobar'))
+    return "Something important is hidden in this castle. What are you going to do?"
+  if (s.includes('use') || s.includes('utiliser') || s.includes('fer servir'))
+    return "We have tools at our disposal. What are you going to do with them?"
+  if (s.includes('see') || s.includes('voir') || s.includes('veure'))
+    return "Something caught your eye in the shadows. Tell me — what do you see?"
+  if (s.includes('hold')) return "I need both hands free to pick the lock. Can you help me?"
+  return "¡Momento clave en nuestra aventura! Say what you would do next."
+}
+
 const CONV_SCENARIOS = {
   en: {
-    intro:   'Usaste estas frases a la perfección. Ahora mira cómo suenan todas juntas en una situación real...',
-    setting: '🏰 Oliver y tú exploran un castillo antiguo de noche. La conversación en inglés:',
-    outro:   '¿Ves cómo fluye? Con 3 bloques construiste una historia completa. Eso es la Técnica Janulus.\n\nPowell Janulus dominó 42 idiomas así — bloque a bloque. Tú ya empezaste. 🌟',
+    intro:   'You used these phrases perfectly. Now watch how they all come together in a real situation...',
+    setting: '🏰 You and Oliver are exploring an ancient castle at night. The lanterns are burning low...',
+    outro:   "You see? With just 3 blocks, you told an entire story. That's the Janulus Technique.\n\nPowell Janulus mastered 42 languages exactly like this — block by block. You've already started. 🌟",
   },
   fr: {
-    intro:   '¡Aprendiste todo esto hoy! Mira cómo fluyen tus frases en una conversación real...',
-    setting: '🗼 Oliver et toi vous promenez à Paris au coucher du soleil. La conversación en français:',
-    outro:   'Voilà! Ya tienes tu primer francés conversacional. 🥐\n\nJanulus aprendió su francés exactamente así — bloque a bloque. El idioma más romántico del mundo está a tu alcance.',
+    intro:   'Tu as utilisé ces phrases parfaitement! Regarde comment elles coulent dans une situation réelle...',
+    setting: '🗼 Oliver et toi vous promenez dans un vieux château au coucher du soleil...',
+    outro:   'Voilà! Tu as maintenant ton premier français conversationnel. 🥐\n\nJanulus a appris son français exactement comme ça — bloc à bloc. Le plus beau des idiomes est à ta portée.',
   },
   ca: {
-    intro:   '¡Hoy aprendiste muchísimo! Mira cómo fluyen tus frases en contexto real...',
-    setting: '🌹 Oliver i tu visiteu el Barri Gòtic de Barcelona al capvespre. La conversa en català:',
-    outro:   'Fantàstic! Ja parles català. 🌹\n\nEl catalán tiene 1,000 años de literatura. Hoy empezaste tu propia historia con él. Bloc a bloc.',
+    intro:   'Has fet servir aquestes frases perfectament! Mira com flueixen en una situació real...',
+    setting: '🌹 Oliver i tu visiteu el Barri Gòtic de Barcelona de nit. Les llums de gas il·luminen el carrer...',
+    outro:   'Fantàstic! Ja parles català. 🌹\n\nEl català té 1,000 anys de literatura. Avui has començat la teva pròpia història. Bloc a bloc.',
   },
 }
 
 function buildConversationScript(sentences, lang) {
   const sc = CONV_SCENARIOS[lang] ?? CONV_SCENARIOS.en
-  const pool = sentences.slice(0, 7) // use up to 7 learned sentences
+  const pool = sentences.slice(0, 7)
+  const exchanges = pool.flatMap((sentence) => [
+    { role: 'oliver', text: getOliverPrompt(sentence), uiLang: true },
+    { role: 'user',   text: sentence, uiLang: false, expected: sentence },
+  ])
   return [
     { role: 'oliver',    text: sc.intro,   uiLang: true },
     { role: 'narration', text: sc.setting, uiLang: true },
-    ...pool.map((text, i) => ({
-      role: i % 2 === 0 ? 'oliver' : 'user',
-      text,
-      uiLang: false,
-    })),
+    ...exchanges,
     { role: 'oliver', text: sc.outro, uiLang: true },
   ]
 }
 
-// ─── Shared UI components ────────────────────────────────────────────────────
+// ── Shared sub-components ──────────────────────────────────────────────────────
+
 function SpeedStrip({ rate, setRate, onListen }) {
   return (
     <div className="flex items-center justify-center gap-2 border-b border-border/30 bg-surface/40 px-4 py-1.5">
@@ -143,8 +213,7 @@ function SpeedStrip({ rate, setRate, onListen }) {
 function TopBar({ onBack, roundIdx, score, flash }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2.5">
-      <button type="button" onClick={onBack}
-        className="text-xs text-text-muted hover:text-text">← Mapa</button>
+      <button type="button" onClick={onBack} className="text-xs text-text-muted hover:text-text">← Mapa</button>
       <div className="flex items-center gap-2">
         <div className="h-2 w-24 overflow-hidden rounded-full bg-border/40">
           <div className="h-full rounded-full bg-primary transition-all duration-500"
@@ -182,41 +251,120 @@ function OliverBubble({ text, onRead, className = '' }) {
   )
 }
 
-// ─── Post-level Conversation Screen ──────────────────────────────────────────
-function ConversationScreen({ sentences, lang, rate, onDone }) {
-  const script = buildConversationScript(sentences, lang)
-  const [lineIdx, setLineIdx] = useState(0)
+// ── Conversation Screen with typing ───────────────────────────────────────────
 
-  // Auto-speak each line when it appears
+function ConversationScreen({ sentences, lang, rate, onDone }) {
+  const script     = buildConversationScript(sentences, lang)
+  const rateRef    = useRef(rate)
+  const inputRef   = useRef(null)
+  const bottomRef  = useRef(null)
+
+  const [idx,       setIdx]       = useState(0)
+  const [userInput, setUserInput] = useState('')
+  const [shake,     setShake]     = useState(false)
+  const [submitted, setSubmitted] = useState({})  // {lineIdx: typedText}
+
+  useEffect(() => { rateRef.current = rate }, [rate])
+
+  const line   = script[idx]
+  const isDone = idx >= script.length
+
+  // Auto-speak oliver + setting lines when they appear
   useEffect(() => {
-    const line = script[lineIdx]
-    if (!line) return
+    if (!line || line.role === 'user') return
     const fn = line.uiLang
-      ? () => doSpeakUI(line.text, rate * 0.88)
-      : () => doSpeak(line.text, lang, rate)
+      ? () => doSpeakUI(line.text, rateRef.current)
+      : () => doSpeak(line.text, lang, rateRef.current)
     const t = setTimeout(fn, 350)
     return () => clearTimeout(t)
-  }, [lineIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [idx]) // eslint-disable-line
 
-  const speakLine = (line) =>
-    line.uiLang ? doSpeakUI(line.text, rate * 0.88) : doSpeak(line.text, lang, rate)
+  // Auto-advance narration after 2s
+  useEffect(() => {
+    if (line?.role !== 'narration') return
+    const t = setTimeout(() => setIdx((n) => n + 1), 2000)
+    return () => clearTimeout(t)
+  }, [idx]) // eslint-disable-line
 
-  const visible = script.slice(0, lineIdx + 1)
-  const isLast  = lineIdx >= script.length - 1
+  // Focus input when user's turn arrives
+  useEffect(() => {
+    if (line?.role === 'user') setTimeout(() => inputRef.current?.focus(), 150)
+  }, [idx]) // eslint-disable-line
+
+  // Scroll to bottom
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [idx, submitted])
+
+  function advance() { setIdx((n) => n + 1) }
+
+  function handleUserSubmit(e) {
+    e?.preventDefault()
+    if (!line?.expected) return
+    const typed    = norm(userInput)
+    const expected = norm(line.expected)
+    if (typed === expected) {
+      doSpeak(line.expected, lang, rateRef.current)
+      setSubmitted((p) => ({ ...p, [idx]: userInput }))
+      setUserInput('')
+      setTimeout(advance, 700)
+    } else {
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
+    }
+  }
+
+  const visible = script.slice(0, isDone ? script.length : idx + 1)
 
   return (
     <div className="flex h-full flex-col bg-background text-text">
       <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2.5">
         <span className="text-sm font-bold">🗨️ Conversación de práctica</span>
-        <span className="text-xs text-text-muted">{Math.min(lineIdx + 1, script.length)}/{script.length}</span>
+        <span className="text-xs text-text-muted">{Math.min(idx + 1, script.length)}/{script.length}</span>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 overflow-auto px-4 py-4">
-        {visible.map((line, i) => {
-          if (line.role === 'narration') {
-            return <p key={i} className="w-full text-center text-xs italic text-text-muted/60">{line.text}</p>
+        {visible.map((l, i) => {
+          if (l.role === 'narration') {
+            return <p key={i} className="w-full text-center text-xs italic text-text-muted/60 py-1">{l.text}</p>
           }
-          const isUser = line.role === 'user'
+
+          const isUser          = l.role === 'user'
+          const isActiveUserTurn = isUser && i === idx && submitted[i] === undefined
+          const isPastUser       = isUser && (submitted[i] !== undefined || i < idx)
+          const displayText      = isPastUser ? (submitted[i] ?? l.expected) : l.text
+
+          if (isActiveUserTurn) {
+            return (
+              <div key={i} className="flex items-end gap-2 flex-row-reverse">
+                <span className="shrink-0 text-2xl">👤</span>
+                <div className="flex-1 max-w-[82%]">
+                  <form onSubmit={handleUserSubmit}
+                    className={`flex gap-2 ${shake ? 'janulus-shake' : ''}`}>
+                    <input
+                      ref={inputRef}
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      placeholder="Escribe tu respuesta…"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="flex-1 rounded-xl border border-primary/40 bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    />
+                    <button type="submit" disabled={!userInput.trim()}
+                      className="rounded-xl border-b-4 border-primary/50 bg-primary px-3 py-2.5 text-sm font-bold text-background disabled:opacity-40 active:translate-y-0.5 active:border-b-2">
+                      →
+                    </button>
+                  </form>
+                  <p className="mt-1.5 text-[10px] text-text-muted/40">
+                    Escribe: <span className="font-mono text-primary/60">{l.expected}</span>
+                    <button type="button" onClick={() => doSpeak(l.expected, lang, rateRef.current)}
+                      className="ml-1.5 text-text-muted/40 hover:text-primary">🔊</button>
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
           return (
             <div key={i} className={`flex items-end gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
               <span className="shrink-0 text-2xl">{isUser ? '👤' : '🐱'}</span>
@@ -225,35 +373,38 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
                   ? 'rounded-br-sm border border-primary/30 bg-primary/20'
                   : 'rounded-bl-sm border border-border/50 bg-surface'
               }`}>
-                <p className="text-sm leading-relaxed">{line.text}</p>
-                <button type="button" onClick={() => speakLine(line)}
-                  className="mt-1 text-[10px] text-text-muted/40 hover:text-primary">
-                  🔊
-                </button>
+                <p className="text-sm leading-relaxed">{displayText}</p>
+                {!isUser && (
+                  <button type="button"
+                    onClick={() => l.uiLang ? doSpeakUI(l.text, rateRef.current) : doSpeak(l.text, lang, rateRef.current)}
+                    className="mt-1 text-[10px] text-text-muted/40 hover:text-primary">🔊</button>
+                )}
               </div>
             </div>
           )
         })}
+        <div ref={bottomRef} />
       </div>
 
       <div className="border-t border-border p-4">
-        {isLast ? (
+        {isDone ? (
           <button type="button" onClick={onDone}
             className="w-full rounded-xl border-b-4 border-primary/50 bg-primary py-3 text-sm font-bold text-background transition-all active:translate-y-0.5 active:border-b-2">
             Ver mi puntuación 🏆
           </button>
-        ) : (
-          <button type="button" onClick={() => setLineIdx((n) => n + 1)}
+        ) : line?.role === 'oliver' ? (
+          <button type="button" onClick={advance}
             className="w-full rounded-xl border border-border/40 bg-surface py-3 text-sm font-semibold text-text-muted transition-colors hover:text-text">
             Siguiente →
           </button>
-        )}
+        ) : null /* narration auto-advances; user line shows own button */}
       </div>
     </div>
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ── Main engine ────────────────────────────────────────────────────────────────
+
 export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
   const ld = getJanulusLevel(lang, levelNum)
 
@@ -267,7 +418,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
   const [learnShake,    setLearnShake]    = useState(false)
   const [learnMistakes, setLearnMistakes] = useState(0)
   const [hintLetters,   setHintLetters]   = useState(0)
-  const [celebration,   setCelebration]   = useState(null)  // { tip } — waits for user click
+  const [celebration,   setCelebration]   = useState(null)
 
   const [buildMode,   setBuildMode]   = useState('type')
   const [typeAnswer,  setTypeAnswer]  = useState('')
@@ -284,10 +435,15 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
   const [learnedSentences, setLearnedSentences] = useState([])
 
   const scoreRef = useRef(0)
+  const rateRef  = useRef(0.75)
   const learnRef = useRef(null)
   const typeRef  = useRef(null)
 
-  // ── All effects BEFORE any conditional returns (React rules) ─────────────
+  // ── All effects BEFORE any conditional returns (React rules) ────────────────
+
+  // Sync rate → rateRef so auto-speak effects always use the current value
+  useEffect(() => { rateRef.current = rate }, [rate])
+
   useEffect(() => {
     if (phase === 'learn' && !celebration) learnRef.current?.focus()
   }, [phase, learnIdx, celebration])
@@ -296,41 +452,47 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     if (buildMode === 'type' && phase === 'build') typeRef.current?.focus()
   }, [buildMode, phase])
 
-  // Auto-speak Oliver intro message
+  // Auto-speak Oliver intro
   useEffect(() => {
     if (phase !== 'oliverIntro' || !ld?.oliversIntro) return
-    const t = setTimeout(() => doSpeakUI(ld.oliversIntro.message, 0.88), 900)
+    const t = setTimeout(() => doSpeakUI(ld.oliversIntro.message, rateRef.current), 900)
     return () => clearTimeout(t)
-  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase]) // eslint-disable-line
 
-  // Auto-speak definition when learn item changes (etymology is click-to-hear)
+  // Learn phase: speak WORD first (t=450), then Spanish definition (t=2500)
   useEffect(() => {
     if (phase !== 'learn' || !!celebration) return
     const item = learnQueue[learnIdx]
     if (!item) return
-    const d = item.type === 'verb' ? round.verb : round.vocab
-    const text = d?.definition ?? d?.etymology
-    if (!text) return
-    const t = setTimeout(() => doSpeakUI(text, 0.85), 750)
-    return () => clearTimeout(t)
-  }, [learnIdx, phase, celebration]) // eslint-disable-line react-hooks/exhaustive-deps
+    const d    = item.type === 'verb' ? round.verb : round.vocab
+    const t1   = setTimeout(() => doSpeak(item.text, lang, rateRef.current), 450)
+    const defEs = d?.definition
+    const t2   = defEs ? setTimeout(() => doSpeakUI(defEs, rateRef.current), 2500) : null
+    return () => { clearTimeout(t1); if (t2) clearTimeout(t2) }
+  }, [learnIdx, phase, celebration]) // eslint-disable-line
 
-  // On correct answer: only the word itself is spoken (via speak() in handleLearnSubmit).
-  // Celebration tip/definition/etymology are all optional — user clicks 🔊 to hear them.
+  // Build phase: auto-speak the full sentence when entering build
+  useEffect(() => {
+    if (phase !== 'build') return
+    const t = setTimeout(() => doSpeak(round.sentence, lang, rateRef.current), 600)
+    return () => clearTimeout(t)
+  }, [phase]) // eslint-disable-line
+
+  // On correct answer: only the word itself is auto-spoken (via speak() in handleLearnSubmit).
+  // All celebration text (definition, etymology, Oliver tip) is click-to-hear only.
 
   const currentItem = learnQueue[learnIdx]
   const speak = useCallback((text) => doSpeak(text ?? round.sentence, lang, rate), [round, lang, rate])
 
-  // ── Oliver Intro ──────────────────────────────────────────────────────────
+  // ── Oliver Intro ─────────────────────────────────────────────────────────────
   if (phase === 'oliverIntro') {
     const { headline, message, technique, funFact } = ld.oliversIntro
     return (
       <div className="flex h-full flex-col bg-background text-text">
-        <SpeedStrip rate={rate} setRate={setRate} onListen={() => doSpeakUI(message, 0.88)} />
+        <SpeedStrip rate={rate} setRate={setRate} onListen={() => doSpeakUI(message, rateRef.current)} />
         <div className="flex flex-1 flex-col items-center gap-5 overflow-auto px-4 py-6">
           <span style={{ fontSize: 72, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,.6))' }}>🐱</span>
           <h2 className="text-center text-2xl font-black">{headline}</h2>
-
           <div className="w-full max-w-md space-y-3 rounded-2xl border border-amber-400/25 bg-amber-400/08 p-5">
             <p className="whitespace-pre-line text-sm leading-relaxed">{message}</p>
             <div className="rounded-xl border border-primary/20 bg-primary/08 p-3">
@@ -338,12 +500,11 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
               <p className="whitespace-pre-line font-mono text-xs text-text-muted">{technique}</p>
             </div>
             <p className="text-xs font-semibold text-amber-400">{funFact}</p>
-            <button type="button" onClick={() => doSpeakUI(message, 0.88)}
+            <button type="button" onClick={() => doSpeakUI(message, rateRef.current)}
               className="flex items-center gap-1.5 rounded-lg border border-amber-400/30 px-3 py-1.5 text-[11px] font-semibold text-amber-400/80 hover:text-amber-400">
               🔊 Leer introducción
             </button>
           </div>
-
           <button type="button" onClick={() => setPhase('learn')}
             className="rounded-2xl border-b-4 border-primary/50 bg-primary px-10 py-3.5 text-lg font-black text-background shadow-xl transition-all hover:opacity-95 active:translate-y-1 active:border-b-2">
             ¡Vamos! →
@@ -353,7 +514,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     )
   }
 
-  // ── Conversation screen ───────────────────────────────────────────────────
+  // ── Conversation screen ───────────────────────────────────────────────────────
   if (phase === 'conversation') {
     return (
       <ConversationScreen
@@ -365,7 +526,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     )
   }
 
-  // ── Learn helpers ─────────────────────────────────────────────────────────
+  // ── Learn helpers ─────────────────────────────────────────────────────────────
   function advanceLearn() {
     setLearnInput(''); setHintLetters(0); setCelebration(null)
     if (learnIdx + 1 >= learnQueue.length) setPhase('build')
@@ -380,7 +541,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     if (ok) {
       const data = currentItem.type === 'verb' ? round.verb : round.vocab
       setCelebration({ tip: data.oliversTip ?? data.etymology ?? null })
-      speak(currentItem.text) // speak word in target language as confirmation
+      speak(currentItem.text) // speak word in target language
     } else {
       setLearnMistakes((m) => m + 1)
       setLearnShake(true)
@@ -394,7 +555,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     else speak(currentItem.text)
   }
 
-  // ── Build helpers ─────────────────────────────────────────────────────────
+  // ── Build helpers ─────────────────────────────────────────────────────────────
   function handleTypeSubmit(e) {
     e?.preventDefault()
     if (buildResult) return
@@ -466,7 +627,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     ? sentenceWords.slice(0, revealWords).join(' ') + (revealWords < sentenceWords.length ? ' …' : '')
     : null
 
-  // ── Learn phase ───────────────────────────────────────────────────────────
+  // ── Learn phase ───────────────────────────────────────────────────────────────
   if (phase === 'learn') {
     const isVerb    = currentItem?.type === 'verb'
     const learnData = isVerb ? round.verb : round.vocab
@@ -523,20 +684,32 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             {isVerb ? '¿Cómo se llama esta acción?' : '¿Cómo se llama este objeto?'}
           </p>
 
-          {/* Definition + Examples — auto-spoken, prominent */}
+          {/* Definition card — Spanish + English, auto-spoken via useEffect */}
           {learnData?.definition && !celebration && (
             <div className="flex w-full max-w-md items-start gap-2 rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5">
               <span className="mt-0.5 shrink-0 text-sm">📘</span>
-              <div className="flex-1">
+              <div className="flex-1 space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Definición</p>
-                <p className="mt-0.5 text-[12px] leading-relaxed text-text/90">{learnData.definition}</p>
-                <button type="button" onClick={() => doSpeakUI(learnData.definition, 0.85)}
-                  className="mt-1 flex items-center gap-1 text-[10px] text-text-muted/40 hover:text-primary">
-                  🔊 Escuchar
-                </button>
 
+                {/* Spanish */}
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[12px] leading-relaxed text-text/90">🇪🇸 {learnData.definition}</p>
+                  <button type="button" onClick={() => doSpeakUI(learnData.definition, rateRef.current)}
+                    className="shrink-0 text-[11px] text-text-muted/40 hover:text-primary">🔊</button>
+                </div>
+
+                {/* English */}
+                {learnData.definitionEn && (
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[12px] leading-relaxed text-text/70">🇬🇧 {learnData.definitionEn}</p>
+                    <button type="button" onClick={() => doSpeakEN(learnData.definitionEn, rateRef.current)}
+                      className="shrink-0 text-[11px] text-text-muted/40 hover:text-primary">🔊</button>
+                  </div>
+                )}
+
+                {/* Examples */}
                 {learnData.examples?.length > 0 && (
-                  <div className="mt-2.5 space-y-1.5 border-t border-primary/15 pt-2">
+                  <div className="border-t border-primary/15 pt-2 space-y-1.5">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
                     {learnData.examples.map((ex, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -544,11 +717,8 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                           <p className="text-[12px] font-medium text-text/85">"{ex.s}"</p>
                           <p className="text-[11px] text-text-muted/60">{ex.t}</p>
                         </div>
-                        <button type="button"
-                          onClick={() => doSpeak(ex.s, lang, rate)}
-                          className="mt-0.5 shrink-0 text-[11px] text-text-muted/30 hover:text-primary">
-                          🔊
-                        </button>
+                        <button type="button" onClick={() => doSpeak(ex.s, lang, rateRef.current)}
+                          className="shrink-0 text-[11px] text-text-muted/30 hover:text-primary">🔊</button>
                       </div>
                     ))}
                   </div>
@@ -561,57 +731,70 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
           {learnData?.etymology && !celebration && (
             <div className="flex w-full max-w-md items-start gap-2 rounded-xl border border-border/20 bg-surface/50 px-3 py-2.5">
               <span className="mt-0.5 shrink-0 text-sm">📖</span>
-              <div className="flex-1">
+              <div className="flex-1 space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted/40">Etimología</p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-text-muted/80">{learnData.etymology}</p>
-                <button type="button" onClick={() => doSpeakUI(learnData.etymology, 0.85)}
-                  className="mt-1 flex items-center gap-1 text-[10px] text-text-muted/40 hover:text-primary">
-                  🔊 Escuchar
-                </button>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[11px] leading-relaxed text-text-muted/80">🇪🇸 {learnData.etymology}</p>
+                  <button type="button" onClick={() => doSpeakUI(learnData.etymology, rateRef.current)}
+                    className="shrink-0 text-[10px] text-text-muted/40 hover:text-primary">🔊</button>
+                </div>
+                {learnData.etymologyEn && (
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[11px] leading-relaxed text-text-muted/60">🇬🇧 {learnData.etymologyEn}</p>
+                    <button type="button" onClick={() => doSpeakEN(learnData.etymologyEn, rateRef.current)}
+                      className="shrink-0 text-[10px] text-text-muted/40 hover:text-primary">🔊</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Celebration — word was auto-spoken in handleLearnSubmit; everything else is click-to-hear */}
+          {/* Celebration — word was spoken in handleLearnSubmit; everything else click-to-hear */}
           {celebration && (
             <div className="w-full max-w-md space-y-3">
               <p className="text-center text-sm font-bold text-emerald-400">✅ ¡Correcto!</p>
 
-              {/* Definition recap with examples */}
+              {/* Definition + examples recap */}
               {learnData?.definition && (
-                <div className="rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5 text-[12px]">
+                <div className="rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Definición</p>
-                  <p className="mt-0.5 leading-relaxed text-text/90">{learnData.definition}</p>
-                  <button type="button" onClick={() => doSpeakUI(learnData.definition, 0.85)}
-                    className="mt-1 flex items-center gap-1 text-[10px] text-text-muted/40 hover:text-primary">
-                    🔊 Escuchar
-                  </button>
-                  {learnData.examples?.length > 0 && (
-                    <div className="mt-2 space-y-1.5 border-t border-primary/15 pt-2">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
-                      {learnData.examples.map((ex, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <p className="font-medium text-text/85">"{ex.s}"</p>
-                            <p className="text-[11px] text-text-muted/60">{ex.t}</p>
-                          </div>
-                          <button type="button"
-                            onClick={() => doSpeak(ex.s, lang, rate)}
-                            className="mt-0.5 shrink-0 text-[11px] text-text-muted/30 hover:text-primary">
-                            🔊
-                          </button>
-                        </div>
-                      ))}
+                  <div className="mt-1 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[12px] leading-relaxed text-text/90">🇪🇸 {learnData.definition}</p>
+                      <button type="button" onClick={() => doSpeakUI(learnData.definition, rateRef.current)}
+                        className="shrink-0 text-[11px] text-text-muted/40 hover:text-primary">🔊</button>
                     </div>
-                  )}
+                    {learnData.definitionEn && (
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[12px] leading-relaxed text-text/70">🇬🇧 {learnData.definitionEn}</p>
+                        <button type="button" onClick={() => doSpeakEN(learnData.definitionEn, rateRef.current)}
+                          className="shrink-0 text-[11px] text-text-muted/40 hover:text-primary">🔊</button>
+                      </div>
+                    )}
+                    {learnData.examples?.length > 0 && (
+                      <div className="border-t border-primary/15 pt-2 space-y-1.5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
+                        {learnData.examples.map((ex, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <p className="text-[12px] font-medium text-text/85">"{ex.s}"</p>
+                              <p className="text-[11px] text-text-muted/60">{ex.t}</p>
+                            </div>
+                            <button type="button" onClick={() => doSpeak(ex.s, lang, rateRef.current)}
+                              className="shrink-0 text-[11px] text-text-muted/30 hover:text-primary">🔊</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* Oliver tip — click-to-hear only */}
+              {/* Oliver tip — click-to-hear */}
               {celebration.tip && (
                 <OliverBubble
                   text={celebration.tip}
-                  onRead={() => doSpeakUI(celebration.tip, 0.88)}
+                  onRead={() => doSpeakUI(celebration.tip, rateRef.current)}
                 />
               )}
 
@@ -667,13 +850,28 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     )
   }
 
-  // ── Build phase ───────────────────────────────────────────────────────────
+  // ── Build phase ───────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col bg-background text-text">
       <TopBar onBack={onBack} roundIdx={roundIdx} score={score} flash={flash} />
       <SpeedStrip rate={rate} setRate={setRate} onListen={() => speak()} />
 
       <div className="flex flex-1 flex-col items-center gap-3 overflow-auto px-4 py-4">
+
+        {/* Visual cards — verb animation + vocab emoji */}
+        <div className="flex w-full max-w-md gap-3">
+          <div className="flex flex-1 flex-col items-center">
+            <VerbAnimation verb={round.verb} size={56} />
+            <p className="mt-1.5 text-center text-[11px] font-bold text-emerald-300">{round.verb.text}</p>
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl"
+            style={{ background: 'radial-gradient(ellipse at 50% 40%,#1e1e3a,#0d0d20)', minHeight: 110 }}>
+            <span style={{ fontSize: 52, lineHeight: 1, filter: 'drop-shadow(0 6px 18px rgba(0,0,0,.7))' }}>
+              {round.vocab.emoji}
+            </span>
+            <p className="mt-1.5 text-center text-[11px] font-bold text-purple-300">{round.vocab.text}</p>
+          </div>
+        </div>
 
         {/* Recipe strip */}
         <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border/30 bg-surface/60 px-4 py-3">
@@ -797,7 +995,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                   : `La frase empieza con "${round.base.text}"… ¿qué va después?`}
                 onRead={() => buildHints === 1
                   ? speak()
-                  : doSpeakUI(`La frase empieza con ${round.base.text}`, 0.88)}
+                  : doSpeakUI(`La frase empieza con ${round.base.text}`, rateRef.current)}
               />
             )}
           </div>
