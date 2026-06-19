@@ -82,6 +82,12 @@ body {
   }
 }
 
+@keyframes nav-dropdown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nav-dropdown { animation: nav-dropdown 0.13s ease; }
+
 .nefertiti-float {
   top: 0;
   animation-name: nefertiti-drift;

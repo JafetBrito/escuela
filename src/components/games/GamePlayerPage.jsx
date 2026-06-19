@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { getGameById } from '../../data/gamesRegistry'
 import { useGamesStore } from '../../stores/useGamesStore'
+
+const COMPONENT_MAP = {
+  chess: lazy(() => import('./chess/ChessGame')),
+}
 
 export default function GamePlayerPage() {
   const { gameId } = useParams()
@@ -12,7 +16,9 @@ export default function GamePlayerPage() {
   const claimReward = useGamesStore((s) => s.claimReward)
   const [claimed, setClaimed] = useState(false)
 
-  if (!game || !game.file) {
+  const GameComponent = game?.type === 'component' ? COMPONENT_MAP[game.component] : null
+
+  if (!game || (!game.file && !GameComponent)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background p-6 text-center text-text">
         <p className="text-4xl">🚧</p>
@@ -57,8 +63,12 @@ export default function GamePlayerPage() {
         )}
       </header>
 
-      <div className="relative flex-1">
-        {game.type === 'external-url' ? (
+      <div className="relative flex-1 overflow-hidden">
+        {GameComponent ? (
+          <Suspense fallback={<div className="flex h-full items-center justify-center text-text-muted">Cargando…</div>}>
+            <GameComponent />
+          </Suspense>
+        ) : game.type === 'external-url' ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
             <p className="text-5xl">{game.icon}</p>
             <p className="max-w-md text-sm text-text-muted">

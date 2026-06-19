@@ -7,12 +7,14 @@ import { GAMES } from '../../data/gamesRegistry'
 const CATEGORY_GRADIENTS = {
   Otros: 'from-cyan-500 to-blue-600',
   Pruebas: 'from-purple-500 to-pink-600',
+  Estrategia: 'from-emerald-500 to-teal-600',
 }
 const DEFAULT_GRADIENT = 'from-primary to-emerald-500'
 
 export default function GamesPage() {
   const categories = [...new Set(GAMES.map((g) => g.category ?? 'Otros'))]
-  const availableCount = GAMES.filter((g) => g.file).length
+  const isAvailable = (g) => Boolean(g.file) || g.type === 'component'
+  const availableCount = GAMES.filter(isAvailable).length
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -43,7 +45,7 @@ export default function GamesPage() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {GAMES.map((game) => {
-              const available = Boolean(game.file)
+              const available = isAvailable(game)
               const gradient = CATEGORY_GRADIENTS[game.category] ?? DEFAULT_GRADIENT
 
               return (

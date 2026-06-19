@@ -4,9 +4,24 @@
 //  2. Update LATEST_VERSION to match
 //  The PatchNotesModal shows once per version (gated by localStorage).
 
-export const LATEST_VERSION = '0.3.0'
+export const LATEST_VERSION = '0.4.0'
 
 export const PATCH_NOTES = [
+  {
+    version: '0.4.0',
+    date: '2026-06-18',
+    title: 'Nav con Dropdowns · Ciclo Día/Noche · Linterna',
+    emoji: '🌙',
+    tag: 'ACTUALIZACIÓN',
+    tagColor: '#a855f7',
+    changes: [
+      { icon: '🧭', text: 'Navegación rediseñada: 6 grupos con dropdowns (Academia, Progreso, Campus, Comunidad) · Ajustes y Cerrar sesión en el menú de perfil' },
+      { icon: '🌙', text: 'Ciclo día/noche en el campus VR: sol que orbita, 8 faroles con fade al anochecer, cielo dinámico con amanecer / día / atardecer / noche' },
+      { icon: '✨', text: 'Estilo cozy: efectos Bloom y Vignette en mascota, avatar y campus · iluminación cálida en tonos ámbar' },
+      { icon: '🔦', text: 'Nueva Linterna en la Tienda (3 000 monedas) · actívala en el VR con la tecla F para proyectar un cono de luz desde tu perspectiva' },
+      { icon: '🕐', text: 'El reloj del HUD VR ahora muestra la hora real del sistema en lugar del tiempo del juego' },
+    ],
+  },
   {
     version: '0.3.0',
     date: '2026-06-18',
