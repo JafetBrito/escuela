@@ -1,15 +1,7 @@
 import { getJanulusLevels } from '../../../data/matrixData'
 
-const PLACEHOLDER = [
-  { level: 3, name: 'Sin Emojis' },
-  { level: 4, name: 'Frases Largas' },
-  { level: 5, name: 'Modo Nativo' },
-]
-
 export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack }) {
-  const real = getJanulusLevels(lang).map((l) => ({ ...l, locked: false }))
-  const fill = PLACEHOLDER.slice(0, Math.max(0, 5 - real.length)).map((p) => ({ ...p, locked: true }))
-  const all  = [...real, ...fill]
+  const all = getJanulusLevels(lang).map((l) => ({ ...l, locked: false }))
 
   return (
     <div className="flex h-full flex-col bg-background text-text">
