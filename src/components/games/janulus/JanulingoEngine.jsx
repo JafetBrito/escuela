@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { getJanulusLevel, getSpeechLangJanulus } from '../../../data/matrixData'
 import VerbAnimation from './VerbAnimation'
 
@@ -174,14 +174,14 @@ function buildConversationScript(sentences, lang) {
   const sc = CONV_SCENARIOS[lang] ?? CONV_SCENARIOS.en
   const pool = sentences.slice(0, 7)
   const exchanges = pool.flatMap((sentence) => [
-    { role: 'oliver', text: getOliverPrompt(sentence), uiLang: true },
+    { role: 'oliver', text: getOliverPrompt(sentence), uiLang: false },
     { role: 'user',   text: sentence, uiLang: false, expected: sentence },
   ])
   return [
-    { role: 'oliver',    text: sc.intro,   uiLang: true },
-    { role: 'narration', text: sc.setting, uiLang: true },
+    { role: 'oliver',    text: sc.intro,   uiLang: false },
+    { role: 'narration', text: sc.setting, uiLang: false },
     ...exchanges,
-    { role: 'oliver', text: sc.outro, uiLang: true },
+    { role: 'oliver', text: sc.outro, uiLang: false },
   ]
 }
 
@@ -246,6 +246,66 @@ function OliverBubble({ text, onRead, className = '' }) {
             🔊 Leer en voz alta
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── Active user turn: type OR tap word tiles ──────────────────────────────────
+
+function ActiveUserTurn({ line, lang, rateRef, userInput, setUserInput, shake, inputRef, onSubmit }) {
+  const tiles = useMemo(() => shuffle(line.expected.split(' ')), [line.expected])
+
+  function appendWord(word) {
+    setUserInput((prev) => {
+      const cur = prev.trim()
+      return cur ? cur + ' ' + word : word
+    })
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="flex items-end gap-2 flex-row-reverse">
+      <span className="shrink-0 text-2xl">👤</span>
+      <div className="flex-1 max-w-[82%] space-y-2">
+        <form onSubmit={onSubmit} className={`flex gap-2 ${shake ? 'janulus-shake' : ''}`}>
+          <input
+            ref={inputRef}
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Escribe o toca las palabras…"
+            autoComplete="off"
+            spellCheck={false}
+            className="flex-1 rounded-xl border border-primary/40 bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+          />
+          <button type="submit" disabled={!userInput.trim()}
+            className="rounded-xl border-b-4 border-primary/50 bg-primary px-3 py-2.5 text-sm font-bold text-background disabled:opacity-40 active:translate-y-0.5 active:border-b-2">
+            →
+          </button>
+        </form>
+
+        {/* Word tiles */}
+        <div className="flex flex-wrap gap-1.5">
+          {tiles.map((word, ti) => (
+            <button key={ti} type="button" onClick={() => appendWord(word)}
+              className="rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/20 active:scale-95">
+              {word}
+            </button>
+          ))}
+          {userInput && (
+            <button type="button" onClick={() => setUserInput('')}
+              className="rounded-lg border border-border/30 px-2 py-1 text-[10px] text-text-muted/50 hover:text-text-muted">
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[10px] text-text-muted/40">
+          <span>Frase:</span>
+          <span className="font-mono text-primary/60">{line.expected}</span>
+          <button type="button" onClick={() => doSpeak(line.expected, lang, rateRef.current)}
+            className="hover:text-primary">🔊</button>
+        </div>
       </div>
     </div>
   )
@@ -336,32 +396,17 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
 
           if (isActiveUserTurn) {
             return (
-              <div key={i} className="flex items-end gap-2 flex-row-reverse">
-                <span className="shrink-0 text-2xl">👤</span>
-                <div className="flex-1 max-w-[82%]">
-                  <form onSubmit={handleUserSubmit}
-                    className={`flex gap-2 ${shake ? 'janulus-shake' : ''}`}>
-                    <input
-                      ref={inputRef}
-                      value={userInput}
-                      onChange={(e) => setUserInput(e.target.value)}
-                      placeholder="Escribe tu respuesta…"
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="flex-1 rounded-xl border border-primary/40 bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                    />
-                    <button type="submit" disabled={!userInput.trim()}
-                      className="rounded-xl border-b-4 border-primary/50 bg-primary px-3 py-2.5 text-sm font-bold text-background disabled:opacity-40 active:translate-y-0.5 active:border-b-2">
-                      →
-                    </button>
-                  </form>
-                  <p className="mt-1.5 text-[10px] text-text-muted/40">
-                    Escribe: <span className="font-mono text-primary/60">{l.expected}</span>
-                    <button type="button" onClick={() => doSpeak(l.expected, lang, rateRef.current)}
-                      className="ml-1.5 text-text-muted/40 hover:text-primary">🔊</button>
-                  </p>
-                </div>
-              </div>
+              <ActiveUserTurn
+                key={i}
+                line={l}
+                lang={lang}
+                rateRef={rateRef}
+                userInput={userInput}
+                setUserInput={setUserInput}
+                shake={shake}
+                inputRef={inputRef}
+                onSubmit={handleUserSubmit}
+              />
             )
           }
 
