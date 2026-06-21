@@ -11,18 +11,22 @@
  */
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { Physics } from '@react-three/rapier'
 import * as THREE from 'three'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../stores/useGameStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
 import { useChatStore } from '../../stores/useChatStore'
+import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
+import { getSkinById } from '../../data/skinsRegistry'
 import { TUTORIAL_MISSIONS } from '../../data/tutorialMissions'
 import { sendNpcMessage } from '../../services/chat/npcTransport'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import MascotMesh from '../mascot/MascotMesh'
 import MascotCompanion from '../mascot/MascotCompanion'
+import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons } from './engine'
+import { useArbolGround, ARBOL_JAFET_POS, ARBOL_SPAWN } from './worlds/useArbolGround'
 
 // ── NPC Jafet definition ──────────────────────────────────────────────────────
 const JAFET = {
@@ -69,73 +73,7 @@ const JAFET_DIALOGUE = {
 
 // ── 3D Scene components ───────────────────────────────────────────────────────
 
-function MagicTree() {
-  const trunkRef = useRef()
-  const canopyRef = useRef()
-  const orbs = useRef([])
-
-  useFrame((_, delta) => {
-    if (canopyRef.current) {
-      canopyRef.current.rotation.y += delta * 0.08
-    }
-    orbs.current.forEach((orb, i) => {
-      if (!orb) return
-      const t = Date.now() * 0.001 + i * 1.2
-      orb.position.x = Math.sin(t) * 1.2
-      orb.position.y = 3.5 + Math.cos(t * 1.3) * 0.4
-      orb.position.z = Math.cos(t) * 1.2
-    })
-  })
-
-  return (
-    <group position={[0, 0, -7]}>
-      {/* Trunk */}
-      <mesh ref={trunkRef} position={[0, 1, 0]}>
-        <cylinderGeometry args={[0.25, 0.4, 2.5, 8]} />
-        <meshStandardMaterial color="#3d2b1a" roughness={0.9} />
-      </mesh>
-      {/* Canopy */}
-      <mesh ref={canopyRef} position={[0, 3, 0]}>
-        <sphereGeometry args={[2, 12, 12]} />
-        <meshStandardMaterial
-          color="#1a4a2e"
-          emissive="#0d3a20"
-          emissiveIntensity={0.4}
-          roughness={0.7}
-        />
-      </mesh>
-      {/* Inner glow sphere */}
-      <mesh position={[0, 3, 0]}>
-        <sphereGeometry args={[1.3, 8, 8]} />
-        <meshStandardMaterial
-          color="#98ca3f"
-          emissive="#98ca3f"
-          emissiveIntensity={0.6}
-          transparent
-          opacity={0.18}
-        />
-      </mesh>
-      {/* Floating orbs */}
-      {[0, 1, 2, 3].map((i) => (
-        <mesh key={i} ref={(el) => { orbs.current[i] = el }}>
-          <sphereGeometry args={[0.1, 6, 6]} />
-          <meshStandardMaterial
-            color="#98ca3f"
-            emissive="#98ca3f"
-            emissiveIntensity={2}
-          />
-        </mesh>
-      ))}
-      {/* Ground glow ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[1.5, 3, 32]} />
-        <meshStandardMaterial color="#98ca3f" emissive="#98ca3f" emissiveIntensity={0.3} transparent opacity={0.25} />
-      </mesh>
-    </group>
-  )
-}
-
-function JafetNpc({ mascot }) {
+function JafetNpc({ mascot, onTalk }) {
   const groupRef = useRef()
   useFrame((_, delta) => {
     if (groupRef.current) {
@@ -144,7 +82,12 @@ function JafetNpc({ mascot }) {
     }
   })
   return (
-    <group ref={groupRef} position={[2.5, 0, -4]} scale={0.18}>
+    <group
+      ref={groupRef}
+      position={ARBOL_JAFET_POS}
+      scale={0.18}
+      onClick={(e) => { e.stopPropagation(); onTalk() }}
+    >
       <Suspense fallback={null}>
         <MascotMesh mascot={mascot} />
       </Suspense>
@@ -152,18 +95,26 @@ function JafetNpc({ mascot }) {
   )
 }
 
-function SceneCamera() {
-  useFrame(({ camera }) => {
-    const t = Date.now() * 0.0003
-    camera.position.x = Math.sin(t) * 5.5
-    camera.position.z = Math.cos(t) * 5.5 + 1
-    camera.lookAt(0, 1.5, -4)
+// Walks the magic tree's floating orbs in a slow orbit — the tree model
+// itself is built once (imperative THREE, via useArbolGround) so its parts
+// are animated here by name instead of through React state.
+function MagicTreeAnimator({ model }) {
+  useFrame(() => {
+    for (let i = 0; i < 4; i++) {
+      const orb = model.getObjectByName(`arbol-orb-${i}`)
+      if (!orb) continue
+      const t = Date.now() * 0.001 + i * 1.2
+      // Local to the tree group (already offset to z=-7), matching the
+      // original orbit radius/height around the canopy.
+      orb.position.set(Math.sin(t) * 1.2, 3.5 + Math.cos(t * 1.3) * 0.4, Math.cos(t) * 1.2)
+    }
+    const canopy = model.getObjectByName('arbol-canopy')
+    if (canopy) canopy.rotation.y += 0.0015
   })
   return null
 }
 
-function ArbolScene({ avatarModel }) {
-  const jafetMascot = getMascotById(JAFET.mascotId)
+function ArbolScene({ model, jafetMascot, onTalkJafet }) {
   return (
     <>
       <color attach="background" args={['#06060f']} />
@@ -172,25 +123,9 @@ function ArbolScene({ avatarModel }) {
       <pointLight position={[0, 4, -7]} color="#98ca3f" intensity={8} distance={12} />
       <pointLight position={[2, 2, -2]} color="#6644aa" intensity={3} distance={8} />
 
-      {/* Ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#0a1a0a" roughness={1} />
-      </mesh>
-
-      <MagicTree />
-      <JafetNpc mascot={jafetMascot} />
-
-      {/* Player avatar preview (bottom-left of scene) */}
-      {avatarModel && (
-        <group position={[-2.5, 0, -1.5]} scale={0.14}>
-          <Suspense fallback={null}>
-            <MascotMesh mascot={avatarModel} />
-          </Suspense>
-        </group>
-      )}
-
-      <SceneCamera />
+      <primitive object={model} />
+      <MagicTreeAnimator model={model} />
+      <JafetNpc mascot={jafetMascot} onTalk={onTalkJafet} />
     </>
   )
 }
@@ -328,6 +263,24 @@ function ActionButton({ missionId, onAction }) {
   )
 }
 
+// Tells the page when the player has walked close enough to Jafet to talk —
+// same proximity-prompt pattern as every other VR world's NPCs.
+function JafetProximity({ playerPositionRef, onNearChange }) {
+  const wasNear = useRef(false)
+  useFrame(() => {
+    const pos = playerPositionRef.current
+    if (!pos) return
+    const dx = pos.x - ARBOL_JAFET_POS[0]
+    const dz = pos.z - ARBOL_JAFET_POS[2]
+    const near = Math.sqrt(dx * dx + dz * dz) < 3.5
+    if (near !== wasNear.current) {
+      wasNear.current = near
+      onNearChange(near)
+    }
+  })
+  return null
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function VrArbol() {
@@ -340,14 +293,24 @@ export default function VrArbol() {
   const { done, completeStep, isTutorialComplete } = useTutorialStore()
 
   const chatMessages = useChatStore((s) => s.messages)
+  const skin = getSkinById(useMascotStore((s) => s.selectedSkinId))
 
   const [showDialogue, setShowDialogue]         = useState(false)
   const [dialogueMessages, setDialogueMessages] = useState([])
   const [isJafetTyping, setIsJafetTyping]       = useState(false)
   const [showMascotOnboarding, setShowMascotOnboarding] = useState(false)
   const [tutorialDone, setTutorialDone]         = useState(false)
+  const [nearJafet, setNearJafet]               = useState(false)
 
   const avatarModel = getMascotById(avatarRegistryId)
+  const jafetMascot = getMascotById(JAFET.mascotId)
+
+  // Shared VR movement engine — same WASD/drag-look/touch/gamepad system as
+  // Campus, Room, Anfiteatro and the Cueva de Platón.
+  const { model: groundModel, groundRayHeight } = useArbolGround()
+  const keysRef = useMovementKeys()
+  const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
+  const playerPositionRef = useRef(null)
 
   // Detect which mission is currently active (first not done)
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
@@ -366,6 +329,18 @@ export default function VrArbol() {
       forceSyncToCloud().catch(() => {})
     }
   }, [done, isTutorialComplete, forceSyncToCloud])
+
+  // F key talks to Jafet when nearby, same shortcut as every other VR world
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.code === 'KeyF' && nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone) {
+        openDialogue()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearJafet, showDialogue, showMascotOnboarding, tutorialDone])
 
   // Push Jafet message helper
   function pushJafet(text) {
@@ -448,12 +423,43 @@ export default function VrArbol() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#06060f]">
+    <div
+      className="relative h-screen w-screen overflow-hidden bg-[#06060f]"
+      style={{ touchAction: 'none' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+      onWheel={onWheel}
+    >
 
       {/* ── 3D Canvas ── */}
       <Canvas camera={{ position: [0, 2, 6], fov: 60 }} className="absolute inset-0">
-        <ArbolScene avatarModel={avatarModel} />
+        <Physics gravity={[0, -20, 0]}>
+          <Suspense fallback={null}>
+            <ArbolScene model={groundModel} jafetMascot={jafetMascot} onTalkJafet={openDialogue} />
+            <Player
+              mascot={avatarModel}
+              skin={skin}
+              scenery={groundModel}
+              groundRayHeight={groundRayHeight}
+              keysRef={keysRef}
+              cameraRef={cameraRef}
+              playerPositionRef={playerPositionRef}
+              spawnAt={ARBOL_SPAWN}
+            />
+            <JafetProximity playerPositionRef={playerPositionRef} onNearChange={setNearJafet} />
+          </Suspense>
+        </Physics>
       </Canvas>
+
+      {/* ── Touch controls ── */}
+      {!showDialogue && !showMascotOnboarding && (
+        <>
+          <VirtualJoystick keysRef={keysRef} />
+          <MobileButtons keysRef={keysRef} />
+        </>
+      )}
 
       {/* ── Top title ── */}
       <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-5">
@@ -480,13 +486,18 @@ export default function VrArbol() {
         </div>
       </div>
 
-      {/* ── Talk to Jafet button ── */}
-      {!showDialogue && !showMascotOnboarding && !tutorialDone && (
+      {/* ── Talk to Jafet prompt — only when close enough to him ── */}
+      {nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone && (
         <div className="absolute bottom-20 left-1/2 z-20 -translate-x-1/2">
           <button type="button" onClick={openDialogue}
-            className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-black/80 px-6 py-3 font-black text-primary shadow-lg backdrop-blur-sm hover:bg-primary hover:text-background transition-all">
-            🧙‍♂️ Hablar con Jafet
+            className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-black/80 px-6 py-3 font-black text-primary shadow-lg backdrop-blur-sm animate-pulse hover:bg-primary hover:text-background transition-all">
+            <span className="hidden sm:inline">F — </span>🧙‍♂️ Hablar con Jafet
           </button>
+        </div>
+      )}
+      {!nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone && (
+        <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-border bg-black/60 px-4 py-2 text-xs text-text-muted backdrop-blur-sm">
+          🚶 Camina (WASD) hacia Jafet, bajo el árbol
         </div>
       )}
 

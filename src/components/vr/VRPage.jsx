@@ -37,7 +37,7 @@ import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
-import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS } from './worlds/useCampusGround'
+import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS, NPC_PAVILION_EXEMPT } from './worlds/useCampusGround'
 import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
 import { useAnfiteatroGround, ANFI_H, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
 import { useWorldTreeGround, WT_CLASS_NODES } from './worlds/useWorldTreeGround'
@@ -95,10 +95,11 @@ const BUILDING_SIZE = 3.2
 
 // Major academic buildings — used by WorldMap minimap markers.
 const CAMPUS_ACADEMIC = [
-  { pos: [0, 0, -62],  color: '#d4c4a0', w: 30, d: 18, h: 13, label: '🎭', name: 'Gran Salón' },
-  { pos: [28, 0, -48], color: '#7a5a3a', w: 18, d: 14, h: 11, label: '📚', name: 'Biblioteca' },
-  { pos: [-26, 0, -46],color: '#3a5a7a', w: 16, d: 13, h: 10, label: '🔬', name: 'Ciencias' },
-  { pos: [65, 0, 0],   color: '#1a7abf', w: 18, d: 44, h: 1,  label: '🏊', name: 'Piscina' },
+  { pos: [0, 0, -62],   color: '#d4c4a0', w: 30, d: 18, h: 13, label: '🎭', name: 'Gran Aula' },
+  { pos: [-30, 0, -58], color: '#7a5a3a', w: 18, d: 14, h: 11, label: '📚', name: 'Biblioteca' },
+  { pos: [30, 0, -58],  color: '#3a5a7a', w: 16, d: 13, h: 10, label: '🔬', name: 'Ciencia + IA' },
+  { pos: [56, 0, -8],   color: '#3a5a7a', w: 14, d: 12, h: 9,  label: '💡', name: 'Innovación' },
+  { pos: [-64, 0, 0],   color: '#8b6234', w: 20, d: 18, h: 3,  label: '🏪', name: 'Mercado' },
 ]
 
 // How close the player needs to be to an NPC to interact with them.
@@ -1750,19 +1751,17 @@ function WorldMap({ open, onClose, playerPositionRef }) {
           <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#4a8a3a" />
           <circle cx="0" cy="0" r="58" fill="#5ea848" opacity="0.4" />
 
-          {/* West forest zone */}
-          <circle cx="-60" cy="0" r="36" fill="#2d6a22" opacity="0.75" />
-          <text x="-60" y="1" fontSize="5" textAnchor="middle" dominantBaseline="middle">🌲</text>
-
-          {/* Swimming pool (east) */}
-          <rect x="56" y="-22" width="18" height="44" fill="#1a7abf" opacity="0.85" rx="1" />
-          <rect x="60" y="-20" width="10" height="40" fill="#2888cc" opacity="0.7" rx="0.5" />
-          <text x="65" y="1" fontSize="5" textAnchor="middle" dominantBaseline="middle">🏊</text>
+          {/* Surrounding forest belt, thinned around the functional zones */}
+          <circle cx="-90" cy="-60" r="30" fill="#2d6a22" opacity="0.6" />
+          <circle cx="90" cy="-60" r="30" fill="#2d6a22" opacity="0.6" />
+          <circle cx="-90" cy="60" r="22" fill="#2d6a22" opacity="0.55" />
+          <circle cx="90" cy="60" r="22" fill="#2d6a22" opacity="0.55" />
 
           {/* Ring roads (paved stone) */}
           <circle cx="0" cy="0" r="23.5" fill="none" stroke="#a8a090" strokeWidth="3" opacity="0.8" />
           <circle cx="0" cy="0" r="47" fill="none" stroke="#a0988a" strokeWidth="3.5" opacity="0.75" />
           <circle cx="0" cy="0" r="74" fill="none" stroke="#a0988a" strokeWidth="2.5" opacity="0.7" />
+          <circle cx="0" cy="0" r="104" fill="none" stroke="#a0988a" strokeWidth="2" opacity="0.6" />
 
           {/* Cardinal avenues */}
           {[0, 90, 180, 270].map((deg) => {
@@ -1828,17 +1827,19 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             )
           })}
 
-          {/* NPC log cabins */}
+          {/* NPC log cabins — skipped for NPCs standing next to real architecture */}
           {VR_NPCS.map((npc) => {
             const [x, , z] = npc.position
             return (
               <g key={npc.id}>
-                <rect
-                  x={x * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
-                  y={z * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
-                  width={BUILDING_SIZE + 0.6} height={BUILDING_SIZE + 0.6}
-                  fill={npc.color} opacity="0.65" rx="0.3"
-                />
+                {!NPC_PAVILION_EXEMPT.has(npc.id) && (
+                  <rect
+                    x={x * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
+                    y={z * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
+                    width={BUILDING_SIZE + 0.6} height={BUILDING_SIZE + 0.6}
+                    fill={npc.color} opacity="0.65" rx="0.3"
+                  />
+                )}
                 <circle cx={x} cy={z} r="1.6" fill={npc.color} stroke="#fff" strokeWidth="0.4" />
                 <text x={x} y={z - 2.8} fontSize="3" textAnchor="middle">{npc.emoji}</text>
               </g>
