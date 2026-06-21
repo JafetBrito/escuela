@@ -17,6 +17,7 @@ import { sendNpcMessage } from '../../services/chat/npcTransport'
 import { useSettingsStore, getModelProvider } from '../../stores/useSettingsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
+import { MOUSE_SENSITIVITY } from './engine'
 import DIALOGUES from './cuevaDialogues.json'
 import {
   WORLD_CINEMATIC, CAVE_MISSIONS, STAGE_SKILLS, NPC_CONFIGS,
@@ -357,12 +358,12 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, playerMascot, o
   )
 }
 
-// WASD + pointer-lock + touch first-person controller
+// WASD + drag-to-look (same mechanism as Campus/Room/Anfiteatro, via the
+// shared VR engine) + touch first-person controller.
 function FirstPersonController({ lockedRef, teleportRef, touchMoveRef, touchYawRef, onMove }) {
   const { camera, gl } = useThree()
   const keys = useRef({})
   const yaw = useRef(0)
-  const pointerLocked = useRef(false)
   const initialized = useRef(false)
 
   useEffect(() => {
@@ -381,20 +382,28 @@ function FirstPersonController({ lockedRef, teleportRef, touchMoveRef, touchYawR
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
   }, [])
 
+  // Drag-to-look: cursor stays visible, only captures yaw while the mouse
+  // button is held — no requestPointerLock, so the mouse never gets "eaten".
   useEffect(() => {
-    const onChange = () => { pointerLocked.current = document.pointerLockElement === gl.domElement }
-    const onM = e => { if (!pointerLocked.current || lockedRef.current) return; yaw.current -= e.movementX * 0.0022 }
-    // Only lock pointer on canvas click when no NPC dialogue is open and user clicked the canvas itself
-    const onClick = e => {
-      if (lockedRef.current) return
-      if (document.pointerLockElement !== gl.domElement && e.target === gl.domElement) {
-        gl.domElement.requestPointerLock()
-      }
+    const el = gl.domElement
+    let dragging = false
+    let lastX = 0
+    const onDown = e => { if (lockedRef.current) return; dragging = true; lastX = e.clientX }
+    const onMove = e => {
+      if (!dragging || lockedRef.current) return
+      const dx = e.clientX - lastX
+      lastX = e.clientX
+      yaw.current -= dx * MOUSE_SENSITIVITY * useVrSettingsStore.getState().mouseSensitivity
     }
-    document.addEventListener('pointerlockchange', onChange)
-    document.addEventListener('mousemove', onM)
-    gl.domElement.addEventListener('click', onClick)
-    return () => { document.removeEventListener('pointerlockchange', onChange); document.removeEventListener('mousemove', onM); gl.domElement.removeEventListener('click', onClick) }
+    const onUp = () => { dragging = false }
+    el.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      el.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
   }, [gl, lockedRef])
 
   useFrame((_, delta) => {
@@ -959,7 +968,6 @@ export default function VrCueva() {
   // ── Free prisoner (4 total including mascot) ──────────────────────────────
   function handleFreePrisoner(id) {
     if (freedIds.includes(id)) return
-    document.exitPointerLock?.()
     const next = [...freedIds, id]
     setFreedIds(next)
     const despSk = STAGE_SKILLS[5]?.[0]
@@ -993,9 +1001,8 @@ export default function VrCueva() {
     else teleportRef.current = [0, 2, 4]
   }
 
-  // ── NPC click from 3D — also releases pointer lock ────────────────────────
+  // ── NPC click from 3D ──────────────────────────────────────────────────────
   function handleTalkNpc(id) {
-    document.exitPointerLock?.() // ← release mouse so player can use dialogue UI
     setActiveNpc(id)
     if (['creyente','sonador','miedoso','mascota'].includes(id)) completeMission('talk_prisoner')
     else if (id === 'esceptico') completeMission('meet_esceptico')
