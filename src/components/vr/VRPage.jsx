@@ -226,8 +226,113 @@ function useSceneryModel() {
   }, [scene])
 }
 
+// Loads /st.glb (an imported "graffiti street" map) through the same hybrid
+// pipeline as useSceneryModel — scaled/recentered so it works with the
+// shared engine's raycasts — but WITHOUT the flat-color palette tint, since
+// this model's own painted/graffiti textures are the whole point.
+function useGraffitiGround() {
+  const { scene } = useGLTF('/st.glb')
 
+  return useMemo(() => {
+    const clone = scene.clone(true)
+    const box = new THREE.Box3().setFromObject(clone)
+    const size = new THREE.Vector3()
+    const center = new THREE.Vector3()
+    box.getSize(size)
+    box.getCenter(center)
 
+    const maxDimension = Math.max(size.x, size.z) || 1
+    const scale = 30 / maxDimension
+    clone.scale.setScalar(scale)
+    clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale)
+
+    const groundRayHeight = size.y * scale + 5
+    return { model: clone, groundRayHeight }
+  }, [scene])
+}
+
+const GRAFFITI_EXIT_PORTAL = [0, 0, 6]
+
+// Single clickable test NPC for the GLB-import experiment — proves an NPC
+// can be placed/talked to on top of an imported map exactly like on any
+// procedural world, with zero changes to the NPC code itself.
+function GraffitiTestNpc({ onTalk }) {
+  const groupRef = useRef()
+  const npcMascot = useMemo(() => getMascotById(8), [])
+  useFrame((_, delta) => {
+    if (groupRef.current) groupRef.current.rotation.y += delta * 0.4
+  })
+  return (
+    <group
+      ref={groupRef}
+      position={[3, 0, -3]}
+      onClick={(e) => { e.stopPropagation(); onTalk() }}
+    >
+      <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
+        <MascotMesh mascot={npcMascot} />
+      </group>
+      <Html position={[0, 1.6, 0]} center distanceFactor={10}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          🎨 Spray — NPC de prueba
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+// Test world for the GLB-import experiment: loads /st.glb through the same
+// hybrid pipeline as CityWorld, then adds the shared Player, one clickable
+// NPC, the campus video screen, and an exit portal back to /vr — proving a
+// fully imported map works end-to-end with our shared engine.
+function GraffitiWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onOpenVideoScreen }) {
+  const { model, groundRayHeight } = useGraffitiGround()
+  const [npcTalking, setNpcTalking] = useState(false)
+
+  return (
+    <>
+      <primitive object={model} />
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+      />
+      <GraffitiTestNpc onTalk={() => setNpcTalking(true)} />
+      <CampusVideoScreen onOpen={onOpenVideoScreen} />
+      <Portal
+        position={GRAFFITI_EXIT_PORTAL}
+        color="#ff2fb0"
+        label="🌀 Volver al Campus"
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
+      {npcTalking && (
+        <Html position={[3, 2.2, -3]} center distanceFactor={7}>
+          <div className="w-64 rounded-2xl border border-border bg-surface/95 p-3 text-center text-xs text-text shadow-xl backdrop-blur">
+            <p className="mb-2 font-semibold">🎨 Spray</p>
+            <p className="mb-3 text-text-muted">
+              ¡Bienvenido a la Calle Graffiti! Este mundo prueba un mapa importado (.glb) corriendo con
+              nuestro motor compartido de movimiento/cámara.
+            </p>
+            <button
+              type="button"
+              onClick={() => setNpcTalking(false)}
+              className="rounded-lg bg-primary px-3 py-1 font-semibold text-background"
+            >
+              Cerrar
+            </button>
+          </div>
+        </Html>
+      )}
+    </>
+  )
+}
 
 // Renders the Anfiteatro world: theater geometry + YouTube screen iframe +
 // one center-stage NPC + exit portal back to campus.
@@ -1390,7 +1495,25 @@ function World({
   roomMode,
   anfiteatroMode,
   worldTreeMode,
+  graffitiMode,
 }) {
+  if (graffitiMode) {
+    return (
+      <GraffitiWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+        onOpenVideoScreen={onOpenVideoScreen}
+      />
+    )
+  }
+
   if (worldTreeMode) {
     return (
       <WorldTreeWorld
@@ -2363,8 +2486,8 @@ function CharSwitcherHud({ playerPositionRef, hudVisible }) {
   )
 }
 
-// roomMode / anfiteatroMode / worldTreeMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false }) {
+// roomMode / anfiteatroMode / worldTreeMode / graffitiMode come from the route.
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, graffitiMode = false }) {
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -2389,7 +2512,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || graffitiMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
   const { remoteTransformsRef, sendChatMessage, kicked, channelRef } = useVrMultiplayer({
     playerId,
@@ -2538,8 +2661,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   }, [showHint])
 
   // Lighting themes per world mode
-  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#90c8e8'
-  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#d4c8b0', 45, 150]
+  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : graffitiMode ? '#181420' : '#90c8e8'
+  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : graffitiMode ? ['#181420', 18, 60] : ['#d4c8b0', 45, 150]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -2570,27 +2693,29 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <color attach="background" args={[bgColor]} />
           <fog attach="fog" args={fogArgs} />
           <SceneEffects
-            bloomIntensity={anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : 0.22}
+            bloomIntensity={anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : graffitiMode ? 0.45 : 0.22}
             vignetteDarkness={0.38}
             multisampling={0}
           />
           {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color */}
-          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode} />
+          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !graffitiMode} />
           {flashlightOn && flashlightPurchased && (
             <FlashlightSpot playerPositionRef={playerPositionRef} cameraRef={cameraRef} />
           )}
           {/* Non-campus modes: static lighting (intensity 0 in campus so they don't stack) */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#000000'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : graffitiMode ? 0.5 : 0}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : graffitiMode ? '#aa88ff' : '#000000'}
           />
           <directionalLight
             position={[20, 30, 10]}
-            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : 0}
-            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#000000'}
+            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : graffitiMode ? 0.5 : 0}
+            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : graffitiMode ? '#ffccee' : '#000000'}
           />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}
+          {graffitiMode && <pointLight position={[0, 6, -8]} intensity={2.2} color="#ff2fb0" distance={30} />}
+          {graffitiMode && <pointLight position={[6, 5, 2]} intensity={1.6} color="#2fdfff" distance={26} />}
           {anfiteatroMode && <pointLight position={[0, ANFI_H * 0.7, 0]} intensity={0.5} color="#9060ff" distance={80} />}
           {worldTreeMode && <hemisphereLight args={['#44ffaa', '#0d2a0a', 1.2]} />}
           {worldTreeMode && <pointLight position={[0, 6, 0]} intensity={6.0} color="#88ffaa" distance={60} decay={1.5} />}
@@ -2618,6 +2743,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               worldTreeMode={worldTreeMode}
               roomMode={roomMode}
               anfiteatroMode={anfiteatroMode}
+              graffitiMode={graffitiMode}
             />
             {/* Parked companion mesh when follow mode is off */}
             <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
@@ -2819,7 +2945,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={worldTreeMode ? 'Árbol del Mundo' : anfiteatroMode ? 'Anfiteatro' : roomMode ? 'Mi Room' : 'Campus VR'}
+            worldName={worldTreeMode ? 'Árbol del Mundo' : anfiteatroMode ? 'Anfiteatro' : roomMode ? 'Mi Room' : graffitiMode ? 'Calle Graffiti' : 'Campus VR'}
           />
         )}
 

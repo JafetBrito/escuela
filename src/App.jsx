@@ -281,6 +281,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/vr/graffiti"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage graffitiMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
         
         <Route
           path="/vr/cueva-platon"

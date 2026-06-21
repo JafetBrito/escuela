@@ -19,6 +19,7 @@ const LINKS = [
   { to: '/vr/room', label: '🥽 VR: Mi Room' },
   { to: '/vr/anfiteatro', label: '🥽 VR: Anfiteatro' },
   { to: '/vr/world-tree', label: '🥽 VR: Árbol del Mundo' },
+  { to: '/vr/graffiti', label: '🥽 VR: Calle Graffiti (st.glb)' },
   { to: '/vr-arbol', label: '🥽 VR: VrArbol (standalone)' },
   { to: '/vr/cueva-platon', label: '🥽 VR: Cueva de Platón' },
   { to: '/admin-setup', label: '⚙️ Admin Setup' },
