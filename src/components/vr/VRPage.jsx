@@ -241,56 +241,59 @@ function useGraffitiGround() {
     box.getSize(size)
     box.getCenter(center)
 
+    // Trust the GLB's own scale (glTF convention is meters, same as every
+    // procedural world) — only correct it if it's wildly off, so the player
+    // isn't left a giant or a speck next to the imported map.
     const maxDimension = Math.max(size.x, size.z) || 1
-    const scale = 30 / maxDimension
+    const scale = maxDimension > 6 && maxDimension < 250 ? 1 : 40 / maxDimension
     clone.scale.setScalar(scale)
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale)
+    clone.updateMatrixWorld(true)
+
+    // box.min.y is the lowest vertex in the WHOLE model — for an interior
+    // scene that's just as likely to be a curb or basement prop as the real
+    // floor. Raycast straight down through the model's own center instead
+    // and use the LOWEST surface hit (the floor) — taking the first/closest
+    // hit would grab the ceiling instead, since the ray starts above the
+    // whole model and a tunnel's roof is what it meets first.
+    const raycaster = new THREE.Raycaster()
+    raycaster.set(new THREE.Vector3(0, size.y * scale + 5, 0), new THREE.Vector3(0, -1, 0))
+    const hits = raycaster.intersectObject(clone, true)
+    if (hits.length > 0) {
+      const lowestY = Math.min(...hits.map((h) => h.point.y))
+      clone.position.y -= lowestY
+    }
 
     const groundRayHeight = size.y * scale + 5
-    return { model: clone, groundRayHeight }
+    return { model: clone, groundRayHeight, footprintX: size.x * scale, footprintZ: size.z * scale }
   }, [scene])
 }
 
-const GRAFFITI_EXIT_PORTAL = [0, 0, 6]
-
-// Single clickable test NPC for the GLB-import experiment — proves an NPC
-// can be placed/talked to on top of an imported map exactly like on any
-// procedural world, with zero changes to the NPC code itself.
-function GraffitiTestNpc({ onTalk }) {
-  const groupRef = useRef()
-  const npcMascot = useMemo(() => getMascotById(8), [])
-  useFrame((_, delta) => {
-    if (groupRef.current) groupRef.current.rotation.y += delta * 0.4
-  })
-  return (
-    <group
-      ref={groupRef}
-      position={[3, 0, -3]}
-      onClick={(e) => { e.stopPropagation(); onTalk() }}
-    >
-      <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
-        <MascotMesh mascot={npcMascot} />
-      </group>
-      <Html position={[0, 1.6, 0]} center distanceFactor={10}>
-        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-          🎨 Spray — NPC de prueba
-        </div>
-      </Html>
-    </group>
-  )
-}
-
 // Test world for the GLB-import experiment: loads /st.glb through the same
-// hybrid pipeline as CityWorld, then adds the shared Player, one clickable
-// NPC, the campus video screen, and an exit portal back to /vr — proving a
-// fully imported map works end-to-end with our shared engine.
-function GraffitiWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onOpenVideoScreen }) {
-  const { model, groundRayHeight } = useGraffitiGround()
-  const [npcTalking, setNpcTalking] = useState(false)
+// hybrid pipeline as CityWorld, then adds the shared Player and an exit
+// portal back to /vr — proving a fully imported map works end-to-end with
+// our shared engine. NPC/video screen are deliberately left out until
+// walking on the imported floor itself is confirmed working.
+function GraffitiWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
+  const { model, groundRayHeight, footprintX, footprintZ } = useGraffitiGround()
+
+  // Keep every placed object proportional to the model's own footprint
+  // instead of fixed coordinates, so it lands inside the map no matter how
+  // big or small the imported scene turns out to be.
+  const halfX = footprintX / 2
+  const halfZ = footprintZ / 2
+  const portalPos = [0, 0, halfZ * 0.6]
 
   return (
     <>
       <primitive object={model} />
+      {/* Flat ground collider sized to the model's own footprint — without
+          this the Rapier character controller never reports "grounded" and
+          gravity falls forever, since the player's own capsule collider
+          always makes the controller branch run (see Player.jsx). */}
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[halfX || 100, 0.5, halfZ || 100]} position={[0, -0.5, 0]} />
+      </RigidBody>
       <Player
         mascot={mascot}
         skin={skin}
@@ -302,34 +305,15 @@ function GraffitiWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, pl
         playerRotationRef={playerRotationRef}
         authorName={authorName}
         playerId={playerId}
+        spawnAt={[0, 0, 0]}
       />
-      <GraffitiTestNpc onTalk={() => setNpcTalking(true)} />
-      <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <Portal
-        position={GRAFFITI_EXIT_PORTAL}
+        position={portalPos}
         color="#ff2fb0"
         label="🌀 Volver al Campus"
         playerPositionRef={playerPositionRef}
         onNearbyChange={onNearPortalChange}
       />
-      {npcTalking && (
-        <Html position={[3, 2.2, -3]} center distanceFactor={7}>
-          <div className="w-64 rounded-2xl border border-border bg-surface/95 p-3 text-center text-xs text-text shadow-xl backdrop-blur">
-            <p className="mb-2 font-semibold">🎨 Spray</p>
-            <p className="mb-3 text-text-muted">
-              ¡Bienvenido a la Calle Graffiti! Este mundo prueba un mapa importado (.glb) corriendo con
-              nuestro motor compartido de movimiento/cámara.
-            </p>
-            <button
-              type="button"
-              onClick={() => setNpcTalking(false)}
-              className="rounded-lg bg-primary px-3 py-1 font-semibold text-background"
-            >
-              Cerrar
-            </button>
-          </div>
-        </Html>
-      )}
     </>
   )
 }
@@ -1509,7 +1493,6 @@ function World({
         authorName={authorName}
         playerId={playerId}
         onNearPortalChange={onNearPortalChange}
-        onOpenVideoScreen={onOpenVideoScreen}
       />
     )
   }
