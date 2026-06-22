@@ -7,6 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // We register the service worker ourselves in main.jsx (with a
+      // periodic update check), instead of the auto-injected script — see
+      // the comment there for why: browsers only check for SW updates on
+      // navigation, throttled to roughly once/day, so without an explicit
+      // poll, an open tab (or one reopened the same day) can keep running
+      // code from days-old deploys indefinitely.
+      injectRegister: false,
       devOptions: { enabled: true, type: 'module' },
       includeAssets: ['favicon.svg', '*.glb', 'audio/**/*'],
       manifest: {
