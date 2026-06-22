@@ -55,18 +55,23 @@ export const useAuthStore = create((set, get) => ({
 
     set({ profile: profile ?? null, license: profile?.license ?? null })
 
+    const local = loadLocalSnapshot()
+
     // If the cloud snapshot is newer than what's in this browser, restore it
     // so progress/mascot/settings follow the user across devices.
     if (profile?.snapshot?.lastSaved) {
-      const local = loadLocalSnapshot()
       const cloudIsNewer = !local?.lastSaved || profile.snapshot.lastSaved > local.lastSaved
       if (cloudIsNewer) {
         applyProgressSnapshot(profile.snapshot)
       }
-    } else if (profile) {
-      // Brand-new account that's never synced to the cloud yet — start fresh
-      // instead of inheriting whatever was left in this browser's local
-      // storage from previous sessions/accounts.
+    } else if (profile && local?.userId && local.userId !== session.user.id) {
+      // This browser's local storage belongs to a DIFFERENT account that
+      // never made it to the cloud — don't let the new account inherit it.
+      // If the cloud just has nothing yet (new account, or a sync that
+      // hasn't landed), keep what's already loaded instead of wiping it —
+      // wiping here used to silently destroy progress every time the cloud
+      // write had failed (e.g. a missing `snapshot` column), since a failed
+      // write looks identical to "never synced".
       applyProgressSnapshot({})
     }
   },

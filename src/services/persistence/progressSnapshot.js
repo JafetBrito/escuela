@@ -28,7 +28,7 @@ import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 //     onboardingCompleted, inventory, activeItems, gallery, coins,
 //     purchasedItems, chatHistory, lastSaved }
 export function buildProgressSnapshot() {
-  const { license, googleUser } = useAuthStore.getState()
+  const { license, googleUser, user } = useAuthStore.getState()
   const { selectedMascotId, selectedSkinId, unlockedMascots, memory } = useMascotStore.getState()
   const { progress, onboardingCompleted } = useProgressStore.getState()
   const { items: inventory } = useInventoryStore.getState()
@@ -74,6 +74,7 @@ export function buildProgressSnapshot() {
   } = useSettingsStore.getState()
 
   return {
+    userId: user?.id ?? null,
     license,
     googleUser,
     selectedMascotId,

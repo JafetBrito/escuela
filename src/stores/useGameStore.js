@@ -221,20 +221,13 @@ export const useGameStore = create((set, get) => ({
 
   setCurrentHp: (val) => set(s => ({ player: { ...s.player, hp: { ...s.player.hp, current: Math.max(0, val) } } })),
 
-  // Force-save to Supabase immediately (used at end of onboarding)
+  // Force-save to Supabase immediately (used at end of onboarding, and by
+  // the admin tools panel to verify cloud sync is actually working).
   forceSyncToCloud: async () => {
     const { buildProgressSnapshot } = await import('../services/persistence/progressSnapshot.js')
-    const { supabase, isSupabaseConfigured } = await import('../services/supabase/client.js')
-    const { useAuthStore } = await import('./useAuthStore.js')
     const { saveLocalSnapshot } = await import('../services/persistence/localStore.js')
-    const snapshot = buildProgressSnapshot()
-    saveLocalSnapshot(snapshot)
-    if (!isSupabaseConfigured()) return
-    const { user } = useAuthStore.getState()
-    if (!user) return
-    await supabase
-      .from('profiles')
-      .update({ snapshot, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
+    const { pushSnapshotToCloud } = await import('../services/persistence/autoSave.js')
+    saveLocalSnapshot(buildProgressSnapshot())
+    await pushSnapshotToCloud()
   },
 }))

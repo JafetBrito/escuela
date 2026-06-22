@@ -26,16 +26,48 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Safety net for projects whose `profiles` table already existed before
+-- some of these columns were added to this file: `create table if not
+-- exists` above is a no-op on an existing table, so it silently does NOT
+-- add new columns. Re-running this whole file is always safe.
+alter table public.profiles add column if not exists role text not null default 'student';
+alter table public.profiles add column if not exists license jsonb;
+alter table public.profiles add column if not exists snapshot jsonb;
+
 alter table public.profiles enable row level security;
 
+drop policy if exists "profiles: select own" on public.profiles;
 create policy "profiles: select own" on public.profiles
   for select using (auth.uid() = id);
 
+drop policy if exists "profiles: update own" on public.profiles;
 create policy "profiles: update own" on public.profiles
   for update using (auth.uid() = id);
 
+drop policy if exists "profiles: insert own" on public.profiles;
 create policy "profiles: insert own" on public.profiles
   for insert with check (auth.uid() = id);
+
+-- Lets admins look up and edit ANY player's row (used by the in-game GM
+-- console: give/remove objetos, set level, etc.). Wrapped in a security
+-- definer function so the policy doesn't recursively re-check RLS on
+-- `profiles` while reading `profiles` itself.
+create or replace function public.is_admin()
+returns boolean
+language sql security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+drop policy if exists "profiles: admin select all" on public.profiles;
+create policy "profiles: admin select all" on public.profiles
+  for select using (public.is_admin());
+
+drop policy if exists "profiles: admin update all" on public.profiles;
+create policy "profiles: admin update all" on public.profiles
+  for update using (public.is_admin());
 
 -- Crea automáticamente una fila en profiles cuando alguien se registra.
 create or replace function public.handle_new_user()
@@ -76,11 +108,14 @@ create index if not exists course_comments_course_module_idx
 
 alter table public.course_comments enable row level security;
 
+drop policy if exists "comments: select all (authenticated)" on public.course_comments;
 create policy "comments: select all (authenticated)" on public.course_comments
   for select using (auth.role() = 'authenticated');
 
+drop policy if exists "comments: insert own" on public.course_comments;
 create policy "comments: insert own" on public.course_comments
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "comments: delete own" on public.course_comments;
 create policy "comments: delete own" on public.course_comments
   for delete using (auth.uid() = user_id);

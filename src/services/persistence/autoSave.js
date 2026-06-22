@@ -21,6 +21,7 @@ import { useGameStore } from '../../stores/useGameStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
 import { supabase, isSupabaseConfigured } from '../supabase/client'
+import { useSyncStatusStore } from '../../stores/useSyncStatusStore'
 
 const STORES = [
   useAuthStore,
@@ -58,20 +59,40 @@ export function hydrateFromLocalStorage() {
 // Pushes the current snapshot to profiles.snapshot so progress, mascot,
 // settings and coins follow the user across devices. Debounced separately
 // from the local save since it's a network call.
-let cloudSaveTimer = null
-function scheduleCloudSave() {
+//
+// The write used to be unchecked — if it failed (e.g. the live Supabase
+// table is missing the `snapshot` column because schema.sql was never
+// re-run after that column was added), nothing told the user, and the next
+// login's "cloud has no snapshot yet" branch would look identical to a
+// brand-new account. Logging + useSyncStatusStore make failures visible
+// instead of silent.
+export async function pushSnapshotToCloud() {
   if (!isSupabaseConfigured()) return
   const { user } = useAuthStore.getState()
   if (!user) return
 
+  useSyncStatusStore.getState().setSaving()
+  const snapshot = buildProgressSnapshot()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ snapshot, updated_at: new Date().toISOString() })
+    .eq('id', user.id)
+
+  if (error) {
+    console.error('[autoSave] cloud sync failed:', error)
+    useSyncStatusStore.getState().setError(error.message)
+  } else {
+    useSyncStatusStore.getState().setSaved()
+  }
+}
+
+let cloudSaveTimer = null
+function scheduleCloudSave() {
+  if (!isSupabaseConfigured()) return
+  if (!useAuthStore.getState().user) return
+
   if (cloudSaveTimer) clearTimeout(cloudSaveTimer)
-  cloudSaveTimer = setTimeout(async () => {
-    const snapshot = buildProgressSnapshot()
-    await supabase
-      .from('profiles')
-      .update({ snapshot, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-  }, 3000)
+  cloudSaveTimer = setTimeout(pushSnapshotToCloud, 3000)
 }
 
 // Keeps the saved account snapshot in sync with every store change
@@ -104,6 +125,8 @@ export function startAutoSave() {
       },
       body: JSON.stringify({ snapshot, updated_at: new Date().toISOString() }),
       keepalive: true,
-    })
+    }).then((res) => {
+      if (!res.ok) console.error('[autoSave] beforeunload cloud flush failed:', res.status)
+    }).catch((err) => console.error('[autoSave] beforeunload cloud flush failed:', err))
   })
 }
