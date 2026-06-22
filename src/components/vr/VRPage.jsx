@@ -323,13 +323,12 @@ function GraffitiWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, pl
 
   return (
     <>
-      <primitive object={model} />
-      {/* Flat ground collider sized to the model's own footprint — without
-          this the Rapier character controller never reports "grounded" and
-          gravity falls forever, since the player's own capsule collider
-          always makes the controller branch run (see Player.jsx). */}
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[halfX || 100, 0.5, halfZ || 100]} position={[0, -0.5, 0]} />
+      {/* A flat collider only covers the outer footprint — this is an
+          interior (a tunnel/street with walls and a roof), so instead we
+          let Rapier build a collider matching the model's own geometry
+          exactly ("trimesh"), the same fix as the Campus world. */}
+      <RigidBody type="fixed" colliders="trimesh">
+        <primitive object={model} />
       </RigidBody>
       <Player
         mascot={mascot}
