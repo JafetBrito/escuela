@@ -16,9 +16,35 @@ import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { playAchievementSound } from '../../utils/sound'
+import { supabase } from '../../services/supabase/client'
 
 const COURSES = Object.values(COURSES_DATA)
 const ALL_ACHIEVEMENTS = getAllAchievements(COURSES)
+
+// "Pionero del Sistema" lives server-side (first 100 accounts to reach
+// level 28, see level28_race in schema.sql) — module-level flag so a single
+// browser session only ever fires the RPC once, even if level keeps
+// re-triggering this watcher's subscriptions.
+let level28ClaimAttempted = false
+
+async function tryClaimLevel28Race() {
+  if (level28ClaimAttempted || !supabase) return
+  if (useAchievementsStore.getState().isUnlocked('pionero-28')) return
+  level28ClaimAttempted = true
+  try {
+    const { data: won, error } = await supabase.rpc('claim_level28_race')
+    if (!error && won) {
+      const achievement = ALL_ACHIEVEMENTS.find((a) => a.id === 'pionero-28')
+      if (achievement) {
+        const isNew = useAchievementsStore.getState().unlock(achievement)
+        if (isNew) playAchievementSound()
+      }
+    }
+  } catch {
+    // Network/RPC failure — allow a retry next time level changes.
+    level28ClaimAttempted = false
+  }
+}
 
 function buildAchievementState(unlockedCount) {
   const { progress } = useProgressStore.getState()
@@ -77,6 +103,7 @@ function runAchievementCheck() {
   if (unlocked.length === ALL_ACHIEVEMENTS.length) return
 
   const state = buildAchievementState(unlocked.length)
+  if (state.level >= 28) tryClaimLevel28Race()
 
   for (const achievement of ALL_ACHIEVEMENTS) {
     if (unlocked.includes(achievement.id)) continue
@@ -96,6 +123,7 @@ function runSilentCatchUp() {
   if (unlocked.length === ALL_ACHIEVEMENTS.length) return
 
   const state = buildAchievementState(unlocked.length)
+  if (state.level >= 28) tryClaimLevel28Race()
 
   for (const achievement of ALL_ACHIEVEMENTS) {
     if (unlocked.includes(achievement.id)) continue

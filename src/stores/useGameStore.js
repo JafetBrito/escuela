@@ -51,6 +51,20 @@ export const PLAYER_CLASSES = {
     startSkills: ['socratic_parry', 'axiom_pulse'],
     passiveAura: 'dialectic_field',
   },
+  // Admin-exclusive class — not selectable by regular players (see
+  // ClassPreviewCard in VRPage.jsx, gated by isAdmin). The Programador's
+  // "hacker" specialization (see TerminalModal) is a stripped-down preview
+  // of this same theme, available to everyone once they reach level 10.
+  hacker: {
+    id: 'hacker',
+    name: 'Hacker',
+    icon: '🕶️',
+    color: '#39ff14',
+    description: 'Acceso root al campus entero. Solo para el admin.',
+    stats: { power: 4, speed: 4, intellect: 5, creativity: 4, wisdom: 4 },
+    startSkills: ['root_access'],
+    passiveAura: 'admin_override',
+  },
 }
 
 export const OLIVER_CLASSES = {
@@ -142,17 +156,18 @@ export const useGameStore = create((set, get) => ({
   setPlayerNickname: (nickname) =>
     set((s) => ({ player: { ...s.player, nickname } })),
 
-  // Spend a talent point to unlock a skill for 'player' or 'oliver'.
-  spendTalentPoint: (owner, skillId) =>
+  // Spend `cost` talent points to unlock a skill for 'player' or 'oliver'
+  // (defaults to 1 for callers that don't care, e.g. older tiers).
+  spendTalentPoint: (owner, skillId, cost = 1) =>
     set((s) => {
       const char = s[owner]
       if (!char) return s
-      if ((char.talentPoints ?? 0) < 1) return s
+      if ((char.talentPoints ?? 0) < cost) return s
       if (char.skills.unlocked.includes(skillId)) return s
       return {
         [owner]: {
           ...char,
-          talentPoints: char.talentPoints - 1,
+          talentPoints: char.talentPoints - cost,
           skills: {
             ...char.skills,
             unlocked: [...char.skills.unlocked, skillId],

@@ -35,9 +35,11 @@ export function useDraggablePopup(id) {
     [id, setPosition],
   )
 
-  const style = position
-    ? { position: 'fixed', left: position.x, top: position.y, right: 'auto', bottom: 'auto' }
-    : undefined
+  const scale = position?.scale ?? 1
+  const style = {
+    ...(position?.x != null ? { position: 'fixed', left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : null),
+    ...(scale !== 1 ? { transform: `scale(${scale})` } : null),
+  }
 
-  return { elRef, style, onPointerDown }
+  return { elRef, style: Object.keys(style).length ? style : undefined, scale, onPointerDown }
 }

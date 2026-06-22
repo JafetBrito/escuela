@@ -180,6 +180,11 @@ export const useAuthStore = create((set, get) => ({
 
   isAdmin: () => get().profile?.role === 'admin',
 
+  // Live voice (mic dictation in VR chat): admins always have it; everyone
+  // else needs it explicitly granted via the admin's "Voz" panel, which
+  // writes profiles.voice_enabled for that player (see gmCommands.setVoicePermission).
+  canUseVoice: () => get().profile?.role === 'admin' || !!get().profile?.voice_enabled,
+
   // 'full' licenses unlock every course; 'single' licenses only unlock the
   // course they were issued for. The demo course and admins are always open.
   hasAccessToCourse: (courseId) => {

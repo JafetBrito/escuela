@@ -130,3 +130,19 @@ export async function runGmCommand(targetId, name, args) {
 export function listShopItemIds() {
   return SHOP_ITEMS.map((i) => `${i.id} — ${i.name}`)
 }
+
+// Grants/revokes live voice (mic dictation in VR world chat) for whichever
+// player matches `query` by email or display name. Admins always have
+// voice regardless of this flag (see useAuthStore.canUseVoice) — this is
+// only for handing it to a specific other player without making them admin.
+export async function setVoicePermission(query, enabled) {
+  const players = await findPlayers(query)
+  if (!players.length) throw new Error('No se encontró ningún jugador con ese correo/nombre.')
+  const player = players[0]
+  const { error } = await supabase
+    .from('profiles')
+    .update({ voice_enabled: enabled })
+    .eq('id', player.id)
+  if (error) throw error
+  return player
+}

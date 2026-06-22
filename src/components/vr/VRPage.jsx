@@ -24,6 +24,10 @@ import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
+import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
+import { useVoiceStore } from '../../stores/useVoiceStore'
+import GmConsole from '../shared/GmConsole'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
@@ -113,6 +117,9 @@ const INTERACT_RADIUS = 2.5
 // How close the player needs to be to a world portal to interact.
 const PORTAL_INTERACT_RADIUS = 2.5
 
+// How long the basic class "golpe" VFX ring stays visible after it fires.
+const ATTACK_BURST_MS = 450
+
 const ROOM_EXIT_PORTAL_POSITION = [0, 0, -ROOM_SIZE / 2 + 2]
 
 // ─── Árbol del Mundo spawn / portal ──────────────────────────────────────────
@@ -141,7 +148,7 @@ const WANDER_CAT_PATHS = [
 // World shortcuts that are NOT character movement: M toggles the map, P
 // opens the character menu, B opens the inventory, and C toggles the
 // world chat input. All ignored while the player is typing in the chat box.
-function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onToggleChat }) {
+function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onToggleChat, onAttack, onUseWeapon }) {
   useEffect(() => {
     const handleDown = (e) => {
       if (isTypingTarget(e.target)) {
@@ -167,13 +174,26 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
           e.preventDefault()
           onToggleChat(true)
           break
+        case 'g':
+          // Every class's basic "golpe" — purely a visible VFX for now (see
+          // LocalAttackBurst/RemotePlayerMesh), no damage/target involved.
+          // (Not "f": that key is already the flashlight toggle below.)
+          e.preventDefault()
+          onAttack?.()
+          break
+        case 'v':
+          // "Usar arma" — your equipped weapon's action (see useWeaponStore
+          // + CharacterTree's "🎒 Arma equipada" section).
+          e.preventDefault()
+          onUseWeapon?.()
+          break
         default:
           break
       }
     }
     window.addEventListener('keydown', handleDown)
     return () => window.removeEventListener('keydown', handleDown)
-  }, [onToggleMap, onOpenCharacter, onOpenInventory, onToggleChat])
+  }, [onToggleMap, onOpenCharacter, onOpenInventory, onToggleChat, onAttack, onUseWeapon])
 }
 
 // Loads the VR background model, scales it to a roomy walkable footprint, and
@@ -778,6 +798,12 @@ function FallingApple({ position }) {
   )
 }
 
+// Desk + monitor prop for the Programador class's terminal ability — only
+// visually "usable" (E prompt + interaction) for class===programmer or the
+// admin; everyone else just sees a static prop in the plaza.
+const COMPUTER_POS = new THREE.Vector3(-6, 0, 8)
+const COMPUTER_RADIUS = 2.2
+
 // 3D gift box that bobs in the air. Glows gold when claimable, grey when already
 // claimed today. Calls onNearChange(bool) as the player approaches/leaves.
 const REWARD_BOX_POS = new THREE.Vector3(6, 1.5, 8)
@@ -845,6 +871,147 @@ function DailyRewardBox({ playerPositionRef, onNearChange }) {
         </Html>
       </group>
     </group>
+  )
+}
+
+// Desk + glowing monitor — the Programador class's terminal. Visible to
+// everyone (it's part of the shared multiplayer scene), but only reports
+// "near" so VRPage can gate the E-to-use prompt by class.
+function ComputerTerminal({ playerPositionRef, onNearChange }) {
+  const screenRef = useRef()
+  const nearRef = useRef(false)
+
+  useFrame(({ clock }) => {
+    if (screenRef.current) {
+      screenRef.current.material.emissiveIntensity = 0.7 + Math.sin(clock.getElapsedTime() * 2.2) * 0.25
+    }
+    const pos = playerPositionRef?.current
+    if (!pos) return
+    const flat = new THREE.Vector3(pos.x, COMPUTER_POS.y, pos.z)
+    const isNear = flat.distanceTo(COMPUTER_POS) <= COMPUTER_RADIUS
+    if (isNear !== nearRef.current) {
+      nearRef.current = isNear
+      onNearChange?.(isNear)
+    }
+  })
+
+  return (
+    <group position={[COMPUTER_POS.x, COMPUTER_POS.y, COMPUTER_POS.z]}>
+      {/* Desk */}
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <boxGeometry args={[1.1, 0.08, 0.6]} />
+        <meshStandardMaterial color="#5b4636" roughness={0.8} />
+      </mesh>
+      {[[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]].map(([x, z], i) => (
+        <mesh key={i} position={[x, 0.18, z]}>
+          <boxGeometry args={[0.06, 0.36, 0.06]} />
+          <meshStandardMaterial color="#3a2e22" />
+        </mesh>
+      ))}
+      {/* Monitor */}
+      <mesh position={[0, 0.75, -0.15]}>
+        <boxGeometry args={[0.55, 0.4, 0.04]} />
+        <meshStandardMaterial color="#111827" roughness={0.4} />
+      </mesh>
+      <mesh ref={screenRef} position={[0, 0.75, -0.125]}>
+        <planeGeometry args={[0.46, 0.3]} />
+        <meshStandardMaterial color="#0a2e1a" emissive="#22c55e" emissiveIntensity={0.7} />
+      </mesh>
+      <Html center position={[0, 1.15, -0.15]} style={{ pointerEvents: 'none', userSelect: 'none' }}>
+        <div style={{ fontSize: 16 }}>🖥️</div>
+      </Html>
+    </group>
+  )
+}
+
+// "Find the bug" mini-puzzles for the Programador terminal — a short fixed
+// list is plenty since one is picked at random per visit.
+const BUG_PUZZLES = [
+  {
+    code: 'function suma(a, b) {\n  retun a + b\n}',
+    options: ['Falta punto y coma', '"retun" mal escrito (debería ser "return")', 'Los parámetros están al revés'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ['El bucle se sale del arreglo (off-by-one)', 'Falta declarar "arr"', 'No hay ningún bug'],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['Falta la función giveAccess', 'Usa "=" en vez de "==" (asignación, no comparación)', 'Falta un "else"'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['Falta el valor inicial en reduce (falla con lista vacía)', '"reduce" no existe', '"items" debería ser un objeto'],
+    answer: 0,
+  },
+]
+
+// Tiered content for the Programador's computer:
+// - 'basic'  → anyone with class===programmer: a find-the-bug puzzle.
+// - 'hacker' → programmer who reached level 10 (the same level the rest of
+//   the class tree unlocks its Tier-3 ultimate at): a harder-paying version
+//   of the same puzzle, themed as breaking encryption.
+// - 'admin'  → the real GM console (way more power, admin-only).
+function TerminalModal({ tier, onClose }) {
+  const [puzzleIdx] = useState(() => Math.floor(Math.random() * BUG_PUZZLES.length))
+  const [selected, setSelected] = useState(null)
+  const [result, setResult] = useState(null)
+  const canClaim = useTerminalRewardsStore((s) => s.canClaim())
+  const puzzle = BUG_PUZZLES[puzzleIdx]
+
+  if (tier === 'admin') return <GmConsole open onClose={onClose} />
+
+  const reward = tier === 'hacker' ? { coins: 600, xp: 60 } : { coins: 250, xp: 25 }
+
+  const handleAnswer = (i) => {
+    setSelected(i)
+    if (i !== puzzle.answer) { setResult('wrong'); return }
+    if (!canClaim) { setResult('claimed'); return }
+    useTerminalRewardsStore.getState().claim(tier)
+    setResult('correct')
+  }
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-md rounded-xl border border-primary/40 bg-black/95 font-mono text-sm text-[#39ff14] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-primary/30 px-4 py-2">
+          <span className="font-semibold">{tier === 'hacker' ? '🕶️ Terminal Hacker' : '🖥️ Terminal del Programador'}</span>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-[#39ff14]">✕</button>
+        </div>
+        <div className="space-y-3 px-4 py-4">
+          <p className="text-[#39ff14]/70">
+            {tier === 'hacker'
+              ? '// Encriptación detectada. Encuentra la vulnerabilidad para romperla.'
+              : '// Depura el siguiente código.'}
+          </p>
+          <pre className="whitespace-pre-wrap rounded bg-[#001a08] p-3 text-xs text-[#39ff14]">{puzzle.code}</pre>
+          <p>¿Cuál es el bug?</p>
+          <div className="flex flex-col gap-2">
+            {puzzle.options.map((opt, i) => (
+              <button
+                key={i}
+                type="button"
+                disabled={result !== null}
+                onClick={() => handleAnswer(i)}
+                className={`rounded border px-3 py-1.5 text-left text-xs transition-colors ${
+                  selected === i
+                    ? i === puzzle.answer ? 'border-[#39ff14] bg-[#39ff14]/10' : 'border-red-500 bg-red-500/10'
+                    : 'border-[#39ff14]/30 hover:border-[#39ff14]'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+          {result === 'correct' && <p className="text-[#39ff14]">✅ ¡Correcto! +{reward.coins} 🪙 +{reward.xp} XP</p>}
+          {result === 'wrong' && <p className="text-red-400">❌ No es eso. Vuelve mañana para otro intento.</p>}
+          {result === 'claimed' && <p className="text-yellow-400">⏳ Ya usaste la terminal hoy. Vuelve mañana.</p>}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -972,6 +1139,10 @@ function IdleNpc({ config, playerPositionRef }) {
   const [bubbles, setBubbles] = useState([])
   const lineIndexRef = useRef(0)
   const bubbleIdRef  = useRef(1)
+  // Ingeniero de IA passive: NPCs tagged topic:'ai' get a glowing highlight
+  // visible only to that class — everyone else sees a plain name tag.
+  const playerClass = useGameStore((s) => s.player.class)
+  const showAiHighlight = config.topic === 'ai' && playerClass === 'ai_engineer'
 
   const sayOneLine = useCallback(async () => {
     let text
@@ -1016,9 +1187,16 @@ function IdleNpc({ config, playerPositionRef }) {
       <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <MascotMesh mascot={mascot} />
       </group>
+      {showAiHighlight && (
+        <pointLight position={[0, NPC_SCALE * 2 + 0.3, 0]} color="#a855f7" intensity={1.4} distance={4} />
+      )}
       <Html position={[0, NPC_SCALE * 2 + 0.6, 0]} center distanceFactor={10}>
-        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-          {config.emoji} {config.name}
+        <div
+          className={`pointer-events-none whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold shadow-lg ${
+            showAiHighlight ? 'bg-purple-500/90 text-white' : 'bg-surface/90 text-text'
+          }`}
+        >
+          {showAiHighlight ? '🧠 ' : ''}{config.emoji} {config.name}
         </div>
       </Html>
       <BubbleStack bubbles={bubbles} baseY={NPC_SCALE * 2 + 1.0} color={config.bubbleColor} />
@@ -1072,8 +1250,40 @@ function WanderingCat({ path }) {
 // remote movement looks smooth despite the ~120ms network tick. Metadata
 // (name/mascot/skin) comes from useVrPresenceStore and only changes on
 // join/rename, so it's safe to read via a normal hook.
-function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
+// Drives the local player's class-colored "golpe" ring: positions it a step
+// in front of the player (using their facing angle) and times the fade off
+// `firedAtRef` — a Date.now() timestamp set by the F-key shortcut.
+function LocalAttackBurst({ playerPositionRef, playerRotationRef, firedAtRef, color }) {
+  const groupRef = useRef()
+  const ringRef = useRef()
+
+  useFrame(() => {
+    const pos = playerPositionRef?.current
+    const ring = ringRef.current
+    if (!pos || !groupRef.current || !ring) return
+    const age = Date.now() - (firedAtRef.current ?? 0)
+    if (age > ATTACK_BURST_MS) { ring.visible = false; return }
+    const ry = playerRotationRef?.current ?? 0
+    groupRef.current.position.set(pos.x + Math.sin(ry) * 0.7, pos.y + 0.5, pos.z + Math.cos(ry) * 0.7)
+    const p = Math.max(0, age) / ATTACK_BURST_MS
+    ring.visible = true
+    ring.scale.setScalar(0.4 + p * 1.0)
+    ring.material.opacity = 0.9 * (1 - p)
+  })
+
+  return (
+    <group ref={groupRef}>
+      <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.25, 0.42, 24]} />
+        <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
+function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
   const group = useRef()
+  const attackRingRef = useRef()
   const player = useVrPresenceStore((s) => s.players[id])
   const mascot = getMascotById(player?.mascotId) || getMascotById(8)
   const skin = getSkinById(player?.skinId)
@@ -1093,6 +1303,23 @@ function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
     let angleDiff = target.ry - node.rotation.y
     angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
     node.rotation.y += angleDiff * lerpFactor
+
+    // Same class-attack VFX as the local player, just driven by the latest
+    // 'action' broadcast for this id instead of a local keypress timestamp.
+    const action = actionsRef?.current.get(id)
+    const ring = attackRingRef.current
+    if (ring) {
+      const age = action ? Date.now() - action.ts : Infinity
+      if (age > ATTACK_BURST_MS) {
+        ring.visible = false
+      } else {
+        const p = Math.max(0, age) / ATTACK_BURST_MS
+        ring.visible = true
+        ring.scale.setScalar(0.4 + p * 1.0)
+        ring.material.color.set(PLAYER_CLASSES[action.classId]?.color ?? '#ffffff')
+        ring.material.opacity = 0.9 * (1 - p)
+      }
+    }
   })
 
   return (
@@ -1103,6 +1330,10 @@ function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
           <MascotMesh mascot={mascot} skin={skin} />
         </group>
       </group>
+      <mesh ref={attackRingRef} position={[0, 0.5, 0.7]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.25, 0.42, 24]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <Html position={[0, PLAYER_HEIGHT + 0.5, 0]} center distanceFactor={10}>
         <button
           type="button"
@@ -1124,7 +1355,7 @@ function RemotePlayerMesh({ id, transformsRef, onSelectPlayer }) {
 // here) comes from useVrPresenceStore (zustand, low-churn); their live
 // transforms come from `transformsRef` (a plain Map, high-churn) so position
 // updates don't cause this list to re-render.
-function RemotePlayers({ transformsRef, onSelectPlayer }) {
+function RemotePlayers({ transformsRef, actionsRef, onSelectPlayer }) {
   // `Object.keys(...)` returns a brand-new array on every store read, which
   // makes useSyncExternalStore think the snapshot changed on every render
   // and re-render forever ("Maximum update depth exceeded" / React error
@@ -1137,7 +1368,7 @@ function RemotePlayers({ transformsRef, onSelectPlayer }) {
   return (
     <>
       {playerIds.map((id) => (
-        <RemotePlayerMesh key={id} id={id} transformsRef={transformsRef} onSelectPlayer={onSelectPlayer} />
+        <RemotePlayerMesh key={id} id={id} transformsRef={transformsRef} actionsRef={actionsRef} onSelectPlayer={onSelectPlayer} />
       ))}
     </>
   )
@@ -1501,10 +1732,14 @@ function World({
   playerPositionRef,
   playerRotationRef,
   remoteTransformsRef,
+  remoteActionsRef,
   onNearbyNpcChange,
   onNearPortalChange,
   onNearClassNodeChange,
   onNearDailyRewardChange,
+  onNearComputerChange,
+  attackFiredAtRef,
+  playerClass,
   onOpenVideoScreen,
   authorName,
   playerId,
@@ -1598,7 +1833,14 @@ function World({
       <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
-      <RemotePlayers transformsRef={remoteTransformsRef} onSelectPlayer={onSelectPlayer} />
+      <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} />
+      <LocalAttackBurst
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        firedAtRef={attackFiredAtRef}
+        color={PLAYER_CLASSES[playerClass]?.color ?? '#e5e7eb'}
+      />
+      <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
     </>
   )
@@ -2069,6 +2311,12 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
   const sendMessage = useWorldChatStore((s) => s.sendMessage)
   const addSystemMessage = useWorldChatStore((s) => s.addSystemMessage)
   const players = useVrPresenceStore((s) => s.players)
+  // Same voice-permission gate as <VoicePanel> — admins respect their own
+  // mute toggle, granted players just need profiles.voice_enabled.
+  const isAdminForVoice = useAuthStore((s) => s.isAdmin())
+  const grantedVoice = useAuthStore((s) => s.canUseVoice())
+  const myVoiceEnabled = useVoiceStore((s) => s.myVoiceEnabled)
+  const canUseVoice = isAdminForVoice ? myVoiceEnabled : grantedVoice
   const isTouch = useIsTouchDevice()
   const [text, setText] = useState('')
   const [tab, setTab] = useState('general')
@@ -2259,7 +2507,7 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
             placeholder="Mensaje global, o /w nombre mensaje para susurrar…"
             className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
           />
-          <MicButton onTranscript={(t) => setText(prev => prev ? prev + ' ' + t : t)} />
+          {canUseVoice && <MicButton onTranscript={(t) => setText(prev => prev ? prev + ' ' + t : t)} />}
           <button
             type="submit"
             className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
@@ -2281,9 +2529,11 @@ function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefil
 }
 
 // ── Class Preview Card — shown when player nears a class node in WorldTree ─────
-function ClassPreviewCard({ classId, step, playerClass, oliverClass, onSelectPlayer, onSelectOliver, onClose }) {
+function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, onSelectPlayer, onSelectOliver, onClose }) {
   const cls = PLAYER_CLASSES[classId]
-  if (!cls) return null
+  // The Hacker node is admin-exclusive — for everyone else it's as if the
+  // node weren't there at all (no preview, no "Elegir").
+  if (!cls || (classId === 'hacker' && !isAdmin)) return null
 
   const statEntries = Object.entries(cls.stats)
   const maxStat = 5
@@ -2470,7 +2720,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
   const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || graffitiMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
-  const { remoteTransformsRef, sendChatMessage, kicked, channelRef } = useVrMultiplayer({
+  const { remoteTransformsRef, remoteActionsRef, sendChatMessage, sendAction, kicked, channelRef } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
     mascotId: mascot.id,
@@ -2496,6 +2746,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [activeNpcId, setActiveNpcId] = useState(null)
   const [nearPortal, setNearPortal] = useState(false)
   const [nearDailyReward, setNearDailyReward] = useState(false)
+  const [nearComputer, setNearComputer] = useState(false)
+  const [terminalOpen, setTerminalOpen] = useState(false)
+  const attackFiredAtRef = useRef(0)
+  const isAdmin = useAuthStore((s) => s.isAdmin())
+  const level = useLevelStore((s) => levelForXp(s.xp))
+  // Live voice chat (<VoicePanel>) used to be open to everyone — now it's
+  // admin-only by default, with the admin's own mute toggle on top, or
+  // explicitly granted to a player via profiles.voice_enabled (DevToolsPanel).
+  const grantedVoice = useAuthStore((s) => s.canUseVoice())
+  const myVoiceEnabled = useVoiceStore((s) => s.myVoiceEnabled)
+  const canUseVoice = isAdmin ? myVoiceEnabled : grantedVoice
   const [portalMenuOpen, setPortalMenuOpen] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
@@ -2565,6 +2826,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       if (e.key.toLowerCase() === 'f') { useItemEffectsStore.getState().toggleItem('linterna'); return }
       if (e.key.toLowerCase() === 'e') {
         if (nearDailyReward) { setDailyRewardsOpen(true); return }
+        if (nearComputer && (playerClass === 'programmer' || isAdmin)) { setTerminalOpen(true); return }
         if (nearbyNpcId) {
           setActiveNpcId((cur) => (cur === nearbyNpcId ? null : nearbyNpcId))
           return
@@ -2577,13 +2839,24 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     }
     window.addEventListener('keydown', handleDown)
     return () => window.removeEventListener('keydown', handleDown)
-  }, [nearPortal, nearDailyReward, nearbyNpcId, isPrivateWorld, navigate])
+  }, [nearPortal, nearDailyReward, nearComputer, nearbyNpcId, isPrivateWorld, navigate, playerClass, isAdmin])
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
     onOpenCharacter: () => openPanel('chat'),
     onOpenInventory: () => openPanel('items'),
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
+    onAttack: () => {
+      attackFiredAtRef.current = Date.now()
+      sendAction(playerClass)
+    },
+    onUseWeapon: () => {
+      if (playerClass === 'hacker') {
+        setTerminalOpen(true)
+      } else {
+        useWorldChatStore.getState().addSystemMessage('🔒 Tu arma todavía no tiene una acción asignada (próximamente).')
+      }
+    },
   })
 
   // Class is now selected during account creation onboarding — no auto-redirect needed.
@@ -2688,10 +2961,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               playerPositionRef={playerPositionRef}
               playerRotationRef={playerRotationRef}
               remoteTransformsRef={remoteTransformsRef}
+              remoteActionsRef={remoteActionsRef}
               onNearbyNpcChange={setNearbyNpcId}
               onNearPortalChange={setNearPortal}
               onNearClassNodeChange={setNearClassNodeId}
               onNearDailyRewardChange={setNearDailyReward}
+              onNearComputerChange={setNearComputer}
+              attackFiredAtRef={attackFiredAtRef}
+              playerClass={playerClass}
               onOpenVideoScreen={() => setVideoScreenOpen(true)}
               authorName={chatAuthor}
               playerId={playerId}
@@ -2731,6 +3008,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
           >
             🎁 Haz clic o pulsa E para reclamar recompensa diaria
+          </button>
+        )}
+
+        {/* Computer terminal prompt — only for the Programador class (or admin) */}
+        {nearComputer && !terminalOpen && (playerClass === 'programmer' || isAdmin) && (
+          <button
+            type="button"
+            onClick={() => setTerminalOpen(true)}
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
+          >
+            🖥️ Pulsa E para usar la terminal
           </button>
         )}
 
@@ -2812,8 +3100,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
         <CameraSettingsMenu open={cameraMenuOpen} onClose={() => setCameraMenuOpen(false)} />
 
-        {/* Voice chat panel — always available */}
-        <VoicePanel playerId={playerId} name={chatAuthor} channelRef={channelRef} />
+        {/* Voice chat panel — admin by default, or explicitly granted (see DevToolsPanel "🎙️ Voz") */}
+        {canUseVoice && (
+          <VoicePanel playerId={playerId} name={chatAuthor} channelRef={channelRef} />
+        )}
 
         {/* Connection status badge — hidden in private worlds or when HUD is off */}
         {hudVisible && !isPrivateWorld && (
@@ -2870,6 +3160,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <DailyRewardsBoard onClose={() => setDailyRewardsOpen(false)} />
         )}
 
+        {/* Programador terminal — tiered by class/level/admin (see TerminalModal) */}
+        {terminalOpen && (
+          <TerminalModal
+            tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
+            onClose={() => setTerminalOpen(false)}
+          />
+        )}
+
         {/* WorldTree class selection card */}
         {worldTreeMode && nearClassNodeId && classSelectionStep !== 'done' && (
           <ClassPreviewCard
@@ -2877,6 +3175,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             step={classSelectionStep}
             playerClass={playerClass}
             oliverClass={oliverClass}
+            isAdmin={isAdmin}
             onSelectPlayer={(id) => {
               selectPlayerClass(id)
               setClassSelectionStep('oliver')

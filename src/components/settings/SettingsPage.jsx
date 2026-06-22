@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, CHAT_MODELS, AI_TONES, AI_VERBOSITY } from '../../stores/useSettingsStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
 import { SHOP_ITEMS } from '../../data/shopRegistry'
 import { getMascotById } from '../../data/mascotRegistry'
 import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
@@ -37,6 +38,12 @@ export default function SettingsPage() {
   const signOut = useAuthStore((s) => s.signOut)
   const updatePassword = useAuthStore((s) => s.updatePassword)
   const coins = useCurrencyStore((s) => s.coins)
+  const popupPositions = usePopupPositionStore((s) => s.positions)
+  const setPopupScale = usePopupPositionStore((s) => s.setScale)
+  const resetPopups = usePopupPositionStore((s) => s.resetAll)
+  const popupScales = Object.fromEntries(
+    Object.entries(popupPositions).map(([id, pos]) => [id, pos?.scale ?? 1]),
+  )
 
   const [newPassword, setNewPassword] = useState('')
   const [passwordStatus, setPasswordStatus] = useState('')
@@ -482,6 +489,39 @@ export default function SettingsPage() {
               del menú
               {historyDays.length > 0 && ` (${historyDays.length} ${historyDays.length === 1 ? 'día guardado' : 'días guardados'})`}.
             </p>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5">
+            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🖐️ Interfaz</p>
+            <p className="text-sm text-text-muted">
+              Los elementos flotantes (Radio, Cámara) se arrastran desde su asa <strong>⠿</strong>. Ajusta
+              aquí su tamaño — cada pantalla es distinta, así que no hay un tamaño estándar.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[{ id: 'radio', label: '🎵 Radio' }, { id: 'camara', label: '📸 Cámara' }].map(({ id, label }) => (
+                <div key={id} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text">{label}</span>
+                    <span className="text-text-muted">{Math.round((popupScales[id] ?? 1) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.6"
+                    max="1.6"
+                    step="0.05"
+                    value={popupScales[id] ?? 1}
+                    onChange={(e) => setPopupScale(id, Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={resetPopups}
+              className="self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-text-muted transition-colors hover:border-danger/40 hover:text-danger"
+            >
+              🔄 Restablecer tamaños y posiciones
+            </button>
           </section>
         </div>
       </main>

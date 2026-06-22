@@ -23,6 +23,7 @@ create table if not exists public.profiles (
   role text not null default 'student',
   license jsonb,
   snapshot jsonb,
+  voice_enabled boolean not null default false,
   updated_at timestamptz not null default now()
 );
 
@@ -33,6 +34,10 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists role text not null default 'student';
 alter table public.profiles add column if not exists license jsonb;
 alter table public.profiles add column if not exists snapshot jsonb;
+-- Live voice (mic dictation in VR chat) is off by default for everyone —
+-- admins always have it implicitly; this flag is how an admin grants it to
+-- a specific other player without giving them admin rights.
+alter table public.profiles add column if not exists voice_enabled boolean not null default false;
 
 alter table public.profiles enable row level security;
 
@@ -119,3 +124,52 @@ create policy "comments: insert own" on public.course_comments
 drop policy if exists "comments: delete own" on public.course_comments;
 create policy "comments: delete own" on public.course_comments
   for delete using (auth.uid() = user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- level28_race: secret achievement "Pionero del Sistema" — the first 100
+-- accounts to reach level 28 before 2027, system-wide (not per-account
+-- local state, since "first 100" only means anything as a global count).
+-- ─────────────────────────────────────────────────────────────────────────
+create table if not exists public.level28_race (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  claimed_at timestamptz not null default now()
+);
+
+alter table public.level28_race enable row level security;
+
+drop policy if exists "level28_race: select all (authenticated)" on public.level28_race;
+create policy "level28_race: select all (authenticated)" on public.level28_race
+  for select using (auth.role() = 'authenticated');
+
+-- ponytail: no explicit row lock around the count check below, so two
+-- simultaneous calls landing on slot #100 could both squeeze through —
+-- acceptable for a small app; upgrade to `select ... for update` on a
+-- singleton counter row if this ever needs to be exact.
+create or replace function public.claim_level28_race()
+returns boolean
+language plpgsql security definer set search_path = public
+as $$
+declare
+  already boolean;
+  current_count int;
+begin
+  if now() >= timestamptz '2027-01-01 00:00:00+00' then
+    return false;
+  end if;
+
+  select exists(select 1 from level28_race where user_id = auth.uid()) into already;
+  if already then
+    return true;
+  end if;
+
+  select count(*) into current_count from level28_race;
+  if current_count >= 100 then
+    return false;
+  end if;
+
+  insert into level28_race (user_id) values (auth.uid());
+  return true;
+exception when unique_violation then
+  return true;
+end;
+$$;

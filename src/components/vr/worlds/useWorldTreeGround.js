@@ -7,6 +7,9 @@ export const WT_CLASS_NODES = {
   ai_engineer:      { pos: [7.0, 2.5, 9.7],        color: '#a855f7' },
   designer:         { pos: [-7.0, 2.5, 9.7],       color: '#f97316' },
   philosopher:      { pos: [-11.4, 2.5, -3.7],     color: '#eab308' },
+  // Grows from the top of the canopy instead of the ring of 5 — admin-only,
+  // see the isAdmin check in ClassPreviewCard (VRPage.jsx).
+  hacker:           { pos: [0, 15.5, 4.5],         color: '#39ff14' },
 }
 
 export function useWorldTreeGround() {
@@ -45,7 +48,7 @@ export function useWorldTreeGround() {
     }
 
     // ─── Main branches (5, one per class) ────────────────────────────────
-    const branchColors = ['#22c55e', '#3b82f6', '#a855f7', '#f97316', '#eab308']
+    const branchColors = ['#22c55e', '#3b82f6', '#a855f7', '#f97316', '#eab308', '#39ff14']
     const classIds = Object.keys(WT_CLASS_NODES)
 
     classIds.forEach((cid, i) => {

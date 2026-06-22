@@ -255,6 +255,10 @@ export const EINSTEIN_NPC = {
   mascotId: 9,
   position: [-4, 0, -4],
   bubbleColor: '#c7d2fe',
+  // Marks this NPC as one whose dialogue revolves around AI — only players
+  // with the ai_engineer class get a passive visual highlight on NPCs
+  // tagged this way (see IdleNpc in VRPage.jsx).
+  topic: 'ai',
   lines: [
     // --- Originales (Construcción y Relatividad) ---
     '¿Sabías que el tiempo es relativo? Por eso esta sección "está casi lista" desde hace ya un buen rato. ⏳',

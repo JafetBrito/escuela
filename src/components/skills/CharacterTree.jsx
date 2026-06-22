@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
+import { useWeaponStore } from '../../stores/useWeaponStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
+import { getWeaponsForClass } from '../../data/weaponRegistry'
 
 // ─── Skill tree data ─────────────────────────────────────────────────────────
 
@@ -31,6 +33,19 @@ export const PLAYER_SKILL_TREE = {
     { tier: 1, levelReq: 1,  cost: 0, skillIds: ['socratic_parry', 'axiom_pulse'] },
     { tier: 2, levelReq: 5,  cost: 1, skillIds: ['dialectic_shield', 'stoic_mind'] },
     { tier: 3, levelReq: 10, cost: 2, skillIds: ['eternal_logos'] },
+  ],
+  // Admin-exclusive — longer tree since it climbs all the way to level 28
+  // (see PLAYER_CLASSES.hacker). Levels past 28 are a placeholder tier
+  // (`comingSoon`) so the tree visibly keeps going without fake content.
+  hacker: [
+    { tier: 1, levelReq: 1,  cost: 0, skillIds: ['root_access', 'ghost_ping'] },
+    { tier: 2, levelReq: 5,  cost: 1, skillIds: ['packet_sniffer', 'backdoor'] },
+    { tier: 3, levelReq: 10, cost: 1, skillIds: ['mass_override', 'silent_patch'] },
+    { tier: 4, levelReq: 15, cost: 2, skillIds: ['deep_root'] },
+    { tier: 5, levelReq: 20, cost: 2, skillIds: ['god_mode_flicker'] },
+    { tier: 6, levelReq: 24, cost: 2, skillIds: ['kernel_panic'] },
+    { tier: 7, levelReq: 28, cost: 3, skillIds: ['system_override'] },
+    { tier: 8, levelReq: 29, cost: null, comingSoon: true, skillIds: [] },
   ],
 }
 
@@ -62,8 +77,17 @@ export const OLIVER_SKILL_TREE = {
   ],
 }
 
-const TIER_LABELS = { 1: 'Base', 2: 'Nivel 5', 3: 'Nivel 10' }
-const TIER_ICONS  = { 1: '🌱', 2: '🔥', 3: '👑' }
+// Labels/icons derive from the tier's own levelReq/cost instead of a fixed
+// tier-number lookup, since classes can now have more than 3 tiers (see the
+// 'hacker' tree above).
+function tierLabel(tierDef) {
+  return tierDef.levelReq <= 1 ? 'Base' : `Nivel ${tierDef.levelReq}`
+}
+function tierIcon(tierDef) {
+  if (tierDef.comingSoon) return '🔒'
+  if (tierDef.levelReq <= 1) return '🌱'
+  return tierDef.cost >= 3 ? '👑' : '🔥'
+}
 
 // ─── Skill card ──────────────────────────────────────────────────────────────
 
@@ -139,9 +163,9 @@ function TierRow({ tierDef, unlockedSkills, level, talentPoints, onUnlock, class
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <span className="text-xl">{TIER_ICONS[tierDef.tier]}</span>
+        <span className="text-xl">{tierIcon(tierDef)}</span>
         <div>
-          <p className="text-sm font-black text-text">{TIER_LABELS[tierDef.tier]}</p>
+          <p className="text-sm font-black text-text">{tierLabel(tierDef)}</p>
           {tierDef.levelReq > 1 && (
             <p className="text-[10px]" style={{ color: levelOk ? classColor : 'var(--color-text-muted)' }}>
               {levelOk ? '✓ Nivel alcanzado' : `Requiere nivel ${tierDef.levelReq}`}
@@ -155,20 +179,26 @@ function TierRow({ tierDef, unlockedSkills, level, talentPoints, onUnlock, class
           </span>
         )}
       </div>
-      <div className="grid gap-3"
-        style={{ gridTemplateColumns: `repeat(${tierDef.skillIds.length}, minmax(0,1fr))` }}>
-        {tierDef.skillIds.map((skillId) => {
-          const skill = SKILL_REGISTRY[skillId]
-          if (!skill) return null
-          return (
-            <SkillCard key={skillId} skill={skill}
-              isUnlocked={unlockedSkills.includes(skillId)}
-              levelOk={levelOk} levelReq={tierDef.levelReq}
-              cost={tierDef.cost} talentPoints={talentPoints}
-              onUnlock={onUnlock} classColor={classColor} />
-          )
-        })}
-      </div>
+      {tierDef.comingSoon ? (
+        <div className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-text-muted">
+          🔒 Próximamente — nuevas habilidades para niveles {tierDef.levelReq}-99
+        </div>
+      ) : (
+        <div className="grid gap-3"
+          style={{ gridTemplateColumns: `repeat(${tierDef.skillIds.length}, minmax(0,1fr))` }}>
+          {tierDef.skillIds.map((skillId) => {
+            const skill = SKILL_REGISTRY[skillId]
+            if (!skill) return null
+            return (
+              <SkillCard key={skillId} skill={skill}
+                isUnlocked={unlockedSkills.includes(skillId)}
+                levelOk={levelOk} levelReq={tierDef.levelReq}
+                cost={tierDef.cost} talentPoints={talentPoints}
+                onUnlock={onUnlock} classColor={classColor} />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -182,6 +212,59 @@ export function StatBar5({ val, color }) {
         <div key={i} className="h-2 w-4 rounded-sm"
           style={{ background: i < val ? color : 'rgba(128,128,128,0.15)' }} />
       ))}
+    </div>
+  )
+}
+
+// ─── Weapon section — Diablo/WoW-style equip slot ────────────────────────────
+// Your weapon is your class's signature tool (e.g. the Hacker's Teléfono):
+// it can be swapped for a better one as you level up, and the equipped one
+// drives the 'V' "usar arma" action in the VR world (see VRPage.jsx).
+function WeaponSection({ classId, level, classColor }) {
+  const weapons = getWeaponsForClass(classId)
+  const equippedId = useWeaponStore((s) => s.equipped.player)
+  const equip = useWeaponStore((s) => s.equip)
+  if (weapons.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface/60 p-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🎒 Arma equipada</p>
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${weapons.length}, minmax(0,1fr))` }}>
+        {weapons.map((w) => {
+          const locked = level < w.requiredLevel
+          const isEquipped = equippedId === w.id
+          return (
+            <div key={w.id} className="flex flex-col gap-2 rounded-xl border p-3"
+              style={{ borderColor: isEquipped ? `${classColor}99` : 'var(--color-border)', opacity: locked ? 0.5 : 1 }}>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{w.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-text">{w.name}</p>
+                  <p className="text-[10px] text-text-muted leading-tight">{w.description}</p>
+                </div>
+              </div>
+              <div className="flex gap-3 text-[9px] text-text-muted">
+                <span>⚔️ {w.stats.power}</span>
+                <span>⚡ {w.stats.speed}</span>
+                <span>🎯 {w.stats.range}</span>
+              </div>
+              {isEquipped ? (
+                <span className="self-end rounded-full px-2 py-0.5 text-[9px] font-black text-white" style={{ background: classColor }}>
+                  ✓ Equipada
+                </span>
+              ) : locked ? (
+                <span className="self-end text-[9px] text-text-muted">🔒 Requiere Nv.{w.requiredLevel}</span>
+              ) : (
+                <button type="button" onClick={() => equip('player', w.id)}
+                  className="self-end rounded-full px-2 py-0.5 text-[9px] font-black text-white"
+                  style={{ background: `linear-gradient(135deg, ${classColor}, ${classColor}cc)` }}>
+                  Equipar
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -206,7 +289,7 @@ export default function CharacterTree({ owner }) {
   const [toast, setToast] = useState(null)
 
   function handleUnlock(skillId, cost) {
-    spendTalent(owner, skillId)
+    spendTalent(owner, skillId, cost)
     const sk = SKILL_REGISTRY[skillId]
     setToast(`✨ ${sk?.name ?? skillId} desbloqueada`)
     setTimeout(() => setToast(null), 2200)
@@ -262,6 +345,8 @@ export default function CharacterTree({ owner }) {
         )}
       </div>
 
+      {isPlayer && <WeaponSection classId={classId} level={level} classColor={clsDef.color} />}
+
       {/* Tiers */}
       <div className="flex flex-col gap-2">
         {tiers.map((tierDef, i) => (
@@ -281,7 +366,7 @@ export default function CharacterTree({ owner }) {
       </div>
 
       <p className="rounded-xl bg-surface/60 px-4 py-3 text-xs text-text-muted">
-        💡 Tier 2 requiere nivel 5 y 1 punto · Tier 3 (ultimate) requiere nivel 10 y 2 puntos
+        💡 Cada nivel te da 1 punto de talento ✨ — úsalo para desbloquear la siguiente habilidad de tu árbol.
       </p>
     </div>
   )

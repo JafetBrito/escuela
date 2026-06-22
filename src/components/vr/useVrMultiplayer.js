@@ -26,6 +26,7 @@ export function isVrRealtimeAvailable() {
 // sendChatMessage does nothing, so the world plays fine single-player.
 export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, accountId, positionRef, rotationRef, enabled = true }) {
   const remoteTransformsRef = useRef(new Map())
+  const remoteActionsRef = useRef(new Map())
   const channelRef = useRef(null)
   const joinedAtRef = useRef(Date.now())
   const [kicked, setKicked] = useState(false)
@@ -77,6 +78,14 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, a
     channel.on('broadcast', { event: 'pos' }, ({ payload }) => {
       if (!payload || payload.id === playerId) return
       remoteTransformsRef.current.set(payload.id, payload)
+    })
+
+    // Basic class ability ("golpe") — other players just need to know it
+    // happened and what class threw it, to flash the right-colored VFX;
+    // unlike position, this doesn't need lerping so a plain Map write is enough.
+    channel.on('broadcast', { event: 'action' }, ({ payload }) => {
+      if (!payload || payload.id === playerId) return
+      remoteActionsRef.current.set(payload.id, payload)
     })
 
     channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
@@ -156,5 +165,17 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, a
     })
   }
 
-  return { remoteTransformsRef, sendChatMessage, kicked, channelRef }
+  // Broadcasts a one-shot class ability ping; remote clients flash a VFX
+  // over this player's last known position for a moment (see AttackBurst).
+  const sendAction = (classId) => {
+    const channel = channelRef.current
+    if (!channel) return
+    channel.send({
+      type: 'broadcast',
+      event: 'action',
+      payload: { id: playerId, classId, ts: Date.now() },
+    })
+  }
+
+  return { remoteTransformsRef, remoteActionsRef, sendChatMessage, sendAction, kicked, channelRef }
 }

@@ -250,6 +250,14 @@ export const STATIC_ACHIEVEMENTS = [
     check: (s) => s.level >= 10,
   },
   {
+    id: 'level-20',
+    category: 'economia',
+    name: 'Nivel 20',
+    icon: '🌟',
+    description: 'Alcanza el nivel 20.',
+    check: (s) => s.level >= 20,
+  },
+  {
     id: 'level-25',
     category: 'economia',
     name: 'Nivel 25',
@@ -258,12 +266,68 @@ export const STATIC_ACHIEVEMENTS = [
     check: (s) => s.level >= 25,
   },
   {
+    id: 'level-30',
+    category: 'economia',
+    name: 'Nivel 30',
+    icon: '💫',
+    description: 'Alcanza el nivel 30.',
+    check: (s) => s.level >= 30,
+  },
+  {
+    id: 'level-40',
+    category: 'economia',
+    name: 'Nivel 40',
+    icon: '💫',
+    description: 'Alcanza el nivel 40.',
+    check: (s) => s.level >= 40,
+  },
+  {
+    id: 'level-50',
+    category: 'economia',
+    name: 'Nivel 50',
+    icon: '💫',
+    description: 'Alcanza el nivel 50.',
+    check: (s) => s.level >= 50,
+  },
+  {
+    id: 'level-60',
+    category: 'economia',
+    name: 'Nivel 60',
+    icon: '💫',
+    description: 'Alcanza el nivel 60.',
+    check: (s) => s.level >= 60,
+  },
+  {
+    id: 'level-70',
+    category: 'economia',
+    name: 'Nivel 70',
+    icon: '💫',
+    description: 'Alcanza el nivel 70.',
+    check: (s) => s.level >= 70,
+  },
+  {
+    id: 'level-80',
+    category: 'economia',
+    name: 'Nivel 80',
+    icon: '💫',
+    description: 'Alcanza el nivel 80.',
+    check: (s) => s.level >= 80,
+  },
+  {
+    id: 'level-90',
+    category: 'economia',
+    name: 'Nivel 90',
+    icon: '💫',
+    description: 'Alcanza el nivel 90.',
+    check: (s) => s.level >= 90,
+  },
+  {
     id: 'level-max',
     category: 'economia',
     name: 'Nivel máximo',
     icon: '🌌',
-    description: 'Alcanza el nivel 90, el máximo posible.',
-    check: (s) => s.level >= 90,
+    description: 'Alcanza el nivel 99, el máximo posible.',
+    check: (s) => s.level >= 99,
   },
 
   // --- Proezas de la fuerza (secretas) ---
@@ -324,6 +388,19 @@ export const STATIC_ACHIEVEMENTS = [
     icon: '❤️',
     description: 'Por ser Amigo de Oliver.',
     check: (s) => s.userEmail === 'wjafte28@gmail.com',
+  },
+  {
+    id: 'pionero-28',
+    category: 'secretos',
+    secret: true,
+    name: 'Pionero del Sistema',
+    icon: '🛡️',
+    description: 'Una de las primeras 100 personas en llegar a nivel 28 antes de 2027.',
+    // Whether you're one of the first 100 lives in Supabase (level28_race),
+    // not in any local store — claimReward28Race (AchievementWatcher.jsx)
+    // calls the RPC and unlocks this directly on success. check() always
+    // returns false so the normal reactive scanner never auto-unlocks it.
+    check: () => false,
   },
 ]
 
