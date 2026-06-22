@@ -70,6 +70,12 @@ import {
 // Flip this back to `false` to return to /fondo_azteca.glb.
 const USE_TEST_SCENERY = true
 
+// Experiment: use the real imported /campus.glb model as the Campus's
+// ground instead of the procedural TestWorld — overrides USE_TEST_SCENERY
+// above when true. NPCs/video screen/portals are untouched either way,
+// since they're rendered as siblings of whichever ground component runs.
+const USE_CAMPUS_GLB = true
+
 const SIMPLE_MODE = false
 const ACTIVE_VR_NPCS = VR_NPCS.filter((n) => !n.battle)
 
@@ -226,12 +232,12 @@ function useSceneryModel() {
   }, [scene])
 }
 
-// Loads /st.glb (an imported "graffiti street" map) through the same hybrid
-// pipeline as useSceneryModel — scaled/recentered so it works with the
-// shared engine's raycasts — but WITHOUT the flat-color palette tint, since
-// this model's own painted/graffiti textures are the whole point.
-function useGraffitiGround() {
-  const { scene } = useGLTF('/st.glb')
+// Shared hybrid loader for any plain imported .glb map: scales/recenters it
+// so it works with the shared engine's raycasts, regardless of how big or
+// small the source asset is. Used by every GLB-imported world (graffiti,
+// campus) so the floor/scale fixes only need to live in one place.
+function useImportedGlbGround(url) {
+  const { scene } = useGLTF(url)
 
   return useMemo(() => {
     const clone = scene.clone(true)
@@ -242,10 +248,11 @@ function useGraffitiGround() {
     box.getCenter(center)
 
     // Trust the GLB's own scale (glTF convention is meters, same as every
-    // procedural world) — only correct it if it's wildly off, so the player
-    // isn't left a giant or a speck next to the imported map.
+    // procedural world) across a wide sane range — only correct it if it's
+    // wildly off, so the player isn't left a giant or a speck next to the
+    // imported map.
     const maxDimension = Math.max(size.x, size.z) || 1
-    const scale = maxDimension > 6 && maxDimension < 250 ? 1 : 40 / maxDimension
+    const scale = maxDimension > 4 && maxDimension < 2000 ? 1 : 40 / maxDimension
     clone.scale.setScalar(scale)
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale)
     clone.updateMatrixWorld(true)
@@ -254,8 +261,8 @@ function useGraffitiGround() {
     // scene that's just as likely to be a curb or basement prop as the real
     // floor. Raycast straight down through the model's own center instead
     // and use the LOWEST surface hit (the floor) — taking the first/closest
-    // hit would grab the ceiling instead, since the ray starts above the
-    // whole model and a tunnel's roof is what it meets first.
+    // hit would grab a roof/ceiling instead, since the ray starts above the
+    // whole model.
     const raycaster = new THREE.Raycaster()
     raycaster.set(new THREE.Vector3(0, size.y * scale + 5, 0), new THREE.Vector3(0, -1, 0))
     const hits = raycaster.intersectObject(clone, true)
@@ -267,6 +274,47 @@ function useGraffitiGround() {
     const groundRayHeight = size.y * scale + 5
     return { model: clone, groundRayHeight, footprintX: size.x * scale, footprintZ: size.z * scale }
   }, [scene])
+}
+
+function useGraffitiGround() {
+  return useImportedGlbGround('/st.glb')
+}
+
+function useCampusGlbGround() {
+  return useImportedGlbGround('/campus.glb')
+}
+
+// Ground component for the imported /campus.glb experiment — just the
+// model, a footprint-sized physics floor, and the shared Player. NPCs,
+// video screen, portals, minimap, etc. are siblings rendered outside
+// <WorldGround> (see World()), so swapping this in for TestWorld doesn't
+// touch any of them.
+function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
+  const { model, groundRayHeight, footprintX, footprintZ } = useCampusGlbGround()
+  const halfX = footprintX / 2
+  const halfZ = footprintZ / 2
+
+  return (
+    <>
+      <primitive object={model} />
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[halfX || 200, 0.5, halfZ || 200]} position={[0, -0.5, 0]} />
+      </RigidBody>
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        spawnAt={[0, 0, 0]}
+      />
+    </>
+  )
 }
 
 // Test world for the GLB-import experiment: loads /st.glb through the same
@@ -1546,7 +1594,7 @@ function World({
     )
   }
 
-  const WorldGround = USE_TEST_SCENERY ? TestWorld : CityWorld
+  const WorldGround = USE_CAMPUS_GLB ? CampusGlbWorld : (USE_TEST_SCENERY ? TestWorld : CityWorld)
 
   return (
     <>
