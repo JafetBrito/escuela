@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
-import { useWeaponStore } from '../../stores/useWeaponStore'
+import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
-import { getWeaponsForClass } from '../../data/weaponRegistry'
+import { EQUIPMENT_SLOTS, SLOT_META, getEquipmentForSlot } from '../../data/equipmentRegistry'
 
 // ─── Skill tree data ─────────────────────────────────────────────────────────
 
@@ -216,50 +216,49 @@ export function StatBar5({ val, color }) {
   )
 }
 
-// ─── Weapon section — Diablo/WoW-style equip slot ────────────────────────────
-// Your weapon is your class's signature tool (e.g. the Hacker's Teléfono):
-// it can be swapped for a better one as you level up, and the equipped one
-// drives the 'V' "usar arma" action in the VR world (see VRPage.jsx).
-function WeaponSection({ classId, level, classColor }) {
-  const weapons = getWeaponsForClass(classId)
-  const equippedId = useWeaponStore((s) => s.equipped.player)
-  const equip = useWeaponStore((s) => s.equip)
-  if (weapons.length === 0) return null
+// ─── Equipment section — Diablo/WoW-style equip slots ────────────────────────
+// Each owner (Avatar = 'player', Mascota = 'oliver') has its own slot set —
+// the Mascota's is intentionally smaller (see EQUIPMENT_SLOTS). The Avatar's
+// equipped weapon also drives the 'V' "usar arma" action in the VR world
+// (see VRPage.jsx).
+function EquipmentSection({ owner, classId, level, classColor }) {
+  const slots = EQUIPMENT_SLOTS[owner]
+  const equipped = useEquipmentStore((s) => s.equipped[owner])
+  const equip = useEquipmentStore((s) => s.equip)
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface/60 p-3">
-      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🎒 Arma equipada</p>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${weapons.length}, minmax(0,1fr))` }}>
-        {weapons.map((w) => {
-          const locked = level < w.requiredLevel
-          const isEquipped = equippedId === w.id
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface/60 p-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🎒 Equipo</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {slots.map((slot) => {
+          const meta = SLOT_META[slot]
+          const items = getEquipmentForSlot(owner, classId, level, slot)
+          const equippedId = equipped[slot]
           return (
-            <div key={w.id} className="flex flex-col gap-2 rounded-xl border p-3"
-              style={{ borderColor: isEquipped ? `${classColor}99` : 'var(--color-border)', opacity: locked ? 0.5 : 1 }}>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{w.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-text">{w.name}</p>
-                  <p className="text-[10px] text-text-muted leading-tight">{w.description}</p>
-                </div>
-              </div>
-              <div className="flex gap-3 text-[9px] text-text-muted">
-                <span>⚔️ {w.stats.power}</span>
-                <span>⚡ {w.stats.speed}</span>
-                <span>🎯 {w.stats.range}</span>
-              </div>
-              {isEquipped ? (
-                <span className="self-end rounded-full px-2 py-0.5 text-[9px] font-black text-white" style={{ background: classColor }}>
-                  ✓ Equipada
-                </span>
-              ) : locked ? (
-                <span className="self-end text-[9px] text-text-muted">🔒 Requiere Nv.{w.requiredLevel}</span>
+            <div key={slot} className="flex flex-col gap-2 rounded-xl border border-border p-3">
+              <p className="text-[10px] font-bold text-text-muted">{meta.icon} {meta.label}</p>
+              {items.length === 0 ? (
+                <p className="text-[10px] text-text-muted">Sin objetos para este slot todavía</p>
               ) : (
-                <button type="button" onClick={() => equip('player', w.id)}
-                  className="self-end rounded-full px-2 py-0.5 text-[9px] font-black text-white"
-                  style={{ background: `linear-gradient(135deg, ${classColor}, ${classColor}cc)` }}>
-                  Equipar
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  {items.map((it) => {
+                    const locked = level < it.requiredLevel
+                    const isEquipped = equippedId === it.id
+                    return (
+                      <button key={it.id} type="button" disabled={locked}
+                        onClick={() => equip(owner, slot, isEquipped ? null : it.id)}
+                        title={`${it.name} — ${it.description}${locked ? ` (Requiere Nv.${it.requiredLevel})` : ''}`}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-xl transition-all disabled:cursor-not-allowed"
+                        style={{
+                          borderColor: isEquipped ? classColor : 'var(--color-border)',
+                          background: isEquipped ? `${classColor}22` : 'transparent',
+                          opacity: locked ? 0.4 : 1,
+                        }}>
+                        {it.icon}
+                      </button>
+                    )
+                  })}
+                </div>
               )}
             </div>
           )
@@ -345,7 +344,7 @@ export default function CharacterTree({ owner }) {
         )}
       </div>
 
-      {isPlayer && <WeaponSection classId={classId} level={level} classColor={clsDef.color} />}
+      <EquipmentSection owner={owner} classId={classId} level={level} classColor={clsDef.color} />
 
       {/* Tiers */}
       <div className="flex flex-col gap-2">

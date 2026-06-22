@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import MascotViewport from './MascotViewport'
 import ChatTab from './ChatTab'
 import ItemsPanel from './ItemsPanel'
@@ -7,7 +8,7 @@ import GalleryPanel from './GalleryPanel'
 import BooksPanel from './BooksPanel'
 import AppearancePanel from './AppearancePanel'
 import FriendsPanel from './FriendsPanel'
-import SkillTreePanel from './SkillTreePanel'
+import CharacterTree from '../skills/CharacterTree'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -21,7 +22,7 @@ const BASE_MENU = [
   { id: 'chat', label: 'Chat', icon: '💬' },
   { id: 'missions', label: 'Misiones', icon: '🎯' },
   { id: 'items', label: 'Objetos', icon: '🎒' },
-  { id: 'skilltree', label: 'Árbol', icon: '🌳' },
+  { id: 'character', label: 'Personaje', icon: '🧑' },
   { id: 'books', label: 'Libros', icon: '📚' },
   { id: 'notes', label: 'Notas', icon: '📝' },
   { id: 'appearance', label: 'Aspecto', icon: '🎨' },
@@ -43,6 +44,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const coins = useCurrencyStore((s) => s.coins)
   const hasCamera = useShopStore((s) => s.purchased.includes('camara'))
+  const [charTab, setCharTab] = useState('avatar')
 
   const displayName = settingsMascotName || mascot.name
   const menu = hasCamera ? BASE_MENU : BASE_MENU.filter((item) => item.id !== 'gallery')
@@ -92,7 +94,30 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             {panel === 'chat' && <ChatTab courseId={courseId} module={module} className="h-full" />}
             {panel === 'missions' && <MissionsPanel courseId={courseId} module={module} />}
             {panel === 'items' && <ItemsPanel />}
-            {panel === 'skilltree' && <SkillTreePanel />}
+            {panel === 'character' && (
+              <div className="flex flex-col gap-4">
+                <div className="flex rounded-2xl border border-border bg-background p-1">
+                  {[
+                    { id: 'avatar', label: 'Avatar', icon: '⚔️', owner: 'player' },
+                    { id: 'mascota', label: displayName, icon: '🐾', owner: 'oliver' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setCharTab(t.id)}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold transition-all"
+                      style={charTab === t.id
+                        ? { background: 'var(--color-primary)', color: '#fff' }
+                        : { color: 'var(--color-text-muted)' }}
+                    >
+                      <span>{t.icon}</span>
+                      <span>{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <CharacterTree owner={charTab === 'avatar' ? 'player' : 'oliver'} />
+              </div>
+            )}
             {panel === 'books' && <BooksPanel />}
             {panel === 'notes' && <NotesPanel courseId={courseId} module={module} />}
             {panel === 'appearance' && <AppearancePanel />}

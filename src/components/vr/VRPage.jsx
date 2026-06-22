@@ -40,6 +40,7 @@ import BattleScreen from '../battle/BattleScreen'
 import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
+import BagsPanel from './BagsPanel'
 import PatchNotesModal from '../shared/PatchNotesModal'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS, NPC_PAVILION_EXEMPT } from './worlds/useCampusGround'
@@ -183,8 +184,8 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
           onAttack?.()
           break
         case 'v':
-          // "Usar arma" — your equipped weapon's action (see useWeaponStore
-          // + CharacterTree's "🎒 Arma equipada" section).
+          // "Usar arma" — your equipped weapon's action (see useEquipmentStore
+          // + CharacterTree's "🎒 Equipo" section).
           e.preventDefault()
           onUseWeapon?.()
           break
@@ -2781,6 +2782,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [hudVisible, setHudVisible] = useState(true)
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
   const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
+  const [bagsOpen, setBagsOpen] = useState(false)
   // Shown once per VR session entry; closing it auto-opens the daily reward.
   const [showAnnouncements, setShowAnnouncements] = useState(true)
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
@@ -3200,12 +3202,18 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenChat={() => setChatOpen(true)}
           onOpenMap={() => setMapOpen(true)}
           onOpenDailyRewards={() => setDailyRewardsOpen(true)}
+          onOpenBags={() => setBagsOpen(true)}
           isPrivateWorld={isPrivateWorld}
         />
 
         {/* Daily rewards board overlay */}
         {dailyRewardsOpen && (
           <DailyRewardsBoard onClose={() => setDailyRewardsOpen(false)} />
+        )}
+
+        {/* WoW-style bags overlay — quick equip/unequip for Avatar + Mascota */}
+        {bagsOpen && (
+          <BagsPanel onClose={() => setBagsOpen(false)} />
         )}
 
         {/* Tablón de anuncios al iniciar la aventura — al cerrarlo, abre la recompensa diaria */}

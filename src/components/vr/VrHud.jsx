@@ -232,7 +232,7 @@ function SkillBar() {
 }
 
 // ─── Utility strip (right side) — Settings / Hide / Audio / Chat / Map / Friends / Arena ──
-function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, hudVisible, setHudVisible, isPrivateWorld }) {
+function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, onOpenBags, hudVisible, setHudVisible, isPrivateWorld }) {
   const [muted, setMuted] = useState(() => localStorage.getItem('vr-muted') === '1')
   const navigate = useNavigate()
 
@@ -255,6 +255,7 @@ function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, 
   const BTNS = [
     { icon: hudVisible ? '👁️' : '🙈', title: hudVisible ? 'Ocultar HUD' : 'Mostrar HUD', onClick: () => setHudVisible(v => !v) },
     { icon: '🎁', title: 'Recompensa diaria', onClick: onOpenDailyRewards, hidden: !hudVisible },
+    { icon: '🎒', title: 'Bolsas', onClick: onOpenBags, hidden: !hudVisible },
     { icon: '📷', title: 'Ajustes de cámara', onClick: onOpenSettings, hidden: !hudVisible },
     { icon: muted ? '🔇' : '🔊', title: muted ? 'Activar audio' : 'Silenciar', onClick: toggleMute, hidden: !hudVisible },
     { icon: '💬', title: 'Chat', onClick: onOpenChat, hidden: !hudVisible },
@@ -311,6 +312,7 @@ export default function VrHud({
   onOpenChat,
   onOpenMap,
   onOpenDailyRewards,
+  onOpenBags,
   isPrivateWorld = false,
 }) {
   return (
@@ -322,6 +324,7 @@ export default function VrHud({
         onOpenChat={onOpenChat}
         onOpenMap={onOpenMap}
         onOpenDailyRewards={onOpenDailyRewards}
+        onOpenBags={onOpenBags}
         hudVisible={hudVisible}
         setHudVisible={setHudVisible}
         isPrivateWorld={isPrivateWorld}
