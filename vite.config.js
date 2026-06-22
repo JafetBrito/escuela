@@ -1,8 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+
+// Commit count as a build number — increments by 1 on every commit with zero
+// manual bumping, so the nav badge (see VersionBadge.jsx) always shows which
+// build is actually deployed. Falls back to '0' wherever there's no git repo
+// (e.g. some CI checkouts).
+function getBuildNumber() {
+  try {
+    return execSync('git rev-list --count HEAD').toString().trim()
+  } catch {
+    return '0'
+  }
+}
 
 export default defineConfig({
+  define: {
+    __BUILD_NUMBER__: JSON.stringify(getBuildNumber()),
+  },
   plugins: [
     react(),
     VitePWA({

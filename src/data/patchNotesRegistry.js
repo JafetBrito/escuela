@@ -4,9 +4,23 @@
 //  2. Update LATEST_VERSION to match
 //  The PatchNotesModal shows once per version (gated by localStorage).
 
-export const LATEST_VERSION = '0.6.0'
+export const LATEST_VERSION = '0.7.0'
 
 export const PATCH_NOTES = [
+  {
+    version: '0.7.0',
+    date: '2026-06-22',
+    title: 'Sistema de Equipo · Menú de Personaje',
+    emoji: '🎒',
+    tag: 'NOVEDAD',
+    tagColor: '#22c55e',
+    changes: [
+      { icon: '🎒', text: 'Sistema de equipo por slots, como en los RPG de rol clásicos: tu Avatar puede equipar cabeza, pecho, guantes, botas y arma; tu Mascota gorro, accesorio, arma y mochila.' },
+      { icon: '🧑', text: 'Menú de personaje rediseñado: pestañas separadas para tu Avatar y tu Mascota, cada una con su propio árbol de habilidades y su propio equipo.' },
+      { icon: '🎒', text: 'Nuevo panel de "Bolsas" en la HUD del mundo VR: una cuadrícula rápida de todos tus objetos desbloqueados para equipar o quitar con un clic, sin salir del juego.' },
+      { icon: '📱', text: 'El arma equipada (por ejemplo, el Teléfono del Hacker) sigue siendo la que activa tu acción especial en el mundo VR.' },
+    ],
+  },
   {
     version: '0.6.0',
     date: '2026-06-22',
@@ -17,7 +31,7 @@ export const PATCH_NOTES = [
     changes: [
       { icon: '🎓', text: 'Nuevo nombre: ¡bienvenidos a Oliver Academy!' },
       { icon: '🕶️', text: 'Clase Hacker en el Árbol del Mundo, con árbol de habilidades propio hasta nivel 28 (próximamente más allá de ese nivel).' },
-      { icon: '⭐', text: 'Nivel máximo subido de 90 a 99: ahora cada subida de nivel otorga un punto de habilidad, igual que en Diablo.' },
+      { icon: '⭐', text: 'Nivel máximo subido de 90 a 99: ahora cada subida de nivel otorga un punto de habilidad, como en los RPG de acción clásicos.' },
       { icon: '📱', text: 'Sistema de arma equipable: tu Teléfono es tu herramienta principal, cambiable por modelos mejores con más estadísticas.' },
       { icon: '🏆', text: 'Nuevos logros cada 10 niveles, más un logro secreto para los primeros 100 jugadores en llegar a nivel 28 antes de 2027.' },
       { icon: '🖐️', text: 'Ajustes → Interfaz: ajusta el tamaño de los elementos flotantes (Radio, Cámara) a tu gusto.' },
@@ -33,7 +47,7 @@ export const PATCH_NOTES = [
     tag: 'NOVEDAD',
     tagColor: '#22c55e',
     changes: [
-      { icon: '🧩', text: 'Janulingo: mini-app completa de idiomas con portada, selección de idioma, mapa de niveles estilo Duolingo y motor de bloques. Ordena Estructura + Verbo + Objeto para construir frases. Inglés (2 niveles), Francés y Catalán.' },
+      { icon: '🧩', text: 'Janulingo: mini-app completa de idiomas con portada, selección de idioma, mapa de niveles por etapas y motor de bloques. Ordena Estructura + Verbo + Objeto para construir frases. Inglés (2 niveles), Francés y Catalán.' },
       { icon: '🔊', text: 'Audio nativo por idioma: selección automática de voz del sistema para cada lengua (corrige el bug que leía catalán con acento inglés). Controles de velocidad 🐌 0.5× / 🚶 0.75× / 🏃 1×.' },
       { icon: '🌍', text: 'Aprende Idiomas: juego de adivinar palabras con emojis con sistema de pistas progresivas de Oliver, pronuciación con Web Speech API y sistema de puntos.' },
       { icon: '♟️', text: 'Ajedrez con tablero completo, modo vs IA (un ply) y modo 2 jugadores. Destaque de último movimiento, detección de jaque/jaque mate/tablas.' },
@@ -58,13 +72,13 @@ export const PATCH_NOTES = [
   {
     version: '0.3.0',
     date: '2026-06-18',
-    title: 'Campus VR · HUD Black Desert · Tablón de Anuncios',
+    title: 'Campus VR · Nueva HUD · Tablón de Anuncios',
     emoji: '🏫',
     tag: 'NOVEDAD',
     tagColor: '#22c55e',
     changes: [
       { icon: '🌍', text: 'Campus VR canadiense: edificios, biblioteca, lab de ciencias, Portal Nexus, dormitorios y bosque de arces' },
-      { icon: '🎮', text: 'HUD estilo Black Desert Mobile: barra lateral de utilidades, ocultar UI, instrucciones una sola vez' },
+      { icon: '🎮', text: 'HUD compacta tipo MMO móvil: barra lateral de utilidades, ocultar UI, instrucciones una sola vez' },
       { icon: '🐱', text: 'NPCs parlantes: Oliver, Albert Einstein y Jafet con burbujas de diálogo por proximidad' },
       { icon: '🌀', text: 'Cuatro mundos: Campus, Mi Room (cabaña), Anfiteatro y Árbol del Mundo' },
       { icon: '🎁', text: 'Recompensas diarias con sistema de racha de 7 días' },
@@ -80,7 +94,7 @@ export const PATCH_NOTES = [
     tag: 'ACTUALIZACIÓN',
     tagColor: '#3b82f6',
     changes: [
-      { icon: '📜', text: 'Página /misiones con NPC y catálogo de misiones generales estilo WoW' },
+      { icon: '📜', text: 'Página /misiones con NPC y catálogo de misiones generales por recompensa' },
       { icon: '📝', text: 'Página /notas rediseñada con sección de integración Notion' },
       { icon: '🎨', text: 'Pestaña "Apariencia" en el menú flotante del personaje (selector de mascota + skins)' },
       { icon: '🏆', text: 'Logros rediseñados: categorías, secretos, toast con sonido' },
@@ -113,7 +127,7 @@ export const PATCH_NOTES = [
     changes: [
       { icon: '🎓', text: 'Plataforma educativa inmersiva con cursos interactivos y videos' },
       { icon: '🐱', text: 'Mascota 3D (naranja, negra, robot, dragón) con niveles, XP y tienda' },
-      { icon: '💰', text: 'Sistema de monedas WoW-style (oro / plata / cobre) con economía de misiones' },
+      { icon: '💰', text: 'Sistema de monedas por denominaciones (oro / plata / cobre) con economía de misiones' },
       { icon: '🌍', text: 'Primer mundo VR: Campus universitario canadiense' },
       { icon: '📚', text: 'Biblioteca, Logros, Arena, Games y menú flotante del personaje' },
     ],

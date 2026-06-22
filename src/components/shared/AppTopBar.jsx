@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Logo from './Logo'
+import VersionBadge from './VersionBadge'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 
@@ -102,10 +103,13 @@ export default function AppTopBar({ variant = 'full' }) {
   if (variant === 'course') {
     return (
       <header className="flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-2.5 md:px-6">
-        <Link to="/dashboard" className="flex shrink-0 items-center gap-1.5">
-          <Logo />
-          <span aria-hidden="true">🐱</span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-1.5">
+            <Logo />
+            <span aria-hidden="true">🐱</span>
+          </Link>
+          <VersionBadge />
+        </div>
         <Link
           to="/dashboard"
           className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:text-text"
@@ -122,10 +126,13 @@ export default function AppTopBar({ variant = 'full' }) {
       className="relative flex items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2 md:px-5"
     >
       {/* Logo */}
-      <Link to="/dashboard" onClick={closeAll} className="flex shrink-0 items-center gap-1.5">
-        <Logo />
-        <span aria-hidden="true">🐱</span>
-      </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link to="/dashboard" onClick={closeAll} className="flex items-center gap-1.5">
+          <Logo />
+          <span aria-hidden="true">🐱</span>
+        </Link>
+        <VersionBadge />
+      </div>
 
       {/* ── Desktop nav ─────────────────────────────────────── */}
       <nav className="hidden flex-1 items-center gap-0.5 text-sm md:flex">
