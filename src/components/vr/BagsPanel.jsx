@@ -9,19 +9,54 @@ const OWNER_TABS = [
   { id: 'mascota', label: 'Mascota', icon: '🐾', owner: 'oliver' },
 ]
 
-// WoW-style bag grid — a quick-access view of every item your class/level has
-// unlocked, with click-to-equip. The full per-slot equip screen lives in the
-// "Personaje" tab of the mascot menu (CharacterTree's EquipmentSection); this
-// is the fast in-VR shortcut, same underlying registry/store.
-export default function BagsPanel({ onClose }) {
-  const [tab, setTab] = useState('avatar')
-  const owner = tab === 'avatar' ? 'player' : 'oliver'
+// WoW-style bag grid — every item your class/level has unlocked, click to
+// equip/unequip. Shared by the VR HUD's floating BagsPanel (below) and the
+// "Bolsas" sub-tab inside the mascot menu (MascotCompanion.jsx) — same
+// registry/store, so equipping from either place stays in sync.
+export function EquipmentBagGrid({ owner }) {
   const classId = useGameStore((s) => s[owner].class)
   const level = useLevelStore((s) => levelForXp(s.xp))
   const equipped = useEquipmentStore((s) => s.equipped[owner])
   const equip = useEquipmentStore((s) => s.equip)
 
   const items = getAvailableEquipment(owner, classId, level)
+
+  if (!classId) {
+    return <p className="py-6 text-center text-xs text-text-muted">Selecciona una clase para desbloquear objetos.</p>
+  }
+  if (items.length === 0) {
+    return <p className="py-6 text-center text-xs text-text-muted">Sin objetos disponibles todavía.</p>
+  }
+
+  return (
+    <div className="grid grid-cols-6 gap-2">
+      {items.map((it) => {
+        const isEquipped = equipped[it.slot] === it.id
+        return (
+          <button
+            key={it.id}
+            type="button"
+            onClick={() => equip(owner, it.slot, isEquipped ? null : it.id)}
+            title={`${it.name} — ${SLOT_META[it.slot].label}\n${it.description}`}
+            className="flex aspect-square items-center justify-center rounded-lg border text-xl transition-all"
+            style={{
+              borderColor: isEquipped ? '#fbbf24' : 'var(--color-border)',
+              background: isEquipped ? 'rgba(251,191,36,0.18)' : 'var(--color-surface)',
+            }}
+          >
+            {it.icon}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Floating overlay version for the VR HUD's 🎒 button — same grid, own
+// Avatar/Mascota toggle since there's no outer entity tab to drive it there.
+export default function BagsPanel({ onClose }) {
+  const [tab, setTab] = useState('avatar')
+  const owner = tab === 'avatar' ? 'player' : 'oliver'
 
   return (
     <div
@@ -71,33 +106,8 @@ export default function BagsPanel({ onClose }) {
           ))}
         </div>
 
-        <div className="p-4">
-          {!classId ? (
-            <p className="py-6 text-center text-xs text-white/40">Selecciona una clase para desbloquear objetos.</p>
-          ) : items.length === 0 ? (
-            <p className="py-6 text-center text-xs text-white/40">Sin objetos disponibles todavía.</p>
-          ) : (
-            <div className="grid grid-cols-6 gap-2">
-              {items.map((it) => {
-                const isEquipped = equipped[it.slot] === it.id
-                return (
-                  <button
-                    key={it.id}
-                    type="button"
-                    onClick={() => equip(owner, it.slot, isEquipped ? null : it.id)}
-                    title={`${it.name} — ${SLOT_META[it.slot].label}\n${it.description}`}
-                    className="flex aspect-square items-center justify-center rounded-lg border text-xl transition-all"
-                    style={{
-                      borderColor: isEquipped ? '#fbbf24' : 'rgba(255,255,255,0.12)',
-                      background: isEquipped ? 'rgba(251,191,36,0.18)' : 'rgba(255,255,255,0.04)',
-                    }}
-                  >
-                    {it.icon}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+        <div className="p-4" style={{ colorScheme: 'dark' }}>
+          <EquipmentBagGrid owner={owner} />
           <p className="mt-3 text-center text-[10px] text-white/25">Toca un objeto para equiparlo o quitarlo.</p>
         </div>
       </div>

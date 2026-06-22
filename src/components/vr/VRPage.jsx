@@ -2893,8 +2893,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
-    onOpenCharacter: () => openPanel('chat'),
-    onOpenInventory: () => openPanel('items'),
+    onOpenCharacter: () => openPanel('mascota-chat'),
+    onOpenInventory: () => openPanel('avatar-bolsas'),
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
     onAttack: () => {
       attackFiredAtRef.current = Date.now()

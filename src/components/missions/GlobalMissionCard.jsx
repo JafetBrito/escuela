@@ -1,7 +1,7 @@
 import { formatCurrency } from '../../utils/currency'
 
-// Renders a single GLOBAL_MISSIONS entry with its current state. Used both
-// in the full /misiones NPC board and in the compact MissionsPanel section.
+// Renders a single GLOBAL_MISSIONS entry with its current state — used in
+// the /misiones NPC board.
 export default function GlobalMissionCard({
   mission,
   accepted,

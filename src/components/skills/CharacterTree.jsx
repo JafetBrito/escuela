@@ -271,7 +271,7 @@ function EquipmentSection({ owner, classId, level, classColor }) {
 // ─── CharacterTree — exported shared component ───────────────────────────────
 // owner: 'player' | 'oliver'
 
-export default function CharacterTree({ owner }) {
+export default function CharacterTree({ owner, hideEquipment = false, hideTiers = false }) {
   const isPlayer    = owner === 'player'
   const classId     = useGameStore((s) => s[owner].class)
   const skills      = useGameStore((s) => s[owner].skills)
@@ -344,29 +344,35 @@ export default function CharacterTree({ owner }) {
         )}
       </div>
 
-      <EquipmentSection owner={owner} classId={classId} level={level} classColor={clsDef.color} />
+      {!hideEquipment && (
+        <EquipmentSection owner={owner} classId={classId} level={level} classColor={clsDef.color} />
+      )}
 
-      {/* Tiers */}
-      <div className="flex flex-col gap-2">
-        {tiers.map((tierDef, i) => (
-          <div key={tierDef.tier} className="flex flex-col gap-2">
-            <TierRow tierDef={tierDef} unlockedSkills={skills.unlocked}
-              level={level} talentPoints={talentPts}
-              onUnlock={handleUnlock} classColor={clsDef.color} />
-            {i < tiers.length - 1 && (
-              <div className="flex items-center gap-2 px-4">
-                <div className="h-px flex-1 border-t border-dashed border-border" />
-                <span className="text-base text-text-muted/40">↓</span>
-                <div className="h-px flex-1 border-t border-dashed border-border" />
+      {!hideTiers && (
+        <>
+          {/* Tiers */}
+          <div className="flex flex-col gap-2">
+            {tiers.map((tierDef, i) => (
+              <div key={tierDef.tier} className="flex flex-col gap-2">
+                <TierRow tierDef={tierDef} unlockedSkills={skills.unlocked}
+                  level={level} talentPoints={talentPts}
+                  onUnlock={handleUnlock} classColor={clsDef.color} />
+                {i < tiers.length - 1 && (
+                  <div className="flex items-center gap-2 px-4">
+                    <div className="h-px flex-1 border-t border-dashed border-border" />
+                    <span className="text-base text-text-muted/40">↓</span>
+                    <div className="h-px flex-1 border-t border-dashed border-border" />
+                  </div>
+                )}
               </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
 
-      <p className="rounded-xl bg-surface/60 px-4 py-3 text-xs text-text-muted">
-        💡 Cada nivel te da 1 punto de talento ✨ — úsalo para desbloquear la siguiente habilidad de tu árbol.
-      </p>
+          <p className="rounded-xl bg-surface/60 px-4 py-3 text-xs text-text-muted">
+            💡 Cada nivel te da 1 punto de talento ✨ — úsalo para desbloquear la siguiente habilidad de tu árbol.
+          </p>
+        </>
+      )}
     </div>
   )
 }
