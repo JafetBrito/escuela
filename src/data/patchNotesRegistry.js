@@ -4,9 +4,27 @@
 //  2. Update LATEST_VERSION to match
 //  The PatchNotesModal shows once per version (gated by localStorage).
 
-export const LATEST_VERSION = '0.5.0'
+export const LATEST_VERSION = '0.6.0'
 
 export const PATCH_NOTES = [
+  {
+    version: '0.6.0',
+    date: '2026-06-22',
+    title: 'Oliver Academy · Clase Hacker · Nivel 99',
+    emoji: '🕶️',
+    tag: 'NOVEDAD',
+    tagColor: '#22c55e',
+    changes: [
+      { icon: '🎓', text: 'Nuevo nombre: ¡bienvenidos a Oliver Academy!' },
+      { icon: '🕶️', text: 'Clase Hacker en el Árbol del Mundo, con árbol de habilidades propio hasta nivel 28 (próximamente más allá de ese nivel).' },
+      { icon: '⭐', text: 'Nivel máximo subido de 90 a 99: ahora cada subida de nivel otorga un punto de habilidad, igual que en Diablo.' },
+      { icon: '📱', text: 'Sistema de arma equipable: tu Teléfono es tu herramienta principal, cambiable por modelos mejores con más estadísticas.' },
+      { icon: '🏆', text: 'Nuevos logros cada 10 niveles, más un logro secreto para los primeros 100 jugadores en llegar a nivel 28 antes de 2027.' },
+      { icon: '🖐️', text: 'Ajustes → Interfaz: ajusta el tamaño de los elementos flotantes (Radio, Cámara) a tu gusto.' },
+      { icon: '🔧', text: 'Corrección: el Árbol del Mundo ya no hace caer al jugador sin parar ni bloquea la selección de clase.' },
+      { icon: '⌨️', text: 'Corrección: en Janulingo, el teclado del móvil ya no se abre solo — ahora espera a que toques el campo de texto.' },
+    ],
+  },
   {
     version: '0.5.0',
     date: '2026-06-19',

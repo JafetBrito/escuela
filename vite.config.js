@@ -14,10 +14,16 @@ export default defineConfig({
       // poll, an open tab (or one reopened the same day) can keep running
       // code from days-old deploys indefinitely.
       injectRegister: false,
-      devOptions: { enabled: true, type: 'module' },
+      // Disabled in dev: a service worker here was the source of "my changes
+      // aren't showing up" while programming — it caches the module graph
+      // independently of Vite's own HMR. main.jsx actively unregisters any
+      // leftover dev SW from before this change. Re-enable temporarily only
+      // if you specifically need to test offline/PWA behavior locally
+      // (prefer `vite build && vite preview` for that instead).
+      devOptions: { enabled: false },
       includeAssets: ['favicon.svg', '*.glb', 'audio/**/*'],
       manifest: {
-        name: 'Oliver School',
+        name: 'Oliver Academy',
         short_name: 'Oliver',
         description: 'Plataforma educativa inmersiva con mundo VR',
         theme_color: '#7c3aed',

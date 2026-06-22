@@ -27,6 +27,13 @@ if (import.meta.env.PROD) {
       },
     })
   })
+} else if ('serviceWorker' in navigator) {
+  // ponytail: dev's PWA service worker used to cache the module graph and
+  // mask code changes during local development — now disabled in
+  // vite.config.js, this just cleans up any worker/cache left over from
+  // before that fix so dev mode self-heals without a manual DevTools step.
+  navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()))
+  if (window.caches) caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)))
 }
 
 createRoot(document.getElementById('root')).render(

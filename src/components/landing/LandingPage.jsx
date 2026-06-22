@@ -141,7 +141,7 @@ export default function LandingPage() {
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl">
               Aprende a tu ritmo con{' '}
               <span className="bg-gradient-to-r from-primary to-[#34d399] bg-clip-text text-transparent">
-                oliver.escuela
+                Oliver Academy
               </span>
             </h1>
             <p className="max-w-2xl text-lg text-text-muted">
@@ -302,7 +302,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted md:px-12">
-        © {new Date().getFullYear()} oliver.escuela — Una escuela, muchos cursos por explorar.
+        © {new Date().getFullYear()} Oliver Academy — Una escuela, muchos cursos por explorar.
       </footer>
 
       <WelcomeVideoModal />

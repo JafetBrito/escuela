@@ -40,10 +40,11 @@ import BattleScreen from '../battle/BattleScreen'
 import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
+import PatchNotesModal from '../shared/PatchNotesModal'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS, NPC_PAVILION_EXEMPT } from './worlds/useCampusGround'
 import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
-import { useAnfiteatroGround, ANFI_H, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
+import { useAnfiteatroGround, ANFI_H, ANFI_HW, ANFI_HD, ANFI_STAGE_Z, ANFI_STAGE_NPC_POS, ANFI_SPAWN, ANFI_EXIT_PORTAL } from './worlds/useAnfiteatroGround'
 import { useWorldTreeGround, WT_CLASS_NODES } from './worlds/useWorldTreeGround'
 import SceneEffects from '../shared/SceneEffects'
 import DayNightCycle from './DayNightCycle'
@@ -383,6 +384,9 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
   return (
     <>
       <primitive object={model} />
+      <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
+        <CuboidCollider args={[ANFI_HW, 0.5, ANFI_HD]} />
+      </RigidBody>
 
       {/* YouTube screen via Html overlay — centered on the north back wall */}
       <Html
@@ -473,9 +477,14 @@ function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
     let nearest = null
     let nearestDist = 4.5
     for (const [cid, node] of Object.entries(WT_CLASS_NODES)) {
+      // 3D distance — the Hacker node sits high up the trunk (y=15.5), far
+      // above walking height, so an XZ-only check used to mark it "nearest"
+      // for anyone standing near the grove's center, blocking every other
+      // class card from ever showing.
       const dx = pos.x - node.pos[0]
+      const dy = pos.y - node.pos[1]
       const dz = pos.z - node.pos[2]
-      const d = Math.sqrt(dx * dx + dz * dz)
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz)
       if (d < nearestDist) { nearestDist = d; nearest = cid }
     }
     onNearClassNodeChange?.(nearest)
@@ -484,6 +493,12 @@ function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   return (
     <>
       <primitive object={model} />
+      {/* Flat ground collider — without it the Rapier character controller
+          never reports "grounded" in this procedural world and the player
+          falls forever. */}
+      <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
+        <CuboidCollider args={[50, 0.5, 50]} />
+      </RigidBody>
       <Player
         mascot={mascot}
         skin={skin}
@@ -1470,6 +1485,9 @@ function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
   return (
     <>
       <primitive object={model} />
+      <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
+        <CuboidCollider args={[ROOM_SIZE / 2, 0.5, ROOM_SIZE / 2]} />
+      </RigidBody>
       <Player
         mascot={mascot}
         skin={skin}
@@ -2763,6 +2781,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [hudVisible, setHudVisible] = useState(true)
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
   const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
+  // Shown once per VR session entry; closing it auto-opens the daily reward.
+  const [showAnnouncements, setShowAnnouncements] = useState(true)
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
   const [chatPrefill, setChatPrefill] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
@@ -2816,6 +2836,34 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         : `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`
     useWorldChatStore.getState().addSystemMessage(motd)
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Gamepad (Xbox or anything else the browser maps to the standard layout)
+  // already drives movement/camera via applyGamepadInput — this just gives
+  // visible confirmation it was detected, since pairing a controller is
+  // otherwise silent.
+  useEffect(() => {
+    const announce = (e) => {
+      useWorldChatStore.getState().addSystemMessage(`🎮 Mando conectado: ${e.gamepad.id} — ¡listo para jugar!`)
+    }
+    const announceLost = (e) => {
+      useWorldChatStore.getState().addSystemMessage(`🎮 Mando desconectado: ${e.gamepad.id}`)
+    }
+    window.addEventListener('gamepadconnected', announce)
+    window.addEventListener('gamepaddisconnected', announceLost)
+    // Some browsers/controllers only ever fire 'gamepadconnected' for pads
+    // paired before this listener was added — check once on mount too.
+    const already = navigator.getGamepads?.() ?? []
+    for (const pad of already) {
+      if (pad?.connected) {
+        useWorldChatStore.getState().addSystemMessage(`🎮 Mando detectado: ${pad.id} — ¡listo para jugar!`)
+        break
+      }
+    }
+    return () => {
+      window.removeEventListener('gamepadconnected', announce)
+      window.removeEventListener('gamepaddisconnected', announceLost)
+    }
   }, [])
 
   // 'E' near a portal, idle NPC, or daily reward box
@@ -3158,6 +3206,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* Daily rewards board overlay */}
         {dailyRewardsOpen && (
           <DailyRewardsBoard onClose={() => setDailyRewardsOpen(false)} />
+        )}
+
+        {/* Tablón de anuncios al iniciar la aventura — al cerrarlo, abre la recompensa diaria */}
+        {showAnnouncements && (
+          <PatchNotesModal
+            open
+            onClose={() => {
+              setShowAnnouncements(false)
+              setDailyRewardsOpen(true)
+            }}
+          />
         )}
 
         {/* Programador terminal — tiered by class/level/admin (see TerminalModal) */}

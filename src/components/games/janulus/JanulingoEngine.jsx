@@ -346,9 +346,14 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
     return () => clearTimeout(t)
   }, [idx]) // eslint-disable-line
 
-  // Focus input when user's turn arrives
+  // Focus input when user's turn arrives — skipped on touch devices, where
+  // focusing instantly pops the on-screen keyboard and shoves the layout
+  // around before the player even sees the new line. There, the keyboard
+  // only opens once they actually tap the field.
   useEffect(() => {
-    if (line?.role === 'user') setTimeout(() => inputRef.current?.focus(), 150)
+    if (line?.role === 'user' && !window.matchMedia('(pointer: coarse)').matches) {
+      setTimeout(() => inputRef.current?.focus(), 150)
+    }
   }, [idx]) // eslint-disable-line
 
   // Scroll to bottom
@@ -489,12 +494,17 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
   // Sync rate → rateRef so auto-speak effects always use the current value
   useEffect(() => { rateRef.current = rate }, [rate])
 
+  // Skipped on touch devices — see ConversationScreen's matching effect above.
   useEffect(() => {
-    if (phase === 'learn' && !celebration) learnRef.current?.focus()
+    if (phase === 'learn' && !celebration && !window.matchMedia('(pointer: coarse)').matches) {
+      learnRef.current?.focus()
+    }
   }, [phase, learnIdx, celebration])
 
   useEffect(() => {
-    if (buildMode === 'type' && phase === 'build') typeRef.current?.focus()
+    if (buildMode === 'type' && phase === 'build' && !window.matchMedia('(pointer: coarse)').matches) {
+      typeRef.current?.focus()
+    }
   }, [buildMode, phase])
 
   // Auto-speak Oliver intro

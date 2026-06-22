@@ -49,7 +49,7 @@ export default function PatchNotesModal({ open: controlledOpen, onClose } = {}) 
           <div className="flex items-center gap-3">
             <span className="text-2xl">📋</span>
             <div>
-              <p className="text-sm font-black uppercase tracking-widest text-white/50">Oliver School</p>
+              <p className="text-sm font-black uppercase tracking-widest text-white/50">Oliver Academy</p>
               <p className="text-xl font-black text-white">Notas de la Versión</p>
             </div>
           </div>
