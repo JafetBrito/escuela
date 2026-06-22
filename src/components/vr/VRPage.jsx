@@ -11,7 +11,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
-import { VR_NPCS, getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC } from '../../data/vrNpcRegistry'
+import { getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
@@ -77,7 +77,6 @@ const USE_TEST_SCENERY = true
 const USE_CAMPUS_GLB = true
 
 const SIMPLE_MODE = false
-const ACTIVE_VR_NPCS = VR_NPCS.filter((n) => !n.battle)
 
 // Scale for NPC models — increased so they stand out clearly in the campus.
 const NPC_SCALE = 0.26
@@ -113,18 +112,6 @@ const INTERACT_RADIUS = 2.5
 
 // How close the player needs to be to a world portal to interact.
 const PORTAL_INTERACT_RADIUS = 2.5
-
-// Campus portal position — northwest of plaza, easy to find from spawn.
-const ROOM_PORTAL_POSITION = [-5, 0, -5]
-
-// Portal Nexus — future worlds, locked. Arranged in a semicircle at south end.
-const NEXUS_PORTALS = [
-  { id: 'nexus-dark',  pos: [-18, 0, 68], color: '#7c3aed', label: '🔮 Mundo Oscuro' },
-  { id: 'nexus-water', pos: [18, 0, 68],  color: '#0284c7', label: '🌊 Mundo Acuático' },
-  { id: 'nexus-mtn',   pos: [-8, 0, 76],  color: '#059669', label: '🏔️ Montañas' },
-  { id: 'nexus-space', pos: [8, 0, 76],   color: '#d97706', label: '🌌 Galaxia' },
-  { id: 'nexus-city',  pos: [0, 0, 80],   color: '#dc2626', label: '🏙️ Metrópolis' },
-]
 
 const ROOM_EXIT_PORTAL_POSITION = [0, 0, -ROOM_SIZE / 2 + 2]
 
@@ -290,15 +277,17 @@ function useCampusGlbGround() {
 // <WorldGround> (see World()), so swapping this in for TestWorld doesn't
 // touch any of them.
 function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
-  const { model, groundRayHeight, footprintX, footprintZ } = useCampusGlbGround()
-  const halfX = footprintX / 2
-  const halfZ = footprintZ / 2
+  const { model, groundRayHeight } = useCampusGlbGround()
 
   return (
     <>
-      <primitive object={model} />
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[halfX || 200, 0.5, halfZ || 200]} position={[0, -0.5, 0]} />
+      {/* A single flat collider only covers outdoor ground — this model has
+          stairs and interiors at other heights, so instead we let Rapier
+          build a collider matching the model's own geometry exactly
+          ("trimesh" = one collider per mesh, shaped like that mesh). That
+          makes every real floor/step in the GLB walkable, not just y = 0. */}
+      <RigidBody type="fixed" colliders="trimesh">
+        <primitive object={model} />
       </RigidBody>
       <Player
         mascot={mascot}
@@ -1276,18 +1265,16 @@ function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 }
 
 // Watches the distance from the player to every NPC and reports the closest
-// Tracks the nearest NPC (mission NPCs + idle NPCs: Oliver, Einstein, Jafet).
-// Reports the nearest one within INTERACT_RADIUS via onNearbyChange.
+// one within INTERACT_RADIUS via onNearbyChange. Only Oliver, Einstein and
+// Jafet remain in the main Campus world — mission NPCs/portals were removed.
 const ALL_NPC_POSITIONS = [
-  ...ACTIVE_VR_NPCS,
   OLIVER_NPC,
   EINSTEIN_NPC,
   JAFET_NPC,
-  SHOPKEEPER_NPC,
 ].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) }))
 
 // Ids that belong to idle (non-mission) NPCs — used to decide which card to show.
-const IDLE_NPC_IDS = new Set([OLIVER_NPC.id, EINSTEIN_NPC.id, JAFET_NPC.id, SHOPKEEPER_NPC.id])
+const IDLE_NPC_IDS = new Set([OLIVER_NPC.id, EINSTEIN_NPC.id, JAFET_NPC.id])
 
 function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
   const lastId = useRef(null)
@@ -1320,10 +1307,9 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 // Shown when the player right-clicks while standing next to Oliver, Einstein or
 // Jafet. Displays a greeting from the NPC and a few action buttons.
 const IDLE_NPC_CONFIGS = {
-  [OLIVER_NPC.id]:      OLIVER_NPC,
-  [EINSTEIN_NPC.id]:    EINSTEIN_NPC,
-  [JAFET_NPC.id]:       JAFET_NPC,
-  [SHOPKEEPER_NPC.id]:  SHOPKEEPER_NPC,
+  [OLIVER_NPC.id]:   OLIVER_NPC,
+  [EINSTEIN_NPC.id]: EINSTEIN_NPC,
+  [JAFET_NPC.id]:    JAFET_NPC,
 }
 
 function IdleNpcCard({ npcId, onClose, onChat }) {
@@ -1608,25 +1594,10 @@ function World({
         authorName={authorName}
         playerId={playerId}
       />
-      <IdleNpc config={OLIVER_NPC}      playerPositionRef={playerPositionRef} />
-      <IdleNpc config={EINSTEIN_NPC}   playerPositionRef={playerPositionRef} />
-      <IdleNpc config={JAFET_NPC}      playerPositionRef={playerPositionRef} />
-      <IdleNpc config={SHOPKEEPER_NPC} playerPositionRef={playerPositionRef} />
-      {ACTIVE_VR_NPCS.map((npc) => (
-        <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />
-      ))}
+      <IdleNpc config={OLIVER_NPC}    playerPositionRef={playerPositionRef} />
+      <IdleNpc config={EINSTEIN_NPC} playerPositionRef={playerPositionRef} />
+      <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
-      <Portal
-        position={ROOM_PORTAL_POSITION}
-        color="#a78bfa"
-        label="🚪 Mi Room"
-        playerPositionRef={playerPositionRef}
-        onNearbyChange={onNearPortalChange}
-      />
-      {/* Portal Nexus — locked future worlds, purely decorative for now */}
-      {NEXUS_PORTALS.map((p) => (
-        <Portal key={p.id} position={p.pos} color={p.color} label={`🔒 ${p.label}`} />
-      ))}
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
       <RemotePlayers transformsRef={remoteTransformsRef} onSelectPlayer={onSelectPlayer} />
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} />
@@ -1943,20 +1914,6 @@ function WorldMap({ open, onClose, playerPositionRef }) {
           {/* Fountain */}
           <circle cx="7" cy="0" r="2.2" fill="#2888cc" opacity="0.9" />
 
-          {/* Portal Nexus (south) */}
-          <circle cx="0" cy="72" r="26" fill="#181830" opacity="0.55" />
-          <circle cx="0" cy="72" r="26" fill="none" stroke="#5040a0" strokeWidth="1.5" opacity="0.8" strokeDasharray="3 2" />
-          <text x="0" y="60" fontSize="3" textAnchor="middle" fill="#a090e0" opacity="0.9">PORTAL NEXUS</text>
-          {NEXUS_PORTALS.map((p) => {
-            const [px, , pz] = p.pos
-            return (
-              <g key={p.id}>
-                <circle cx={px} cy={pz} r="3.2" fill={p.color} opacity="0.75" />
-                <text x={px} y={pz - 4.5} fontSize="2.8" textAnchor="middle" opacity="0.9">🔒</text>
-              </g>
-            )
-          })}
-
           {/* Academic buildings */}
           {CAMPUS_ACADEMIC.map(({ pos, color, w, d, name, label }) => {
             const [bx, , bz] = pos
@@ -1981,25 +1938,6 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             )
           })}
 
-          {/* NPC log cabins — skipped for NPCs standing next to real architecture */}
-          {VR_NPCS.map((npc) => {
-            const [x, , z] = npc.position
-            return (
-              <g key={npc.id}>
-                {!NPC_PAVILION_EXEMPT.has(npc.id) && (
-                  <rect
-                    x={x * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
-                    y={z * NPC_BUILDING_OFFSET - BUILDING_SIZE / 2}
-                    width={BUILDING_SIZE + 0.6} height={BUILDING_SIZE + 0.6}
-                    fill={npc.color} opacity="0.65" rx="0.3"
-                  />
-                )}
-                <circle cx={x} cy={z} r="1.6" fill={npc.color} stroke="#fff" strokeWidth="0.4" />
-                <text x={x} y={z - 2.8} fontSize="3" textAnchor="middle">{npc.emoji}</text>
-              </g>
-            )
-          })}
-
           {/* Oliver + Einstein (idle NPCs near plaza) */}
           {[
             { npc: { id: 'oliver', position: [4, 0, 4], emoji: '🐾', color: '#fde68a' }, },
@@ -2013,18 +1951,6 @@ function WorldMap({ open, onClose, playerPositionRef }) {
               </g>
             )
           })}
-
-          {/* Room portal marker */}
-          {(() => {
-            const [px, , pz] = ROOM_PORTAL_POSITION
-            return (
-              <g>
-                <circle cx={px} cy={pz} r="2.4" fill="#a78bfa" opacity="0.9" />
-                <text x={px} y={pz - 3.6} fontSize="3.2" textAnchor="middle">🌀</text>
-                <text x={px} y={pz + 4.2} fontSize="2" textAnchor="middle" fill="#e0d8ff" opacity="0.8">Mi Room</text>
-              </g>
-            )
-          })()}
 
           {/* Anfiteatro portal marker — south-east of plaza */}
           <g>
