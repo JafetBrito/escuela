@@ -41,6 +41,7 @@ import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
 import BagsPanel from './BagsPanel'
+import CharacterPanel from './CharacterPanel'
 import PatchNotesModal from '../shared/PatchNotesModal'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS, NPC_PAVILION_EXEMPT } from './worlds/useCampusGround'
@@ -2783,6 +2784,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
   const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
   const [bagsOpen, setBagsOpen] = useState(false)
+  const [characterPanelOpen, setCharacterPanelOpen] = useState(false)
   // Shown once per VR session entry; closing it auto-opens the daily reward.
   const [showAnnouncements, setShowAnnouncements] = useState(true)
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
@@ -2894,7 +2896,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
     onOpenCharacter: () => openPanel('mascota-chat'),
-    onOpenInventory: () => openPanel('avatar-bolsas'),
+    onOpenInventory: () => openPanel('avatar-personaje'),
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
     onAttack: () => {
       attackFiredAtRef.current = Date.now()
@@ -3203,6 +3205,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenMap={() => setMapOpen(true)}
           onOpenDailyRewards={() => setDailyRewardsOpen(true)}
           onOpenBags={() => setBagsOpen(true)}
+          onOpenCharacterPanel={() => setCharacterPanelOpen(true)}
           isPrivateWorld={isPrivateWorld}
         />
 
@@ -3214,6 +3217,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* WoW-style bags overlay — quick equip/unequip for Avatar + Mascota */}
         {bagsOpen && (
           <BagsPanel onClose={() => setBagsOpen(false)} />
+        )}
+
+        {/* Avatar character pane — opened by clicking the HUD portrait card */}
+        {characterPanelOpen && (
+          <CharacterPanel onClose={() => setCharacterPanelOpen(false)} />
         )}
 
         {/* Tablón de anuncios al iniciar la aventura — al cerrarlo, abre la recompensa diaria */}

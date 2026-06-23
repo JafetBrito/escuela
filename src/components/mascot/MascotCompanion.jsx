@@ -1,12 +1,11 @@
 import MascotViewport from './MascotViewport'
-import AvatarViewport from './AvatarViewport'
 import ChatTab from './ChatTab'
 import BooksPanel from './BooksPanel'
 import MascotSelector from './MascotSelector'
 import SkinSelector from './SkinSelector'
 import AvatarApparelGrid from './AvatarApparelGrid'
 import CharacterTree from '../skills/CharacterTree'
-import { EquipmentBagGrid } from '../vr/BagsPanel'
+import CharacterPaperdoll from '../skills/CharacterPaperdoll'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -29,7 +28,6 @@ const ENTITY_TABS = [
 
 const SUB_TABS_AVATAR = [
   { id: 'personaje', label: 'Personaje', icon: '🧑' },
-  { id: 'bolsas', label: 'Bolsas', icon: '🎒' },
   { id: 'arbol', label: 'Árbol', icon: '🌳' },
   { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
   { id: 'libros', label: 'Libros', icon: '📚' },
@@ -136,27 +134,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
           </div>
 
           <div className="flex-1 overflow-y-auto border-t border-border p-4">
-            {subTab === 'personaje' && (
-              <div className="flex flex-col gap-4">
-                <div className="relative h-44 overflow-hidden rounded-2xl border border-border">
-                  {isAvatarEntity ? (
-                    <AvatarViewport className="h-full w-full" />
-                  ) : (
-                    <MascotViewport className="h-full w-full" showEmotions />
-                  )}
-                </div>
-                <CharacterTree owner={entity.owner} hideTiers />
-              </div>
-            )}
-
-            {subTab === 'bolsas' && (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
-                  🎒 Bolsas de {isAvatarEntity ? avatar.label : displayName}
-                </p>
-                <EquipmentBagGrid owner={entity.owner} />
-              </div>
-            )}
+            {subTab === 'personaje' && <CharacterPaperdoll owner={entity.owner} />}
 
             {subTab === 'arbol' && <CharacterTree owner={entity.owner} hideEquipment />}
 

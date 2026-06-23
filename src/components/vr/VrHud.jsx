@@ -111,7 +111,8 @@ function ThinBar({ current, max, color, label }) {
 }
 
 // ─── Portrait card (top-left) — BDM compact style ─────────────────────────
-function PortraitHud() {
+// Click opens the Avatar's character pane (CharacterPanel/CharacterPaperdoll).
+function PortraitHud({ onOpenCharacterPanel }) {
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
   const hp = useGameStore((s) => s.player.hp)
@@ -126,8 +127,11 @@ function PortraitHud() {
   const mascotEmoji = MASCOT_EMOJI[mascotId] ?? '🐱'
 
   return (
-    <div
-      className="relative flex flex-col gap-1 rounded-xl px-3 py-2"
+    <button
+      type="button"
+      onClick={onOpenCharacterPanel}
+      title="Ver personaje"
+      className="relative flex flex-col gap-1 rounded-xl px-3 py-2 text-left transition-transform active:scale-95"
       style={{
         background: 'linear-gradient(135deg, rgba(0,0,0,0.72), rgba(0,0,0,0.45))',
         backdropFilter: 'blur(10px)',
@@ -171,7 +175,7 @@ function PortraitHud() {
       <ThinBar current={hp.current} max={hp.max} color="#ef4444" label="HP" />
       <ThinBar current={energy.current} max={energy.max} color="#22c55e" label="EN" />
       {oCls && <ThinBar current={oliverHp.current} max={oliverHp.max} color="#f97316" label={mascotEmoji} />}
-    </div>
+    </button>
   )
 }
 
@@ -313,6 +317,7 @@ export default function VrHud({
   onOpenMap,
   onOpenDailyRewards,
   onOpenBags,
+  onOpenCharacterPanel,
   isPrivateWorld = false,
 }) {
   return (
@@ -335,7 +340,7 @@ export default function VrHud({
           {/* Top-left: compact portrait + mascot avatar */}
           <div className="pointer-events-none absolute left-3 top-3 z-20 sm:left-4 sm:top-4">
             <div className="pointer-events-auto">
-              <PortraitHud />
+              <PortraitHud onOpenCharacterPanel={onOpenCharacterPanel} />
             </div>
           </div>
 
