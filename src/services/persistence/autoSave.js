@@ -73,14 +73,27 @@ export async function pushSnapshotToCloud() {
 
   useSyncStatusStore.getState().setSaving()
   const snapshot = buildProgressSnapshot()
-  const { error } = await supabase
+  // upsert (not update): a plain UPDATE ... WHERE id = X silently affects
+  // ZERO rows and returns NO error when the profiles row doesn't exist yet
+  // (account created before the handle_new_user trigger existed, or the
+  // trigger failed) — which is why "saved" showed green while the DB stayed
+  // empty. upsert inserts the row if missing, updates it if present. The
+  // `.select()` lets us confirm a row actually came back instead of trusting
+  // a no-op as success.
+  const { data, error } = await supabase
     .from('profiles')
-    .update({ snapshot, updated_at: new Date().toISOString() })
-    .eq('id', user.id)
+    .upsert(
+      { id: user.id, email: user.email, snapshot, updated_at: new Date().toISOString() },
+      { onConflict: 'id' },
+    )
+    .select('id')
 
   if (error) {
     console.error('[autoSave] cloud sync failed:', error)
     useSyncStatusStore.getState().setError(error.message)
+  } else if (!data || data.length === 0) {
+    console.error('[autoSave] cloud sync wrote 0 rows — RLS blocked the write for', user.id)
+    useSyncStatusStore.getState().setError('La base de datos no aceptó la escritura (0 filas).')
   } else {
     useSyncStatusStore.getState().setSaved()
   }
