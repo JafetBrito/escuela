@@ -14,7 +14,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import * as THREE from 'three'
 import { useNavigate } from 'react-router-dom'
-import { useGameStore } from '../../stores/useGameStore'
+import { useGameStore, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
 import { useChatStore } from '../../stores/useChatStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -286,7 +286,7 @@ function JafetProximity({ playerPositionRef, onNearChange }) {
 export default function VrArbol() {
   const navigate = useNavigate()
 
-  const avatarRegistryId = useGameStore((s) => s.player.avatarRegistryId)
+  const avatarId = useGameStore((s) => s.player.avatarId)
   const oliverClass      = useGameStore((s) => s.oliver.class)
   const forceSyncToCloud = useGameStore((s) => s.forceSyncToCloud)
 
@@ -302,7 +302,7 @@ export default function VrArbol() {
   const [tutorialDone, setTutorialDone]         = useState(false)
   const [nearJafet, setNearJafet]               = useState(false)
 
-  const avatarModel = getMascotById(avatarRegistryId)
+  const avatarModel = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]
   const jafetMascot = getMascotById(JAFET.mascotId)
 
   // Shared VR movement engine — same WASD/drag-look/touch/gamepad system as

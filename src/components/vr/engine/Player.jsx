@@ -52,42 +52,14 @@ export function isBlocked(raycaster, scenery, origin, direction, distance) {
   return hits.length > 0 && hits[0].distance < COLLISION_RADIUS + distance
 }
 
-// Humanoid avatar body for the local player and remote players.
-// Renders using simple Three.js primitives — head/torso/legs — colored by
-// the player's chosen avatar from PLAYER_AVATARS. Symmetric around y=0 so it
-// sits on the ground the same way MascotMesh does.
+// Humanoid avatar body for the local player and remote players — the real
+// hombre.glb/mujer.glb model for the player's chosen PLAYER_AVATARS entry,
+// loaded through the same MascotMesh pipeline (auto-centered/scaled to fit,
+// feet at y=-1 pre-scale) every mascot/NPC body already uses, so it sits on
+// the ground exactly the same way.
 export function PlayerAvatarBody({ avatarId }) {
   const avatar = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
-  const color = avatar.color
-  return (
-    <group>
-      {/* Head */}
-      <mesh position={[0, 0.72, 0]}>
-        <sphereGeometry args={[0.22, 8, 6]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Torso */}
-      <mesh position={[0, 0.22, 0]}>
-        <cylinderGeometry args={[0.2, 0.22, 0.5, 8]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Hips */}
-      <mesh position={[0, -0.07, 0]}>
-        <cylinderGeometry args={[0.22, 0.18, 0.15, 8]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Left leg */}
-      <mesh position={[-0.12, -0.5, 0]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.65, 6]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Right leg */}
-      <mesh position={[0.12, -0.5, 0]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.65, 6]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    </group>
-  )
+  return <MascotMesh mascot={avatar} />
 }
 
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and

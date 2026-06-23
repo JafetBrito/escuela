@@ -2,15 +2,15 @@ import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import MascotMesh from './MascotMesh'
 import SceneEffects from '../shared/SceneEffects'
-import { useGameStore } from '../../stores/useGameStore'
-import { getMascotById } from '../../data/mascotRegistry'
+import { useGameStore, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { getSkinById } from '../../data/skinsRegistry'
 
-// Renders the player's 3D avatar model (stored in mascotRegistry at avatarRegistryId)
-// using the same MascotMesh pipeline, always with the default skin.
+// Renders the player's real 3D avatar model (hombre.glb/mujer.glb, picked
+// at account creation) using the same MascotMesh pipeline, always with the
+// default skin.
 export default function AvatarViewport({ className = '' }) {
-  const avatarRegistryId = useGameStore((s) => s.player.avatarRegistryId)
-  const mascot = getMascotById(avatarRegistryId)
+  const avatarId = useGameStore((s) => s.player.avatarId)
+  const mascot = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]
   const skin = getSkinById('default')
 
   return (

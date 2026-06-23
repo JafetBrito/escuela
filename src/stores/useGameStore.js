@@ -115,19 +115,18 @@ export const OLIVER_CLASSES = {
   },
 }
 
+// Real 3D models for the player's own character (separate from MASCOTS,
+// which are the companion pet). Just gender for now per the MODELOS 3D/
+// AVATARES/ folder — more options go here later without touching anything
+// that reads PLAYER_AVATARS, since every consumer just looks up by id.
 export const PLAYER_AVATARS = [
-  { id: 'scholar',  icon: '📖', color: '#3b82f6', label: 'Erudito' },
-  { id: 'valiant',  icon: '🛡️', color: '#ef4444', label: 'Valiente' },
-  { id: 'mystic',   icon: '🔮', color: '#a855f7', label: 'Místico' },
-  { id: 'swift',    icon: '⚡', color: '#eab308', label: 'Veloz' },
-  { id: 'shadow',   icon: '🌑', color: '#64748b', label: 'Sombra' },
-  { id: 'nature',   icon: '🌿', color: '#22c55e', label: 'Natural' },
+  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb' },
+  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb' },
 ]
 
 const DEFAULT_PLAYER = {
   class: null,
-  avatarId: 'scholar',
-  avatarRegistryId: 8,  // id en mascotRegistry (modelo 3D del jugador)
+  avatarId: 'hombre',
   nickname: '',
   hp: { current: 100, max: 100 },
   energy: { current: 100, max: 100 },
@@ -149,9 +148,6 @@ export const useGameStore = create((set, get) => ({
 
   setPlayerAvatar: (avatarId) =>
     set((s) => ({ player: { ...s.player, avatarId } })),
-
-  setAvatarRegistryId: (avatarRegistryId) =>
-    set((s) => ({ player: { ...s.player, avatarRegistryId } })),
 
   setPlayerNickname: (nickname) =>
     set((s) => ({ player: { ...s.player, nickname } })),

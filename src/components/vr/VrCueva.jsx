@@ -29,9 +29,11 @@ const VR_CODE = 'CUEVA380AC'
 
 // ── Assign GLB models to prisoners ────────────────────────────────────────────
 const PRISONER_MODELS = {
-  creyente: { path: '/mage.glb',              rotY: 0 },
-  sonador:  { path: '/owl.glb',               rotY: 0 },
-  miedoso:  { path: '/mage_fox.glb',          rotY: 0 },
+  creyente: { path: '/MODELOS 3D/NPC/mage.glb',          rotY: 0 },
+  sonador:  { path: '/MODELOS 3D/MASCOTAS/owl.glb',      rotY: 0 },
+  miedoso:  { path: '/MODELOS 3D/NPC/mage_fox.glb',      rotY: 0 },
+  // ⚠️ little_alebrije_cat.glb no está en la nueva carpeta MODELOS 3D —
+  // esta ruta sigue rota hasta que se agregue el archivo ahí.
   esceptico:{ path: '/little_alebrije_cat.glb', rotY: 0 },
 }
 
@@ -253,7 +255,7 @@ function JafetOutdoorNpc({ onTalk }) {
   return (
     <group ref={g} position={[0, 0, 20]} onClick={e => { e.stopPropagation(); onTalk('jafet') }} onPointerOver={() => setHov(true)} onPointerOut={() => setHov(false)}>
       <Suspense fallback={null}>
-        <GlbNpcMesh modelPath="/mage_elder.glb" rotationY={Math.PI}/>
+        <GlbNpcMesh modelPath="/MODELOS 3D/NPC/mage_elder.glb" rotationY={Math.PI}/>
       </Suspense>
       {hov && <mesh rotation={[-Math.PI/2,0,0]} position={[0,0.02,0]}><ringGeometry args={[0.5,0.9,24]}/><meshBasicMaterial color="#a78bfa" transparent opacity={0.35}/></mesh>}
       <pointLight color="#a78bfa" intensity={hov?5:2} distance={6}/>
@@ -346,7 +348,7 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, playerMascot, o
         {playerMascot && (
           <GlbPrisonerNpc cfg={{ id:'mascota', position:[-2,0,1], color:'#a78bfa' }}
             freed={freedIds.includes('mascota')} canFree={canFree}
-            modelPath={playerMascot.modelPath ?? '/orange_cat.glb'} modelRotY={playerMascot.modelRotationY ?? 0}
+            modelPath={playerMascot.modelPath ?? '/MODELOS 3D/MASCOTAS/orange_cat.glb'} modelRotY={playerMascot.modelRotationY ?? 0}
             onTalk={onTalkNpc} onFree={onFreeNpc} isSpecial/>
         )}
         {stage >= 2 && <EscepticoNpcMesh stage={stage} onTalk={onTalkNpc}/>}

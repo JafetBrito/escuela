@@ -4,16 +4,13 @@ import { Canvas } from '@react-three/fiber'
 import Button from '../shared/Button'
 import Logo from '../shared/Logo'
 import MascotMesh from '../mascot/MascotMesh'
-import { MASCOTS, getMascotById } from '../../data/mascotRegistry'
+import { getMascotById } from '../../data/mascotRegistry'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useGameStore, PLAYER_CLASSES } from '../../stores/useGameStore'
+import { useGameStore, PLAYER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/googleAuth'
 
 const FACEBOOK_ENABLED = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true'
-
-// Only show first 4 real models: Gato Naranja, Mago, Mago Ancestral, Zorro Mago
-const AVATAR_MODELS = MASCOTS.filter((m) => m.modelPath).slice(0, 4)
 
 // Welcome video embed URL — leave empty for the Oliver 3D placeholder
 const WELCOME_VIDEO_URL = ''
@@ -66,7 +63,7 @@ export default function CreateAccountPage() {
   const registerWithGoogle = useAuthStore((s) => s.registerWithGoogle)
   const session            = useAuthStore((s) => s.session)
 
-  const setAvatarRegistryId = useGameStore((s) => s.setAvatarRegistryId)
+  const setPlayerAvatar     = useGameStore((s) => s.setPlayerAvatar)
   const setPlayerNickname   = useGameStore((s) => s.setPlayerNickname)
   const selectPlayerClass   = useGameStore((s) => s.selectPlayerClass)
   const forceSyncToCloud    = useGameStore((s) => s.forceSyncToCloud)
@@ -80,8 +77,8 @@ export default function CreateAccountPage() {
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
 
-  // Step 2 – avatar (3D model id from mascotRegistry)
-  const [avatarRegistryId, setAvatarId] = useState(AVATAR_MODELS[0]?.id ?? 8)
+  // Step 2 – avatar (hombre/mujer, see PLAYER_AVATARS)
+  const [avatarId, setAvatarId] = useState(PLAYER_AVATARS[0]?.id ?? 'hombre')
 
   // Step 3 – player class
   const [playerClassId, setPlayerClassId] = useState(null)
@@ -129,7 +126,7 @@ export default function CreateAccountPage() {
 
   const handleFinish = async () => {
     setStatus('processing')
-    setAvatarRegistryId(avatarRegistryId)
+    setPlayerAvatar(avatarId)
     setPlayerNickname(nickname.trim() || email.split('@')[0])
     if (playerClassId) selectPlayerClass(playerClassId)
     try { await forceSyncToCloud() } catch { /* best effort */ }
@@ -137,7 +134,7 @@ export default function CreateAccountPage() {
     navigate('/vr-arbol')   // ← goes to tutorial world, NOT campus
   }
 
-  const selectedAvatar = getMascotById(avatarRegistryId)
+  const selectedAvatar = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]
   const selectedClass  = playerClassId ? PLAYER_CLASSES[playerClassId] : null
 
   return (
@@ -337,7 +334,7 @@ export default function CreateAccountPage() {
             <div className="rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
               <h2 className="mb-1 text-2xl font-black">Elige tu avatar</h2>
               <p className="mb-5 text-sm text-text-muted">
-                Este modelo 3D te representará en el campus virtual. Puedes cambiarlo después.
+                ¿Hombre o mujer? Este modelo 3D te representará en el campus virtual. Puedes cambiarlo después en Apariencia. Pronto agregaremos más opciones.
               </p>
 
               {/* 3D preview */}
@@ -354,19 +351,14 @@ export default function CreateAccountPage() {
                 </div>
                 <div className="flex items-center gap-3 border-t border-border px-4 py-2.5">
                   <span className="text-2xl">{selectedAvatar.icon || '✨'}</span>
-                  <div>
-                    <p className="font-black text-text">{selectedAvatar.name}</p>
-                    {selectedAvatar.description && (
-                      <p className="text-[11px] text-text-muted line-clamp-1">{selectedAvatar.description}</p>
-                    )}
-                  </div>
+                  <p className="font-black text-text">{selectedAvatar.label}</p>
                 </div>
               </div>
 
               {/* Model grid */}
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                {AVATAR_MODELS.map((m) => {
-                  const active = m.id === avatarRegistryId
+                {PLAYER_AVATARS.map((m) => {
+                  const active = m.id === avatarId
                   return (
                     <button key={m.id} type="button" onClick={() => setAvatarId(m.id)}
                       className="flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-all hover:scale-105"
@@ -381,7 +373,7 @@ export default function CreateAccountPage() {
                       </div>
                       <span className="text-xs font-bold leading-tight text-center"
                         style={{ color: active ? m.color : 'var(--color-text-muted)' }}>
-                        {m.name}
+                        {m.label}
                       </span>
                     </button>
                   )

@@ -54,6 +54,11 @@ export const MASCOTS = [
   { id: 7, name: 'Nudo', geometry: 'torusKnot', color: '#f87171' },
   
   // --- MODELOS 3D REALES (.GLB) ---
+  // Todos viven ahora bajo public/MODELOS 3D/ (antes sueltos en la raíz de
+  // public/). Mago/Mago Ancestral/Zorro Mago/Lagarto Mago se movieron a la
+  // subcarpeta NPC/ (siguen funcionando aquí como mascotas porque
+  // vrNpcRegistry.js los reutiliza por id para varios NPCs del campus), el
+  // resto vive en MASCOTAS/.
   {
     id: 8,
     name: 'Gato Naranja',
@@ -61,7 +66,7 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#f97316',
     description: 'El gato legendario de Oliver School. Ágil, curioso y siempre a tu lado en cada aventura de aprendizaje.',
-    modelPath: '/orange_cat.glb',
+    modelPath: '/MODELOS 3D/MASCOTAS/orange_cat.glb',
     modelSourceUrl: 'https://sketchfab.com/3d-models/orange-cat-2b722183b60e4fcfbe3c2263536d2fa6',
     modelRotationY: Math.PI,
     modelOffsetY: -0.35,
@@ -73,7 +78,7 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#a78bfa',
     description: 'Un hechicero con poderes arcanos. Transforma el conocimiento en magia pura y guía al estudiante por senderos misteriosos.',
-    modelPath: '/mage.glb',
+    modelPath: '/MODELOS 3D/NPC/mage.glb',
   },
   {
     id: 10,
@@ -82,7 +87,7 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#818cf8',
     description: 'Sabio ancestral lleno de sabiduría milenaria. Guía con paciencia y serenidad a todo el que busca el conocimiento.',
-    modelPath: '/mage_elder.glb',
+    modelPath: '/MODELOS 3D/NPC/mage_elder.glb',
   },
   {
     id: 11,
@@ -91,7 +96,7 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#fb923c',
     description: 'Astuto y veloz, este zorro combina magia y astucia para superar cualquier obstáculo del camino.',
-    modelPath: '/mage_fox.glb',
+    modelPath: '/MODELOS 3D/NPC/mage_fox.glb',
   },
   {
     id: 12,
@@ -100,7 +105,7 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#34d399',
     description: 'Guardián de los secretos naturales. Adaptable y poderoso en cualquier terreno; nunca se rinde.',
-    modelPath: '/lizard_mage.glb',
+    modelPath: '/MODELOS 3D/NPC/lizard_mage.glb',
   },
   {
     id: 13,
@@ -109,7 +114,46 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#f472b6',
     description: 'Alegre e inquebrantable. Su energía positiva te mantendrá motivado ante cualquier desafío académico.',
+    // ⚠️ balloon_dog.glb no está en la nueva carpeta MODELOS 3D — esta ruta
+    // sigue rota hasta que se agregue el archivo. Mientras tanto cae al
+    // gato de respaldo (CatMesh) por geometry: 'cat'.
     modelPath: '/balloon_dog.glb',
+  },
+  {
+    id: 14,
+    name: 'Ajo',
+    icon: '🧄',
+    geometry: 'cat',
+    color: '#fef3c7',
+    description: 'Pequeño y resistente, nunca le falta picardía. Un compañero curioso para cualquier aventura.',
+    modelPath: '/MODELOS 3D/MASCOTAS/ajo.glb',
+  },
+  {
+    id: 15,
+    name: 'Toro',
+    icon: '🐂',
+    geometry: 'cat',
+    color: '#92400e',
+    description: 'Fuerte y leal, avanza sin detenerse ante ningún reto académico.',
+    modelPath: '/MODELOS 3D/MASCOTAS/bull.glb',
+  },
+  {
+    id: 16,
+    name: 'Gato',
+    icon: '🐈',
+    geometry: 'cat',
+    color: '#78716c',
+    description: 'Un segundo gato, tan curioso como el original pero con su propio estilo.',
+    modelPath: '/MODELOS 3D/MASCOTAS/gato.glb',
+  },
+  {
+    id: 17,
+    name: 'Búho',
+    icon: '🦉',
+    geometry: 'cat',
+    color: '#b45309',
+    description: 'Sabio y observador, ve lo que otros pasan por alto.',
+    modelPath: '/MODELOS 3D/MASCOTAS/owl.glb',
   },
 ]
 

@@ -204,7 +204,7 @@ function useWorldShortcuts({ onToggleMap, onOpenCharacter, onOpenInventory, onTo
 // model is also handed to <Player> so it can raycast against the real
 // geometry for ground height and collisions.
 function useSceneryModel() {
-  const { scene } = useGLTF('/fondo_azteca.glb')
+  const { scene } = useGLTF('/MODELOS 3D/VR/fondo_azteca.glb')
 
   return useMemo(() => {
     const clone = scene.clone(true)
@@ -287,11 +287,11 @@ function useImportedGlbGround(url) {
 }
 
 function useGraffitiGround() {
-  return useImportedGlbGround('/st.glb')
+  return useImportedGlbGround('/MODELOS 3D/VR/st.glb')
 }
 
 function useCampusGlbGround() {
-  const result = useImportedGlbGround('/campus.glb')
+  const result = useImportedGlbGround('/MODELOS 3D/VR/campus.glb')
   if (sessionStorage.getItem('logCampusLandmarks') === '1') {
     sessionStorage.removeItem('logCampusLandmarks')
     const targets = /accueil|entrance|entree|main_entrance/i
@@ -1354,7 +1354,7 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
   return (
     <group ref={group}>
       <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
-        <PlayerAvatarBody avatarId={player?.avatarId || 'scholar'} />
+        <PlayerAvatarBody avatarId={player?.avatarId || 'hombre'} />
         <group position={[1.2, 0, 0]} scale={0.65}>
           <MascotMesh mascot={mascot} skin={skin} />
         </group>

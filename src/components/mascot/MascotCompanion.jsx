@@ -1,5 +1,6 @@
 import MascotViewport from './MascotViewport'
 import ChatTab from './ChatTab'
+import MissionsTab from './MissionsTab'
 import BooksPanel from './BooksPanel'
 import MascotSelector from './MascotSelector'
 import SkinSelector from './SkinSelector'
@@ -39,6 +40,7 @@ const SUB_TABS_MASCOTA = [...SUB_TABS_AVATAR, { id: 'chat', label: 'Chat', icon:
 const SIMPLE_MODE_COURSES = new Set(['course-claude-mayores'])
 const SUB_TABS_SIMPLE = [
   { id: 'chat', label: 'Chat', icon: '💬' },
+  { id: 'misiones', label: 'Misiones', icon: '🎯' },
   { id: 'libros', label: 'Libros', icon: '📚' },
 ]
 
@@ -168,6 +170,10 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
                   </div>
                 </div>
               )
+            )}
+
+            {subTab === 'misiones' && (
+              <MissionsTab courseId={courseId} module={module} onGoToChat={() => setSubTab('chat')} />
             )}
 
             {subTab === 'libros' && <BooksPanel />}
