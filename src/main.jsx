@@ -2,12 +2,24 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-import { hydrateFromLocalStorage, startAutoSave } from './services/persistence/autoSave'
+import { hydrateFromLocalStorage, startAutoSave, pushSnapshotToCloud } from './services/persistence/autoSave'
 import { useAuthStore } from './stores/useAuthStore'
+import { useSyncStatusStore } from './stores/useSyncStatusStore'
+import { isSupabaseConfigured } from './services/supabase/client'
 
 hydrateFromLocalStorage()
 startAutoSave()
 useAuthStore.getState().init()
+
+// ponytail: temporary console hook to diagnose the cloud-save issue live in
+// any environment (dev or prod build) without needing source maps — delete
+// once Supabase persistence is confirmed working end to end.
+window.__oliverDebug = {
+  auth: () => useAuthStore.getState(),
+  sync: () => useSyncStatusStore.getState(),
+  supabaseConfigured: isSupabaseConfigured(),
+  forceSave: () => pushSnapshotToCloud().then(() => useSyncStatusStore.getState()),
+}
 
 // Browsers only check for a new service worker on navigation, throttled to
 // roughly once per day — without this, a tab left open (or just reopened

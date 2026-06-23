@@ -102,7 +102,17 @@ export default function CreateAccountPage() {
     e.preventDefault()
     setError(''); setStatus('processing')
     try {
-      await signUpWithEmail(email, password, nickname || email.split('@')[0])
+      const data = await signUpWithEmail(email, password, nickname || email.split('@')[0])
+      // ponytail: Supabase's default "Confirm email" setting returns no
+      // session until the link is clicked — without this check the wizard
+      // silently continues with user=null and nothing ever reaches the
+      // cloud (forceSyncToCloud no-ops). Disable "Confirm email" in the
+      // Supabase dashboard (Authentication > Providers > Email) to skip
+      // this step entirely.
+      if (!data.session) {
+        setError('Te enviamos un correo de confirmación. Ábrelo y confirma tu cuenta, luego inicia sesión para continuar — si no confirmas, tu progreso no se guardará en la nube.')
+        return
+      }
       setStep(2)
     } catch (err) {
       setError(err.message)
