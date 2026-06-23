@@ -4,9 +4,25 @@
 //  2. Update LATEST_VERSION to match
 //  The PatchNotesModal shows once per version (gated by localStorage).
 
-export const LATEST_VERSION = '0.7.0'
+export const LATEST_VERSION = '0.8.0'
 
 export const PATCH_NOTES = [
+  {
+    version: '0.8.0',
+    date: '2026-06-23',
+    title: 'Ficha de Personaje · Nuevo Avatar · Curso para Adultos Mayores',
+    emoji: '🧑‍🎨',
+    tag: 'NOVEDAD',
+    tagColor: '#22c55e',
+    changes: [
+      { icon: '🧑‍🎨', text: 'Ficha de personaje estilo RPG clásico: tu modelo 3D al centro, slots de equipo a los lados y bolsas con objetos que arrastras directo a su slot para equiparlos.' },
+      { icon: '🚶', text: 'Avatar completamente nuevo: ya eliges entre modelo de Hombre o Mujer al crear tu cuenta, con un cuerpo 3D real en el mundo VR (antes eran figuras geométricas de prueba).' },
+      { icon: '🐾', text: '4 mascotas nuevas para elegir en el Árbol del Mundo: Ajo, Toro, Gato y Búho.' },
+      { icon: '🎓', text: 'Nuevo curso accesible para adultos mayores: aprende a usar un asistente de inteligencia artificial conversacional en tu día a día, sin mundos virtuales, a tu ritmo y en el orden que prefieras.' },
+      { icon: '🎯', text: 'Nueva pestaña "Misiones" en el menú de tu mascota: ve de un vistazo qué te falta completar de cada clase.' },
+      { icon: '☁️', text: 'Corrección: el progreso ahora se guarda de forma confiable en la nube en cada partida, sin importar cuándo se creó tu cuenta.' },
+    ],
+  },
   {
     version: '0.7.0',
     date: '2026-06-22',
