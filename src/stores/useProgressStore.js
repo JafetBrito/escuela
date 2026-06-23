@@ -134,6 +134,15 @@ export const useProgressStore = create((set, get) => ({
     const firstOrder = Math.min(...courseData.modules.map((m) => m.order))
     if (targetModule.order === firstOrder) return true
 
+    // Non-linear courses (e.g. for learners who want to browse classes in
+    // any order) only gate behind the intro module — completing the rest is
+    // tracked for badges/progress but never blocks the others.
+    if (courseData.nonLinear) {
+      const introModule = courseData.modules.find((m) => m.order === firstOrder)
+      const moduleProgress = get().progress[courseId]?.moduleProgress ?? []
+      return moduleProgress.some((p) => p.moduleId === introModule.id && p.completed)
+    }
+
     const prevModule = courseData.modules.find((m) => m.order === targetModule.order - 1)
     if (!prevModule) return true
 

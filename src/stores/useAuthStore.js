@@ -188,7 +188,7 @@ export const useAuthStore = create((set, get) => ({
   // 'full' licenses unlock every course; 'single' licenses only unlock the
   // course they were issued for. The demo course and admins are always open.
   hasAccessToCourse: (courseId) => {
-    if (courseId === 'course-demo') return true
+    if (courseId === 'course-demo' || courseId === 'course-claude-mayores') return true
     if (get().profile?.role === 'admin') return true
     const license = get().license
     if (!license) return false

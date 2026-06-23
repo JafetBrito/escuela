@@ -34,6 +34,14 @@ const SUB_TABS_AVATAR = [
 ]
 const SUB_TABS_MASCOTA = [...SUB_TABS_AVATAR, { id: 'chat', label: 'Chat', icon: '💬' }]
 
+// Courses for an audience the RPG layer (avatar/clases/equipo/XP) would only
+// confuse — these get a "modo serio" with just Chat + Libros, no Avatar tab.
+const SIMPLE_MODE_COURSES = new Set(['course-claude-mayores'])
+const SUB_TABS_SIMPLE = [
+  { id: 'chat', label: 'Chat', icon: '💬' },
+  { id: 'libros', label: 'Libros', icon: '📚' },
+]
+
 export default function MascotCompanion({ courseId, module, hideViewport = false }) {
   const open = useMascotCompanionStore((s) => s.open)
   const setOpen = useMascotCompanionStore((s) => s.setOpen)
@@ -41,10 +49,11 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
   const panel = useMascotCompanionStore((s) => s.panel)
   const setPanel = useMascotCompanionStore((s) => s.setPanel)
 
+  const simpleMode = SIMPLE_MODE_COURSES.has(courseId)
   const [entityId, rawSubTab] = panel.split('-')
-  const entity = ENTITY_TABS.find((e) => e.id === entityId) ?? ENTITY_TABS[0]
+  const entity = simpleMode ? ENTITY_TABS[1] : (ENTITY_TABS.find((e) => e.id === entityId) ?? ENTITY_TABS[0])
   const isAvatarEntity = entity.id === 'avatar'
-  const subTabs = isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA
+  const subTabs = simpleMode ? SUB_TABS_SIMPLE : (isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA)
   const subTab = subTabs.some((t) => t.id === rawSubTab) ? rawSubTab : subTabs[0].id
 
   const setEntity = (id) => {
@@ -75,46 +84,52 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
           <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-mono font-black text-primary" title="Sistema N48">
-                  N48
-                </span>
+                {!simpleMode && (
+                  <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-mono font-black text-primary" title="Sistema N48">
+                    N48
+                  </span>
+                )}
                 <p className="text-base font-bold text-text">{displayName}</p>
               </div>
               <button onClick={() => setOpen(false)} className="text-text-muted hover:text-text" aria-label="Cerrar">
                 ✕
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <LevelBadge />
-              <CurrencyBadge amount={coins} />
-            </div>
+            {!simpleMode && (
+              <div className="flex flex-wrap items-center gap-2">
+                <LevelBadge />
+                <CurrencyBadge amount={coins} />
+              </div>
+            )}
           </div>
 
           {/* Entity tabs: Avatar | Mascota */}
-          <div className="flex gap-1 px-3 pt-2.5">
-            {ENTITY_TABS.map((t) => {
-              const isActive = t.id === entity.id
-              const eCls = t.id === 'avatar' ? cls : oCls
-              const eColor = t.id === 'avatar' ? (cls?.color ?? avatar.color) : (oCls?.color ?? '#a855f7')
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setEntity(t.id)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-bold transition-all"
-                  style={isActive ? { background: eColor, color: '#fff' } : { color: 'var(--color-text-muted)' }}
-                >
-                  <span>{t.icon}</span>
-                  <span>{t.id === 'mascota' ? displayName : t.label}</span>
-                  {eCls && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${isActive ? 'bg-white/20' : 'bg-black/10'}`}>
-                      {eCls.icon}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          {!simpleMode && (
+            <div className="flex gap-1 px-3 pt-2.5">
+              {ENTITY_TABS.map((t) => {
+                const isActive = t.id === entity.id
+                const eCls = t.id === 'avatar' ? cls : oCls
+                const eColor = t.id === 'avatar' ? (cls?.color ?? avatar.color) : (oCls?.color ?? '#a855f7')
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setEntity(t.id)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-bold transition-all"
+                    style={isActive ? { background: eColor, color: '#fff' } : { color: 'var(--color-text-muted)' }}
+                  >
+                    <span>{t.icon}</span>
+                    <span>{t.id === 'mascota' ? displayName : t.label}</span>
+                    {eCls && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${isActive ? 'bg-white/20' : 'bg-black/10'}`}>
+                        {eCls.icon}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {/* Sub-tabs */}
           <div className="flex gap-1 overflow-x-auto px-3 pb-2.5 pt-2 text-sm">

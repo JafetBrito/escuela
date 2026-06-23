@@ -1,0 +1,227 @@
+{
+  "courseId": "course-claude-mayores",
+  "title": "Introducción a Claude",
+  "description": "Un curso pensado para adultos mayores: aprende a usar Claude, un asistente de inteligencia artificial, para tu vida diaria. Sin prisa, sin mundos virtuales, paso a paso.",
+  "nonLinear": true,
+  "aiInstructions": "Este curso enseña a usar Claude (un asistente de IA conversacional) a personas adultas mayores que pueden tener poca o ninguna experiencia previa con tecnología. Usa SIEMPRE un lenguaje simple, cálido y paciente, sin tecnicismos ni anglicismos innecesarios. Explica las cosas paso a paso, con ejemplos cotidianos (familia, salud, recetas, cartas, recordatorios). Nunca hagas sentir mal al estudiante por no saber algo — celebra cada pequeño avance. Si pregunta algo de salud, recuérdale amablemente que Claude no sustituye a su médico. Si pregunta algo fuera del tema de la clase, respóndele con calma y relaciona la respuesta con alguna clase del curso si aplica. El curso no es lineal: después de la clase 1 puede ver las demás clases en el orden que quiera.",
+  "welcome": {
+    "topicIntro": "Claude es un asistente de inteligencia artificial con el que puedes conversar escribiendo, como si le mandaras un mensaje a alguien. Le puedes pedir ayuda para escribir cartas, organizar tu día, aprender cosas nuevas o resolver dudas. En este curso vas a aprender a usarlo paso a paso, sin prisa.",
+    "requirements": [
+      "Saber escribir y leer en español, lo básico",
+      "Conexión a internet",
+      "Ganas de aprender algo nuevo, sin prisa — no necesitas experiencia previa con computadoras"
+    ]
+  },
+  "modules": [
+    {
+      "id": 1,
+      "title": "Bienvenida: ¿qué es la Inteligencia Artificial y qué es Claude?",
+      "order": 1,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Una introducción tranquila: qué es la Inteligencia Artificial, qué es Claude, y cómo vas a usarlo en esta plataforma a través del Chat de tu mascota.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Salúdalo: escríbele \"Hola\" a tu mascota y cuéntale tu nombre",
+          "hint": "Abre el menú flotante, ve a la pestaña Chat, y escribe un saludo. Así empieza toda conversación con Claude."
+        }
+      },
+      "resources": [
+        { "label": "Claude (sitio oficial)", "url": "https://claude.ai", "type": "link" }
+      ],
+      "quiz": {
+        "question": "¿Qué es Claude?",
+        "options": [
+          "Un asistente con el que puedes conversar escribiendo, para pedirle ayuda",
+          "Un virus de computadora",
+          "Una red social",
+          "Un juego de mesa"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 2,
+      "title": "Tu primera conversación: cómo escribirle a Claude",
+      "order": 2,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Cómo hacerle preguntas claras, cómo pedir que te explique algo de nuevo si no entendiste, y por qué no hay preguntas tontas.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Pregúntale algo que siempre quisiste saber, con tus propias palabras",
+          "hint": "No te preocupes por escribir \"perfecto\" — Claude entiende aunque haya errores de dedo o de acento."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "Si Claude no entendió bien tu pregunta, ¿qué puedes hacer?",
+        "options": [
+          "Nada, ya se perdió la oportunidad",
+          "Volver a explicarle con otras palabras, las veces que quieras",
+          "Apagar la computadora",
+          "Esperar 24 horas para volver a intentar"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 3,
+      "title": "Pide ayuda con tareas del día a día",
+      "order": 3,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Listas de compras, recordatorios, organizar tu semana o pedir ideas para el menú — ejemplos prácticos de cómo Claude te ayuda en el día a día.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Pídele que te ayude a armar una lista (de compras, de pendientes, lo que tú quieras)",
+          "hint": "Por ejemplo: \"Ayúdame a hacer una lista del mercado para esta semana\"."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "¿Cuál de estos es un buen ejemplo de uso diario de Claude?",
+        "options": [
+          "Pedirle que organice una lista de pendientes para la semana",
+          "Pedirle tu número de cuenta bancaria",
+          "Pedirle que adivine tu contraseña",
+          "Ninguno de los anteriores"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 4,
+      "title": "Escribe cartas y mensajes con ayuda de Claude",
+      "order": 4,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Redacta un mensaje de WhatsApp, una carta o una tarjeta de cumpleaños con ayuda de Claude — tú decides las ideas, Claude te ayuda a ordenarlas.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Pídele que te ayude a escribir un mensaje para alguien especial",
+          "hint": "Por ejemplo: \"Ayúdame a escribir un mensaje de cumpleaños para mi nieta\"."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "Cuando le pides a Claude ayuda para escribir una carta, ¿quién decide qué se dice?",
+        "options": [
+          "Tú decides las ideas, Claude te ayuda a ordenarlas y escribirlas",
+          "Claude decide todo sin preguntarte nada",
+          "No se puede escribir cartas con Claude",
+          "Hay que pagar extra por cada carta"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 5,
+      "title": "Aprende cosas nuevas: recetas, jardinería y curiosidades",
+      "order": 5,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Usa a Claude como un compañero de aprendizaje: pídele una receta, consejos para tus plantas, o que te explique algo que siempre te dio curiosidad.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Pregúntale sobre algún pasatiempo o curiosidad que te interese",
+          "hint": "Por ejemplo: \"¿Cómo cuido un cactus?\" o \"Dame una receta fácil de sopa\"."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "¿Para cuál de estas cosas puedes usar Claude?",
+        "options": [
+          "Pedirle una receta de cocina o consejos para tus plantas",
+          "Solo para temas de matemáticas avanzadas",
+          "Solo lo usan los jóvenes",
+          "Solo funciona en inglés"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 6,
+      "title": "Tu bienestar: información general de salud",
+      "order": 6,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Cómo pedirle información general sobre salud y bienestar — y por qué Claude siempre te va a recomendar consultar a tu médico, no reemplazarlo.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Pregúntale algo general sobre bienestar (por ejemplo, sobre dormir mejor)",
+          "hint": "Recuerda: Claude te puede dar información general, pero las decisiones de salud siempre las debe confirmar tu médico."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "Si Claude te da información sobre salud, ¿qué debes hacer siempre?",
+        "options": [
+          "Confirmarlo con tu médico antes de tomar una decisión",
+          "Seguirlo sin preguntarle a nadie más",
+          "Ignorarlo siempre",
+          "Nada, no hace falta confirmar nada"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 7,
+      "title": "Seguridad: reconoce estafas y protege tus datos",
+      "order": 7,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Claude puede ayudarte a identificar mensajes y llamadas sospechosas, y te recuerda qué datos nunca debes compartir (contraseñas, números de tarjeta, códigos de verificación).",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Pregúntale: \"¿cómo sé si un mensaje es una estafa?\"",
+          "hint": "Claude te puede dar señales de alerta comunes en estafas por mensaje, llamada o correo."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "¿Cuál de estos datos NUNCA debes compartir, ni con Claude ni con nadie por mensaje?",
+        "options": [
+          "Tu contraseña o el código de verificación de tu banco",
+          "Una receta de cocina",
+          "El nombre de una planta",
+          "Una pregunta sobre el clima"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    },
+    {
+      "id": 8,
+      "title": "Cierre: tu propia lista de usos de Claude",
+      "order": 8,
+      "videoId": "dQw4w9WgXcQ",
+      "description": "Repasamos todo lo aprendido y armamos juntos tu lista personal de las cosas para las que vas a seguir usando Claude.",
+      "noItem": true,
+      "missions": {
+        "chat": {
+          "label": "Cuéntale 3 cosas para las que piensas seguir usando Claude",
+          "hint": "Pueden ser de cualquier clase del curso: mensajes, listas, recetas, dudas, lo que tú quieras."
+        }
+      },
+      "resources": [],
+      "quiz": {
+        "question": "Al terminar este curso, ¿qué puedes seguir haciendo?",
+        "options": [
+          "Seguir usando Claude para lo que necesites en tu día a día, cuando quieras",
+          "Ya no se puede volver a usar Claude",
+          "Solo se puede usar una vez al mes",
+          "Hay que pagar para volver a entrar al chat"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    }
+  ]
+}

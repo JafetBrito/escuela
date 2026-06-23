@@ -291,7 +291,19 @@ function useGraffitiGround() {
 }
 
 function useCampusGlbGround() {
-  return useImportedGlbGround('/campus.glb')
+  const result = useImportedGlbGround('/campus.glb')
+  if (sessionStorage.getItem('logCampusLandmarks') === '1') {
+    sessionStorage.removeItem('logCampusLandmarks')
+    const targets = /accueil|entrance|entree|main_entrance/i
+    const wp = new THREE.Vector3()
+    result.model.traverse((o) => {
+      if (targets.test(o.name)) {
+        o.getWorldPosition(wp)
+        console.log('[landmark]', o.name, wp.x.toFixed(2), wp.y.toFixed(2), wp.z.toFixed(2))
+      }
+    })
+  }
+  return result
 }
 
 // Ground component for the imported /campus.glb experiment — just the
