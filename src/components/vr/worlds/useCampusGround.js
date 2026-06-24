@@ -481,7 +481,7 @@ export function useCampusGround() {
       lampPos.push([Math.sin(a) * 23.5, Math.cos(a) * 23.5])
     }
     ;[0, Math.PI / 2, Math.PI, Math.PI * 3 / 2].forEach((a) => {
-      ;[15, 30, 44, 58, 80].forEach((r) => {
+      ;[15, 30, 44, 58, 70, 80].forEach((r) => {
         const perp = a + Math.PI / 2
         lampPos.push(
           [Math.cos(a) * r + Math.cos(perp) * 4.2, Math.sin(a) * r + Math.sin(perp) * 4.2],

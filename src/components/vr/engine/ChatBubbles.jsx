@@ -41,6 +41,13 @@ export function useChatBubbles(matchId) {
   const messages = useWorldChatStore((s) => s.messages)
   const [bubbles, setBubbles] = useState([])
   const shownIdRef = useRef(null)
+  // Each bubble's expiry timer is tracked here instead of as this effect's
+  // cleanup — the effect re-runs on every world chat message (not just ones
+  // from `matchId`), and a cleanup tied to that would cancel a still-pending
+  // expiry every time anyone else sends a message, leaving old bubbles stuck
+  // on screen forever. Timers now only get cleared by their own callback
+  // (above) or on unmount (below).
+  const timersRef = useRef(new Map())
 
   useEffect(() => {
     const last = messages[messages.length - 1]
@@ -59,9 +66,15 @@ export function useChatBubbles(matchId) {
     setBubbles((current) => [...current, { id: last.id, text: last.text }].slice(-MAX_STACKED_BUBBLES))
     const timer = setTimeout(() => {
       setBubbles((current) => current.filter((b) => b.id !== last.id))
+      timersRef.current.delete(last.id)
     }, CHAT_BUBBLE_DURATION)
-    return () => clearTimeout(timer)
+    timersRef.current.set(last.id, timer)
   }, [messages, matchId])
+
+  useEffect(() => () => {
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current.clear()
+  }, [])
 
   return bubbles
 }

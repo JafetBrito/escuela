@@ -15,7 +15,7 @@ export const MOVE_ACCEL = 18
 // MascotMesh normalizes models to ~2 units tall. The scenery footprint is
 // ~24 units wide, so we shrink the player to a human-ish scale that doesn't
 // dwarf the structure it's walking around.
-export const PLAYER_SCALE = 0.12
+export const PLAYER_SCALE = 0.2
 export const PLAYER_HEIGHT = PLAYER_SCALE * 2
 // MascotMesh centers every model on its own bounding box and normalizes it
 // to ~2 units tall, so before any outer scale is applied its feet sit at

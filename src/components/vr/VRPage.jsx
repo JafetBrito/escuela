@@ -628,6 +628,13 @@ function useVoiceChat({ playerId, name, channelRef }) {
         if (from === playerId) return
         setSpeaking((p) => ({ ...p, [from]: n }))
         if (!localStreamRef.current) return  // we don't have mic, skip offer
+        // Deterministic initiator: only the lexicographically smaller id ever
+        // sends an offer. Without this, two people enabling mic around the
+        // same time both create+send offers to each other, each peer ends up
+        // with signalingState 'have-local-offer', and setRemoteDescription on
+        // the incoming offer throws (silently swallowed below) — both sides
+        // get stuck never exchanging an answer, so neither hears the other.
+        if (playerId > from) return
         try {
           const pc = getOrCreatePeer(from)
           const offer = await pc.createOffer()
@@ -1355,7 +1362,7 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
     <group ref={group}>
       <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <PlayerAvatarBody avatarId={player?.avatarId || 'hombre'} />
-        <group position={[1.2, 0, 0]} scale={0.65}>
+        <group position={[1.2, 0, 0]} scale={0.45}>
           <MascotMesh mascot={mascot} skin={skin} />
         </group>
       </group>

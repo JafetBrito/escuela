@@ -140,11 +140,10 @@ export default function DayNightCycle({ campusMode }) {
   const { scene, camera } = useThree()
   const moonTexture = useCatMoonTexture()
 
-  useFrame((_, delta) => {
-    useDayNightStore.getState().tick(delta)
+  useFrame(() => {
     if (!campusMode) return
 
-    const t = useDayNightStore.getState().timeOfDay
+    const t = useDayNightStore.getState().getTimeOfDay()
     const [frac, ki] = keyAt(t)
     const k0 = KEYS[ki], k1 = KEYS[ki + 1]
 

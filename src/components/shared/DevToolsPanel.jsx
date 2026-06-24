@@ -4,8 +4,12 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { useSyncStatusStore } from '../../stores/useSyncStatusStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
+import { useDayNightStore } from '../../stores/useDayNightStore'
 import { setVoicePermission } from '../../services/admin/gmCommands'
 import GmConsole from './GmConsole'
+
+const SEASONS = ['primavera', 'verano', 'otoño', 'invierno']
+const WEATHERS = ['despejado', 'nublado', 'lluvia']
 
 const SYNC_LABEL = {
   idle: '⚪ Sin sincronizar aún',
@@ -50,6 +54,10 @@ export default function DevToolsPanel() {
   const [voiceQuery, setVoiceQuery] = useState('')
   const [voiceBusy, setVoiceBusy] = useState(false)
   const [voiceMsg, setVoiceMsg] = useState('')
+  const dnMode = useDayNightStore((s) => s.mode)
+  const dnHour = useDayNightStore((s) => s.manualBaseHour)
+  const season = useDayNightStore((s) => s.season)
+  const weather = useDayNightStore((s) => s.weather)
   if (!isAdmin?.()) return null
 
   const handleVoiceGrant = async (enabled) => {
@@ -139,6 +147,50 @@ export default function DevToolsPanel() {
               </button>
             </div>
             {voiceMsg && <p className="mt-1 text-[10px] text-text-muted">{voiceMsg}</p>}
+          </div>
+
+          <div className="mb-2 rounded-lg border border-border/60 bg-surface-hover px-2 py-1.5">
+            <p className="text-xs font-semibold text-text-muted">🌦️ Hora y Clima (campus VR)</p>
+            <p className="mt-1 text-[10px] text-text-muted">
+              {dnMode === 'real' ? '🟢 Siguiendo la hora real del sistema' : `🟠 Hora forzada: ${Math.floor(dnHour)}:00`}
+            </p>
+            <div className="mt-1 flex items-center gap-1">
+              <input
+                type="range"
+                min={0}
+                max={23}
+                step={1}
+                value={Math.floor(dnHour)}
+                onChange={(e) => useDayNightStore.getState().setManualHour(Number(e.target.value))}
+                className="flex-1"
+              />
+              <span className="w-10 text-right text-xs text-text">{Math.floor(dnHour)}:00</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => useDayNightStore.getState().useRealTime()}
+              disabled={dnMode === 'real'}
+              className="mt-1 w-full rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary disabled:opacity-50"
+            >
+              🕐 Volver a la hora real
+            </button>
+            <div className="mt-2 flex gap-1">
+              <select
+                value={season}
+                onChange={(e) => useDayNightStore.getState().setSeason(e.target.value)}
+                className="flex-1 rounded-lg border border-border bg-background px-1 py-1 text-xs text-text outline-none focus:border-primary"
+              >
+                {SEASONS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select
+                value={weather}
+                onChange={(e) => useDayNightStore.getState().setWeather(e.target.value)}
+                className="flex-1 rounded-lg border border-border bg-background px-1 py-1 text-xs text-text outline-none focus:border-primary"
+              >
+                {WEATHERS.map((w) => <option key={w} value={w}>{w}</option>)}
+              </select>
+            </div>
+            <p className="mt-1 text-[10px] text-text-muted">Estación/clima: guardados, sin efectos visuales aún.</p>
           </div>
 
           <p className="mb-2 px-1 text-xs font-semibold text-text-muted">🛠️ Dev — saltar a ruta</p>

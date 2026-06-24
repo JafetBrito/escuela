@@ -1,15 +1,31 @@
 import { create } from 'zustand'
 
-// 1 game-minute per real second → full 24hr cycle in 24 real minutes of play.
-// Raise speed to see day/night faster (debug); lower for slower immersive cycle.
+// Hora real del sistema (no un timer de juego): por defecto sigue el reloj
+// real minuto a minuto. Un admin puede forzar una hora puntual desde
+// DevToolsPanel — desde ahí el reloj sigue avanzando normal (1 hora real =
+// 1 hora de juego) a partir de la hora forzada, nunca se queda congelado.
 export const useDayNightStore = create((set, get) => ({
-  timeOfDay: 14.0, // start at 2 pm
-  speed: 1.0,      // game-minutes per real second
+  mode: 'real', // 'real' | 'manual'
+  manualBaseHour: 12,
+  manualBaseAtMs: Date.now(),
 
-  tick(deltaSec) {
-    set((s) => ({ timeOfDay: (s.timeOfDay + deltaSec * s.speed / 60) % 24 }))
+  // estaciones/clima: solo el dato + el control admin existen por ahora,
+  // sin efectos visuales todavía (eso se conecta cuando se construya ese sistema)
+  season: 'primavera',
+  weather: 'despejado',
+
+  getTimeOfDay() {
+    const { mode, manualBaseHour, manualBaseAtMs } = get()
+    if (mode === 'manual') {
+      const elapsedHours = (Date.now() - manualBaseAtMs) / 3_600_000
+      return (((manualBaseHour + elapsedHours) % 24) + 24) % 24
+    }
+    const now = new Date()
+    return now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600
   },
 
-  setTimeOfDay: (t) => set({ timeOfDay: ((t % 24) + 24) % 24 }),
-  setSpeed: (speed) => set({ speed }),
+  setManualHour: (hour) => set({ mode: 'manual', manualBaseHour: hour, manualBaseAtMs: Date.now() }),
+  useRealTime: () => set({ mode: 'real' }),
+  setSeason: (season) => set({ season }),
+  setWeather: (weather) => set({ weather }),
 }))

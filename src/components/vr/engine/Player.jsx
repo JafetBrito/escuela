@@ -360,7 +360,7 @@ export function Player({
               {/* Avatar is the main character — full size */}
               <PlayerAvatarBody avatarId={avatarId} />
               {companionFollows && (
-                <group position={[1.4, 0, 0]} scale={0.55}>
+                <group position={[1.4, 0, 0]} scale={0.45}>
                   <MascotMesh mascot={mascot} skin={skin} />
                 </group>
               )}
@@ -368,11 +368,11 @@ export function Player({
           ) : (
             <>
               {/* Mascot is the main character — scaled up, centered */}
-              <group scale={1.25}>
+              <group scale={1.1}>
                 <MascotMesh mascot={mascot} skin={skin} />
               </group>
               {companionFollows && (
-                <group position={[1.6, 0, 0]} scale={0.5}>
+                <group position={[1.6, 0, 0]} scale={0.8}>
                   <PlayerAvatarBody avatarId={avatarId} />
                 </group>
               )}
