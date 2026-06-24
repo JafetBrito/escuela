@@ -65,7 +65,7 @@ export const MASCOTS = [
     icon: '🐱',
     geometry: 'cat',
     color: '#f97316',
-    description: 'El gato legendario de Oliver School. Ágil, curioso y siempre a tu lado en cada aventura de aprendizaje.',
+    description: 'El gato legendario de Oliver Academy. Ágil, curioso y siempre a tu lado en cada aventura de aprendizaje.',
     modelPath: '/MODELOS 3D/MASCOTAS/orange_cat.glb',
     modelSourceUrl: 'https://sketchfab.com/3d-models/orange-cat-2b722183b60e4fcfbe3c2263536d2fa6',
     modelRotationY: Math.PI,

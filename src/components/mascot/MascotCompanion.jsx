@@ -19,9 +19,13 @@ import { getMascotById } from '../../data/mascotRegistry'
 // ─── N48 ─────────────────────────────────────────────────────────────────────
 // Two top-level tabs — Avatar (your player character) and Mascota (Oliver) —
 // each with the same WoW-style character-pane sub-tabs: Personaje (3D model
-// + equipped gear), Bolsas (equip from unlocked items, same grid as the VR
-// HUD's bags button), Árbol (skills), Apariencia, Libros. Mascota gets an
-// extra Chat sub-tab. `panel` in the store is `"${entityId}-${subTabId}"`.
+// + equipped gear, via CharacterPaperdoll), Árbol (skills), Apariencia,
+// Libros. Mascota gets an extra Chat sub-tab. Equipping items themselves
+// happens in the separate small floating Bolsas popup (VrHud's 🎒 button,
+// see BagsPanel.jsx) — not a sub-tab here, so it never blocks this menu or
+// the world behind it; both write to the same useEquipmentStore, so gear
+// equipped from Bolsas shows up immediately in Personaje. `panel` in the
+// store is `"${entityId}-${subTabId}"`.
 const ENTITY_TABS = [
   { id: 'avatar', label: 'Avatar', icon: '⚔️', owner: 'player' },
   { id: 'mascota', label: 'Mascota', icon: '🐾', owner: 'oliver' },

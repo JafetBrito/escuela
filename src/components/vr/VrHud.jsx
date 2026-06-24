@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
@@ -111,7 +110,7 @@ function ThinBar({ current, max, color, label }) {
 }
 
 // ─── Portrait card (top-left) — BDM compact style ─────────────────────────
-// Click opens the Avatar's character pane (CharacterPanel/CharacterPaperdoll).
+// Click opens the Avatar's Personaje tab in the MascotCompanion menu.
 function PortraitHud({ onOpenCharacterPanel }) {
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
@@ -235,10 +234,20 @@ function SkillBar() {
   )
 }
 
-// ─── Utility strip (right side) — Settings / Hide / Audio / Chat / Map / Friends / Arena ──
-function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, onOpenBags, hudVisible, setHudVisible, isPrivateWorld }) {
+// ─── Utility strip (right side) — Settings / Hide / Rewards / Bags / Map / Chat / Audio / Friends / Arena ──
+function VrUtilBar({
+  onOpenSettings,
+  onOpenChat,
+  onOpenMap,
+  onOpenDailyRewards,
+  onOpenBags,
+  onOpenFriends,
+  onOpenArenaConfirm,
+  hudVisible,
+  setHudVisible,
+  isPrivateWorld,
+}) {
   const [muted, setMuted] = useState(() => localStorage.getItem('vr-muted') === '1')
-  const navigate = useNavigate()
 
   // Sync initial mute state to npcVoice store on first render
   useEffect(() => {
@@ -256,16 +265,19 @@ function VrUtilBar({ onOpenSettings, onOpenChat, onOpenMap, onOpenDailyRewards, 
     if (m) window.speechSynthesis?.cancel()
   }
 
+  // Ajustes is always the first/top button (never hides — it's how you'd
+  // turn the HUD back on/configure it), then the eye toggle right under it,
+  // not the other way around.
   const BTNS = [
-    { icon: hudVisible ? '👁️' : '🙈', title: hudVisible ? 'Ocultar HUD' : 'Mostrar HUD', onClick: () => setHudVisible(v => !v) },
+    { icon: '⚙️', title: 'Ajustes', onClick: onOpenSettings },
+    { icon: hudVisible ? '👁️' : '🙈', title: hudVisible ? 'Ocultar interfaz' : 'Mostrar interfaz', onClick: () => setHudVisible(v => !v) },
     { icon: '🎁', title: 'Recompensa diaria', onClick: onOpenDailyRewards, hidden: !hudVisible },
     { icon: '🎒', title: 'Bolsas', onClick: onOpenBags, hidden: !hudVisible },
-    { icon: '📷', title: 'Ajustes de cámara', onClick: onOpenSettings, hidden: !hudVisible },
-    { icon: muted ? '🔇' : '🔊', title: muted ? 'Activar audio' : 'Silenciar', onClick: toggleMute, hidden: !hudVisible },
-    { icon: '💬', title: 'Chat', onClick: onOpenChat, hidden: !hudVisible },
     { icon: '🗺️', title: 'Mapa', onClick: onOpenMap, hidden: !hudVisible || isPrivateWorld },
-    { icon: '👥', title: 'Amigos', onClick: () => navigate('/amigos'), hidden: !hudVisible },
-    { icon: '⚔️', title: 'Arena', onClick: () => navigate('/arena'), hidden: !hudVisible },
+    { icon: '💬', title: 'Chat', onClick: onOpenChat, hidden: !hudVisible },
+    { icon: muted ? '🔇' : '🔊', title: muted ? 'Activar audio' : 'Silenciar', onClick: toggleMute, hidden: !hudVisible },
+    { icon: '👥', title: 'Amigos', onClick: onOpenFriends, hidden: !hudVisible },
+    { icon: '⚔️', title: 'Arena', onClick: onOpenArenaConfirm, hidden: !hudVisible },
   ]
 
   return (
@@ -317,19 +329,23 @@ export default function VrHud({
   onOpenMap,
   onOpenDailyRewards,
   onOpenBags,
+  onOpenFriends,
+  onOpenArenaConfirm,
   onOpenCharacterPanel,
   isPrivateWorld = false,
 }) {
   return (
     <>
-      <DayNightClock />
-      {/* Utility strip — always rendered so the eye button is accessible */}
+      {hudVisible && <DayNightClock />}
+      {/* Utility strip — always rendered so the eye/Ajustes buttons are accessible */}
       <VrUtilBar
         onOpenSettings={onOpenSettings}
         onOpenChat={onOpenChat}
         onOpenMap={onOpenMap}
         onOpenDailyRewards={onOpenDailyRewards}
         onOpenBags={onOpenBags}
+        onOpenFriends={onOpenFriends}
+        onOpenArenaConfirm={onOpenArenaConfirm}
         hudVisible={hudVisible}
         setHudVisible={setHudVisible}
         isPrivateWorld={isPrivateWorld}

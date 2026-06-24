@@ -1,9 +1,24 @@
+import { useState } from 'react'
 import { useVrSettingsStore } from '../../../stores/useVrSettingsStore'
 
-// Settings panel for camera mode (1st/3rd person), mouse/gamepad feel, FOV,
-// and noClip — reads and writes useVrSettingsStore directly, so it works
-// identically in any world without needing extra props.
+const TABS = [
+  { id: 'controles', label: 'Cámara', icon: '🎥' },
+  { id: 'interfaz', label: 'Interfaz', icon: '🖥️' },
+  { id: 'atajos', label: 'Atajos', icon: '⌨️' },
+]
+
+const CAMERA_DEFAULTS = {
+  cameraDistance: 6.5, cameraHeight: 2.4, zoomMin: 1.2, zoomMax: 55, pitchMin: -0.6, pitchMax: 1.0, fov: 58,
+}
+
+// "Ajustes" panel opened from the HUD's ⚙️ button — camera mode (1st/3rd
+// person), mouse/gamepad feel, FOV and noClip in the Cámara tab (the
+// original content of this component), plus an Interfaz tab (HUD reset +
+// what the 👁️ hide-UI button affects) and a read-only Atajos reference.
+// Reads/writes useVrSettingsStore directly, so it works identically in any
+// world without needing extra props.
 export function CameraSettingsMenu({ open, onClose }) {
+  const [tab, setTab] = useState('controles')
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const setCameraMode = useVrSettingsStore((s) => s.setCameraMode)
   const mouseSensitivity = useVrSettingsStore((s) => s.mouseSensitivity)
@@ -31,14 +46,32 @@ export function CameraSettingsMenu({ open, onClose }) {
 
   return open ? (
     <div className="absolute right-2 top-16 z-30 flex flex-col items-end gap-2 md:right-4 md:top-14">
-      <div className="w-64 rounded-xl border border-border bg-surface/95 p-3 text-sm text-text shadow-xl backdrop-blur">
+      <div className="w-72 rounded-xl border border-border bg-surface/95 p-3 text-sm text-text shadow-xl backdrop-blur">
           <div className="mb-3 flex items-center justify-between">
-            <p className="font-semibold">Cámara y controles</p>
+            <p className="font-semibold">⚙️ Ajustes</p>
             <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
               ✕
             </button>
           </div>
 
+          <div className="mb-3 flex gap-1 border-b border-border pb-2">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-semibold transition-colors ${
+                  tab === t.id ? 'bg-primary text-background' : 'text-text-muted hover:text-text'
+                }`}
+              >
+                <span>{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {tab === 'controles' && (
+          <>
           <p className="mb-1 text-xs font-semibold text-text-muted">Tipo de cámara</p>
           <div className="mb-3 flex gap-2">
             <button
@@ -227,9 +260,61 @@ export function CameraSettingsMenu({ open, onClose }) {
                 onChange={(e) => setNpcVoice(e.target.checked)}
                 className="accent-primary"
               />
-              🔊 Voz de los NPCs (Text-to-Speech)
+              🔊 Leer voces (NPCs y chat en voz alta)
             </label>
           </div>
+          </>
+          )}
+
+          {tab === 'interfaz' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-text-muted">
+                El botón 👁️ de la barra lateral oculta TODA la interfaz (menús, chat, voz, mascota
+                flotante y controles táctiles) para tomar capturas limpias del mundo — vuelve a
+                presionarlo para mostrarla de nuevo.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraDistance(CAMERA_DEFAULTS.cameraDistance)
+                  setCameraHeight(CAMERA_DEFAULTS.cameraHeight)
+                  setZoomMin(CAMERA_DEFAULTS.zoomMin)
+                  setZoomMax(CAMERA_DEFAULTS.zoomMax)
+                  setPitchMin(CAMERA_DEFAULTS.pitchMin)
+                  setPitchMax(CAMERA_DEFAULTS.pitchMax)
+                  setFov(CAMERA_DEFAULTS.fov)
+                }}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
+              >
+                ↺ Restablecer cámara a valores por defecto
+              </button>
+              <p className="text-[10px] text-text-muted">
+                La barra de habilidades (abajo, al centro) se puede arrastrar para reposicionarla
+                — mantén presionado y suelta donde prefieras.
+              </p>
+            </div>
+          )}
+
+          {tab === 'atajos' && (
+            <div className="flex flex-col gap-1.5 text-xs text-text-muted">
+              {[
+                ['WASD / flechas', 'Moverse'],
+                ['R (mantener)', 'Correr (sprint)'],
+                ['Espacio', 'Saltar'],
+                ['Arrastrar / stick derecho', 'Mirar alrededor'],
+                ['Rueda / pellizco', 'Zoom de cámara'],
+                ['Enter / C', 'Abrir chat'],
+                ['M', 'Abrir mapa'],
+                ['E', 'Interactuar con NPCs/objetos'],
+                ['F', 'Habilidad de ataque (según tu clase)'],
+              ].map(([key, action]) => (
+                <div key={key} className="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-2 py-1.5">
+                  <span className="font-mono font-bold text-text">{key}</span>
+                  <span>{action}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
     </div>
   ) : null

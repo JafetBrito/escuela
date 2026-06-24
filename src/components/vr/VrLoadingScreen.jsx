@@ -103,7 +103,7 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
       <div className="relative z-10 mb-8 flex flex-col items-center gap-3">
         <div className="text-7xl animate-bounce" style={{ animationDuration: '2s' }}>🐱</div>
         <h1 className="text-3xl font-black tracking-widest text-white" style={{ textShadow: '0 0 20px rgba(251,146,60,0.8)' }}>
-          oliver.school
+          oliver.academy
         </h1>
         <p className="text-sm font-semibold tracking-widest text-orange-400 uppercase">
           {worldName}
@@ -150,7 +150,7 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
       </div>
 
       {/* Version watermark */}
-      <p className="absolute bottom-4 right-4 text-xs text-slate-700">v1.0 · oliver.school</p>
+      <p className="absolute bottom-4 right-4 text-xs text-slate-700">v1.0 · oliver.academy</p>
     </div>
   )
 }

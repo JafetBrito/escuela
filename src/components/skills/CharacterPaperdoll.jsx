@@ -50,7 +50,7 @@ function BagItem({ item, isEquipped }) {
     <div
       draggable
       onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
-      title={`${item.name} — ${SLOT_META[item.slot].label}\n${item.description}\narrastra a su slot para equipar`}
+      title={`${item.name} — ${SLOT_META[item.slot].label}\n${item.description}\n⚔️ Poder ${item.stats.power} · 🏃 Velocidad ${item.stats.speed} (próximamente activos)\narrastra a su slot para equipar`}
       className="flex h-11 w-11 shrink-0 cursor-grab items-center justify-center rounded-md text-lg active:cursor-grabbing"
       style={{
         background: isEquipped ? 'rgba(200,162,74,0.18)' : 'rgba(255,255,255,0.05)',
@@ -155,6 +155,13 @@ export default function CharacterPaperdoll({ owner }) {
           </div>
         ))}
       </div>
+
+      {/* Every item already carries power/speed stats (see equipmentRegistry.js)
+          — they just don't move the numbers above yet. Surfaced here so it's
+          documented as a planned feature, not silently missing. */}
+      <p className="px-4 pb-2 text-[9px] italic text-white/25">
+        🔧 Próximamente: el poder y la velocidad de tu equipo modificarán estas estadísticas.
+      </p>
 
       {/* Bag strip — drag onto a slot above to equip */}
       <div className="border-t px-4 py-3" style={{ borderColor: `${GOLD}22`, background: 'rgba(0,0,0,0.2)' }}>

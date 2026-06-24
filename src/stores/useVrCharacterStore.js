@@ -33,4 +33,6 @@ export const useVrCharacterStore = create((set) => ({
   setParkedPosition: (char, pos) =>
     set((s) => ({ parkedPositions: { ...s.parkedPositions, [char]: pos ? { x: pos.x, y: pos.y, z: pos.z } : null } })),
   clearTeleportRequest: () => set({ teleportTo: null }),
+  // Generic one-shot teleport, e.g. the fall-into-the-void rescue in VRPage.jsx.
+  setTeleportTo: (pos) => set({ teleportTo: pos }),
 }))

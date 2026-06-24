@@ -41,7 +41,6 @@ import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
 import BagsPanel from './BagsPanel'
-import CharacterPanel from './CharacterPanel'
 import PatchNotesModal from '../shared/PatchNotesModal'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS, NPC_PAVILION_EXEMPT } from './worlds/useCampusGround'
@@ -1593,6 +1592,48 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
   return null
 }
 
+// Watches for the player falling into the void (an unfinished/holey area of
+// a map with no floor below) and fires onFall once per fall — resets itself
+// automatically once the rescue teleport lifts the player back above the
+// threshold, ready to catch a future fall.
+const FALL_RESCUE_Y = -25
+
+function FallRescueTracker({ playerPositionRef, onFall }) {
+  const firedRef = useRef(false)
+
+  useFrame(() => {
+    const pos = playerPositionRef.current
+    if (!pos) return
+    if (pos.y < FALL_RESCUE_Y) {
+      if (!firedRef.current) {
+        firedRef.current = true
+        onFall({ x: pos.x, y: pos.y, z: pos.z })
+      }
+    } else {
+      firedRef.current = false
+    }
+  })
+
+  return null
+}
+
+// Oliver (the orange cat, mascot id 8) "swooping in" to rescue a fallen
+// player — shown for a few seconds at the spot they fell, regardless of
+// which mascot the player actually has equipped.
+const ORANGE_CAT_MASCOT = getMascotById(8)
+
+function FallRescueCat({ position }) {
+  const ref = useRef()
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.position.y = position.y + 1 + Math.sin(clock.elapsedTime * 4) * 0.3
+  })
+  return (
+    <group ref={ref} position={[position.x, position.y + 1, position.z]} scale={0.6}>
+      <MascotMesh mascot={ORANGE_CAT_MASCOT} />
+    </group>
+  )
+}
+
 // ── Idle NPC right-click card ─────────────────────────────────────────────────
 // Shown when the player right-clicks while standing next to Oliver, Einstein or
 // Jafet. Displays a greeting from the NPC and a few action buttons.
@@ -2061,6 +2102,97 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
           className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
         >
           {isFriend ? '✖️ Quitar amigo' : '➕ Agregar amigo'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Friends list popup — opened from the HUD's 👥 button. Used to navigate to
+// a separate /amigos page (leaving the VR world entirely); now it's a popup
+// like Bolsas/Personaje, with online status derived from useVrPresenceStore.
+function FriendsPopup({ friends, players, onWhisper, onRemoveFriend, onClose }) {
+  const onlineNames = new Set(Object.values(players).map((p) => p.name))
+
+  return (
+    <div
+      className="absolute inset-0 z-40 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-base font-bold text-text">👥 Amigos</p>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
+            ✕
+          </button>
+        </div>
+        {friends.length === 0 ? (
+          <p className="py-6 text-center text-xs text-text-muted">
+            Aún no tienes amigos agregados. Toca el nombre de otro jugador en el mundo y elige
+            "Agregar amigo".
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {friends.map((name) => {
+              const online = onlineNames.has(name)
+              return (
+                <div key={name} className="flex items-center justify-between gap-2 rounded-xl border border-border px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${online ? 'bg-green-500' : 'bg-text-muted/40'}`} />
+                    <span className="text-sm font-semibold text-text">{name}</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      disabled={!online}
+                      onClick={() => onWhisper(name)}
+                      className="rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-background transition-colors hover:bg-primary-hover disabled:opacity-30"
+                    >
+                      🔒 Susurrar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveFriend(name)}
+                      className="rounded-lg border border-border px-2 py-1 text-xs text-text-muted hover:text-text"
+                      aria-label={`Quitar a ${name}`}
+                    >
+                      ✖️
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Arena's real VR battle world doesn't exist yet — this just confirms intent
+// (and doubles as a "next up" teaser) instead of dropping the player into a
+// half-built page when they tap ⚔️.
+function ArenaConfirmPopup({ onClose }) {
+  return (
+    <div
+      className="absolute inset-0 z-40 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-5 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <p className="text-4xl">⚔️</p>
+        <p className="mt-2 text-base font-bold text-text">¿Quieres ir al mundo de batalla?</p>
+        <p className="mt-1 text-xs text-text-muted">
+          La Arena PvP dentro del mundo VR todavía está en construcción — pronto podrás retar a
+          otros estudiantes en tiempo real ahí mismo.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-4 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
+        >
+          Entendido, avísame cuando esté lista
         </button>
       </div>
     </div>
@@ -2968,7 +3100,25 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
   const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
   const [bagsOpen, setBagsOpen] = useState(false)
-  const [characterPanelOpen, setCharacterPanelOpen] = useState(false)
+  const [friendsOpen, setFriendsOpen] = useState(false)
+  const [arenaConfirmOpen, setArenaConfirmOpen] = useState(false)
+  // Fall-into-the-void rescue: { x, y, z } of where the player fell, used to
+  // show Oliver (orange cat) "arriving" there for a moment. null = no rescue
+  // in progress.
+  const [rescuePos, setRescuePos] = useState(null)
+
+  // Fired by <FallRescueTracker> when the player drops below the map (an
+  // unfinished/holey area with no floor) — teleports them back to the plaza
+  // spawn, shows Oliver rescuing them, and announces it in world chat (local
+  // + broadcast to everyone, doubling as a live test of global announcements).
+  const handleFallRescue = (fallPos) => {
+    const text = `${chatAuthor} se ha caído al vacío, vamos a rescatarlo 🐱`
+    useWorldChatStore.getState().sendMessage('Sistema', text, { authorId: playerId })
+    sendChatMessage('Sistema', text)
+    useVrCharacterStore.getState().setTeleportTo({ x: 0, y: 0.2, z: 5 })
+    setRescuePos(fallPos)
+    setTimeout(() => setRescuePos(null), 3500)
+  }
   // Shown once per VR session entry; closing it auto-opens the daily reward.
   const [showAnnouncements, setShowAnnouncements] = useState(true)
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
@@ -2977,6 +3127,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const friends = useFriendsStore((s) => s.friends)
   const addFriend = useFriendsStore((s) => s.addFriend)
   const removeFriend = useFriendsStore((s) => s.removeFriend)
+  const players = useVrPresenceStore((s) => s.players)
   const whisperTarget = useWorldChatStore((s) => s.whisperTarget)
   const accepted = useGlobalMissionsStore((s) => s.accepted)
   const claimed = useGlobalMissionsStore((s) => s.claimed)
@@ -2987,23 +3138,25 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const flashlightOn = useItemEffectsStore((s) => s.activeItems['linterna'])
   const flashlightPurchased = useShopStore((s) => s.purchased.includes('linterna'))
 
-  // Player TTS — speak every message the local player sends in world chat.
-  // Voice pitch/rate differs per active character so avatar and mascota sound distinct.
+  // Chat TTS — speak every world-chat message out loud, the local player's
+  // own as well as everyone else's, so chat doubles as a voice substitute
+  // (the local player's voice pitch/rate differs by active character;
+  // everyone else gets a neutral voice since we don't know their character).
   const worldMessages = useWorldChatStore((s) => s.messages)
   const lastSpokenMsgRef = useRef(null)
   useEffect(() => {
     if (!worldMessages.length) return
     const last = worldMessages[worldMessages.length - 1]
     if (!last || last.id === lastSpokenMsgRef.current) return
-    if (last.authorId !== playerId) return
-    if (last.whisperTo) return // don't TTS whispers
+    if (last.whisperTo || last.whisperFrom) return // don't TTS private whispers
     lastSpokenMsgRef.current = last.id
     if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
     const clean = last.text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    const isMascotActive = useVrCharacterStore.getState().activeChar === 'mascot'
+    const isOwnMessage = last.authorId === playerId
+    const isMascotActive = isOwnMessage && useVrCharacterStore.getState().activeChar === 'mascot'
     utt.lang = 'es-ES'
     utt.rate = isMascotActive ? 1.15 : 1.0
     utt.pitch = isMascotActive ? 1.45 : 1.0
@@ -3216,6 +3369,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             />
             {/* Parked companion mesh when follow mode is off */}
             <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
+            <FallRescueTracker playerPositionRef={playerPositionRef} onFall={handleFallRescue} />
+            {rescuePos && <FallRescueCat position={rescuePos} />}
           </Suspense>
           </Physics>
         </Canvas>}
@@ -3304,15 +3459,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!isPrivateWorld && (
           <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} playerRotationRef={playerRotationRef} />
         )}
-        <WorldChat
-          open={chatOpen}
-          onClose={() => setChatOpen(false)}
-          onOpen={() => setChatOpen(true)}
-          authorName={chatAuthor}
-          playerId={playerId}
-          onSend={sendChatMessage}
-          prefill={chatPrefill}
-        />
+        {hudVisible && (
+          <WorldChat
+            open={chatOpen}
+            onClose={() => setChatOpen(false)}
+            onOpen={() => setChatOpen(true)}
+            authorName={chatAuthor}
+            playerId={playerId}
+            onSend={sendChatMessage}
+            prefill={chatPrefill}
+          />
+        )}
 
         {!isPrivateWorld && selectedPlayer && (
           <PlayerMenu
@@ -3337,7 +3494,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         <CameraSettingsMenu open={cameraMenuOpen} onClose={() => setCameraMenuOpen(false)} />
 
         {/* Voice chat panel — admin by default, or explicitly granted (see DevToolsPanel "🎙️ Voz") */}
-        {canUseVoice && (
+        {canUseVoice && hudVisible && (
           <VoicePanel playerId={playerId} name={chatAuthor} channelRef={channelRef} />
         )}
 
@@ -3389,7 +3546,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenMap={() => setMapOpen(true)}
           onOpenDailyRewards={() => setDailyRewardsOpen(true)}
           onOpenBags={() => setBagsOpen(true)}
-          onOpenCharacterPanel={() => setCharacterPanelOpen(true)}
+          onOpenFriends={() => setFriendsOpen(true)}
+          onOpenArenaConfirm={() => setArenaConfirmOpen(true)}
+          onOpenCharacterPanel={() => openPanel('avatar-personaje')}
           isPrivateWorld={isPrivateWorld}
         />
 
@@ -3403,9 +3562,24 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <BagsPanel onClose={() => setBagsOpen(false)} />
         )}
 
-        {/* Avatar character pane — opened by clicking the HUD portrait card */}
-        {characterPanelOpen && (
-          <CharacterPanel onClose={() => setCharacterPanelOpen(false)} />
+        {/* Friends list — popup instead of navigating away from the VR world */}
+        {friendsOpen && (
+          <FriendsPopup
+            friends={friends}
+            players={players}
+            onWhisper={(name) => {
+              setChatPrefill({ text: `/w ${name} `, key: Date.now() })
+              setChatOpen(true)
+              setFriendsOpen(false)
+            }}
+            onRemoveFriend={removeFriend}
+            onClose={() => setFriendsOpen(false)}
+          />
+        )}
+
+        {/* Arena — not built into the VR world yet, just a heads-up for now */}
+        {arenaConfirmOpen && (
+          <ArenaConfirmPopup onClose={() => setArenaConfirmOpen(false)} />
         )}
 
         {/* Tablón de anuncios al iniciar la aventura — al cerrarlo, abre la recompensa diaria */}
@@ -3463,8 +3637,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           />
         )}
 
-        <VirtualJoystick keysRef={keysRef} hidden={chatOpen} />
-        <MobileButtons keysRef={keysRef} hidden={chatOpen} onOpenChat={() => setChatOpen(true)} />
+        <VirtualJoystick keysRef={keysRef} hidden={chatOpen || !hudVisible} />
+        <MobileButtons keysRef={keysRef} hidden={chatOpen || !hudVisible} onOpenChat={() => setChatOpen(true)} />
 
         {kicked && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4 text-center">
@@ -3487,7 +3661,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         )}
       </div>
 
-      <MascotCompanion hideViewport />
+      {hudVisible && <MascotCompanion hideViewport />}
 
       {/* VR mascot onboarding — shown when user hasn't chosen their companion yet */}
       {!oliverClass && <VrMascotOnboarding />}
