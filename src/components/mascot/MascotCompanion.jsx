@@ -6,7 +6,9 @@ import MascotSelector from './MascotSelector'
 import SkinSelector from './SkinSelector'
 import AvatarApparelGrid from './AvatarApparelGrid'
 import CharacterTree from '../skills/CharacterTree'
-import CharacterPaperdoll from '../skills/CharacterPaperdoll'
+import CharacterPaperdoll, { CharacterStats } from '../skills/CharacterPaperdoll'
+import { EquipmentBagGrid } from '../vr/BagsPanel'
+import Inventory from '../inventory/Inventory'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -19,13 +21,12 @@ import { getMascotById } from '../../data/mascotRegistry'
 // ─── N48 ─────────────────────────────────────────────────────────────────────
 // Two top-level tabs — Avatar (your player character) and Mascota (Oliver) —
 // each with the same WoW-style character-pane sub-tabs: Personaje (3D model
-// + equipped gear, via CharacterPaperdoll), Árbol (skills), Apariencia,
-// Libros. Mascota gets an extra Chat sub-tab. Equipping items themselves
-// happens in the separate small floating Bolsas popup (VrHud's 🎒 button,
-// see BagsPanel.jsx) — not a sub-tab here, so it never blocks this menu or
-// the world behind it; both write to the same useEquipmentStore, so gear
-// equipped from Bolsas shows up immediately in Personaje. `panel` in the
-// store is `"${entityId}-${subTabId}"`.
+// + equipped gear), Árbol (skills), Bolsas (equip grid), Apariencia, Libros,
+// Notas, Estadísticas. Mascota gets an extra Chat sub-tab. In VR (`vrMode`
+// prop) the Avatar/Mascota switcher is hidden and the entity is locked to
+// whichever button opened the menu (paw button = mascota, portrait = avatar)
+// — see `lockedEntity` in useMascotCompanionStore. `panel` in the store is
+// `"${entityId}-${subTabId}"`.
 const ENTITY_TABS = [
   { id: 'avatar', label: 'Avatar', icon: '⚔️', owner: 'player' },
   { id: 'mascota', label: 'Mascota', icon: '🐾', owner: 'oliver' },
@@ -34,8 +35,11 @@ const ENTITY_TABS = [
 const SUB_TABS_AVATAR = [
   { id: 'personaje', label: 'Personaje', icon: '🧑' },
   { id: 'arbol', label: 'Árbol', icon: '🌳' },
+  { id: 'bolsas', label: 'Bolsas', icon: '🎒' },
   { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
   { id: 'libros', label: 'Libros', icon: '📚' },
+  { id: 'notas', label: 'Notas', icon: '📝' },
+  { id: 'estadisticas', label: 'Estadísticas', icon: '📊' },
 ]
 const SUB_TABS_MASCOTA = [...SUB_TABS_AVATAR, { id: 'chat', label: 'Chat', icon: '💬' }]
 
@@ -48,16 +52,19 @@ const SUB_TABS_SIMPLE = [
   { id: 'libros', label: 'Libros', icon: '📚' },
 ]
 
-export default function MascotCompanion({ courseId, module, hideViewport = false }) {
+export default function MascotCompanion({ courseId, module, hideViewport = false, vrMode = false }) {
   const open = useMascotCompanionStore((s) => s.open)
   const setOpen = useMascotCompanionStore((s) => s.setOpen)
-  const toggleOpen = useMascotCompanionStore((s) => s.toggleOpen)
+  const openLocked = useMascotCompanionStore((s) => s.openLocked)
   const panel = useMascotCompanionStore((s) => s.panel)
   const setPanel = useMascotCompanionStore((s) => s.setPanel)
+  const lockedEntity = useMascotCompanionStore((s) => s.lockedEntity)
 
   const simpleMode = SIMPLE_MODE_COURSES.has(courseId)
   const [entityId, rawSubTab] = panel.split('-')
-  const entity = simpleMode ? ENTITY_TABS[1] : (ENTITY_TABS.find((e) => e.id === entityId) ?? ENTITY_TABS[0])
+  const entity = simpleMode
+    ? ENTITY_TABS[1]
+    : (ENTITY_TABS.find((e) => e.id === (lockedEntity ?? entityId)) ?? ENTITY_TABS[0])
   const isAvatarEntity = entity.id === 'avatar'
   const subTabs = simpleMode ? SUB_TABS_SIMPLE : (isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA)
   const subTab = subTabs.some((t) => t.id === rawSubTab) ? rawSubTab : subTabs[0].id
@@ -67,6 +74,17 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
     setPanel(`${id}-${fallback}`)
   }
   const setSubTab = (id) => setPanel(`${entity.id}-${id}`)
+  // In VR, the paw button always opens mascota-only and the portrait click
+  // (see VrHud/VRPage) calls openLocked('avatar-personaje', 'avatar') —
+  // toggling the SAME open button here just closes it again.
+  const handlePawClick = () => {
+    if (vrMode) {
+      if (open) setOpen(false)
+      else openLocked('mascota-personaje', 'mascota')
+    } else {
+      setOpen(!open)
+    }
+  }
 
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
@@ -109,8 +127,8 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             )}
           </div>
 
-          {/* Entity tabs: Avatar | Mascota */}
-          {!simpleMode && (
+          {/* Entity tabs: Avatar | Mascota — hidden when locked to one entity (VR) */}
+          {!simpleMode && !lockedEntity && (
             <div className="flex gap-1 px-3 pt-2.5">
               {ENTITY_TABS.map((t) => {
                 const isActive = t.id === entity.id
@@ -180,6 +198,17 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
               <MissionsTab courseId={courseId} module={module} onGoToChat={() => setSubTab('chat')} />
             )}
 
+            {subTab === 'bolsas' && (
+              <div className="flex flex-col gap-2">
+                <EquipmentBagGrid owner={entity.owner} />
+                <p className="text-center text-[10px] text-text-muted">Toca un objeto para equiparlo o quitarlo.</p>
+              </div>
+            )}
+
+            {subTab === 'notas' && <Inventory className="h-full" />}
+
+            {subTab === 'estadisticas' && <CharacterStats owner={entity.owner} />}
+
             {subTab === 'libros' && <BooksPanel />}
 
             {subTab === 'chat' && <ChatTab courseId={courseId} module={module} className="h-full" />}
@@ -188,7 +217,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
       )}
 
       <button
-        onClick={toggleOpen}
+        onClick={handlePawClick}
         className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
         aria-label="Abrir mascota"
       >

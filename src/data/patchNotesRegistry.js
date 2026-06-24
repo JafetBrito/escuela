@@ -4,9 +4,28 @@
 //  2. Update LATEST_VERSION to match
 //  The PatchNotesModal shows once per version (gated by localStorage).
 
-export const LATEST_VERSION = '0.8.0'
+export const LATEST_VERSION = '0.9.0'
 
 export const PATCH_NOTES = [
+  {
+    version: '0.9.0',
+    date: '2026-06-24',
+    title: 'HUD Renovada · Menús de Mascota y Avatar Separados · Mundo Sincronizado',
+    emoji: '⚙️',
+    tag: 'ACTUALIZACIÓN',
+    tagColor: '#3b82f6',
+    changes: [
+      { icon: '⚙️', text: 'Nuevo botón de Ajustes en la HUD del mundo VR: cámara y controles, interfaz, y una referencia de atajos de teclado, todo en un solo lugar bien organizado.' },
+      { icon: '👁️', text: 'El botón de ocultar interfaz ahora sí esconde TODO: chat, voz, mascota flotante y controles táctiles, no solo el HUD principal.' },
+      { icon: '🐱', text: 'Sistema de rescate: si caes al vacío en una zona incompleta del mapa, Oliver aparece a rescatarte y te regresa a la Gran Aula, anunciándolo a todo el servidor.' },
+      { icon: '🔊', text: 'El chat ahora se lee en voz alta para todos los jugadores, no solo para quien escribe.' },
+      { icon: '👥', text: 'Amigos y Arena ahora abren ventanas dentro del mundo VR en vez de sacarte a otra página.' },
+      { icon: '🎒', text: 'Las bolsas ya no tapan toda la pantalla, y se corrigió un error que bloqueaba objetos iniciales si aún no elegías clase.' },
+      { icon: '🧑‍🎨', text: 'El menú de tu Mascota y el de tu Avatar ahora están completamente separados — cada uno con su propio modelo 3D, equipo, árbol, bolsas, apariencia, libros, notas y estadísticas.' },
+      { icon: '🌦️', text: 'Los cambios de hora y clima que haga un administrador ya se ven en tiempo real para todos los jugadores conectados, no solo en su propia pantalla.' },
+      { icon: '🚶', text: 'Cambiar entre Avatar y Mascota ya no los encoge ni agranda — y el Avatar se ve un poco más grande que antes.' },
+    ],
+  },
   {
     version: '0.8.0',
     date: '2026-06-23',

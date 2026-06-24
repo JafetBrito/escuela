@@ -14,6 +14,8 @@ import {
   SPRINT_MULTIPLIER,
   PLAYER_SCALE,
   PLAYER_HEIGHT,
+  AVATAR_RELATIVE_SCALE,
+  MASCOT_RELATIVE_SCALE,
   MODEL_HALF_HEIGHT,
   COLLISION_RADIUS,
   WALK_CYCLE_SPEED,
@@ -372,25 +374,29 @@ export function Player({
       </RigidBody>
       {/* Visual group — camera target + mesh + chat bubbles */}
       <group ref={group}>
+        {/* Each character keeps its OWN relative scale (AVATAR_RELATIVE_SCALE /
+            MASCOT_RELATIVE_SCALE) whether it's the active model or the
+            companion trailing alongside — switching which one you're playing
+            as never makes either model shrink or grow. */}
         <group ref={meshGroup} scale={PLAYER_SCALE}>
           {activeChar === 'avatar' ? (
             <>
-              {/* Avatar is the main character — full size */}
-              <PlayerAvatarBody avatarId={avatarId} />
+              <group scale={AVATAR_RELATIVE_SCALE}>
+                <PlayerAvatarBody avatarId={avatarId} />
+              </group>
               {companionFollows && (
-                <group position={[1.4, 0, 0]} scale={0.45}>
+                <group position={[1.4, 0, 0]} scale={MASCOT_RELATIVE_SCALE}>
                   <MascotMesh mascot={mascot} skin={skin} />
                 </group>
               )}
             </>
           ) : (
             <>
-              {/* Mascot is the main character — scaled up, centered */}
-              <group scale={1.1}>
+              <group scale={MASCOT_RELATIVE_SCALE}>
                 <MascotMesh mascot={mascot} skin={skin} />
               </group>
               {companionFollows && (
-                <group position={[1.6, 0, 0]} scale={0.8}>
+                <group position={[1.6, 0, 0]} scale={AVATAR_RELATIVE_SCALE}>
                   <PlayerAvatarBody avatarId={avatarId} />
                 </group>
               )}

@@ -24,6 +24,7 @@ import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useDayNightStore } from '../../stores/useDayNightStore'
 import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
 import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
@@ -52,6 +53,8 @@ import DayNightCycle from './DayNightCycle'
 import {
   PLAYER_SCALE,
   PLAYER_HEIGHT,
+  AVATAR_RELATIVE_SCALE,
+  MASCOT_RELATIVE_SCALE,
   MODEL_HALF_HEIGHT,
   TURN_SPEED,
   CHAT_BUBBLE_DURATION,
@@ -345,12 +348,10 @@ function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
         playerRotationRef={playerRotationRef}
         authorName={authorName}
         playerId={playerId}
-        // A few meters into the plaza (Oliver/Einstein/Jafet all stand within
-        // ~11 units of here) instead of the bare world origin — combined with
-        // the isFloor fix above, the origin itself was likely fine height-wise,
-        // but this keeps the player from spawning in a dead patch with nothing
-        // around them.
-        spawnAt={[0, 0, 5]}
+        // Right at the Gran Aula's front edge (see CAMPUS_ACADEMIC: centered
+        // at [0,0,-62], depth 18 → edge at z=-53) instead of the open plaza,
+        // per the explicit request to spawn there.
+        spawnAt={[0, 0, -53]}
       />
     </>
   )
@@ -1381,8 +1382,10 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
   return (
     <group ref={group}>
       <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
-        <PlayerAvatarBody avatarId={player?.avatarId || 'hombre'} />
-        <group position={[1.2, 0, 0]} scale={0.45}>
+        <group scale={AVATAR_RELATIVE_SCALE}>
+          <PlayerAvatarBody avatarId={player?.avatarId || 'hombre'} />
+        </group>
+        <group position={[1.2, 0, 0]} scale={MASCOT_RELATIVE_SCALE}>
           <MascotMesh mascot={mascot} skin={skin} />
         </group>
       </group>
@@ -3056,6 +3059,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
   const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || graffitiMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
+  // Admin's hour/season/weather (DevToolsPanel) is mirrored to every
+  // connected player via VR presence — see useVrMultiplayer's worldState
+  // track payload. Selected here as plain primitives (not one object) so
+  // the hook's re-track effect can depend on them by value.
+  const isAdminForWorldState = useAuthStore((s) => s.isAdmin())
+  const dnMode = useDayNightStore((s) => s.mode)
+  const dnManualBaseHour = useDayNightStore((s) => s.manualBaseHour)
+  const dnManualBaseAtMs = useDayNightStore((s) => s.manualBaseAtMs)
+  const dnSeason = useDayNightStore((s) => s.season)
+  const dnWeather = useDayNightStore((s) => s.weather)
   const { remoteTransformsRef, remoteActionsRef, sendChatMessage, sendAction, kicked, channelRef } = useVrMultiplayer({
     playerId,
     name: chatAuthor,
@@ -3066,6 +3079,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     positionRef: playerPositionRef,
     rotationRef: playerRotationRef,
     enabled: !isPrivateWorld,
+    isAdmin: isAdminForWorldState,
+    dnMode,
+    dnManualBaseHour,
+    dnManualBaseAtMs,
+    dnSeason,
+    dnWeather,
   })
   const [vrReady, setVrReady] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
@@ -3134,7 +3153,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
   const claimReward = useGlobalMissionsStore((s) => s.claimReward)
   const missionState = useMissionState()
-  const openPanel = useMascotCompanionStore((s) => s.openPanel)
+  const openLocked = useMascotCompanionStore((s) => s.openLocked)
   const flashlightOn = useItemEffectsStore((s) => s.activeItems['linterna'])
   const flashlightPurchased = useShopStore((s) => s.purchased.includes('linterna'))
 
@@ -3176,6 +3195,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         ? `Tu Room privada, ${chatAuthor}. Aquí solo apareces tú. Acércate al portal 🌀 y pulsa E para volver al Campus.`
         : `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`
     useWorldChatStore.getState().addSystemMessage(motd)
+    // The instructions above are local-only (for the joining player). Other
+    // already-connected players get a short generic announcement instead —
+    // otherwise everyone would hear/see this player's own "how to" text.
+    sendChatMessage('Sistema', 'Un usuario se ha unido al mapa')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -3232,8 +3255,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
-    onOpenCharacter: () => openPanel('mascota-chat'),
-    onOpenInventory: () => openPanel('avatar-personaje'),
+    onOpenCharacter: () => openLocked('mascota-chat', 'mascota'),
+    onOpenInventory: () => openLocked('avatar-personaje', 'avatar'),
     onToggleChat: (value) => setChatOpen((open) => (typeof value === 'boolean' ? value : !open)),
     onAttack: () => {
       attackFiredAtRef.current = Date.now()
@@ -3548,7 +3571,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenBags={() => setBagsOpen(true)}
           onOpenFriends={() => setFriendsOpen(true)}
           onOpenArenaConfirm={() => setArenaConfirmOpen(true)}
-          onOpenCharacterPanel={() => openPanel('avatar-personaje')}
+          onOpenCharacterPanel={() => openLocked('avatar-personaje', 'avatar')}
           isPrivateWorld={isPrivateWorld}
         />
 
@@ -3661,7 +3684,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         )}
       </div>
 
-      {hudVisible && <MascotCompanion hideViewport />}
+      {hudVisible && <MascotCompanion hideViewport vrMode />}
 
       {/* VR mascot onboarding — shown when user hasn't chosen their companion yet */}
       {!oliverClass && <VrMascotOnboarding />}

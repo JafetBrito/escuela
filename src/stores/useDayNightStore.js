@@ -28,4 +28,15 @@ export const useDayNightStore = create((set, get) => ({
   useRealTime: () => set({ mode: 'real' }),
   setSeason: (season) => set({ season }),
   setWeather: (weather) => set({ weather }),
+
+  // Applied by useVrMultiplayer when it sees an admin's tracked world-state
+  // in VR presence — keeps every connected player's sky/weather in sync with
+  // whatever the admin set, instead of each client only seeing their own.
+  applyRemoteState: (state) => set({
+    mode: state.mode === 'manual' ? 'manual' : 'real',
+    manualBaseHour: state.manualBaseHour,
+    manualBaseAtMs: state.manualBaseAtMs,
+    season: state.season,
+    weather: state.weather,
+  }),
 }))

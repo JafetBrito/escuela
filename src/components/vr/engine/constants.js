@@ -22,6 +22,12 @@ export const SPRINT_MULTIPLIER = 1.8
 // dwarf the structure it's walking around.
 export const PLAYER_SCALE = 0.2
 export const PLAYER_HEIGHT = PLAYER_SCALE * 2
+// Relative scale of each character's OWN model — applied the same whether
+// that character is the one you're controlling or the companion trailing
+// behind, so switching between avatar/mascot never makes either one visibly
+// shrink or grow. Avatar is intentionally a bit bigger than the mascot.
+export const AVATAR_RELATIVE_SCALE = 1.25
+export const MASCOT_RELATIVE_SCALE = 1
 // MascotMesh centers every model on its own bounding box and normalizes it
 // to ~2 units tall, so before any outer scale is applied its feet sit at
 // y = -1 (half of that 2-unit height) instead of y = 0. Every mascot/NPC

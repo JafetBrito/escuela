@@ -62,14 +62,15 @@ function BagItem({ item, isEquipped }) {
   )
 }
 
-// WoW-style character pane: equip slots flanking a 3D viewport, a stats
-// panel, and a drag-to-equip bag strip — same for Avatar ('player') and
-// Mascota ('oliver'), just with each owner's own (smaller) slot set.
+// WoW-style character pane: equip slots flanking a 3D viewport and a
+// drag-to-equip bag strip — same for Avatar ('player') and Mascota
+// ('oliver'), just with each owner's own (smaller) slot set. Always shows
+// the model + slots even with no class chosen yet (starter gear has no
+// class requirement) — stats live in the separate CharacterStats below so
+// this pane doesn't get cluttered.
 export default function CharacterPaperdoll({ owner }) {
   const isPlayer = owner === 'player'
   const classId = useGameStore((s) => s[owner].class)
-  const hp = useGameStore((s) => s[owner].hp)
-  const energy = useGameStore((s) => (isPlayer ? s.player.energy : null))
   const xp = useLevelStore((s) => s.xp)
   const level = levelForXp(xp)
   const equipped = useEquipmentStore((s) => s.equipped[owner])
@@ -79,17 +80,7 @@ export default function CharacterPaperdoll({ owner }) {
   const slots = EQUIPMENT_SLOTS[owner].filter((s) => s !== 'weapon')
   const left = slots.filter((_, i) => i % 2 === 0)
   const right = slots.filter((_, i) => i % 2 === 1)
-  const bagItems = classId ? getAvailableEquipment(owner, classId, level) : []
-  const color = clsDef?.color ?? GOLD
-
-  if (!classId) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/40 p-10 text-center">
-        <span className="text-5xl">{isPlayer ? '⚔️' : '🐾'}</span>
-        <p className="font-bold text-text">{isPlayer ? 'Sin clase de personaje' : 'Sin clase de Oliver'}</p>
-      </div>
-    )
-  }
+  const bagItems = getAvailableEquipment(owner, classId, level)
 
   return (
     <div
@@ -105,9 +96,9 @@ export default function CharacterPaperdoll({ owner }) {
         className="flex items-center gap-3 px-4 py-2.5"
         style={{ background: 'linear-gradient(90deg, rgba(200,162,74,0.18), transparent)', borderBottom: `1px solid ${GOLD}33` }}
       >
-        <span className="text-2xl">{clsDef.icon}</span>
+        <span className="text-2xl">{clsDef?.icon ?? (isPlayer ? '⚔️' : '🐾')}</span>
         <div>
-          <p className="text-sm font-black text-white">{clsDef.name}</p>
+          <p className="text-sm font-black text-white">{clsDef?.name ?? (isPlayer ? 'Sin clase' : 'Sin clase de Oliver')}</p>
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: GOLD }}>Nivel {level}</p>
         </div>
       </div>
@@ -136,33 +127,6 @@ export default function CharacterPaperdoll({ owner }) {
         <SlotBox owner={owner} slot="weapon" classId={classId} level={level} equippedId={equipped.weapon} equip={equip} />
       </div>
 
-      {/* Stats panel */}
-      <div className="grid grid-cols-2 gap-2 border-t px-4 py-3" style={{ borderColor: `${GOLD}22` }}>
-        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(0,0,0,0.3)' }}>
-          <span className="text-xs">❤️</span>
-          <span className="text-[10px] font-bold text-white/70">{hp.current}/{hp.max}</span>
-        </div>
-        {energy && (
-          <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(0,0,0,0.3)' }}>
-            <span className="text-xs">⚡</span>
-            <span className="text-[10px] font-bold text-white/70">{energy.current}/{energy.max}</span>
-          </div>
-        )}
-        {Object.entries(clsDef.stats).map(([stat, val]) => (
-          <div key={stat} className="col-span-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1" style={{ background: 'rgba(0,0,0,0.2)' }}>
-            <span className="text-[9px] font-bold uppercase tracking-wide text-white/40">{stat}</span>
-            <StatBar5 val={val} color={color} />
-          </div>
-        ))}
-      </div>
-
-      {/* Every item already carries power/speed stats (see equipmentRegistry.js)
-          — they just don't move the numbers above yet. Surfaced here so it's
-          documented as a planned feature, not silently missing. */}
-      <p className="px-4 pb-2 text-[9px] italic text-white/25">
-        🔧 Próximamente: el poder y la velocidad de tu equipo modificarán estas estadísticas.
-      </p>
-
       {/* Bag strip — drag onto a slot above to equip */}
       <div className="border-t px-4 py-3" style={{ borderColor: `${GOLD}22`, background: 'rgba(0,0,0,0.2)' }}>
         <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">🎒 Bolsas — arrastra para equipar</p>
@@ -176,6 +140,60 @@ export default function CharacterPaperdoll({ owner }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// Stats tab — split out of the paperdoll above so that pane stays focused on
+// gear. Shows HP/EN (always available) and class stat bars (once a class is
+// chosen), plus the próximamente note about items affecting these numbers.
+export function CharacterStats({ owner }) {
+  const isPlayer = owner === 'player'
+  const classId = useGameStore((s) => s[owner].class)
+  const hp = useGameStore((s) => s[owner].hp)
+  const energy = useGameStore((s) => (isPlayer ? s.player.energy : null))
+  const clsDef = isPlayer ? PLAYER_CLASSES[classId] : OLIVER_CLASSES[classId]
+  const color = clsDef?.color ?? GOLD
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl"
+      style={{
+        background: 'linear-gradient(160deg, #1a1610 0%, #2a2418 100%)',
+        border: `1px solid ${GOLD}55`,
+      }}
+    >
+      <div className="grid grid-cols-2 gap-2 p-4">
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(0,0,0,0.3)' }}>
+          <span className="text-xs">❤️</span>
+          <span className="text-[10px] font-bold text-white/70">{hp.current}/{hp.max}</span>
+        </div>
+        {energy && (
+          <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(0,0,0,0.3)' }}>
+            <span className="text-xs">⚡</span>
+            <span className="text-[10px] font-bold text-white/70">{energy.current}/{energy.max}</span>
+          </div>
+        )}
+        {clsDef
+          ? Object.entries(clsDef.stats).map(([stat, val]) => (
+            <div key={stat} className="col-span-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1" style={{ background: 'rgba(0,0,0,0.2)' }}>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-white/40">{stat}</span>
+              <StatBar5 val={val} color={color} />
+            </div>
+          ))
+          : (
+            <p className="col-span-2 text-[10px] text-white/30">
+              Elige una clase en el Árbol del Mundo para ver tus estadísticas de combate.
+            </p>
+          )}
+      </div>
+
+      {/* Every item already carries power/speed stats (see equipmentRegistry.js)
+          — they just don't move the numbers above yet. Surfaced here so it's
+          documented as a planned feature, not silently missing. */}
+      <p className="px-4 pb-3 text-[9px] italic text-white/25">
+        🔧 Próximamente: el poder y la velocidad de tu equipo modificarán estas estadísticas.
+      </p>
     </div>
   )
 }

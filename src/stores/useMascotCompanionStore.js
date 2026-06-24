@@ -7,8 +7,12 @@ import { create } from 'zustand'
 export const useMascotCompanionStore = create((set) => ({
   open: false,
   panel: 'avatar-personaje',
+  // Set by the VR world's two separate entry points (mascot paw button vs.
+  // "tu clase" portrait) so the menu shows ONLY that entity with no way to
+  // switch to the other — outside VR (the learning app's companion) this
+  // stays null and the Avatar/Mascota switcher behaves as before.
+  lockedEntity: null,
   setOpen: (open) => set({ open }),
-  toggleOpen: () => set((s) => ({ open: !s.open })),
   setPanel: (panel) => set({ panel }),
-  openPanel: (panel) => set({ open: true, panel }),
+  openLocked: (panel, entityId) => set({ open: true, panel, lockedEntity: entityId }),
 }))

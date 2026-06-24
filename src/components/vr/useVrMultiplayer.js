@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../../services/supabase/client'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
+import { useDayNightStore } from '../../stores/useDayNightStore'
 
 const VR_CHANNEL = 'vr:campus'
 const POSITION_INTERVAL = 120
@@ -24,7 +25,27 @@ export function isVrRealtimeAvailable() {
 // Returns `{ remoteTransformsRef, sendChatMessage }`. When Realtime isn't
 // configured, this is a no-op: the store stays disconnected/empty and
 // sendChatMessage does nothing, so the world plays fine single-player.
-export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, accountId, positionRef, rotationRef, enabled = true }) {
+export function useVrMultiplayer({
+  playerId,
+  name,
+  mascotId,
+  skinId,
+  avatarId,
+  accountId,
+  positionRef,
+  rotationRef,
+  enabled = true,
+  isAdmin = false,
+  // Passed as separate primitives (not one worldState object) so the
+  // re-track effect below can depend on them by value instead of by
+  // reference — an inline object literal from the caller would otherwise
+  // change identity every render and re-track on every frame.
+  dnMode = null,
+  dnManualBaseHour = null,
+  dnManualBaseAtMs = null,
+  dnSeason = null,
+  dnWeather = null,
+}) {
   const remoteTransformsRef = useRef(new Map())
   const remoteActionsRef = useRef(new Map())
   const channelRef = useRef(null)
@@ -62,12 +83,20 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, a
       }
 
       const players = {}
+      // ponytail: first presence carrying a worldState wins — fine for one
+      // admin online at a time, which is the only case that matters today.
+      let remoteWorldState = null
       for (const [id, presences] of Object.entries(state)) {
-        if (id === playerId) continue
         const meta = presences[0]
+        if (meta?.worldState && !remoteWorldState) remoteWorldState = meta.worldState
+        if (id === playerId) continue
         if (meta) players[id] = { name: meta.name, mascotId: meta.mascotId, skinId: meta.skinId, avatarId: meta.avatarId }
       }
       setPlayers(players)
+      // Mirrors whichever admin is currently online onto every connected
+      // player's sky/weather — including new joiners, since presence sync
+      // always includes everyone already tracked, not just live changes.
+      if (remoteWorldState) useDayNightStore.getState().applyRemoteState(remoteWorldState)
 
       // Drop live transforms for anyone who's no longer present.
       for (const id of remoteTransformsRef.current.keys()) {
@@ -102,7 +131,12 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, a
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnected(true)
-        channel.track({ name, mascotId, skinId, avatarId, accountId, joinedAt: joinedAtRef.current })
+        channel.track({
+          name, mascotId, skinId, avatarId, accountId, joinedAt: joinedAtRef.current,
+          worldState: isAdmin
+            ? { mode: dnMode, manualBaseHour: dnManualBaseHour, manualBaseAtMs: dnManualBaseAtMs, season: dnSeason, weather: dnWeather }
+            : null,
+        })
       }
     })
 
@@ -119,12 +153,19 @@ export function useVrMultiplayer({ playerId, name, mascotId, skinId, avatarId, a
   }, [playerId, kicked, enabled])
 
   // Re-broadcast presence whenever the player's displayed name/mascot/skin
-  // changes (e.g. they swap mascots in the Aspecto panel mid-session).
+  // changes (e.g. they swap mascots in the Aspecto panel mid-session), or
+  // — for the admin — whenever they change the world's hour/season/weather,
+  // so every connected player's sky updates live instead of just the admin's.
   useEffect(() => {
     const channel = channelRef.current
     if (!channel) return
-    channel.track({ name, mascotId, skinId, avatarId, accountId, joinedAt: joinedAtRef.current })
-  }, [name, mascotId, skinId, avatarId, accountId])
+    channel.track({
+      name, mascotId, skinId, avatarId, accountId, joinedAt: joinedAtRef.current,
+      worldState: isAdmin
+        ? { mode: dnMode, manualBaseHour: dnManualBaseHour, manualBaseAtMs: dnManualBaseAtMs, season: dnSeason, weather: dnWeather }
+        : null,
+    })
+  }, [name, mascotId, skinId, avatarId, accountId, isAdmin, dnMode, dnManualBaseHour, dnManualBaseAtMs, dnSeason, dnWeather])
 
   // Broadcast this player's position/rotation at a fixed interval. Reads
   // straight from the refs (mutated every frame by <Player>) so this effect
