@@ -5,7 +5,16 @@ import { useState } from 'react'
 // illustrating a concept like "alucinaciones".
 export default function ModuleSlideshow({ images = [], className = '', aspectClassName = 'aspect-video' }) {
   const [index, setIndex] = useState(0)
-  if (!images.length) return null
+
+  if (!images.length) {
+    return (
+      <div className={`flex aspect-video flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-surface text-center ${className}`}>
+        <span className="text-3xl">🖼️</span>
+        <p className="text-sm font-semibold text-text-muted">Próximamente: las imágenes de esta clase</p>
+      </div>
+    )
+  }
+
   const slide = images[index]
   const src = typeof slide === 'string' ? slide : slide.src
   const caption = typeof slide === 'string' ? null : slide.caption

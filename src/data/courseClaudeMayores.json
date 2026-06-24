@@ -23,7 +23,8 @@
       "resources": [
         { "label": "Claude (sitio oficial)", "url": "https://claude.ai", "type": "link" },
         { "label": "Anthropic — la empresa detrás de Claude", "url": "https://www.anthropic.com/claude", "type": "link" },
-        { "label": "Documentación y guías oficiales de Claude", "url": "https://docs.claude.com", "type": "link" }
+        { "label": "Documentación y guías oficiales de Claude", "url": "https://docs.claude.com", "type": "link" },
+        { "label": "Tu Guía Amigable de Claude (PDF)", "url": "/claude/Tu_Guía_Amigable_de_Claude.pdf", "type": "link" }
       ]
     },
     {
@@ -35,7 +36,8 @@
       "noItem": true,
       "resources": [
         { "label": "Claude (sitio oficial)", "url": "https://claude.ai", "type": "link" },
-        { "label": "Guía oficial de cómo escribir mejores instrucciones (prompts)", "url": "https://docs.claude.com", "type": "link" }
+        { "label": "Guía oficial de cómo escribir mejores instrucciones (prompts)", "url": "https://docs.claude.com", "type": "link" },
+        { "label": "Guía visual del método RTC (imagen)", "url": "/claude/AI_Prompting_Method_Success_Guide.png", "type": "link" }
       ]
     },
     {
@@ -56,21 +58,18 @@
       "title": "Diapositivas: ejemplos de alucinaciones",
       "order": 4,
       "type": "slideshow",
-      "images": [
-        "/cursos/claude/alucinaciones-1.jpg",
-        "/cursos/claude/alucinaciones-2.jpg"
-      ],
+      "images": [],
       "description": "Un par de ejemplos visuales de alucinaciones de IA, para acompañar la clase anterior.",
       "noItem": true,
       "resources": []
     },
     {
       "id": 5,
-      "title": "Bonus track: el podcast",
+      "title": "Bonus track: Prompts perfectos con el método RTC",
       "order": 5,
       "type": "audio",
-      "audioSrc": "/cursos/claude/audio/bonus-track.mp3",
-      "description": "Un episodio extra en formato podcast para escuchar con calma, sin necesidad de ver pantalla.",
+      "audioSrc": "/claude/audio/Prompts_perfectos_con_el_Método_RTCF.m4a",
+      "description": "Un episodio extra en formato podcast sobre el método RTC, para escuchar con calma, sin necesidad de ver pantalla.",
       "noItem": true,
       "resources": []
     },
