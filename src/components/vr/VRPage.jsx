@@ -2112,23 +2112,43 @@ function TransportMenu({ onNavigate, onClose }) {
 
 // Top-down overview of the campus: the plaza, every NPC's zone, and a live
 // marker for the player's position. Opened/closed with the M key.
-function WorldMap({ open, onClose, playerPositionRef }) {
+// NPCs and points of interest that really exist (and are walkable-to) in the
+// live Campus right now — kept in sync by hand with World()'s render list
+// below. The old map used to draw an "Anfiteatro portal" pin and a wider
+// cast of quest-giver NPCs from vrNpcRegistry.js that were removed from the
+// live Campus a while back (see the ALL_NPC_POSITIONS comment above); this
+// list only shows what a player can actually walk up to and use.
+const MAP_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC]
+
+// WoW-style world map: bigger, labeled zones, real NPC pins, and the
+// location-based interactables (daily reward chest, hacker terminal, the
+// announcements screen) instead of the old bare terrain sketch.
+function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
   const playerMarkerRef = useRef(null)
+  const playerArrowRef = useRef(null)
+  const canClaimDaily = useDailyRewardsStore((s) => s.canClaim)
+  const dailyClaimable = open ? canClaimDaily() : false
 
   useEffect(() => {
     if (!open) return
     let raf
     const update = () => {
       const pos = playerPositionRef.current
-      if (pos && playerMarkerRef.current) {
-        playerMarkerRef.current.setAttribute('cx', pos.x.toFixed(2))
-        playerMarkerRef.current.setAttribute('cy', pos.z.toFixed(2))
+      if (pos) {
+        if (playerMarkerRef.current) {
+          playerMarkerRef.current.setAttribute('cx', pos.x.toFixed(2))
+          playerMarkerRef.current.setAttribute('cy', pos.z.toFixed(2))
+        }
+        if (playerArrowRef.current) {
+          const deg = ((playerRotationRef?.current ?? 0) * 180) / Math.PI
+          playerArrowRef.current.setAttribute('transform', `translate(${pos.x.toFixed(2)}, ${pos.z.toFixed(2)}) rotate(${deg.toFixed(1)})`)
+        }
       }
       raf = requestAnimationFrame(update)
     }
     raf = requestAnimationFrame(update)
     return () => cancelAnimationFrame(raf)
-  }, [open, playerPositionRef])
+  }, [open, playerPositionRef, playerRotationRef])
 
   if (!open) return null
 
@@ -2139,18 +2159,19 @@ function WorldMap({ open, onClose, playerPositionRef }) {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="relative rounded-2xl border border-border bg-surface p-4 shadow-2xl"
+        className="relative rounded-2xl bg-surface p-4 shadow-2xl"
+        style={{ border: '3px solid #c9a227', boxShadow: '0 0 50px rgba(201,162,39,0.3)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between gap-6">
-          <p className="text-sm font-bold text-text">🗺️ Mapa del campus</p>
+          <p className="text-sm font-bold" style={{ color: '#e8c477' }}>🗺️ Mapa del Campus — Oliver Academy</p>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar mapa">
             ✕
           </button>
         </div>
         <svg
           viewBox={`-${GROUND_RADIUS + 5} -${GROUND_RADIUS + 5} ${(GROUND_RADIUS + 5) * 2} ${(GROUND_RADIUS + 5) * 2}`}
-          className="h-[66vh] w-[66vh] max-w-[90vw]"
+          className="h-[85vh] w-[85vh] max-w-[92vw]"
         >
           {/* Summer grass ground */}
           <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#4a8a3a" />
@@ -2161,6 +2182,7 @@ function WorldMap({ open, onClose, playerPositionRef }) {
           <circle cx="90" cy="-60" r="30" fill="#2d6a22" opacity="0.6" />
           <circle cx="-90" cy="60" r="22" fill="#2d6a22" opacity="0.55" />
           <circle cx="90" cy="60" r="22" fill="#2d6a22" opacity="0.55" />
+          <text x="-90" y="-60" fontSize="2.4" textAnchor="middle" fill="#dff0d0" opacity="0.8">Bosque de Arces</text>
 
           {/* Ring roads (paved stone) */}
           <circle cx="0" cy="0" r="23.5" fill="none" stroke="#a8a090" strokeWidth="3" opacity="0.8" />
@@ -2188,6 +2210,7 @@ function WorldMap({ open, onClose, playerPositionRef }) {
               return `${Math.cos(a) * 9},${Math.sin(a) * 9}`
             }).join(' ')
           } fill="#d0c8b8" />
+          <text x="0" y="13" fontSize="2.3" textAnchor="middle" fill="#f0ece0" opacity="0.9">Plaza Central</text>
           {/* Maple leaf monument */}
           <circle cx="-7" cy="0" r="2.0" fill="#d52b1e" opacity="0.9" />
           <text x="-7" y="0.5" fontSize="3.5" textAnchor="middle" dominantBaseline="middle">🍁</text>
@@ -2199,6 +2222,7 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             const [bx, , bz] = pos
             return (
               <g key={name}>
+                <title>{name}</title>
                 <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill={color} opacity="0.82" rx="0.8" />
                 <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill="none" stroke="#d52b1e" strokeWidth="0.6" opacity="0.5" rx="0.8" />
                 <text x={bx} y={bz + 0.6} fontSize="4.5" textAnchor="middle" dominantBaseline="middle">{label}</text>
@@ -2212,34 +2236,49 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             const [bx, , bz] = pos
             return (
               <g key={i}>
+                <title>Dormitorios</title>
                 <rect x={bx - 3.5} y={bz - 6} width={7} height={12} fill={color} opacity="0.70" rx="0.4" />
                 <rect x={bx - 3.5} y={bz - 6} width={7} height={1.5} fill="#d52b1e" opacity="0.45" rx="0.3" />
               </g>
             )
           })}
+          <text x="60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">Dormitorios</text>
+          <text x="-60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">Dormitorios</text>
 
-          {/* Oliver + Einstein (idle NPCs near plaza) */}
-          {[
-            { npc: { id: 'oliver', position: [4, 0, 4], emoji: '🐾', color: '#fde68a' }, },
-            { npc: { id: 'einstein', position: [-4, 0, -4], emoji: '🧙', color: '#c7d2fe' }, },
-          ].map(({ npc }) => {
+          {/* NPCs that are really walkable-to in the live Campus */}
+          {MAP_NPCS.map((npc) => {
             const [x, , z] = npc.position
             return (
               <g key={npc.id}>
-                <circle cx={x} cy={z} r="1.4" fill={npc.color} opacity="0.9" stroke="#fff" strokeWidth="0.35" />
-                <text x={x} y={z - 2.4} fontSize="2.8" textAnchor="middle">{npc.emoji}</text>
+                <title>{npc.name}</title>
+                <circle cx={x} cy={z} r="1.6" fill={npc.bubbleColor ?? '#fde68a'} opacity="0.95" stroke="#1a1410" strokeWidth="0.4" />
+                <text x={x} y={z - 2.6} fontSize="3" textAnchor="middle">{npc.emoji}</text>
               </g>
             )
           })}
 
-          {/* Anfiteatro portal marker — south-east of plaza */}
+          {/* Daily reward chest — pulses with a quest-style "!" when claimable */}
           <g>
-            <rect x="14" y="-10" width="16" height="20" fill="#7c2d8a" opacity="0.8" rx="1" />
-            <rect x="14" y="-10" width="16" height="20" fill="none" stroke="#d946ef" strokeWidth="0.6" opacity="0.7" rx="1" />
-            <text x="22" y="2" fontSize="5" textAnchor="middle" dominantBaseline="middle">🎭</text>
-            <text x="22" y="14" fontSize="2.1" textAnchor="middle" fill="#f5d0fe" opacity="0.95">Anfiteatro</text>
-            <circle cx="5" cy="0" r="2.2" fill="#d946ef" opacity="0.85" />
-            <text x="5" y="-3.4" fontSize="3" textAnchor="middle">🌀</text>
+            <title>{dailyClaimable ? 'Recompensa diaria disponible' : 'Recompensa diaria (ya reclamada hoy)'}</title>
+            <circle cx={REWARD_BOX_POS.x} cy={REWARD_BOX_POS.z} r="1.6" fill="#fbbf24" opacity={dailyClaimable ? 0.95 : 0.5} stroke="#1a1410" strokeWidth="0.4" />
+            <text x={REWARD_BOX_POS.x} y={REWARD_BOX_POS.z + 0.5} fontSize="2.6" textAnchor="middle" dominantBaseline="middle">🎁</text>
+            {dailyClaimable && (
+              <text x={REWARD_BOX_POS.x} y={REWARD_BOX_POS.z - 3} fontSize="3.4" textAnchor="middle" fill="#facc15" className="animate-bounce" style={{ textShadow: '0 0 6px #f59e0b' }}>❗</text>
+            )}
+          </g>
+
+          {/* Hacker-class computer terminal */}
+          <g>
+            <title>Terminal (clase Hacker)</title>
+            <circle cx={COMPUTER_POS.x} cy={COMPUTER_POS.z} r="1.4" fill="#22c55e" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
+            <text x={COMPUTER_POS.x} y={COMPUTER_POS.z + 0.5} fontSize="2.4" textAnchor="middle" dominantBaseline="middle">💻</text>
+          </g>
+
+          {/* Announcements / video screen, north of the plaza */}
+          <g>
+            <title>Pantalla de anuncios</title>
+            <circle cx="0" cy="-28" r="1.4" fill="#a78bfa" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
+            <text x="0" y="-27.5" fontSize="2.4" textAnchor="middle" dominantBaseline="middle">📺</text>
           </g>
 
           {/* Perimeter stone fence */}
@@ -2254,11 +2293,19 @@ function WorldMap({ open, onClose, playerPositionRef }) {
             </g>
           ))}
 
-          {/* Player position marker (live) */}
+          {/* Player position marker (live) + facing arrow */}
           <circle ref={playerMarkerRef} cx="0" cy="0" r="2.2" fill="#e74c3c" stroke="#fff" strokeWidth="0.55" />
+          <path ref={playerArrowRef} d="M 0,-4.4 L 1.7,-1 L -1.7,-1 Z" fill="#e74c3c" stroke="#fff" strokeWidth="0.3" />
         </svg>
-        <p className="mt-2 text-center text-xs text-text-muted">
-          Pulsa <strong>M</strong> para cerrar el mapa
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[11px] text-text-muted">
+          <span>🐾 NPC</span>
+          <span>🎁 Recompensa diaria</span>
+          <span>💻 Terminal (Hacker)</span>
+          <span>📺 Anuncios</span>
+          <span className="text-[#e74c3c]">▲ Tú</span>
+        </div>
+        <p className="mt-1 text-center text-xs text-text-muted">
+          Pulsa <strong>M</strong> para cerrar el mapa · revisa <strong>📜 Misiones</strong> en el menú para el catálogo completo
         </p>
       </div>
     </div>
@@ -3137,7 +3184,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
 
         {!isPrivateWorld && (
-          <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} />
+          <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} playerRotationRef={playerRotationRef} />
         )}
         <WorldChat
           open={chatOpen}
