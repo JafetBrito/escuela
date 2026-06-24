@@ -40,6 +40,9 @@ import ModuleResources from './ModuleResources'
 import CommentsPanel from './CommentsPanel'
 import VideoPlayer from '../video/VideoPlayer'
 import VerticalVideo from '../video/VerticalVideo'
+import ModuleSlideshow from './ModuleSlideshow'
+import ModuleAudioPlayer from './ModuleAudioPlayer'
+import ModuleEmbed from './ModuleEmbed'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -175,6 +178,12 @@ export default function LearningInterface() {
             {/* 🎬 REPRODUCTOR / LAUNCHER */}
             {currentModule.type === 'vr' ? (
               <VrModuleLauncher module={currentModule} />
+            ) : currentModule.type === 'slideshow' ? (
+              <ModuleSlideshow images={currentModule.images} className="w-full" />
+            ) : currentModule.type === 'audio' ? (
+              <ModuleAudioPlayer src={currentModule.audioSrc} title={currentModule.title} className="w-full" />
+            ) : currentModule.type === 'embed' ? (
+              <ModuleEmbed html={currentModule.embedHtml} className="w-full" />
             ) : (
               <>
                 {/* Escritorio: Oculto en móviles (hidden), visible en pantallas medianas o mayores (md:block) */}

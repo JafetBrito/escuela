@@ -24,9 +24,11 @@ export default function ModuleResources({ module, className = '' }) {
         )}
       </ul>
 
-      <p className="mt-4 text-xs text-text-muted">
-        Tus MISIONES de esta clase están en el menú de tu mascota (🎯 Misiones).
-      </p>
+      {module.missions && (
+        <p className="mt-4 text-xs text-text-muted">
+          Tus MISIONES de esta clase están en el menú de tu mascota (🎯 Misiones).
+        </p>
+      )}
     </div>
   )
 }

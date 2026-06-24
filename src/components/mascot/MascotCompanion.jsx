@@ -1,6 +1,5 @@
 import MascotViewport from './MascotViewport'
 import ChatTab from './ChatTab'
-import MissionsTab from './MissionsTab'
 import BooksPanel from './BooksPanel'
 import MascotSelector from './MascotSelector'
 import SkinSelector from './SkinSelector'
@@ -44,11 +43,11 @@ const SUB_TABS_AVATAR = [
 const SUB_TABS_MASCOTA = [...SUB_TABS_AVATAR, { id: 'chat', label: 'Chat', icon: '💬' }]
 
 // Courses for an audience the RPG layer (avatar/clases/equipo/XP) would only
-// confuse — these get a "modo serio" with just Chat + Libros, no Avatar tab.
+// confuse — these get a "modo serio" with just Chat + Libros, no Avatar tab,
+// no missions (the class resources + video are enough).
 const SIMPLE_MODE_COURSES = new Set(['course-claude-mayores'])
 const SUB_TABS_SIMPLE = [
   { id: 'chat', label: 'Chat', icon: '💬' },
-  { id: 'misiones', label: 'Misiones', icon: '🎯' },
   { id: 'libros', label: 'Libros', icon: '📚' },
 ]
 

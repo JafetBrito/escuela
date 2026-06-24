@@ -37,7 +37,7 @@ export const CATEGORY_META = {
   Guias: { icon: '❤️', gradient: 'from-[#fb923c] to-[#facc15]', accent: '#ad1111' },
   Filosofía: { icon: '🏛️', gradient: 'from-[#eab308] to-[#f97316]', accent: '#eab308' },
   Pruebas: { icon: '🧪', gradient: 'from-[#2dd4bf] to-[#60a5fa]', accent: '#2dd4bf' },
-  'Para Adultos Mayores': { icon: '👵', gradient: 'from-[#fb923c] to-[#fbbf24]', accent: '#fb923c' },
+  'Claude para Todos': { icon: '🤝', gradient: 'from-[#fb923c] to-[#fbbf24]', accent: '#fb923c' },
   Otros: { icon: '📚', gradient: 'from-[#94a3b8] to-[#64748b]', accent: '#94a3b8' },
 }
 

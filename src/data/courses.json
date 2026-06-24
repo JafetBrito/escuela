@@ -109,11 +109,11 @@
   },
   {
     "id": "course-claude-mayores",
-    "title": "Introducción a Claude",
-    "description": "Un curso para adultos mayores: aprende a usar Claude, un asistente de inteligencia artificial, paso a paso y sin prisa. Sin mundos virtuales, con videos y un chat sencillo.",
-    "icon": "👵",
+    "title": "Claude para Todos",
+    "description": "Aprende a usar Claude, un asistente de inteligencia artificial, paso a paso y sin prisa — para cualquier persona, sin experiencia previa necesaria. Sin mundos virtuales, con videos y un chat sencillo.",
+    "icon": "🤝",
     "color": "#fb923c",
-    "category": "Para Adultos Mayores",
+    "category": "Claude para Todos",
     "locked": false
   }
 ]
