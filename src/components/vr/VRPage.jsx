@@ -251,6 +251,17 @@ function useImportedGlbGround(url) {
 
   return useMemo(() => {
     const clone = scene.clone(true)
+    // getGroundY() (Player.jsx) only counts hits on meshes flagged
+    // userData.isFloor — a convention the procedural worlds set by hand on
+    // their own floor meshes, but that an imported GLB never gets. Without
+    // this, every ground-height raycast against an imported model (the
+    // player's initial spawn snap, and the no-Rapier-collider gravity
+    // fallback) silently found nothing and fell back to y=0 — which is why
+    // the player could spawn floating or clipped into geometry depending on
+    // what's actually at y=0 under the spawn point. Every mesh here IS the
+    // walkable scenery (NPCs/props are separate siblings, not part of this
+    // clone), so it's safe to flag all of them.
+    clone.traverse((o) => { if (o.isMesh) o.userData.isFloor = true })
     const box = new THREE.Box3().setFromObject(clone)
     const size = new THREE.Vector3()
     const center = new THREE.Vector3()
@@ -335,7 +346,12 @@ function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
         playerRotationRef={playerRotationRef}
         authorName={authorName}
         playerId={playerId}
-        spawnAt={[0, 0, 0]}
+        // A few meters into the plaza (Oliver/Einstein/Jafet all stand within
+        // ~11 units of here) instead of the bare world origin — combined with
+        // the isFloor fix above, the origin itself was likely fine height-wise,
+        // but this keeps the player from spawning in a dead patch with nothing
+        // around them.
+        spawnAt={[0, 0, 5]}
       />
     </>
   )
@@ -777,20 +793,25 @@ function VoicePanel({ playerId, name, channelRef }) {
   )
 }
 
-// Shows the inactive companion parked at a fixed world position when the player
-// enables "Stay" mode — rendered inside Suspense so MascotMesh can useGLTF.
+// Shows the inactive companion parked at its own remembered world position
+// when the player enables "Stay" mode — rendered inside Suspense so
+// MascotMesh can useGLTF. Keyed off `parkedPositions[inactiveChar]` (not the
+// active character's live position) so avatar and mascot can each be left in
+// a different spot instead of sharing one position.
 function StayedCompanion({ mascot, skin, avatarId }) {
   const activeChar = useVrCharacterStore((s) => s.activeChar)
-  const stayPosition = useVrCharacterStore((s) => s.stayPosition)
-  if (!stayPosition) return null
-  const pos = [stayPosition.x, stayPosition.y, stayPosition.z]
+  const companionFollows = useVrCharacterStore((s) => s.companionFollows)
+  const inactiveChar = activeChar === 'avatar' ? 'mascot' : 'avatar'
+  const parkedPos = useVrCharacterStore((s) => s.parkedPositions[inactiveChar])
+  if (companionFollows || !parkedPos) return null
+  const pos = [parkedPos.x, parkedPos.y, parkedPos.z]
   return (
     <group position={pos}>
       <group scale={PLAYER_SCALE * 0.9}>
-        {activeChar === 'avatar' ? (
-          <MascotMesh mascot={mascot} skin={skin} />
-        ) : (
+        {inactiveChar === 'avatar' ? (
           <PlayerAvatarBody avatarId={avatarId} />
+        ) : (
+          <MascotMesh mascot={mascot} skin={skin} />
         )}
       </group>
     </group>
@@ -2123,11 +2144,43 @@ const MAP_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC]
 // WoW-style world map: bigger, labeled zones, real NPC pins, and the
 // location-based interactables (daily reward chest, hacker terminal, the
 // announcements screen) instead of the old bare terrain sketch.
+// How far you can zoom into the WorldMap — 1 shows the whole circular
+// campus, MAX_MAP_ZOOM crops in close enough to actually read building
+// labels/NPC names instead of the tiny full-map view this used to be stuck at.
+const MIN_MAP_ZOOM = 1
+const MAX_MAP_ZOOM = 8
+
 function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
   const playerMarkerRef = useRef(null)
   const playerArrowRef = useRef(null)
+  const svgWrapRef = useRef(null)
+  const dragRef = useRef(null)
   const canClaimDaily = useDailyRewardsStore((s) => s.canClaim)
   const dailyClaimable = open ? canClaimDaily() : false
+  // Start already zoomed in a bit — the old 1:1 full-campus view was the
+  // "no veo nada" complaint, everything was too small to read.
+  const [zoom, setZoom] = useState(2.2)
+  const [pan, setPan] = useState({ x: 0, z: 0 })
+
+  const baseHalf = GROUND_RADIUS + 5
+  const half = baseHalf / zoom
+  const clampPan = (p) => ({
+    x: Math.min(GROUND_RADIUS, Math.max(-GROUND_RADIUS, p.x)),
+    z: Math.min(GROUND_RADIUS, Math.max(-GROUND_RADIUS, p.z)),
+  })
+  const viewBox = `${pan.x - half} ${pan.z - half} ${half * 2} ${half * 2}`
+
+  const centerOnPlayer = () => {
+    const pos = playerPositionRef?.current
+    if (pos) setPan(clampPan({ x: pos.x, z: pos.z }))
+  }
+
+  // Re-center on the player every time the map opens, so it always starts
+  // zoomed in on where you actually are instead of the world origin.
+  useEffect(() => {
+    if (open) centerOnPlayer()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -2152,6 +2205,28 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
 
   if (!open) return null
 
+  const handleWheel = (e) => {
+    e.preventDefault()
+    setZoom((z) => Math.min(MAX_MAP_ZOOM, Math.max(MIN_MAP_ZOOM, z * (e.deltaY < 0 ? 1.18 : 1 / 1.18))))
+  }
+  const handlePointerDown = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+    dragRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panZ: pan.z }
+  }
+  const handlePointerMove = (e) => {
+    if (!dragRef.current) return
+    const rect = svgWrapRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const worldPerPixel = (half * 2) / rect.width
+    const dx = (e.clientX - dragRef.current.x) * worldPerPixel
+    const dy = (e.clientY - dragRef.current.y) * worldPerPixel
+    setPan(clampPan({ x: dragRef.current.panX - dx, z: dragRef.current.panZ - dy }))
+  }
+  const handlePointerUp = (e) => {
+    dragRef.current = null
+    e.currentTarget.releasePointerCapture?.(e.pointerId)
+  }
+
   return (
     <div
       className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-sm"
@@ -2169,9 +2244,20 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
             ✕
           </button>
         </div>
+        {/* Circular viewport — rueda del mouse o pinch para zoom, arrastra para mover */}
+        <div
+          ref={svgWrapRef}
+          className="relative h-[78vh] w-[78vh] max-w-[88vw] overflow-hidden rounded-full"
+          style={{ border: '4px solid #c9a227', cursor: dragRef.current ? 'grabbing' : 'grab', touchAction: 'none' }}
+          onWheel={handleWheel}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
         <svg
-          viewBox={`-${GROUND_RADIUS + 5} -${GROUND_RADIUS + 5} ${(GROUND_RADIUS + 5) * 2} ${(GROUND_RADIUS + 5) * 2}`}
-          className="h-[85vh] w-[85vh] max-w-[92vw]"
+          viewBox={viewBox}
+          className="block h-full w-full"
         >
           {/* Summer grass ground */}
           <circle cx="0" cy="0" r={GROUND_RADIUS} fill="#4a8a3a" />
@@ -2297,6 +2383,34 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
           <circle ref={playerMarkerRef} cx="0" cy="0" r="2.2" fill="#e74c3c" stroke="#fff" strokeWidth="0.55" />
           <path ref={playerArrowRef} d="M 0,-4.4 L 1.7,-1 L -1.7,-1 Z" fill="#e74c3c" stroke="#fff" strokeWidth="0.3" />
         </svg>
+        </div>
+        <div className="pointer-events-none absolute right-6 top-[4.2rem] flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.min(MAX_MAP_ZOOM, z * 1.4))}
+            className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white shadow hover:bg-black/80"
+            aria-label="Acercar"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.max(MIN_MAP_ZOOM, z / 1.4))}
+            className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white shadow hover:bg-black/80"
+            aria-label="Alejar"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={centerOnPlayer}
+            className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-sm text-white shadow hover:bg-black/80"
+            aria-label="Centrar en mí"
+            title="Centrar en mí"
+          >
+            🎯
+          </button>
+        </div>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[11px] text-text-muted">
           <span>🐾 NPC</span>
           <span>🎁 Recompensa diaria</span>
@@ -2728,22 +2842,26 @@ function CharSwitcherHud({ playerPositionRef, hudVisible }) {
   const companionFollows = useVrCharacterStore((s) => s.companionFollows)
   const toggleChar = useVrCharacterStore((s) => s.toggleChar)
   const setCompanionFollows = useVrCharacterStore((s) => s.setCompanionFollows)
-  const setStayPosition = useVrCharacterStore((s) => s.setStayPosition)
+  const setParkedPosition = useVrCharacterStore((s) => s.setParkedPosition)
 
   if (!hudVisible) return null
 
   const handleSwitch = () => {
-    toggleChar()
+    // While parked, this also swaps which character is left behind and
+    // teleports onto whichever one you're switching to — see toggleChar.
+    toggleChar(playerPositionRef?.current)
   }
+
+  const inactiveChar = activeChar === 'avatar' ? 'mascot' : 'avatar'
 
   const handleFollowToggle = () => {
     if (companionFollows) {
-      // Switching to Stay — record current player position
-      const pos = playerPositionRef?.current
-      setStayPosition(pos ?? null)
+      // Switching to Stay — record current player position as the
+      // companion's parked spot.
+      setParkedPosition(inactiveChar, playerPositionRef?.current ?? null)
     } else {
-      // Switching to Follow — clear stay position
-      setStayPosition(null)
+      // Switching to Follow — clear its parked spot, it teleports back to your side.
+      setParkedPosition(inactiveChar, null)
     }
     setCompanionFollows(!companionFollows)
   }

@@ -7,10 +7,15 @@ import * as THREE from 'three'
 // camera follows them. Tune values here and every world picks it up.
 
 export const MOVE_SPEED = 5.5
-export const TURN_SPEED = 10
+// Turning used to lag noticeably behind a quick direction change, which read
+// as the character "sliding"/struggling to turn — raised alongside MOVE_ACCEL
+// for a snappier, less floaty feel overall.
+export const TURN_SPEED = 14
 // How quickly the player accelerates/decelerates toward the target walking
 // speed (higher = snappier, lower = floatier).
-export const MOVE_ACCEL = 18
+export const MOVE_ACCEL = 24
+// Hold R to run at this multiple of MOVE_SPEED.
+export const SPRINT_MULTIPLIER = 1.8
 
 // MascotMesh normalizes models to ~2 units tall. The scenery footprint is
 // ~24 units wide, so we shrink the player to a human-ish scale that doesn't

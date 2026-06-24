@@ -149,14 +149,16 @@ export function MobileButtons({ keysRef, hidden, onOpenChat }) {
   const isTouch = useIsTouchDevice()
   if (!isTouch || hidden) return null
 
-  const setJump = (v) => (e) => {
+  const setKey = (key, v) => (e) => {
     e.preventDefault()
     try {
       if (v) e.currentTarget.setPointerCapture(e.pointerId)
       else   e.currentTarget.releasePointerCapture(e.pointerId)
     } catch {}
-    keysRef.current[' '] = v
+    keysRef.current[key] = v
   }
+  const setJump = (v) => setKey(' ', v)
+  const setSprint = (v) => setKey('r', v)
 
   return (
     <div className="pointer-events-none absolute bottom-6 right-4 z-20 flex flex-col items-center gap-2">
@@ -171,6 +173,18 @@ export function MobileButtons({ keysRef, hidden, onOpenChat }) {
         aria-label="saltar"
       >
         ↑
+      </button>
+      <button
+        type="button"
+        onPointerDown={setSprint(true)}
+        onPointerUp={setSprint(false)}
+        onPointerCancel={setSprint(false)}
+        onContextMenu={(e) => e.preventDefault()}
+        style={{ touchAction: 'none' }}
+        className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/30 bg-black/30 text-xl text-white shadow-lg backdrop-blur-sm active:bg-primary/50"
+        aria-label="correr"
+      >
+        🏃
       </button>
       {onOpenChat && (
         <button

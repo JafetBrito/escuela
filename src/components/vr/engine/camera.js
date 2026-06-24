@@ -145,5 +145,7 @@ export function applyGamepadInput(delta, cameraRef) {
   }
 
   // A button (index 0) jumps, same as space/the touch jump button.
-  return { moveX, moveY, jump: pad.buttons[0]?.pressed ?? false }
+  // Left stick click (L3, index 10) sprints, same as holding R on keyboard —
+  // the standard "click stick to run" binding in most third-person games.
+  return { moveX, moveY, jump: pad.buttons[0]?.pressed ?? false, sprint: pad.buttons[10]?.pressed ?? false }
 }

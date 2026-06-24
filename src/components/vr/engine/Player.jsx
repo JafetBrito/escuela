@@ -11,6 +11,7 @@ import { applyGamepadInput, getPitchRange } from './camera'
 import {
   MOVE_SPEED,
   MOVE_ACCEL,
+  SPRINT_MULTIPLIER,
   PLAYER_SCALE,
   PLAYER_HEIGHT,
   MODEL_HALF_HEIGHT,
@@ -144,6 +145,19 @@ export function Player({
       initialized.current = true
     }
 
+    // One-shot teleport requested by toggleChar (useVrCharacterStore) — fires
+    // when swapping onto a character that has its own remembered parked spot,
+    // so the shared physics body actually moves there instead of the new
+    // model just appearing at wherever the old one was standing.
+    const teleportTo = useVrCharacterStore.getState().teleportTo
+    if (teleportTo && bodyRef.current) {
+      bodyRef.current.setTranslation({ x: teleportTo.x, y: teleportTo.y + 0.1, z: teleportTo.z })
+      pos.set(teleportTo.x, teleportTo.y, teleportTo.z)
+      velocityXZ.current.set(0, 0, 0)
+      velocityY.current = 0
+      useVrCharacterStore.getState().clearTeleportRequest()
+    }
+
     // Gamepad (Xbox controller etc.) input: right stick/bumpers are applied
     // straight to the camera inside this helper; the left stick comes back
     // as a movement vector we fold in below alongside WASD/touch.
@@ -169,7 +183,11 @@ export function Player({
 
     const inputLength = input.length()
     const isMoving = inputLength > 0.001
-    if (isMoving) input.normalize().multiplyScalar(MOVE_SPEED * Math.min(1, inputLength))
+    const sprinting = isMoving && (!!keys['r'] || !!gamepad?.sprint)
+    if (isMoving) {
+      const speed = MOVE_SPEED * (sprinting ? SPRINT_MULTIPLIER : 1)
+      input.normalize().multiplyScalar(speed * Math.min(1, inputLength))
+    }
 
     // Smoothly accelerate/decelerate toward the target velocity instead of
     // snapping instantly to full speed (or to a dead stop).
