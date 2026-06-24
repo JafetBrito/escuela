@@ -8,3 +8,19 @@
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
+
+# ---------------------------------------------------------------------------
+# Cache-Control — the other half of the auto-update system (see main.jsx,
+# which polls the service worker for updates every 60s). That poll is useless
+# if Hostinger lets the browser cache index.html/sw.js/manifest.webmanifest
+# for any length of time: those are the files that announce a new build
+# exists, so they must always be re-fetched. Hashed files under /assets/ get
+# the opposite policy (cache forever) in public/assets/.htaccess — every Vite
+# build gives them a new filename, so there's never a stale copy to evict.
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+  </FilesMatch>
+</IfModule>
