@@ -430,7 +430,7 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
           <iframe
             width="690"
             height="420"
-            src="https://www.youtube.com/embed/nKSCVzTy69U?autoplay=1&rel=0&modestbranding=1"
+            src="https://www.youtube.com/embed/1y1qrh58MlA?autoplay=1&mute=1&rel=0&modestbranding=1"
             title="Pantalla Anfiteatro"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1735,7 +1735,7 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
 // A large billboard near the Grand Hall north road. Right-clicking it (or
 // clicking the on-screen prompt) opens a full-screen video modal.
 // The PRESENTATION_VIDEO_URL can be changed in one place below.
-const PRESENTATION_VIDEO_URL = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1'
+const PRESENTATION_VIDEO_URL = 'https://www.youtube.com/embed/1y1qrh58MlA?autoplay=1'
 
 function CampusVideoScreen({ onOpen }) {
   const meshRef  = useRef()
@@ -3134,7 +3134,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const text = `${chatAuthor} se ha caído al vacío, vamos a rescatarlo 🐱`
     useWorldChatStore.getState().sendMessage('Sistema', text, { authorId: playerId })
     sendChatMessage('Sistema', text)
-    useVrCharacterStore.getState().setTeleportTo({ x: 0, y: 0.2, z: 5 })
+    // Same spot as the campus spawn point (Gran Aula's front edge) — the old
+    // open-plaza coordinate used to land rescued players in a broken/unfinished
+    // patch of the map where they'd get stuck again right after being rescued.
+    useVrCharacterStore.getState().setTeleportTo({ x: 0, y: 0.2, z: -53 })
     setRescuePos(fallPos)
     setTimeout(() => setRescuePos(null), 3500)
   }

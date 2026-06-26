@@ -119,9 +119,13 @@ export const OLIVER_CLASSES = {
 // which are the companion pet). Just gender for now per the MODELOS 3D/
 // AVATARES/ folder — more options go here later without touching anything
 // that reads PLAYER_AVATARS, since every consumer just looks up by id.
+// modelRotationY: these GLBs face sideways relative to the engine's forward
+// convention (+Z), so the avatar visibly "strafes" instead of facing the way
+// it walks — same kind of fix already applied to mascots in mascotRegistry.js.
+// If a model still looks off after this, flip the sign (Math.PI/2 <-> -Math.PI/2).
 export const PLAYER_AVATARS = [
-  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb' },
-  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb' },
+  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb', modelRotationY: Math.PI / 2 },
+  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb', modelRotationY: Math.PI / 2 },
 ]
 
 const DEFAULT_PLAYER = {

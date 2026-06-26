@@ -39,6 +39,7 @@ const LINKS = [
   { to: '/vr-arbol', label: '🥽 VR: VrArbol (standalone)' },
   { to: '/vr/cueva-platon', label: '🥽 VR: Cueva de Platón' },
   { to: '/admin-setup', label: '⚙️ Admin Setup' },
+  { to: '/admin/flipbook-test', label: '📖 Flipbook 3D (test)' },
 ]
 
 export default function DevToolsPanel() {

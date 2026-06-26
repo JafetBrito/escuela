@@ -51,6 +51,7 @@ const VRPage = lazy(() => import('./components/vr/VRPage'))
 const VrArbol      = lazy(() => import('./components/vr/VrArbol'))
 const VrCueva      = lazy(() => import('./components/vr/VrCueva'))
 const AdminSetupPage = lazy(() => import('./components/admin/AdminSetupPage'))
+const FlipbookTestPage = lazy(() => import('./components/admin/FlipbookTestPage'))
 const ArenaPage = lazy(() => import('./components/arena/ArenaPage'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
@@ -108,6 +109,11 @@ export default function App() {
         <Route path="/admin-setup" element={
           <Suspense fallback={<RouteFallback />}>
             <AdminSetupPage />
+          </Suspense>
+        } />
+        <Route path="/admin/flipbook-test" element={
+          <Suspense fallback={<RouteFallback />}>
+            <FlipbookTestPage />
           </Suspense>
         } />
 
