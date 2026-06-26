@@ -1,21 +1,86 @@
 /**
- * VrArbol — Mundo tutorial de Oliver Academy (escenario: Templo egipcio,
- * /MODELOS 3D/VR/egyptian_temple.glb). El nombre del archivo/ruta se quedó
- * igual a propósito — solo cambia el modelo 3D, no los identificadores.
+ * VrArbol — Mundo tutorial de Oliver Academy (ruta /vr-templo). Escenario:
+ * Templo egipcio importado (/MODELOS 3D/VR/egyptian_temple.glb). El nombre
+ * del archivo/identificadores internos se quedó como "Arbol"/"Jafet" a
+ * propósito (era un árbol procedural antes) — solo cambió el modelo 3D, no
+ * hay que renombrar nada más por esto.
  *
- * Flujo (ver src/data/tutorialMissions.js):
- *   1. Cinemática de bienvenida (10 diálogos con voz) + revelación del Templo
- *   2. Primeros pasos: moverte y hablar con Jafet (chat de prueba)
- *   3. Elige la clase de tu Avatar, ahí mismo frente al Templo
- *   4. Elige tu mascota (abre VrMascotOnboarding)
- *   5. Elige la clase de tu mascota (dentro del mismo modal)
- *   6. Revisa las habilidades iniciales desbloqueadas
- *   7. Configura IA de la mascota (opcional / skip)
- *   8. Primera conversación con la mascota
- *   9. Entra al Campus VR
+ * FLUJO DE MISIONES (ver src/data/tutorialMissions.js para XP/orden real):
+ *   1. meet_jafet        — cinemática de bienvenida (10 líneas con voz) +
+ *                          revelación del Templo. Se completa solo, al
+ *                          terminar la cinemática (no requiere acción).
+ *   2. practice_basics   — moverte (MovementTracker) + escribirle algo a
+ *                          Jafet en el chat de prueba (DialogueBox). Ambos
+ *                          son reales, no temporizadores.
+ *   3. choose_avatar_class — AvatarClassPicker, dentro del propio Templo
+ *                          (ya no viaja a /vr/world-tree).
+ *   4. choose_mascot     — abre VrMascotOnboarding.
+ *   5. mascot_class      — dentro del mismo modal de VrMascotOnboarding.
+ *   6. test_ability      — AbilityRevealCard (solo muestra startSkills, no
+ *                          hay sistema de combate/cast todavía).
+ *   7. setup_ai          — opcional/saltable, manda a /ajustes.
+ *   8. first_chat        — primera conversación con la mascota (vía
+ *                          MascotCompanion, fuera de este archivo).
+ *   9. enter_campus      — navega a /vr.
+ *
+ * INTERACCIÓN CON JAFET — mismo patrón que el resto del mundo VR (ver
+ * IdleNpc/IdleNpcCard/NpcProximityTracker en VRPage.jsx, que es donde
+ * vive el sistema "oficial" que este archivo imita):
+ *   - Clic izquierdo en el modelo → una frase corta en un globo (sin abrir
+ *     nada) — JafetNpc.onSayLine / getAmbientLine().
+ *   - Clic derecho (en cualquier punto de la pantalla) / tecla F / botón
+ *     flotante inferior, estando cerca → abre JafetCard (saludo + botón
+ *     "Hablar"). Nunca abre la conversación real por sí solo.
+ *   - Botón "Hablar" de JafetCard → ahí sí abre DialogueBox (la
+ *     conversación de verdad, con las acciones de la misión activa).
+ *   - ❗ aparece sobre su cabeza mientras quede tutorial pendiente
+ *     (jafetHasQuest = !tutorialDone), igual que el ❗ de misión en VrNpc.
+ *   - showDialogue SOLO se pone en true desde una acción explícita del
+ *     jugador (openDialogue) o como continuación de un flujo que el
+ *     jugador ya inició (p.ej. después de elegir clase) — nunca se abre
+ *     solo al cargar la página o terminar una cinemática.
+ *
+ * ÍNDICE DEL ARCHIVO (en orden de aparición):
+ *   speakLine()            — TTS con safety-timeout (igual que VrCueva.jsx).
+ *   runCinematic()          — anima pitch/distance/yaw de la cámara del
+ *                            engine entre dos valores; usado en los 2-3
+ *                            momentos de cámara dirigida de este archivo.
+ *   JAFET, JAFET_DIALOGUE   — npc + líneas por paso de misión.
+ *   JafetNpc                — modelo 3D de Jafet (clic=frase, ❗+nombre si
+ *                            `near`). Usa MODEL_HALF_HEIGHT para no quedar
+ *                            enterrado — cualquier NPC nuevo en un GLB
+ *                            importado necesita ese mismo ajuste.
+ *   ArbolScene              — luces + el modelo del templo. OJO: el modelo
+ *                            va envuelto en <RigidBody type="fixed"
+ *                            colliders="trimesh"> — sin eso, Player.jsx cae
+ *                            para siempre (no hay collider real contra qué
+ *                            chocar). Cualquier mundo nuevo con
+ *                            useImportedGlbGround necesita lo mismo
+ *                            (mismo patrón que Campus/Graffiti en VRPage.jsx).
+ *   MovementTracker         — distancia real caminada, para practice_basics.
+ *   FallRescueTracker       — mismo rescate por caída que VRPage.jsx
+ *                            (Campus), pero sin la animación del gato — solo
+ *                            teletransporta de vuelta a ARBOL_SPAWN.
+ *   MissionRow              — una fila del panel de misiones (izquierda).
+ *   IntroCinematicOverlay   — las 10 líneas iniciales con TTS + botón de
+ *                            repetir audio (🔊) por si la voz del navegador
+ *                            falla.
+ *   RevealTitleCard         — texto flotante durante la fase 'reveal'.
+ *   AvatarClassPicker       — lista de PLAYER_CLASSES (oculta 'hacker' salvo
+ *                            admin).
+ *   ClassRevealAnnouncer    — flash de "elegiste tu clase" (avatar u oliver).
+ *   AbilityRevealCard       — muestra startSkills de ambas clases elegidas.
+ *   JafetCard               — el popup de clic-derecho/F (saludo + Hablar).
+ *   DialogueBox             — la conversación real con Jafet (input libre +
+ *                            botón de acción de la misión activa).
+ *   ActionButton            — botón(es) de acción dentro de DialogueBox,
+ *                            específico por missionId.
+ *   JafetProximity          — distancia jugador↔Jafet → nearJafet.
+ *   VrArbol (default)       — página principal: estado, efectos, layout.
  */
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
 import { Physics, RigidBody } from '@react-three/rapier'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
@@ -33,7 +98,7 @@ import { sendNpcMessage } from '../../services/chat/npcTransport'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import MascotMesh from '../mascot/MascotMesh'
 import MascotCompanion from '../mascot/MascotCompanion'
-import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons } from './engine'
+import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons, BubbleStack, MODEL_HALF_HEIGHT } from './engine'
 import { useImportedGlbGround } from './worlds/useImportedGlbGround'
 
 // Where Jafet stands and where the player spawns — small offsets near the
@@ -157,29 +222,67 @@ const JAFET_DIALOGUE = {
 
 // ── 3D Scene components ───────────────────────────────────────────────────────
 
-function JafetNpc({ mascot, onTalk }) {
+// Jafet's own visible scale — separate from his ground position so the
+// MODEL_HALF_HEIGHT lift below can be computed against it. Without that
+// lift the model is centered on ARBOL_JAFET_POS (ground level), burying
+// roughly the bottom half of it in the floor — same convention every other
+// NPC in the VR engine uses (see IdleNpc/VrNpc in VRPage.jsx: outer group at
+// ground level, inner group lifted by scale * MODEL_HALF_HEIGHT).
+const JAFET_SCALE = 0.18
+
+// Same left-click-for-a-line + proximity name tag/exclamation pattern as
+// every other NPC in the app (VRPage.jsx's IdleNpc/VrNpc) — see the
+// doc-comment at the top of this file for the full list of what's shared
+// vs. bespoke here. `onSayLine` returns the text to show in the bubble.
+function JafetNpc({ mascot, near, hasQuest, onSayLine }) {
   const groupRef = useRef()
+  const [bubbles, setBubbles] = useState([])
+  const bubbleIdRef = useRef(1)
+
   useFrame((_, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * 0.3
-      groupRef.current.position.y = Math.sin(Date.now() * 0.001) * 0.06
+      groupRef.current.position.y = ARBOL_JAFET_POS[1] + Math.sin(Date.now() * 0.001) * 0.06
     }
   })
+
+  const sayLine = () => {
+    const text = onSayLine?.()
+    if (!text) return
+    const id = bubbleIdRef.current++
+    setBubbles((cur) => [...cur, { id, text }].slice(-2))
+    setTimeout(() => setBubbles((cur) => cur.filter((b) => b.id !== id)), 4500)
+  }
+
   return (
     <group
       ref={groupRef}
       position={ARBOL_JAFET_POS}
-      scale={0.18}
-      onClick={(e) => { e.stopPropagation(); onTalk() }}
+      onClick={(e) => { e.stopPropagation(); sayLine() }}
     >
-      <Suspense fallback={null}>
-        <MascotMesh mascot={mascot} />
-      </Suspense>
+      <group scale={JAFET_SCALE} position={[0, JAFET_SCALE * MODEL_HALF_HEIGHT, 0]}>
+        <Suspense fallback={null}>
+          <MascotMesh mascot={mascot} />
+        </Suspense>
+      </group>
+      {near && (
+        <Html position={[0, JAFET_SCALE * MODEL_HALF_HEIGHT * 2 + 0.6, 0]} center distanceFactor={10}>
+          <div className="pointer-events-none flex flex-col items-center gap-0.5">
+            {hasQuest && (
+              <span className="animate-bounce text-xl leading-none drop-shadow-lg" style={{ color: '#facc15', textShadow: '0 0 8px #f59e0b' }}>❗</span>
+            )}
+            <div className="whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+              🧙‍♂️ Jafet
+            </div>
+          </div>
+        </Html>
+      )}
+      <BubbleStack bubbles={bubbles} baseY={JAFET_SCALE * MODEL_HALF_HEIGHT * 2 + 1.0} color="#98ca3f" />
     </group>
   )
 }
 
-function ArbolScene({ model, jafetMascot, onTalkJafet }) {
+function ArbolScene({ model, jafetMascot, jafetNear, jafetHasQuest, onJafetSayLine }) {
   return (
     <>
       <color attach="background" args={['#2a1c0f']} />
@@ -199,7 +302,7 @@ function ArbolScene({ model, jafetMascot, onTalkJafet }) {
       <RigidBody type="fixed" colliders="trimesh">
         <primitive object={model} />
       </RigidBody>
-      <JafetNpc mascot={jafetMascot} onTalk={onTalkJafet} />
+      <JafetNpc mascot={jafetMascot} near={jafetNear} hasQuest={jafetHasQuest} onSayLine={onJafetSayLine} />
     </>
   )
 }
@@ -447,6 +550,32 @@ function AbilityRevealCard({ playerClass, oliverClass, onDone }) {
   )
 }
 
+// ── Jafet's interaction card — right-click/F-key/prompt-button, same
+// pattern as every other NPC's "card before chat" step (see IdleNpcCard in
+// VRPage.jsx). Shows one contextual line + a button that opens the real
+// conversation (<DialogueBox>); never opens that conversation by itself. ──
+function JafetCard({ line, onTalk, onClose }) {
+  return (
+    <div className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 overflow-hidden rounded-2xl border border-primary/30 bg-surface/95 shadow-2xl backdrop-blur-sm sm:bottom-20">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <span className="text-2xl">🧙‍♂️</span>
+        <div className="flex-1">
+          <p className="text-sm font-black text-text">Jafet</p>
+          <p className="text-[10px] text-primary">Guardián del Templo</p>
+        </div>
+        <button type="button" onClick={onClose} className="text-text-muted hover:text-text text-lg leading-none">×</button>
+      </div>
+      <p className="px-4 py-3 text-xs italic leading-relaxed text-text-muted">&ldquo;{line}&rdquo;</p>
+      <div className="flex flex-col gap-2 p-3 pt-0">
+        <button type="button" onClick={onTalk}
+          className="w-full rounded-xl bg-primary py-2.5 text-xs font-black text-background hover:bg-primary/80">
+          💬 Hablar
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Dialogue box ──────────────────────────────────────────────────────────────
 
 function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissionId, onAction }) {
@@ -605,6 +734,10 @@ export default function VrArbol() {
   // Returning players who already met Jafet skip straight to 'play'.
   const [phase, setPhase] = useState(() => (done.includes('meet_jafet') ? 'play' : 'intro'))
   const [showDialogue, setShowDialogue]         = useState(false)
+  // The card (greeting + "Hablar" button) shown by right-click/F-key/the
+  // bottom prompt — opening the real conversation always goes through this
+  // first, same two-step pattern as every other NPC (see JafetCard above).
+  const [showJafetCard, setShowJafetCard]       = useState(false)
   const [dialogueMessages, setDialogueMessages] = useState([])
   const [isJafetTyping, setIsJafetTyping]       = useState(false)
   const [showMascotOnboarding, setShowMascotOnboarding] = useState(false)
@@ -652,7 +785,9 @@ export default function VrArbol() {
     runCinematic(cameraRef, cinematicLockRef, { pitch: 0.22, distance: 2.6 }, 2400, () => {
       setPhase('play')
       completeStep('meet_jafet')
-      setTimeout(openDialogue, 300)
+      // Deliberately doesn't auto-open the dialogue — the player walks up
+      // and interacts with Jafet themselves (right-click/F/prompt button),
+      // same as every other NPC in the app. See JafetCard/openDialogue.
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
@@ -681,35 +816,18 @@ export default function VrArbol() {
     if (isTutorialComplete()) forceSyncToCloud().catch(() => {})
   }, [done, isTutorialComplete, forceSyncToCloud])
 
-  // Welcome the player back if they return mid-tutorial with the dialogue
-  // closed — covers simply leaving and coming back later. Runs once on
-  // mount only: a FRESH player has phase='intro' here (done.length===0, so
-  // this no-ops) and picks up the conversation itself once the reveal
-  // cinematic finishes; this effect is only for a player who already has
-  // progress and reloads straight into 'play'.
-  useEffect(() => {
-    if (phase !== 'play' || done.length === 0 || tutorialDone) return
-    const t = setTimeout(() => {
-      if (!showDialogue && !showMascotOnboarding) {
-        runCinematic(cameraRef, cinematicLockRef, { pitch: 0.22, distance: 2.6 })
-        openDialogue()
-      }
-    }, 900)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // F key talks to Jafet when nearby, same shortcut as every other VR world
+  // F key opens Jafet's card when nearby — same shortcut + same two-step
+  // (card-then-chat) interaction as every other NPC in the app.
   useEffect(() => {
     const handler = (e) => {
-      if (e.code === 'KeyF' && nearJafet && phase === 'play' && !showDialogue && !showMascotOnboarding && !tutorialDone) {
-        openDialogue()
+      if (e.code === 'KeyF' && nearJafet && phase === 'play' && !showDialogue && !showJafetCard && !showMascotOnboarding && !tutorialDone) {
+        setShowJafetCard(true)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearJafet, showDialogue, showMascotOnboarding, tutorialDone, phase])
+  }, [nearJafet, showDialogue, showJafetCard, showMascotOnboarding, tutorialDone, phase])
 
   // Push Jafet message helper
   function pushJafet(text) {
@@ -730,8 +848,15 @@ export default function VrArbol() {
   }
 
   function openDialogue() {
+    setShowJafetCard(false)
     announce(activeMission?.id ?? 'done')
     setShowDialogue(true)
+  }
+
+  // The line Jafet says on a plain left-click (no card, no chat) — just the
+  // first line of whatever he'd open the real conversation with right now.
+  function getAmbientLine() {
+    return JAFET_DIALOGUE[activeMission?.id ?? 'done']?.[0] ?? ''
   }
 
   function handleFallRescue() {
@@ -822,13 +947,25 @@ export default function VrArbol() {
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
       onWheel={(e) => { if (!cinematicLockRef.current) onWheel(e) }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        if (phase === 'play' && nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone) {
+          setShowJafetCard((v) => !v)
+        }
+      }}
     >
 
       {/* ── 3D Canvas ── */}
       <Canvas camera={{ position: [0, 2, 6], fov: 60 }} className="absolute inset-0">
         <Physics gravity={[0, -20, 0]}>
           <Suspense fallback={null}>
-            <ArbolScene model={groundModel} jafetMascot={jafetMascot} onTalkJafet={openDialogue} />
+            <ArbolScene
+              model={groundModel}
+              jafetMascot={jafetMascot}
+              jafetNear={phase === 'play' && nearJafet}
+              jafetHasQuest={!tutorialDone}
+              onJafetSayLine={getAmbientLine}
+            />
             <Player
               mascot={realMascot}
               skin={skin}
@@ -890,12 +1027,13 @@ export default function VrArbol() {
         </div>
       )}
 
-      {/* ── Talk to Jafet prompt — only when close enough to him ── */}
-      {phase === 'play' && nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone && (
+      {/* ── Talk to Jafet prompt — only when close enough to him. Opens the
+          card (not the chat directly) — same as right-click/F. ── */}
+      {phase === 'play' && nearJafet && !showDialogue && !showJafetCard && !showMascotOnboarding && !tutorialDone && (
         <div className="absolute bottom-20 left-1/2 z-20 -translate-x-1/2">
-          <button type="button" onClick={openDialogue}
+          <button type="button" onClick={() => setShowJafetCard(true)}
             className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-black/80 px-6 py-3 font-black text-primary shadow-lg backdrop-blur-sm animate-pulse hover:bg-primary hover:text-background transition-all">
-            <span className="hidden sm:inline">F — </span>🧙‍♂️ Hablar con Jafet
+            <span className="hidden sm:inline">F / Clic derecho — </span>🧙‍♂️ Jafet
           </button>
         </div>
       )}
@@ -903,6 +1041,12 @@ export default function VrArbol() {
         <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-border bg-black/60 px-4 py-2 text-xs text-text-muted backdrop-blur-sm">
           🚶 Camina (WASD) hacia Jafet, dentro del templo
         </div>
+      )}
+
+      {/* ── Jafet's card — right-click/F/prompt-button. Closing it does not
+          open the chat; only its "Hablar" button does (see openDialogue). ── */}
+      {phase === 'play' && showJafetCard && !showDialogue && !showMascotOnboarding && (
+        <JafetCard line={getAmbientLine()} onTalk={openDialogue} onClose={() => setShowJafetCard(false)} />
       )}
 
       {/* ── Tutorial complete banner ── */}
