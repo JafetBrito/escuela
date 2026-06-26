@@ -3,8 +3,8 @@ import { getCourseData } from '../../data/courseRegistry'
 import MascotViewport from '../mascot/MascotViewport'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useMascotStore } from '../../stores/useMascotStore'
-import { useAuthStore } from '../../stores/useAuthStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useMascotMemoryStore } from '../../stores/useMascotMemoryStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getTransport } from '../../services/chat/transports'
 
@@ -39,10 +39,11 @@ export default function WelcomeModal({ courseId }) {
   const setStudyPlan = useMascotStore((s) => s.setStudyPlan)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
-  const license = useAuthStore((s) => s.license)
-  const minimaxApiKey = useSettingsStore((s) => s.minimaxApiKey)
-  const deepseekApiKey = useSettingsStore((s) => s.deepseekApiKey)
-  const chatModel = useSettingsStore((s) => s.chatModel)
+  const activeCredentialId = useSettingsStore((s) => s.activeCredentialId)
+  const identity = useSettingsStore((s) => s.identity)
+  const soulRules = useSettingsStore((s) => s.soulRules)
+  const userProfile = useSettingsStore((s) => s.userProfile)
+  const agentMode = useSettingsStore((s) => s.agentMode)
   const aiTone = useSettingsStore((s) => s.aiTone)
   const aiVerbosity = useSettingsStore((s) => s.aiVerbosity)
   const temperature = useSettingsStore((s) => s.temperature)
@@ -87,15 +88,18 @@ export default function WelcomeModal({ courseId }) {
         mode: 'text',
         content,
         context: {
-          minimaxApiKey: minimaxApiKey || license?.minimaxApiKey,
-          deepseekApiKey,
-          model: chatModel,
+          connectionId: activeCredentialId,
           mascotName: settingsMascotName || mascot.name,
+          identity,
+          soulRules,
+          userProfile,
+          agentMode,
           aiTone,
           aiVerbosity,
           temperature,
           maxTokens,
           customInstructions,
+          longTermMemories: useMascotMemoryStore.getState().memories.map((m) => m.content),
           course: { title: courseData.title, instructions: courseData.aiInstructions },
           history: [],
         },

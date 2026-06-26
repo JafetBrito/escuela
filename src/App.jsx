@@ -32,6 +32,7 @@ import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import PatchNotesModal from './components/shared/PatchNotesModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import IntroMissionDevTool from './components/admin/IntroMissionDevTool'
+import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
 
 /**
@@ -91,6 +92,7 @@ export default function App() {
       <PatchNotesModal />
       <DevToolsPanel />
       <IntroMissionDevTool />
+      <AiCredentialsLoader />
 
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 

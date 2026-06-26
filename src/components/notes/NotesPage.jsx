@@ -7,11 +7,11 @@
  * 1. Mostrar las notas/links locales (guardados en el Zustand InventoryStore).
  * 2. Sincronizar y leer notas externas desde la API de Notion del usuario.
  * * ⚠️ ADVERTENCIA SOBRE SEGURIDAD Y CREDENCIALES:
- * Las credenciales de Notion (`notionApiKey` y `notionDatabaseId`) NO vienen 
- * de un archivo `.env`. Se obtienen del `useSettingsStore`, lo que significa 
- * que son ingresadas por el propio usuario y probablemente viven en su 
- * LocalStorage. Nunca intentes loggear (console.log) estas llaves en 
- * producción ni enviarlas a servidores de terceros no autorizados.
+ * El token de Notion vive en la tabla `ai_credentials` de Supabase (RLS:
+ * solo el dueño puede leerlo, ni siquiera un admin) — se pide justo antes de
+ * cada llamada vía `getApiKeyForProvider('notion')`, nunca se guarda en
+ * Zustand/LocalStorage. Solo `notionDatabaseId` (no es secreto) sigue en
+ * useSettingsStore. Nunca loggear (console.log) el token en producción.
  * ============================================================================
  */
 
@@ -22,7 +22,8 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import Inventory from '../inventory/Inventory'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
-import { isNotionConfigured, fetchNotionPages } from '../../services/notion/notionClient'
+import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
+import { fetchNotionPages } from '../../services/notion/notionClient'
 import PageVideoModal from '../shared/PageVideoModal'
 
 /**
@@ -37,9 +38,9 @@ import PageVideoModal from '../shared/PageVideoModal'
  */
 function NotionSection() {
   // 1. Obtenemos las credenciales configuradas por el usuario
-  const notionApiKey = useSettingsStore((s) => s.notionApiKey)
   const notionDatabaseId = useSettingsStore((s) => s.notionDatabaseId)
-  const configured = isNotionConfigured({ notionApiKey, notionDatabaseId })
+  const notionConnected = useAiCredentialsStore((s) => s.connections.some((c) => c.providerId === 'notion'))
+  const configured = notionConnected && Boolean(notionDatabaseId)
 
   // 2. Estado Local de la petición HTTP
   const [loading, setLoading] = useState(false)
@@ -53,9 +54,10 @@ function NotionSection() {
   const handleSync = async () => {
     setLoading(true)
     setError(null)
-    
+
+    const notionApiKey = await useAiCredentialsStore.getState().getApiKeyForProvider('notion')
     const result = await fetchNotionPages({ notionApiKey, notionDatabaseId })
-    
+
     if (result.ok) {
       setPages(result.pages)
     } else {

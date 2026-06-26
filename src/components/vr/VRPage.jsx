@@ -17,7 +17,8 @@ import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
-import { useSettingsStore, getModelProvider } from '../../stores/useSettingsStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { sendNpcMessage } from '../../services/chat/npcTransport'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useFriendsStore } from '../../stores/useFriendsStore'
@@ -1205,10 +1206,9 @@ function IdleNpc({ config, playerPositionRef }) {
   const sayOneLine = useCallback(async () => {
     let text
     if (config.aiPrompt) {
-      const { minimaxApiKey, deepseekApiKey, chatModel } = useSettingsStore.getState()
-      const provider = getModelProvider(chatModel)
-      const apiKey = provider === 'deepseek' ? deepseekApiKey : minimaxApiKey
-      if (apiKey && !apiKey.startsWith('mx-mock')) {
+      const { activeCredentialId } = useSettingsStore.getState()
+      const hasConnection = useAiCredentialsStore.getState().connections.some((c) => c.id === activeCredentialId)
+      if (hasConnection) {
         try {
           const reply = await sendNpcMessage({
             npcPrompt: config.aiPrompt,

@@ -19,7 +19,8 @@
 import { useState } from 'react'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
-import { isNotionConfigured, pushNoteToNotion } from '../../services/notion/notionClient'
+import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
+import { pushNoteToNotion } from '../../services/notion/notionClient'
 import NoteModal from './NoteModal'
 
 /**
@@ -35,7 +36,7 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
   const addItem = useInventoryStore((s) => s.addItem)
   const removeItem = useInventoryStore((s) => s.removeItem)
   
-  const notionApiKey = useSettingsStore((s) => s.notionApiKey)
+  const notionConnected = useAiCredentialsStore((s) => s.connections.some((c) => c.providerId === 'notion'))
   const notionDatabaseId = useSettingsStore((s) => s.notionDatabaseId)
 
   // --- 2. ESTADOS LOCALES (FORMULARIO E INTERFAZ) ---
@@ -86,7 +87,7 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
     e.stopPropagation() // Evita que se abra el NoteModal al hacer clic en el botón de enviar
     
     // Validación 1: ¿Están configuradas las llaves?
-    if (!isNotionConfigured({ notionApiKey, notionDatabaseId })) {
+    if (!notionConnected || !notionDatabaseId) {
       setNotionStatus((s) => ({ ...s, [item.id]: 'Configura tu integración de Notion en Ajustes' }))
       setTimeout(() => setNotionStatus((s) => ({ ...s, [item.id]: null })), 4000)
       return
@@ -94,6 +95,7 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
 
     // Proceso de envío
     setNotionStatus((s) => ({ ...s, [item.id]: 'Enviando…' }))
+    const notionApiKey = await useAiCredentialsStore.getState().getApiKeyForProvider('notion')
     const result = await pushNoteToNotion({ notionApiKey, notionDatabaseId }, item)
     
     setNotionStatus((s) => ({

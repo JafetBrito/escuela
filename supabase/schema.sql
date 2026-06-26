@@ -141,6 +141,55 @@ drop policy if exists "level28_race: select all (authenticated)" on public.level
 create policy "level28_race: select all (authenticated)" on public.level28_race
   for select using (auth.role() = 'authenticated');
 
+-- ─────────────────────────────────────────────────────────────────────────
+-- ai_credentials: llaves de API de IA del usuario (MiniMax, DeepSeek,
+-- Anthropic, Google, o cualquier endpoint "OpenAI-compatible" vía base_url).
+-- A diferencia de `profiles`, esta tabla NO tiene política de "admin select
+-- all" — ni siquiera un administrador puede leer la llave de otro usuario.
+-- El cliente nunca vuelve a pedir api_key salvo justo antes de llamar a la
+-- IA; la lista de conexiones en Ajustes solo lee provider_id/base_url/model/
+-- label (ver useAiCredentialsStore.js).
+-- ─────────────────────────────────────────────────────────────────────────
+create table if not exists public.ai_credentials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  provider_id text not null,
+  label text,
+  api_key text not null,
+  base_url text,
+  model text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists ai_credentials_user_idx on public.ai_credentials (user_id);
+
+alter table public.ai_credentials enable row level security;
+
+drop policy if exists "ai_credentials: owner all" on public.ai_credentials;
+create policy "ai_credentials: owner all" on public.ai_credentials
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- mascot_memories: hechos puntuales que el usuario le pide a su mascota que
+-- recuerde a largo plazo (distinto del historial de chat crudo, que ya vive
+-- en profiles.snapshot.chatHistory). Mismo patrón de RLS: solo el dueño.
+-- ─────────────────────────────────────────────────────────────────────────
+create table if not exists public.mascot_memories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists mascot_memories_user_idx on public.mascot_memories (user_id, created_at);
+
+alter table public.mascot_memories enable row level security;
+
+drop policy if exists "mascot_memories: owner all" on public.mascot_memories;
+create policy "mascot_memories: owner all" on public.mascot_memories
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 -- ponytail: no explicit row lock around the count check below, so two
 -- simultaneous calls landing on slot #100 could both squeeze through —
 -- acceptable for a small app; upgrade to `select ... for update` on a

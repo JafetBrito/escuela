@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import TypedText from './TypedText'
 import { useChatStore } from '../../stores/useChatStore'
-import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useMascotMemoryStore } from '../../stores/useMascotMemoryStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getCourseData } from '../../data/courseRegistry'
 
@@ -15,35 +15,42 @@ export default function ChatPanel({ className = '', module, courseId }) {
   const messages = useChatStore((s) => s.messages)
   const isSending = useChatStore((s) => s.isSending)
   const send = useChatStore((s) => s.send)
-  const license = useAuthStore((s) => s.license)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const inventory = useInventoryStore((s) => s.items)
   const summaryLensActive = useItemEffectsStore((s) => !!s.activeItems['lente-resumen'])
   const completeMission = useProgressStore((s) => s.completeMission)
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
-  const minimaxApiKey = useSettingsStore((s) => s.minimaxApiKey)
-  const deepseekApiKey = useSettingsStore((s) => s.deepseekApiKey)
-  const chatModel = useSettingsStore((s) => s.chatModel)
+  const activeCredentialId = useSettingsStore((s) => s.activeCredentialId)
+  const identity = useSettingsStore((s) => s.identity)
+  const soulRules = useSettingsStore((s) => s.soulRules)
+  const userProfile = useSettingsStore((s) => s.userProfile)
   const aiTone = useSettingsStore((s) => s.aiTone)
   const aiVerbosity = useSettingsStore((s) => s.aiVerbosity)
+  const agentMode = useSettingsStore((s) => s.agentMode)
+  const toolsEnabled = useSettingsStore((s) => s.toolsEnabled)
   const temperature = useSettingsStore((s) => s.temperature)
   const maxTokens = useSettingsStore((s) => s.maxTokens)
   const customInstructions = useSettingsStore((s) => s.customInstructions)
+  const longTermMemories = useMascotMemoryStore((s) => s.memories.map((m) => m.content))
   const mascotName = settingsMascotName || getMascotById(selectedMascotId).name
   const courseData = courseId ? getCourseData(courseId) : null
 
   const sendMessage = (content) => {
     if (!content.trim()) return
     send(content.trim(), {
-      minimaxApiKey: minimaxApiKey || license?.minimaxApiKey,
-      deepseekApiKey,
-      model: chatModel,
+      connectionId: activeCredentialId,
       mascotName,
+      identity,
+      soulRules,
+      userProfile,
       aiTone,
       aiVerbosity,
+      agentMode,
+      toolsEnabled,
       temperature,
       maxTokens,
       customInstructions,
+      longTermMemories,
       course: courseData
         ? { title: courseData.title, instructions: courseData.aiInstructions }
         : undefined,

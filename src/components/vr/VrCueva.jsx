@@ -14,7 +14,8 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import MascotCompanion from '../mascot/MascotCompanion'
 import courseFilosofia from '../../data/courseFilosofia.json'
 import { sendNpcMessage } from '../../services/chat/npcTransport'
-import { useSettingsStore, getModelProvider } from '../../stores/useSettingsStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { MOUSE_SENSITIVITY } from './engine'
@@ -1017,10 +1018,9 @@ export default function VrCueva() {
     setAiMessages(p => [...p, { role:'user', content:text }])
     setAiLoading(true)
     try {
-      const { minimaxApiKey, deepseekApiKey, chatModel } = useSettingsStore.getState()
-      const provider = getModelProvider(chatModel)
-      const apiKey = provider === 'deepseek' ? deepseekApiKey : minimaxApiKey
-      if (apiKey && !apiKey.startsWith('mx-mock')) {
+      const { activeCredentialId } = useSettingsStore.getState()
+      const hasConnection = useAiCredentialsStore.getState().connections.some((c) => c.id === activeCredentialId)
+      if (hasConnection) {
         const reply = await sendNpcMessage({ npcPrompt: JAFET_OUTSIDE_PROMPT, content: text, history: aiMessages })
         setAiMessages(p => [...p, { role:'assistant', content:reply }])
       } else {
