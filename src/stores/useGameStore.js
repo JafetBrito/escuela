@@ -130,6 +130,11 @@ export const PLAYER_AVATARS = [
 
 const DEFAULT_PLAYER = {
   class: null,
+  // Reserved for the future per-owner specialization within a class (e.g.
+  // two "Filósofo" players each picking a different subclass) — no
+  // selection UI exists yet, this just keeps the shape ready. Will unlock
+  // by level once that feature is built.
+  subclass: null,
   avatarId: 'hombre',
   nickname: '',
   hp: { current: 100, max: 100 },
@@ -140,6 +145,7 @@ const DEFAULT_PLAYER = {
 
 const DEFAULT_OLIVER = {
   class: null,
+  subclass: null,
   hp: { current: 80, max: 80 },
   skills: { unlocked: ['scratch'], equipped: ['scratch', null, null, null] },
   talentPoints: 3,

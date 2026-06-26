@@ -18,7 +18,7 @@ export default function IntroMissionDevTool() {
   const jumpTo = (stepId) => {
     const idx = TUTORIAL_MISSIONS.findIndex((m) => m.id === stepId)
     const done = TUTORIAL_MISSIONS.slice(0, idx).map((m) => m.id)
-    useTutorialStore.setState({ done, returnTo: null })
+    useTutorialStore.setState({ done })
     setOpen(false)
     navigate('/vr-arbol')
   }
