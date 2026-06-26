@@ -5,6 +5,7 @@ import { useGameStore } from '../../stores/useGameStore'
 import { useSyncStatusStore } from '../../stores/useSyncStatusStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useDayNightStore } from '../../stores/useDayNightStore'
+import { useDevCalibrationStore } from '../../stores/useDevCalibrationStore'
 import { useLevelStore, levelProgress, MAX_LEVEL } from '../../stores/useLevelStore'
 import { setVoicePermission } from '../../services/admin/gmCommands'
 import { pushSnapshotToCloud } from '../../services/persistence/autoSave'
@@ -65,6 +66,7 @@ export default function DevToolsPanel() {
   const weather = useDayNightStore((s) => s.weather)
   const xp = useLevelStore((s) => s.xp)
   const { level, isMaxLevel } = levelProgress(xp)
+  const avatarOverride = useDevCalibrationStore((s) => s.avatarRotationOverride)
   if (!isAdmin?.()) return null
 
   // Goes through addXp() (not loadXp) so the level-up banner/sound actually
@@ -179,6 +181,35 @@ export default function DevToolsPanel() {
                   +{amount}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="mb-2 rounded-lg border border-border/60 bg-surface-hover px-2 py-1.5">
+            <p className="text-xs font-semibold text-text-muted">🧭 Calibrar giro del avatar</p>
+            <p className="mt-1 text-[10px] text-text-muted">
+              Ajusta en vivo (en cualquier mundo VR) hasta que camines y veas la espalda del personaje, no el costado. Cuando quede bien, dime el grado exacto para fijarlo en el código y borrar esto.
+            </p>
+            <p className="mt-1 text-xs text-text">
+              Ajuste actual: {Math.round((avatarOverride * 180) / Math.PI)}°
+            </p>
+            <div className="mt-1 grid grid-cols-4 gap-1">
+              {[-90, -15, -5, 5, 15, 90].map((deg) => (
+                <button
+                  key={deg}
+                  type="button"
+                  onClick={() => useDevCalibrationStore.getState().nudge((deg * Math.PI) / 180)}
+                  className="rounded-lg border border-primary/40 px-1 py-1 text-xs font-semibold text-primary"
+                >
+                  {deg > 0 ? `+${deg}°` : `${deg}°`}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => useDevCalibrationStore.getState().reset()}
+                className="col-span-2 rounded-lg border border-danger/40 px-1 py-1 text-xs font-semibold text-danger"
+              >
+                ↺ Reiniciar
+              </button>
             </div>
           </div>
 

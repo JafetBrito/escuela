@@ -6,6 +6,7 @@ import MascotMesh from '../../mascot/MascotMesh'
 import { useGameStore, PLAYER_AVATARS } from '../../../stores/useGameStore'
 import { useVrSettingsStore } from '../../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../../stores/useVrCharacterStore'
+import { useDevCalibrationStore } from '../../../stores/useDevCalibrationStore'
 import { useChatBubbles, BubbleStack, colorFromId } from './ChatBubbles'
 import { applyGamepadInput, getPitchRange } from './camera'
 import {
@@ -69,7 +70,13 @@ export function isBlocked(raycaster, scenery, origin, direction, distance) {
 // the ground exactly the same way.
 export function PlayerAvatarBody({ avatarId }) {
   const avatar = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
-  return <MascotMesh mascot={avatar} />
+  // Live calibration override (see DevToolsPanel's 🧭 section + useDevCalibrationStore)
+  // — 0 once the right modelRotationY is hardcoded and this whole thing is removed.
+  const override = useDevCalibrationStore((s) => s.avatarRotationOverride)
+  const avatarWithOverride = override
+    ? { ...avatar, modelRotationY: (avatar.modelRotationY ?? 0) + override }
+    : avatar
+  return <MascotMesh mascot={avatarWithOverride} />
 }
 
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
