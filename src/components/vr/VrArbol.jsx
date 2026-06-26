@@ -16,7 +16,7 @@
  */
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Physics } from '@react-three/rapier'
+import { Physics, RigidBody } from '@react-three/rapier'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
@@ -189,7 +189,16 @@ function ArbolScene({ model, jafetMascot, onTalkJafet }) {
       <pointLight position={[0, 4, -7]} color="#ffa94d" intensity={6} distance={14} />
       <pointLight position={[2, 2, -2]} color="#ffcf7a" intensity={3} distance={10} />
 
-      <primitive object={model} />
+      {/* Without a real physics collider here, Rapier's character controller
+          (which Player.jsx switches to as soon as its own capsule collider
+          exists) finds no ground at all and the player falls forever — the
+          same fix Campus/Graffiti already use for their imported .glb maps.
+          "trimesh" shapes the collider to the model's own geometry, so the
+          temple's interior floor/stairs/columns are all solid, not just a
+          flat plane at y=0. */}
+      <RigidBody type="fixed" colliders="trimesh">
+        <primitive object={model} />
+      </RigidBody>
       <JafetNpc mascot={jafetMascot} onTalk={onTalkJafet} />
     </>
   )
