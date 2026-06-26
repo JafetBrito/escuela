@@ -1,10 +1,12 @@
 /**
- * VrArbol — Mundo tutorial del Árbol de Oliver Academy
+ * VrArbol — Mundo tutorial de Oliver Academy (escenario: Templo egipcio,
+ * /MODELOS 3D/VR/egyptian_temple.glb). El nombre del archivo/ruta se quedó
+ * igual a propósito — solo cambia el modelo 3D, no los identificadores.
  *
  * Flujo (ver src/data/tutorialMissions.js):
- *   1. Cinemática de bienvenida (10 diálogos con voz) + revelación del Árbol
+ *   1. Cinemática de bienvenida (10 diálogos con voz) + revelación del Templo
  *   2. Primeros pasos: moverte y hablar con Jafet (chat de prueba)
- *   3. Elige la clase de tu Avatar, ahí mismo frente al Árbol
+ *   3. Elige la clase de tu Avatar, ahí mismo frente al Templo
  *   4. Elige tu mascota (abre VrMascotOnboarding)
  *   5. Elige la clase de tu mascota (dentro del mismo modal)
  *   6. Revisa las habilidades iniciales desbloqueadas
@@ -31,7 +33,13 @@ import VrMascotOnboarding from './VrMascotOnboarding'
 import MascotMesh from '../mascot/MascotMesh'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons } from './engine'
-import { useArbolGround, ARBOL_JAFET_POS, ARBOL_SPAWN } from './worlds/useArbolGround'
+import { useImportedGlbGround } from './worlds/useImportedGlbGround'
+
+// Where Jafet stands and where the player spawns — small offsets near the
+// world's center, which is where useImportedGlbGround() recenters whatever
+// GLB is loaded, regardless of that model's native scale.
+const ARBOL_JAFET_POS = [2.5, 0, -4]
+const ARBOL_SPAWN = [0, 0, 4]
 
 // ── TTS helper — same pattern as VrCueva.jsx's speakLine, kept local since
 // it's a small, self-contained helper with no shared state worth a module. ──
@@ -54,9 +62,9 @@ function speakLine(text, onDone) {
 
 // ── The 10-line welcome speech, read aloud before the player can move ──────
 const ARBOL_INTRO_LINES = [
-  '¡Bienvenido, estudiante! 🌳 Soy Jafet, guardián del Árbol de Oliver Academy. Hoy empieza algo importante.',
+  '¡Bienvenido, estudiante! 🏛️ Soy Jafet, guardián de este Templo de Oliver Academy. Hoy empieza algo importante.',
   'Oliver Academy no es una escuela común: aquí cada clase, cada compañero y cada decisión se vive dentro de un mundo entero.',
-  'Este Árbol existe para una sola cosa: prepararte antes de que cruces al Campus, donde todo lo que aprendas aquí se pone en práctica.',
+  'Este Templo existe para una sola cosa: prepararte antes de que cruces al Campus, donde todo lo que aprendas aquí se pone en práctica.',
   'Vas a elegir un camino para ti — tu clase — y vas a conocer a un compañero que te acompañará en cada paso: tu mascota.',
   'Tu mascota no es solo decorativa. Piensa, responde y aprende contigo, con su propia personalidad y sus propias habilidades.',
   'No te preocupes por hacerlo "bien" — cada decisión que tomes aquí se puede ajustar más adelante. Esto es para explorar, no para acertar.',
@@ -96,7 +104,7 @@ const JAFET = {
   emoji: '🧙‍♂️',
   color: '#98ca3f',
   mascotId: 10,   // mage_elder.glb
-  aiPrompt: `Eres Jafet, el guardián del Árbol de Oliver Academy. Eres sabio, cercano y con buen humor.
+  aiPrompt: `Eres Jafet, el guardián del Templo de Oliver Academy. Eres sabio, cercano y con buen humor.
 Guías a los nuevos estudiantes a través del tutorial de bienvenida.
 Hablas en español, eres entusiasta del aprendizaje y del mundo mágico de Oliver Academy.
 Nunca salgas del personaje. Usa emojis ocasionalmente para ser expresivo.`,
@@ -138,7 +146,7 @@ const JAFET_DIALOGUE = {
   ],
   enter_campus: [
     '¡Los escuché conversar! 💬 Ese es un vínculo que solo crece con el tiempo.',
-    'Ya completaste todo lo que el Árbol tenía para enseñarte. Solo falta un paso: cruzar hacia Oliver Academy.',
+    'Ya completaste todo lo que el Templo tenía para enseñarte. Solo falta un paso: cruzar hacia Oliver Academy.',
   ],
   done: [
     '¡Has llegado lejos, estudiante! 🎉 El campus de Oliver Academy te espera con nuevas clases, batallas y aventuras.',
@@ -170,34 +178,17 @@ function JafetNpc({ mascot, onTalk }) {
   )
 }
 
-// Walks the magic tree's floating orbs in a slow orbit — the tree model
-// itself is built once (imperative THREE, via useArbolGround) so its parts
-// are animated here by name instead of through React state.
-function MagicTreeAnimator({ model }) {
-  useFrame(() => {
-    for (let i = 0; i < 4; i++) {
-      const orb = model.getObjectByName(`arbol-orb-${i}`)
-      if (!orb) continue
-      const t = Date.now() * 0.001 + i * 1.2
-      orb.position.set(Math.sin(t) * 1.2, 3.5 + Math.cos(t * 1.3) * 0.4, Math.cos(t) * 1.2)
-    }
-    const canopy = model.getObjectByName('arbol-canopy')
-    if (canopy) canopy.rotation.y += 0.0015
-  })
-  return null
-}
-
 function ArbolScene({ model, jafetMascot, onTalkJafet }) {
   return (
     <>
-      <color attach="background" args={['#06060f']} />
-      <fog attach="fog" args={['#06060f', 18, 42]} />
-      <ambientLight intensity={0.25} color="#334466" />
-      <pointLight position={[0, 4, -7]} color="#98ca3f" intensity={8} distance={12} />
-      <pointLight position={[2, 2, -2]} color="#6644aa" intensity={3} distance={8} />
+      <color attach="background" args={['#2a1c0f']} />
+      <fog attach="fog" args={['#3a2716', 20, 55]} />
+      <ambientLight intensity={0.55} color="#e8c98a" />
+      <directionalLight position={[10, 15, 8]} color="#ffd9a0" intensity={1.4} />
+      <pointLight position={[0, 4, -7]} color="#ffa94d" intensity={6} distance={14} />
+      <pointLight position={[2, 2, -2]} color="#ffcf7a" intensity={3} distance={10} />
 
       <primitive object={model} />
-      <MagicTreeAnimator model={model} />
       <JafetNpc mascot={jafetMascot} onTalk={onTalkJafet} />
     </>
   )
@@ -291,7 +282,7 @@ function IntroCinematicOverlay({ onDone }) {
       </div>
       <div className="absolute bottom-8 flex items-center gap-4 rounded-2xl px-5 py-3" style={{ background: 'rgba(10,20,10,0.9)', border: '1px solid rgba(152,202,63,0.25)' }}>
         <div className="flex h-10 w-10 items-center justify-center rounded-full text-xl" style={{ background: 'rgba(152,202,63,0.12)', border: '1px solid rgba(152,202,63,0.35)' }}>🧙‍♂️</div>
-        <div><p className="text-xs font-black" style={{ color: '#bbe87a' }}>Jafet</p><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>Guardián del Árbol</p></div>
+        <div><p className="text-xs font-black" style={{ color: '#bbe87a' }}>Jafet</p><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>Guardián del Templo</p></div>
         <button type="button" onClick={replay} title="Repetir audio" className="rounded-xl px-2.5 py-2 text-base"
           style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
           🔊
@@ -319,7 +310,7 @@ function RevealTitleCard() {
     <div className="pointer-events-none absolute inset-x-0 top-1/3 z-40 flex justify-center px-6"
       style={{ opacity: vis ? 1 : 0, transition: 'opacity 0.8s' }}>
       <p className="text-center text-3xl font-black sm:text-4xl" style={{ color: '#bbe87a', textShadow: '0 0 30px #98ca3f88' }}>
-        🌳 El Árbol de Oliver Academy
+        🏛️ El Templo de Oliver Academy
       </p>
     </div>
   )
@@ -451,7 +442,7 @@ function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissio
           <span className="text-2xl">🧙‍♂️</span>
           <div className="flex-1">
             <p className="text-sm font-black text-text">Jafet</p>
-            <p className="text-[10px] text-primary">Guardián del Árbol</p>
+            <p className="text-[10px] text-primary">Guardián del Templo</p>
           </div>
           <button type="button" onClick={onClose}
             className="text-text-muted hover:text-text text-lg leading-none">×</button>
@@ -601,7 +592,7 @@ export default function VrArbol() {
 
   // Shared VR movement engine — same WASD/drag-look/touch/gamepad system as
   // Campus, Room, Anfiteatro and the Cueva de Platón.
-  const { model: groundModel, groundRayHeight } = useArbolGround()
+  const { model: groundModel, groundRayHeight } = useImportedGlbGround('/MODELOS 3D/VR/egyptian_temple.glb')
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
   const playerPositionRef = useRef(null)
@@ -836,7 +827,7 @@ export default function VrArbol() {
       {phase === 'play' && (
         <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-5">
           <div className="rounded-2xl border border-primary/20 bg-black/60 px-5 py-2 backdrop-blur-sm">
-            <p className="text-center text-sm font-black text-primary">🌳 El Árbol de Oliver Academy</p>
+            <p className="text-center text-sm font-black text-primary">🏛️ El Templo de Oliver Academy</p>
             <p className="text-center text-[10px] text-text-muted">Mundo tutorial — completa tus misiones para ir al campus</p>
           </div>
         </div>
@@ -872,7 +863,7 @@ export default function VrArbol() {
       )}
       {phase === 'play' && !nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone && (
         <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-border bg-black/60 px-4 py-2 text-xs text-text-muted backdrop-blur-sm">
-          🚶 Camina (WASD) hacia Jafet, bajo el árbol
+          🚶 Camina (WASD) hacia Jafet, dentro del templo
         </div>
       )}
 
