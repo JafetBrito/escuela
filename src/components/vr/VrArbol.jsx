@@ -1,13 +1,14 @@
 /**
- * VrArbol — Mundo tutorial del Árbol de Oliver School
+ * VrArbol — Mundo tutorial del Árbol de Oliver Academy
  *
- * Flujo:
+ * Flujo (ver src/data/tutorialMissions.js):
  *   1. Habla con Jafet (scripted + AI opcional)
- *   2. Elige tu mascota (abre VrMascotOnboarding)
- *   3. Elige la clase de tu mascota
- *   4. Configura IA de la mascota (opcional / skip)
- *   5. Primera conversación con la mascota
- *   → Ir al Campus VR desbloqueado
+ *   2. Elige la clase de tu Avatar (viaje de ida y vuelta a /vr/world-tree)
+ *   3. Elige tu mascota (abre VrMascotOnboarding)
+ *   4. Elige la clase de tu mascota (dentro del mismo modal)
+ *   5. Configura IA de la mascota (opcional / skip)
+ *   6. Primera conversación con la mascota
+ *   7. Entra al Campus VR
  */
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -28,6 +29,27 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons } from './engine'
 import { useArbolGround, ARBOL_JAFET_POS, ARBOL_SPAWN } from './worlds/useArbolGround'
 
+// Eases the existing third-person orbit camera (the same yaw/pitch/distance
+// object <Player> already reads every frame — see engine/camera.js) to a
+// tighter, more "directed" framing over `ms`, locking out manual drag input
+// for that window via lockedRef. Only used at 2-3 key narrative beats; the
+// rest of the time the camera stays fully player-controlled.
+function runCinematic(cameraRef, lockedRef, { pitch, distance }, ms = 1800) {
+  lockedRef.current = true
+  const cam = cameraRef.current
+  const start = { pitch: cam.pitch, targetDistance: cam.targetDistance }
+  const t0 = performance.now()
+  function tick() {
+    const t = Math.min(1, (performance.now() - t0) / ms)
+    const e = 1 - (1 - t) ** 3
+    cam.pitch = start.pitch + (pitch - start.pitch) * e
+    cam.targetDistance = start.targetDistance + (distance - start.targetDistance) * e
+    if (t < 1) requestAnimationFrame(tick)
+    else lockedRef.current = false
+  }
+  requestAnimationFrame(tick)
+}
+
 // ── NPC Jafet definition ──────────────────────────────────────────────────────
 const JAFET = {
   id: 'jafet',
@@ -35,39 +57,51 @@ const JAFET = {
   emoji: '🧙‍♂️',
   color: '#98ca3f',
   mascotId: 10,   // mage_elder.glb
-  aiPrompt: `Eres Jafet, el guardián del Árbol de Oliver School. Eres sabio, cercano y con buen humor.
+  aiPrompt: `Eres Jafet, el guardián del Árbol de Oliver Academy. Eres sabio, cercano y con buen humor.
 Guías a los nuevos estudiantes a través del tutorial de bienvenida.
-Hablas en español, eres entusiasta del aprendizaje y del mundo mágico de Oliver School.
+Hablas en español, eres entusiasta del aprendizaje y del mundo mágico de Oliver Academy.
 Nunca salgas del personaje. Usa emojis ocasionalmente para ser expresivo.`,
 }
 
 // ── Scripted dialogue per tutorial step ──────────────────────────────────────
+// Each key holds the lines Jafet says once that step BECOMES the active one
+// (not "after finishing the previous one") — that way the same content works
+// both the first time a step starts and when the player returns to it (e.g.
+// after the choose_avatar_class round-trip to /vr/world-tree, which fully
+// remounts this page). See announce()/openDialogue() below.
 const JAFET_DIALOGUE = {
   initial: [
-    '¡Bienvenido al Árbol de Oliver School! 🌳 Soy Jafet, tu guía en este mundo mágico.',
-    'Aquí comenzará tu aventura. Pero primero, necesito conocerte mejor y presentarte a tu compañero.',
-    '¿Estás listo para empezar? ¡Vamos a hacer esto juntos! 🧙‍♂️',
+    '¡Bienvenido al Árbol de Oliver Academy! 🌳 Soy Jafet, el guardián de este lugar.',
+    'Aquí empieza tu aventura: vas a elegir tu camino, conocer a tu compañero y subir varios niveles antes de entrar al campus.',
+    '¿Listo para empezar? ¡Vamos a hacerlo juntos! 🧙‍♂️',
   ],
-  meet_jafet: [
-    '¡Excelente! Ya nos conocemos. Ese es el primer paso. 🌟',
-    'Ahora, lo más importante: elegir a tu compañero de aventuras.',
+  choose_avatar_class: [
+    '¡Ese es el espíritu! 🌟 Lo primero es lo primero: ¿qué camino quieres seguir?',
+    'En el Árbol del Mundo encontrarás las clases disponibles para tu Avatar. Elige la que más te guste — luego tu mascota elegirá una que la complemente.',
   ],
   choose_mascot: [
-    '¡Un compañero increíble! Cada modelo tiene su propia personalidad y estilo.',
-    'Pero un compañero sin clase es como un hechicero sin grimorio...',
+    '¡Bien elegido! Ese camino te queda perfecto. ⚔️',
+    'Ahora necesitas un compañero de viaje. Cada mascota tiene su propio estilo — elige la que sientas más cercana a ti.',
   ],
   mascot_class: [
-    '¡Perfecto! Tu compañero ahora tiene poderes únicos. ⚔️',
-    'Ahora viene algo opcional pero muy poderoso: darle una mente de IA real.',
+    '¡Un compañero increíble! 🐾 Pero un compañero sin clase es como un hechicero sin grimorio…',
+    'Elige su clase con cuidado: algunas combinan mejor con tu camino que otras, aunque al final la decisión es toda tuya.',
   ],
   setup_ai: [
-    '¡Tu compañero está casi listo! 🤖',
-    'El último paso es el más importante: ¡habla con él! Una primera conversación siempre es especial.',
+    '¡Perfecto! Tu compañero ya tiene poderes únicos. 🔮',
+    'Ahora viene algo opcional pero muy poderoso: darle una mente de IA real para que piense y responda por sí mismo.',
   ],
   first_chat: [
-    '¡Lo lograste! Has completado el tutorial del Árbol. 🎉',
-    'Ahora eres parte de Oliver School. El campus virtual te espera con nuevas aventuras, clases y batallas.',
-    '¡Nos veremos en el campus, estudiante! 🌍',
+    '¡Tu compañero está casi listo! 🤖',
+    'Ahora pruébalo: abre su menú y dile algo. Una primera conversación siempre se recuerda.',
+  ],
+  enter_campus: [
+    '¡Los escuché conversar! 💬 Ese es un vínculo que solo crece con el tiempo.',
+    'Ya completaste todo lo que el Árbol tenía para enseñarte. Solo falta un paso: cruzar hacia Oliver Academy.',
+  ],
+  done: [
+    '¡Has llegado lejos, estudiante! 🎉 El campus de Oliver Academy te espera con nuevas clases, batallas y aventuras.',
+    '¡Nos vemos por ahí! 🌍',
   ],
 }
 
@@ -233,11 +267,13 @@ function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissio
 
 function ActionButton({ missionId, onAction }) {
   const labels = {
-    meet_jafet:    '✅ ¡Hola Jafet!',
-    choose_mascot: '🐾 Elegir compañero',
-    mascot_class:  null,   // handled inside VrMascotOnboarding
-    setup_ai:      '⚙️ Ir a Ajustes',
-    first_chat:    '💬 Abrir chat',
+    meet_jafet:          '✅ ¡Hola Jafet!',
+    choose_avatar_class: '🌳 Ir al Árbol del Mundo',
+    choose_mascot:       '🐾 Elegir compañero',
+    mascot_class:        null,   // handled inside VrMascotOnboarding
+    setup_ai:            '⚙️ Ir a Ajustes',
+    first_chat:          '💬 Abrir chat',
+    enter_campus:        '🏛️ Entrar al Campus',
   }
   const skips = { setup_ai: '⏭️ Saltar por ahora' }
 
@@ -299,8 +335,13 @@ export default function VrArbol() {
   const [dialogueMessages, setDialogueMessages] = useState([])
   const [isJafetTyping, setIsJafetTyping]       = useState(false)
   const [showMascotOnboarding, setShowMascotOnboarding] = useState(false)
-  const [tutorialDone, setTutorialDone]         = useState(false)
   const [nearJafet, setNearJafet]               = useState(false)
+  // Tracks which JAFET_DIALOGUE key was last spoken, so announce() never
+  // repeats itself within one mount but still speaks fresh content whenever
+  // the active step actually changes (including right after returning from
+  // the /vr/world-tree round-trip, which remounts this whole page).
+  const lastSpokenRef = useRef('')
+  const cinematicLockRef = useRef(false)
 
   const avatarModel = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]
   const jafetMascot = getMascotById(JAFET.mascotId)
@@ -314,21 +355,37 @@ export default function VrArbol() {
 
   // Detect which mission is currently active (first not done)
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
+  const tutorialDone = activeMission === null
 
   // Detect first_chat completion when chat store gets a message
   useEffect(() => {
     if (chatMessages.length > 0 && !done.includes('first_chat')) {
       completeStep('first_chat')
+      announce('enter_campus')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatMessages.length, done, completeStep])
 
-  // Check overall tutorial completion
+  // Sync to cloud the moment the whole tutorial wraps up
   useEffect(() => {
-    if (isTutorialComplete()) {
-      setTutorialDone(true)
-      forceSyncToCloud().catch(() => {})
-    }
+    if (isTutorialComplete()) forceSyncToCloud().catch(() => {})
   }, [done, isTutorialComplete, forceSyncToCloud])
+
+  // Welcome the player back if they return mid-tutorial with the dialogue
+  // closed — covers both the choose_avatar_class round-trip (this page fully
+  // remounts when navigating to /vr/world-tree and back) and simply leaving
+  // and coming back later.
+  useEffect(() => {
+    if (done.length === 0 || tutorialDone) return
+    const t = setTimeout(() => {
+      if (!showDialogue && !showMascotOnboarding) {
+        runCinematic(cameraRef, cinematicLockRef, { pitch: 0.22, distance: 2.6 })
+        openDialogue()
+      }
+    }, 900)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // F key talks to Jafet when nearby, same shortcut as every other VR world
   useEffect(() => {
@@ -347,14 +404,23 @@ export default function VrArbol() {
     setDialogueMessages(prev => [...prev, { role: 'assistant', content: text }])
   }
 
-  function openDialogue() {
-    if (dialogueMessages.length === 0) {
-      // First open: play intro lines one by one with 600ms gaps
-      const lines = JAFET_DIALOGUE.initial
-      lines.forEach((line, i) => {
-        setTimeout(() => pushJafet(line), i * 700)
-      })
+  // Speaks the lines for `key` unless they were already the last thing said
+  // — safe to call redundantly from multiple places (open, action buttons,
+  // auto-detected step completions).
+  function announce(key) {
+    if (!key || key === lastSpokenRef.current) return
+    lastSpokenRef.current = key
+    const lines = JAFET_DIALOGUE[key] ?? []
+    lines.forEach((line, i) => setTimeout(() => pushJafet(line), i * 700))
+    // Cinematic camera moment at the two narrative bookends — meeting Jafet
+    // for the first time, and his closing farewell.
+    if (key === 'initial' || key === 'done') {
+      runCinematic(cameraRef, cinematicLockRef, { pitch: 0.25, distance: 2.4 })
     }
+  }
+
+  function openDialogue() {
+    announce(!done.includes('meet_jafet') ? 'initial' : (activeMission?.id ?? 'done'))
     setShowDialogue(true)
   }
 
@@ -379,19 +445,21 @@ export default function VrArbol() {
     if (action === 'skip') {
       completeStep(missionId)
       const idx = TUTORIAL_MISSIONS.findIndex(m => m.id === missionId)
-      const next = TUTORIAL_MISSIONS[idx + 1]
-      if (next) {
-        const lines = JAFET_DIALOGUE[next.id] ?? []
-        lines.forEach((l, i) => setTimeout(() => pushJafet(l), 500 + i * 700))
-      }
+      announce(TUTORIAL_MISSIONS[idx + 1]?.id)
       return
     }
 
     if (missionId === 'meet_jafet') {
       completeStep('meet_jafet')
-      const lines = JAFET_DIALOGUE.meet_jafet
-      lines.forEach((l, i) => setTimeout(() => pushJafet(l), 400 + i * 700))
-      setTimeout(() => pushJafet('¡Haz clic en "🐾 Elegir compañero" cuando estés listo!'), 400 + lines.length * 700 + 300)
+      announce('choose_avatar_class')
+    }
+
+    if (missionId === 'choose_avatar_class') {
+      // Standalone world (different route/Canvas) — leave a breadcrumb so
+      // WorldTree's class-selection flow knows to send the player back here
+      // once they've picked their class, instead of its normal default.
+      useTutorialStore.getState().setReturnTo('/vr-arbol')
+      navigate('/vr/world-tree')
     }
 
     if (missionId === 'choose_mascot') {
@@ -407,30 +475,33 @@ export default function VrArbol() {
       // MascotCompanion handles the chat — we just hint the user
       pushJafet('¡Abre el menú de tu mascota (el botón 🐱 abajo a la derecha) y envíale un mensaje!')
     }
+
+    if (missionId === 'enter_campus') {
+      completeStep('enter_campus')
+      announce('done')
+      setTimeout(() => navigate('/vr'), 2400)
+    }
   }
 
-  // VrMascotOnboarding finished → complete missions 2 and 3
+  // VrMascotOnboarding finished → completes both the model+name step and
+  // the mascot's class step, since that single modal covers both.
   function handleMascotOnboardingDone() {
     setShowMascotOnboarding(false)
     completeStep('choose_mascot')
     completeStep('mascot_class')
-    // Reopen dialogue with next step lines
-    const lines = JAFET_DIALOGUE.mascot_class
     setShowDialogue(true)
-    lines.forEach((l, i) => setTimeout(() => pushJafet(l), 400 + i * 700))
-    const aiLines = JAFET_DIALOGUE.setup_ai
-    aiLines.forEach((l, i) => setTimeout(() => pushJafet(l), 400 + (lines.length + i) * 700 + 500))
+    announce('mascot_class')
   }
 
   return (
     <div
       className="relative h-screen w-screen overflow-hidden bg-[#06060f]"
       style={{ touchAction: 'none' }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
+      onPointerDown={(e) => { if (!cinematicLockRef.current) onPointerDown(e) }}
+      onPointerMove={(e) => { if (!cinematicLockRef.current) onPointerMove(e) }}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
-      onWheel={onWheel}
+      onWheel={(e) => { if (!cinematicLockRef.current) onWheel(e) }}
     >
 
       {/* ── 3D Canvas ── */}
@@ -464,7 +535,7 @@ export default function VrArbol() {
       {/* ── Top title ── */}
       <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-5">
         <div className="rounded-2xl border border-primary/20 bg-black/60 px-5 py-2 backdrop-blur-sm">
-          <p className="text-center text-sm font-black text-primary">🌳 El Árbol de Oliver School</p>
+          <p className="text-center text-sm font-black text-primary">🌳 El Árbol de Oliver Academy</p>
           <p className="text-center text-[10px] text-text-muted">Mundo tutorial — completa tus misiones para ir al campus</p>
         </div>
       </div>
@@ -507,7 +578,7 @@ export default function VrArbol() {
           <div className="text-center">
             <p className="text-4xl">🎉</p>
             <p className="text-xl font-black text-primary">¡Tutorial completado!</p>
-            <p className="text-sm text-text-muted">Ya eres parte de Oliver School. El campus te espera.</p>
+            <p className="text-sm text-text-muted">Ya eres parte de Oliver Academy. El campus te espera.</p>
           </div>
           <button
             type="button"

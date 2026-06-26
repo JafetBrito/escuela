@@ -31,6 +31,7 @@ import AchievementToast from './components/achievements/AchievementToast'
 import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import PatchNotesModal from './components/shared/PatchNotesModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
+import IntroMissionDevTool from './components/admin/IntroMissionDevTool'
 import { useLibraryStore } from './stores/useLibraryStore'
 
 /**
@@ -89,7 +90,8 @@ export default function App() {
       <LevelUpAnnouncer />
       <PatchNotesModal />
       <DevToolsPanel />
-      
+      <IntroMissionDevTool />
+
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 
         en la pantalla sin cambiar la URL actual. Usa Suspense porque el lector 

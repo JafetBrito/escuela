@@ -27,6 +27,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useDayNightStore } from '../../stores/useDayNightStore'
 import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
 import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
+import { useTutorialStore } from '../../stores/useTutorialStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import GmConsole from '../shared/GmConsole'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
@@ -3095,6 +3096,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
   const worldTreeCompleted = useGameStore((s) => s.worldTreeCompleted)
+  const tutorialReturnTo = useTutorialStore((s) => s.returnTo)
   const startBattle = useCombatStore((s) => s.startBattle)
   const combatActive = useCombatStore((s) => s.active)
   const [nearbyNpcId, setNearbyNpcId] = useState(null)
@@ -3637,7 +3639,20 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             isAdmin={isAdmin}
             onSelectPlayer={(id) => {
               selectPlayerClass(id)
-              setClassSelectionStep('oliver')
+              // Tutorial sends the player here just to pick THIS class (see
+              // VrArbol.jsx's choose_avatar_class step) — Oliver's class has
+              // its own polished picker back at the Árbol (VrMascotOnboarding,
+              // already shows a "★ Recomendada" hint once playerClass is set),
+              // so skip WorldTree's own oliver sub-step and return immediately.
+              const { returnTo, setReturnTo, completeStep } = useTutorialStore.getState()
+              if (returnTo) {
+                completeStep('choose_avatar_class')
+                setClassSelectionStep('done')
+                setReturnTo(null)
+                setTimeout(() => navigate(returnTo), 1500)
+              } else {
+                setClassSelectionStep('oliver')
+              }
             }}
             onSelectOliver={(id) => {
               selectOliverClass(id)
@@ -3689,8 +3704,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
       {hudVisible && <MascotCompanion hideViewport vrMode />}
 
-      {/* VR mascot onboarding — shown when user hasn't chosen their companion yet */}
-      {!oliverClass && <VrMascotOnboarding />}
+      {/* VR mascot onboarding — shown when user hasn't chosen their companion
+          yet. Suppressed while the Árbol tutorial sent the player here just
+          to pick their Avatar's class (tutorialReturnTo set) — mascot
+          onboarding happens right after, back at the Árbol, and this modal
+          would otherwise block the WorldTree screen entirely. */}
+      {!oliverClass && !tutorialReturnTo && <VrMascotOnboarding />}
 
       {/* Turn-based battle overlay */}
       <BattleScreen />
