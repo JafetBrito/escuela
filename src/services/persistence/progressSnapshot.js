@@ -24,6 +24,7 @@ import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
+import { useSeenStore } from '../../stores/useSeenStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -140,6 +141,7 @@ export function buildProgressSnapshot() {
     terminalRewards: useTerminalRewardsStore.getState(),
     voice: useVoiceStore.getState(),
     equippedItems: useEquipmentStore.getState().equipped,
+    seen: useSeenStore.getState(),
     lastSaved: new Date().toISOString(),
   }
 }
@@ -196,4 +198,5 @@ export function applyProgressSnapshot(snapshot) {
   useTerminalRewardsStore.getState().loadTerminalRewards(snapshot.terminalRewards ?? {})
   useVoiceStore.getState().loadVoice(snapshot.voice ?? {})
   useEquipmentStore.getState().loadEquipped(snapshot.equippedItems)
+  useSeenStore.getState().loadSeen(snapshot.seen)
 }

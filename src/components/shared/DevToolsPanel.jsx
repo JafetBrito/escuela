@@ -40,7 +40,7 @@ const LINKS = [
   { to: '/vr/anfiteatro', label: '🥽 VR: Anfiteatro' },
   { to: '/vr/world-tree', label: '🥽 VR: Árbol del Mundo' },
   { to: '/vr/graffiti', label: '🥽 VR: Calle Graffiti (st.glb)' },
-  { to: '/vr-arbol', label: '🥽 VR: VrArbol (standalone)' },
+  { to: '/vr-templo', label: '🥽 VR: Templo (tutorial)' },
   { to: '/vr/cueva-platon', label: '🥽 VR: Cueva de Platón' },
   { to: '/admin-setup', label: '⚙️ Admin Setup' },
   { to: '/admin/flipbook-test', label: '📖 Flipbook 3D (test)' },

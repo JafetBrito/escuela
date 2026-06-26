@@ -391,7 +391,7 @@ export function Player({
               <group scale={AVATAR_RELATIVE_SCALE}>
                 <PlayerAvatarBody avatarId={avatarId} />
               </group>
-              {companionFollows && (
+              {companionFollows && mascot && (
                 <group position={[1.4, 0, 0]} scale={MASCOT_RELATIVE_SCALE}>
                   <MascotMesh mascot={mascot} skin={skin} />
                 </group>

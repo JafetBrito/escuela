@@ -44,6 +44,8 @@ import VrHud from './VrHud'
 import DailyRewardsBoard from './DailyRewardsBoard'
 import BagsPanel from './BagsPanel'
 import PatchNotesModal from '../shared/PatchNotesModal'
+import { LATEST_VERSION } from '../../data/patchNotesRegistry'
+import { useSeenStore } from '../../stores/useSeenStore'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useCampusGround, GROUND_RADIUS, NPC_BUILDING_OFFSET, CAMPUS_DORMS, NPC_PAVILION_EXEMPT } from './worlds/useCampusGround'
 import { useRoomGround, ROOM_SIZE, ROOM_HEIGHT } from './worlds/useRoomGround'
@@ -3063,7 +3065,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [chatOpen, setChatOpen] = useState(false)
   const [hudVisible, setHudVisible] = useState(true)
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
-  const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
+  // Already-seen patch notes skip straight to the daily reward instead of
+  // showing an announcement the player already dismissed on a past visit.
+  const patchAlreadySeen = useSeenStore.getState().patchVersion === LATEST_VERSION
+  const [dailyRewardsOpen, setDailyRewardsOpen] = useState(patchAlreadySeen)
   const [bagsOpen, setBagsOpen] = useState(false)
   const [friendsOpen, setFriendsOpen] = useState(false)
   const [arenaConfirmOpen, setArenaConfirmOpen] = useState(false)
@@ -3087,8 +3092,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     setRescuePos(fallPos)
     setTimeout(() => setRescuePos(null), 3500)
   }
-  // Shown once per VR session entry; closing it auto-opens the daily reward.
-  const [showAnnouncements, setShowAnnouncements] = useState(true)
+  // Shown once per ACCOUNT (see useSeenStore) on VR entry; closing it auto-opens the daily reward.
+  const [showAnnouncements, setShowAnnouncements] = useState(!patchAlreadySeen)
   const [showHint, setShowHint] = useState(() => !localStorage.getItem('vr-hint-seen'))
   const [chatPrefill, setChatPrefill] = useState(null)
   const [selectedPlayer, setSelectedPlayer] = useState(null)

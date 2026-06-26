@@ -1,28 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
+import { useSeenStore } from '../../stores/useSeenStore'
 
-const LS_KEY = 'patch-seen'
-
-// When `open` prop is provided, the modal is controlled externally.
-// Without it, it auto-shows once per version via localStorage.
+// Shows once per ACCOUNT per version (tracked in useSeenStore, synced via
+// progressSnapshot) regardless of whether `open`/`onClose` are passed —
+// callers that force `open` (e.g. the VR entry gate) still only see it once,
+// they just also need to not rely on `onClose` firing when already seen.
 export default function PatchNotesModal({ open: controlledOpen, onClose } = {}) {
-  const controlled = controlledOpen !== undefined
-  const [autoOpen, setAutoOpen] = useState(false)
+  const seenVersion = useSeenStore((s) => s.patchVersion)
+  const setSeenVersion = useSeenStore((s) => s.setPatchVersion)
   const [tab, setTab] = useState(0)
 
-  useEffect(() => {
-    if (!controlled && localStorage.getItem(LS_KEY) !== LATEST_VERSION) {
-      setAutoOpen(true)
-    }
-  }, [controlled])
-
-  const isOpen = controlled ? controlledOpen : autoOpen
+  const alreadySeen = seenVersion === LATEST_VERSION
+  const isOpen = (controlledOpen ?? true) && !alreadySeen
   if (!isOpen) return null
 
   const dismiss = () => {
-    if (!controlled) localStorage.setItem(LS_KEY, LATEST_VERSION)
-    if (controlled) onClose?.()
-    else setAutoOpen(false)
+    setSeenVersion(LATEST_VERSION)
+    onClose?.()
   }
 
   const note = PATCH_NOTES[tab]
@@ -141,6 +136,5 @@ export default function PatchNotesModal({ open: controlledOpen, onClose } = {}) 
 
 // Also export a hook to manually re-open patch notes (e.g., from Settings)
 export function reopenPatchNotes() {
-  localStorage.removeItem(LS_KEY)
-  window.location.reload() // simplest trigger; could use a store flag instead
+  useSeenStore.getState().setPatchVersion(null)
 }

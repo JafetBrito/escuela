@@ -131,7 +131,7 @@ export default function CreateAccountPage() {
     if (playerClassId) selectPlayerClass(playerClassId)
     try { await forceSyncToCloud() } catch { /* best effort */ }
     setStatus('idle')
-    navigate('/vr-arbol')   // ← goes to tutorial world, NOT campus
+    navigate('/vr-templo')   // ← goes to tutorial world, NOT campus
   }
 
   const selectedAvatar = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]

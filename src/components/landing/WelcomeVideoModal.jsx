@@ -1,34 +1,17 @@
-import { useEffect, useState } from 'react'
 import VideoPlayer from '../video/VideoPlayer'
+import { useSeenStore } from '../../stores/useSeenStore'
 
-const STORAGE_KEY = 'oliver-explainer-seen'
 const EXPLAINER_VIDEO_ID = '4sHQ3_Pr-wQ'
 
-// Shown once, the first time someone opens the landing page, with a short
-// video explaining how oliver.escuela works.
+// Shown once per ACCOUNT (see useSeenStore — synced via progressSnapshot,
+// not localStorage, so clearing the cache doesn't bring it back).
 export default function WelcomeVideoModal() {
-  const [open, setOpen] = useState(false)
+  const seen = useSeenStore((s) => s.welcomeVideo)
+  const setSeen = useSeenStore((s) => s.setWelcomeVideo)
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setOpen(true)
-      }
-    } catch {
-      // localStorage unavailable — just skip the popup.
-    }
-  }, [])
+  const close = () => setSeen()
 
-  const close = () => {
-    setOpen(false)
-    try {
-      localStorage.setItem(STORAGE_KEY, '1')
-    } catch {
-      // ignore
-    }
-  }
-
-  if (!open) return null
+  if (seen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">

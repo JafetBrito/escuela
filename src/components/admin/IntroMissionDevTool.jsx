@@ -8,7 +8,7 @@ import { TUTORIAL_MISSIONS } from '../../data/tutorialMissions'
 // jump straight to any stage of the Árbol/Jafet intro tutorial for testing,
 // without replaying ~30 minutes of it each time. Jumping to step N marks
 // every step before it as done (so step N becomes the active one) and sends
-// the admin to /vr-arbol.
+// the admin to /vr-templo.
 export default function IntroMissionDevTool() {
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const navigate = useNavigate()
@@ -20,7 +20,7 @@ export default function IntroMissionDevTool() {
     const done = TUTORIAL_MISSIONS.slice(0, idx).map((m) => m.id)
     useTutorialStore.setState({ done })
     setOpen(false)
-    navigate('/vr-arbol')
+    navigate('/vr-templo')
   }
 
   return (
@@ -40,7 +40,7 @@ export default function IntroMissionDevTool() {
           ))}
           <button
             type="button"
-            onClick={() => { useTutorialStore.getState().reset(); setOpen(false); navigate('/vr-arbol') }}
+            onClick={() => { useTutorialStore.getState().reset(); setOpen(false); navigate('/vr-templo') }}
             className="mt-1 block w-full rounded-lg border border-border px-2 py-1.5 text-left text-text-muted hover:bg-surface"
           >
             ↺ Reiniciar tutorial completo

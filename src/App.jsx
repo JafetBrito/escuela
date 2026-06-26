@@ -244,7 +244,7 @@ export default function App() {
 
         {/* === RUTAS DE REALIDAD VIRTUAL (Heavy 3D Load) === */}
         <Route
-          path="/vr-arbol"
+          path="/vr-templo"
           element={
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>

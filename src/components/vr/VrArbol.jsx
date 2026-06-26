@@ -18,13 +18,14 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { useNavigate } from 'react-router-dom'
-import { useGameStore, PLAYER_AVATARS, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
+import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
 import { useChatStore } from '../../stores/useChatStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { getMascotById } from '../../data/mascotRegistry'
+import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { getSkinById } from '../../data/skinsRegistry'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import { TUTORIAL_MISSIONS } from '../../data/tutorialMissions'
@@ -216,6 +217,26 @@ function MovementTracker({ playerPositionRef, active, threshold = 5, onThreshold
   return null
 }
 
+// Same safety net as the main Campus world (VRPage.jsx's FallRescueTracker)
+// — catches the player if they ever end up below the floor (e.g. a raycast
+// miss against the imported temple mesh) and teleports them back to spawn
+// instead of leaving them falling forever.
+const FALL_RESCUE_Y = -25
+
+function FallRescueTracker({ playerPositionRef, onFall }) {
+  const firedRef = useRef(false)
+  useFrame(() => {
+    const pos = playerPositionRef.current
+    if (!pos) return
+    if (pos.y < FALL_RESCUE_Y) {
+      if (!firedRef.current) { firedRef.current = true; onFall() }
+    } else {
+      firedRef.current = false
+    }
+  })
+  return null
+}
+
 // ── Tutorial HUD ──────────────────────────────────────────────────────────────
 
 function MissionRow({ mission, done, active }) {
@@ -316,7 +337,7 @@ function RevealTitleCard() {
   )
 }
 
-// ── In-Árbol avatar class picker — replaces the old trip to /vr/world-tree.
+// ── In-Templo avatar class picker — replaces the old trip to /vr/world-tree.
 // Jafet presents every class right here; the Hacker node stays admin-only,
 // same gate as WorldTree's. ──────────────────────────────────────────────────
 function AvatarClassPicker({ isAdmin, onSelect, onClose }) {
@@ -556,7 +577,6 @@ function JafetProximity({ playerPositionRef, onNearChange }) {
 export default function VrArbol() {
   const navigate = useNavigate()
 
-  const avatarId = useGameStore((s) => s.player.avatarId)
   const playerClassId    = useGameStore((s) => s.player.class)
   const oliverClass      = useGameStore((s) => s.oliver.class)
   const forceSyncToCloud = useGameStore((s) => s.forceSyncToCloud)
@@ -566,6 +586,11 @@ export default function VrArbol() {
 
   const chatMessages = useChatStore((s) => s.messages)
   const skin = getSkinById(useMascotStore((s) => s.selectedSkinId))
+  const mascotId = useMascotStore((s) => s.selectedMascotId)
+  // No companion mesh renders until a mascot is actually chosen — passing
+  // the avatar model here (a past bug) made <Player> render it twice: once
+  // as the avatar body, once again as the "mascot" companion beside it.
+  const realMascot = oliverClass ? getMascotById(mascotId) : null
 
   // 'intro' (10-line cinematic) → 'reveal' (camera settles on Jafet) → 'play'.
   // Returning players who already met Jafet skip straight to 'play'.
@@ -587,7 +612,6 @@ export default function VrArbol() {
   const cinematicLockRef = useRef(false)
   if (phase !== 'play') cinematicLockRef.current = true
 
-  const avatarModel = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]
   const jafetMascot = getMascotById(JAFET.mascotId)
 
   // Shared VR movement engine — same WASD/drag-look/touch/gamepad system as
@@ -701,6 +725,10 @@ export default function VrArbol() {
     setShowDialogue(true)
   }
 
+  function handleFallRescue() {
+    useVrCharacterStore.getState().setTeleportTo({ x: ARBOL_SPAWN[0], y: ARBOL_SPAWN[1] + 0.2, z: ARBOL_SPAWN[2] })
+  }
+
   async function handleUserMessage(text) {
     setDialogueMessages(prev => [...prev, { role: 'user', content: text }])
     setIsJafetTyping(true)
@@ -793,7 +821,7 @@ export default function VrArbol() {
           <Suspense fallback={null}>
             <ArbolScene model={groundModel} jafetMascot={jafetMascot} onTalkJafet={openDialogue} />
             <Player
-              mascot={avatarModel}
+              mascot={realMascot}
               skin={skin}
               scenery={groundModel}
               groundRayHeight={groundRayHeight}
@@ -808,6 +836,7 @@ export default function VrArbol() {
               active={phase === 'play' && activeMission?.id === 'practice_basics'}
               onThreshold={() => setMovedEnough(true)}
             />
+            <FallRescueTracker playerPositionRef={playerPositionRef} onFall={handleFallRescue} />
           </Suspense>
         </Physics>
       </Canvas>
