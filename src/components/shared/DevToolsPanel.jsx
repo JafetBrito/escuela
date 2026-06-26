@@ -5,8 +5,12 @@ import { useGameStore } from '../../stores/useGameStore'
 import { useSyncStatusStore } from '../../stores/useSyncStatusStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useDayNightStore } from '../../stores/useDayNightStore'
+import { useLevelStore, levelProgress, MAX_LEVEL } from '../../stores/useLevelStore'
 import { setVoicePermission } from '../../services/admin/gmCommands'
+import { pushSnapshotToCloud } from '../../services/persistence/autoSave'
 import GmConsole from './GmConsole'
+
+const XP_TEST_AMOUNTS = [500, 2500, 5000]
 
 const SEASONS = ['primavera', 'verano', 'otoño', 'invierno']
 const WEATHERS = ['despejado', 'nublado', 'lluvia']
@@ -59,7 +63,16 @@ export default function DevToolsPanel() {
   const dnHour = useDayNightStore((s) => s.manualBaseHour)
   const season = useDayNightStore((s) => s.season)
   const weather = useDayNightStore((s) => s.weather)
+  const xp = useLevelStore((s) => s.xp)
+  const { level, isMaxLevel } = levelProgress(xp)
   if (!isAdmin?.()) return null
+
+  // Goes through addXp() (not loadXp) so the level-up banner/sound actually
+  // fires — same command as /addxp in the GM console, just one click away.
+  const handleAddXp = async (amount) => {
+    useLevelStore.getState().addXp(amount)
+    await pushSnapshotToCloud()
+  }
 
   const handleVoiceGrant = async (enabled) => {
     if (!voiceQuery.trim() || voiceBusy) return
@@ -148,6 +161,25 @@ export default function DevToolsPanel() {
               </button>
             </div>
             {voiceMsg && <p className="mt-1 text-[10px] text-text-muted">{voiceMsg}</p>}
+          </div>
+
+          <div className="mb-2 rounded-lg border border-border/60 bg-surface-hover px-2 py-1.5">
+            <p className="text-xs font-semibold text-text-muted">⭐ Nivel y XP</p>
+            <p className="mt-1 text-[10px] text-text-muted">
+              Nivel {level}{isMaxLevel && ` (máx. ${MAX_LEVEL})`} — dispara el aviso de subir de nivel para probarlo.
+            </p>
+            <div className="mt-1 flex gap-1">
+              {XP_TEST_AMOUNTS.map((amount) => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => handleAddXp(amount)}
+                  className="flex-1 rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary"
+                >
+                  +{amount}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="mb-2 rounded-lg border border-border/60 bg-surface-hover px-2 py-1.5">

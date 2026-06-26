@@ -37,3 +37,33 @@ export function playAchievementSound() {
     // Audio is best-effort; ignore failures (e.g. autoplay restrictions).
   }
 }
+
+// Bigger ascending fanfare for leveling up — same synth approach as the
+// achievement ding, just longer/brighter so it reads as a bigger deal.
+export function playLevelUpSound() {
+  try {
+    const ctx = getContext()
+    if (!ctx) return
+    if (ctx.state === 'suspended') ctx.resume()
+
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51] // C5, E5, G5, C6, E6
+    const now = ctx.currentTime
+
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'triangle'
+      osc.frequency.value = freq
+      const start = now + i * 0.1
+      gain.gain.setValueAtTime(0, start)
+      gain.gain.linearRampToValueAtTime(0.22, start + 0.03)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.6)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(start)
+      osc.stop(start + 0.6)
+    })
+  } catch {
+    // Audio is best-effort; ignore failures (e.g. autoplay restrictions).
+  }
+}

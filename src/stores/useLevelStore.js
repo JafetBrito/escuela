@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useGameStore } from './useGameStore'
+import { playLevelUpSound } from '../utils/sound'
 
 // Diablo-style leveling: 99 levels, 500 XP per level (linear), one talent
 // point awarded per level gained. Level 99 is the cap — XP keeps
@@ -26,10 +27,15 @@ export function levelProgress(xp) {
 
 export const useLevelStore = create((set, get) => ({
   xp: 0,
+  // One entry per level-up "event" (not per level — gaining 3 levels at once
+  // from a big XP grant queues a single toast for the level you landed on,
+  // same as WoW). Consumed by <LevelUpAnnouncer>.
+  levelUpQueue: [],
 
   // Returns the new level so callers can react to level-ups (e.g. show a toast).
-  // Also awards 1 talent point per level gained (Diablo-style), so the
-  // award happens exactly once no matter which caller granted the XP.
+  // Also awards 1 talent point per level gained (Diablo-style) and queues the
+  // on-screen level-up announcement + sound — all in one place, so every XP
+  // grant call site gets this for free instead of having to remember it.
   addXp: (amount) => {
     const prevLevel = levelForXp(get().xp)
     const xp = Math.max(0, get().xp + amount)
@@ -38,9 +44,13 @@ export const useLevelStore = create((set, get) => ({
     const levelsGained = level - prevLevel
     if (levelsGained > 0) {
       useGameStore.getState().earnTalentPoints('player', levelsGained)
+      set((state) => ({ levelUpQueue: [...state.levelUpQueue, { level, ts: Date.now() }] }))
+      playLevelUpSound()
     }
     return { level, leveledUp: levelsGained > 0 }
   },
+
+  dismissLevelUpToast: () => set((state) => ({ levelUpQueue: state.levelUpQueue.slice(1) })),
 
   loadXp: (xp) => set({ xp: xp ?? 0 }),
 }))

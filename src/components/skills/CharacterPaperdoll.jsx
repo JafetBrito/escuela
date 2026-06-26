@@ -1,5 +1,5 @@
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES } from '../../stores/useGameStore'
-import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
+import { useLevelStore, levelForXp, levelProgress, MAX_LEVEL } from '../../stores/useLevelStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { EQUIPMENT_SLOTS, SLOT_META, getEquipmentForSlot, getAvailableEquipment, getEquipmentById } from '../../data/equipmentRegistry'
 import { StatBar5 } from './CharacterTree'
@@ -152,6 +152,8 @@ export function CharacterStats({ owner }) {
   const classId = useGameStore((s) => s[owner].class)
   const hp = useGameStore((s) => s[owner].hp)
   const energy = useGameStore((s) => (isPlayer ? s.player.energy : null))
+  const xp = useLevelStore((s) => s.xp)
+  const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
   const clsDef = isPlayer ? PLAYER_CLASSES[classId] : OLIVER_CLASSES[classId]
   const color = clsDef?.color ?? GOLD
 
@@ -163,6 +165,18 @@ export function CharacterStats({ owner }) {
         border: `1px solid ${GOLD}55`,
       }}
     >
+      {/* Account-wide level/XP — same number whether you're looking at the
+          avatar or the mascot panel, since leveling isn't per-character. */}
+      <div className="px-4 pt-4">
+        <div className="mb-1 flex items-center justify-between text-xs">
+          <span className="flex items-center gap-1 font-bold" style={{ color: GOLD }}>⭐ Nivel {level}{isMaxLevel && ` (máx. ${MAX_LEVEL})`}</span>
+          <span className="text-white/50">{isMaxLevel ? '' : `${xpIntoLevel} / ${xpForNextLevel} XP`}</span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <div className="h-full rounded-full" style={{ width: `${isMaxLevel ? 100 : (xpIntoLevel / xpForNextLevel) * 100}%`, background: GOLD }} />
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-2 p-4">
         <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(0,0,0,0.3)' }}>
           <span className="text-xs">❤️</span>

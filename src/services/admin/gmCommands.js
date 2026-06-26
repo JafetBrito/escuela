@@ -107,6 +107,21 @@ export async function runGmCommand(targetId, name, args) {
       return `✅ Nivel ${level} aplicado.`
     }
 
+    // Unlike /setlevel (silent — used to jump straight to a level), this goes
+    // through addXp() so the level-up banner/sound actually fires, for
+    // testing how leveling up looks/feels.
+    case 'addxp': {
+      const amount = Number(arg)
+      if (!Number.isFinite(amount)) throw new Error('Cantidad de XP inválida.')
+      if (isSelf) {
+        const { level, leveledUp } = useLevelStore.getState().addXp(amount)
+        await pushSnapshotToCloud()
+        return leveledUp ? `✅ +${amount} XP — ¡subiste a nivel ${level}!` : `✅ +${amount} XP.`
+      }
+      await mutateRemoteSnapshot(targetId, (snap) => { snap.xp = Math.max(0, (snap.xp ?? 0) + amount) })
+      return `✅ +${amount} XP añadidos (no verá el aviso de nivel hasta que recargue).`
+    }
+
     case 'unlockmascot': {
       const id = Number(arg)
       if (!Number.isFinite(id)) throw new Error('ID de mascota inválido.')

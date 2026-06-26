@@ -28,6 +28,7 @@ import AchievementsPage from './components/achievements/AchievementsPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import AchievementWatcher from './components/achievements/AchievementWatcher'
 import AchievementToast from './components/achievements/AchievementToast'
+import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import PatchNotesModal from './components/shared/PatchNotesModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import { useLibraryStore } from './stores/useLibraryStore'
@@ -85,6 +86,7 @@ export default function App() {
       */}
       <AchievementWatcher />
       <AchievementToast />
+      <LevelUpAnnouncer />
       <PatchNotesModal />
       <DevToolsPanel />
       
