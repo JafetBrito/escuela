@@ -38,11 +38,18 @@ import {
 // model and returns the height of whatever floor mesh (userData.isFloor)
 // it hits — the same contract every world's ground hook (`useCampusGround`,
 // `useRoomGround`, etc.) already returns a `{ model, groundRayHeight }` for.
+// Takes the LOWEST isFloor hit, not the first one the ray crosses: procedural
+// worlds only ever flag their literal floor meshes as isFloor, so there's
+// normally just one hit and this is a no-op change for them. But
+// useImportedGlbGround (any plain .glb map) flags every mesh as isFloor —
+// for an interior model with a ceiling/dome above the walkable area, the
+// first hit going down from above is the ceiling, which used to snap the
+// player up there permanently instead of onto the real floor.
 export function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
   raycaster.set(new THREE.Vector3(x, groundRayHeight, z), DOWN)
-  const hits = raycaster.intersectObject(scenery, true)
-  const hit = hits.find((h) => h.object.userData.isFloor)
-  return hit ? hit.point.y : 0
+  const hits = raycaster.intersectObject(scenery, true).filter((h) => h.object.userData.isFloor)
+  if (!hits.length) return 0
+  return Math.min(...hits.map((h) => h.point.y))
 }
 
 // Casts a ray from the player's chest in a horizontal direction to check for
