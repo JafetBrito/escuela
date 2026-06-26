@@ -272,6 +272,10 @@ function IntroCinematicOverlay({ onDone }) {
     else { setIdx((p) => p + 1) }
   }
 
+  // Browser TTS occasionally drops an utterance silently — this lets the
+  // player retry the current line on demand instead of getting stuck.
+  const replay = () => speakLine(LINES[idx], () => {})
+
   return (
     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center" style={{ background: 'rgba(4,8,4,0.97)' }}>
       <button type="button" onClick={() => { skipRef.current = true; window.speechSynthesis?.cancel(); onDone() }}
@@ -288,6 +292,10 @@ function IntroCinematicOverlay({ onDone }) {
       <div className="absolute bottom-8 flex items-center gap-4 rounded-2xl px-5 py-3" style={{ background: 'rgba(10,20,10,0.9)', border: '1px solid rgba(152,202,63,0.25)' }}>
         <div className="flex h-10 w-10 items-center justify-center rounded-full text-xl" style={{ background: 'rgba(152,202,63,0.12)', border: '1px solid rgba(152,202,63,0.35)' }}>🧙‍♂️</div>
         <div><p className="text-xs font-black" style={{ color: '#bbe87a' }}>Jafet</p><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>Guardián del Árbol</p></div>
+        <button type="button" onClick={replay} title="Repetir audio" className="rounded-xl px-2.5 py-2 text-base"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          🔊
+        </button>
         <button type="button" onClick={goNext} disabled={!ready} className="ml-2 rounded-xl px-4 py-2 text-xs font-black transition-all disabled:opacity-30"
           style={{ background: 'rgba(152,202,63,0.28)', color: '#bbe87a', border: '1px solid rgba(152,202,63,0.4)' }}>
           {idx >= LINES.length - 1 ? 'Entrar →' : 'Siguiente →'}
@@ -602,15 +610,22 @@ export default function VrArbol() {
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
   const tutorialDone = activeMission === null
 
-  // Reveal cinematic: wide establishing shot of the tree, then settle on
-  // Jafet, then hand control to the player.
+  // Reveal cinematic: pulls back to show more of the tree around the
+  // player, then settles into the normal close framing. NOTE: this engine's
+  // camera always orbits and looks at the PLAYER (see Player.jsx's
+  // lookAt) — there's no independent free-camera that can fly to frame an
+  // NPC elsewhere in the scene, so this is a reveal-around-the-player, not
+  // a cut to Jafet's face. Distances here stay inside the same safe range
+  // already used by the other cinematic beats in this file — a much wider
+  // distance was tried and broke rendering (the camera-collision pull-in
+  // against the tree geometry, plus the look-at height lift formula in
+  // Player.jsx, combined to point the camera at empty sky).
   useEffect(() => {
     if (phase !== 'reveal') return
     const cam = cameraRef.current
-    cam.distance = cam.targetDistance = 11
-    cam.pitch = 0.42
-    cam.yaw = 0.05
-    runCinematic(cameraRef, cinematicLockRef, { pitch: 0.2, distance: 3.2, yaw: -0.3 }, 2600, () => {
+    cam.distance = cam.targetDistance = 4.2
+    cam.pitch = 0.3
+    runCinematic(cameraRef, cinematicLockRef, { pitch: 0.22, distance: 2.6 }, 2400, () => {
       setPhase('play')
       completeStep('meet_jafet')
       setTimeout(openDialogue, 300)
