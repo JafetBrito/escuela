@@ -1,40 +1,60 @@
 /**
  * VrArbol — Mundo tutorial de Oliver Academy (ruta /vr-templo). Escenario:
  * Templo egipcio importado (/MODELOS 3D/VR/egyptian_temple.glb). El nombre
- * del archivo/identificadores internos se quedó como "Arbol"/"Jafet" a
- * propósito (era un árbol procedural antes) — solo cambió el modelo 3D, no
- * hay que renombrar nada más por esto.
+ * del archivo/identificadores internos se quedó como "Arbol" a propósito
+ * (era un árbol procedural antes) — solo cambió el modelo 3D, no hay que
+ * renombrar nada más por esto.
+ *
+ * DOS NPCs, ROLES FIJOS (ver NPCS más abajo): Jafet narra la bienvenida;
+ * desde choose_avatar_class en adelante, Oliver (el mismo gato naranja
+ * mascotId 8 que ya existe como NPC idle en el Campus — ver OLIVER_NPC en
+ * vrNpcRegistry.js) da el resto de las misiones. NPC_DIALOGUE define, por
+ * cada paso de misión, quién habla (`speaker`) — eso es lo único que decide
+ * a cuál NPC hay que acercarse, cuál tiene el ❗, y con cuál se abre el
+ * DialogueBox. "Por stages" = cada entrada de NPC_DIALOGUE es, en efecto, un
+ * stage: cambia quién habla y qué se puede hacer en la escena.
  *
  * FLUJO DE MISIONES (ver src/data/tutorialMissions.js para XP/orden real):
  *   1. meet_jafet        — cinemática de bienvenida (10 líneas con voz) +
- *                          revelación del Templo. Se completa solo, al
+ *                          revelación del Templo (con Jafet Y Oliver ya
+ *                          visibles en la escena). Se completa solo, al
  *                          terminar la cinemática (no requiere acción).
  *   2. practice_basics   — moverte (MovementTracker) + escribirle algo a
  *                          Jafet en el chat de prueba (DialogueBox). Ambos
- *                          son reales, no temporizadores.
- *   3. choose_avatar_class — AvatarClassPicker, dentro del propio Templo
- *                          (ya no viaja a /vr/world-tree).
+ *                          son reales, no temporizadores. Última misión que
+ *                          da Jafet — de aquí en adelante habla Oliver.
+ *   3. choose_avatar_class — AvatarClassPicker: grid de clases → tarjeta de
+ *                          detalle (stats + skills, estilo ClassPreviewCard
+ *                          de VRPage.jsx) con un comentario de Oliver sobre
+ *                          esa clase (OLIVER_CLASS_LINES).
  *   4. choose_mascot     — abre VrMascotOnboarding.
  *   5. mascot_class      — dentro del mismo modal de VrMascotOnboarding.
- *   6. test_ability      — AbilityRevealCard (solo muestra startSkills, no
- *                          hay sistema de combate/cast todavía).
+ *   6. test_ability      — AbilityRevealCard (lectura de los 2 startSkills
+ *                          del Avatar) seguido de SkillTrialPanel (probar
+ *                          cada uno de verdad: dispara un SkillBurstVfx en
+ *                          el color de la habilidad). No hay sistema de
+ *                          combate/cast todavía — esto es lo más real que se
+ *                          puede ofrecer sin construir uno.
  *   7. setup_ai          — opcional/saltable, manda a /ajustes.
  *   8. first_chat        — primera conversación con la mascota (vía
  *                          MascotCompanion, fuera de este archivo).
  *   9. enter_campus      — navega a /vr.
  *
- * INTERACCIÓN CON JAFET — mismo patrón que el resto del mundo VR (ver
+ * INTERACCIÓN CON LOS NPCs — mismo patrón que el resto del mundo VR (ver
  * IdleNpc/IdleNpcCard/NpcProximityTracker en VRPage.jsx, que es donde
  * vive el sistema "oficial" que este archivo imita):
- *   - Clic izquierdo en el modelo → una frase corta en un globo (sin abrir
- *     nada) — JafetNpc.onSayLine / getAmbientLine().
+ *   - Clic izquierdo en cualquiera de los dos modelos → una frase corta en
+ *     un globo (sin abrir nada) — TempleNpc.onSayLine / getAmbientLine(id).
+ *     Funciona aunque no sea su turno de dar misiones (línea de relleno).
  *   - Clic derecho (en cualquier punto de la pantalla) / tecla F / botón
- *     flotante inferior, estando cerca → abre JafetCard (saludo + botón
- *     "Hablar"). Nunca abre la conversación real por sí solo.
- *   - Botón "Hablar" de JafetCard → ahí sí abre DialogueBox (la
- *     conversación de verdad, con las acciones de la misión activa).
- *   - ❗ aparece sobre su cabeza mientras quede tutorial pendiente
- *     (jafetHasQuest = !tutorialDone), igual que el ❗ de misión en VrNpc.
+ *     flotante inferior, estando cerca del NPC que SÍ es el activeSpeakerId
+ *     → abre NpcCard (saludo + botón "Hablar"). Nunca abre la conversación
+ *     real por sí solo. Si estás cerca del NPC equivocado, no pasa nada —
+ *     hay que caminar hacia el que tiene el ❗.
+ *   - Botón "Hablar" de NpcCard → ahí sí abre DialogueBox (la conversación
+ *     de verdad, con las acciones de la misión activa).
+ *   - ❗ aparece SOLO sobre la cabeza del activeSpeakerId mientras quede
+ *     tutorial pendiente, igual que el ❗ de misión en VrNpc.
  *   - showDialogue SOLO se pone en true desde una acción explícita del
  *     jugador (openDialogue) o como continuación de un flujo que el
  *     jugador ya inició (p.ej. después de elegir clase) — nunca se abre
@@ -45,17 +65,23 @@
  *   runCinematic()          — anima pitch/distance/yaw de la cámara del
  *                            engine entre dos valores; usado en los 2-3
  *                            momentos de cámara dirigida de este archivo.
- *   JAFET, JAFET_DIALOGUE   — npc + líneas por paso de misión.
- *   JafetNpc                — modelo 3D de Jafet (clic=frase, ❗+nombre si
- *                            `near`). Usa MODEL_HALF_HEIGHT para no quedar
- *                            enterrado — cualquier NPC nuevo en un GLB
- *                            importado necesita ese mismo ajuste.
- *   ArbolScene              — luces + el modelo del templo. OJO: el modelo
- *                            va envuelto en <RigidBody type="fixed"
- *                            colliders="trimesh"> — sin eso, Player.jsx cae
- *                            para siempre (no hay collider real contra qué
- *                            chocar). Cualquier mundo nuevo con
- *                            useImportedGlbGround necesita lo mismo
+ *   NPCS                    — Jafet + Oliver: nombre/emoji/posición/mascotId
+ *                            /aiPrompt de cada uno.
+ *   NPC_DIALOGUE            — líneas por paso de misión + quién las dice
+ *                            (`speaker`) — esto define los "stages".
+ *   OLIVER_CLASS_LINES      — comentario de Oliver por cada PLAYER_CLASSES
+ *                            id, usado en AvatarClassPicker.
+ *   TempleNpc               — modelo 3D compartido por Jafet y Oliver (clic
+ *                            =frase, ❗+nombre si `near`). Usa
+ *                            MODEL_HALF_HEIGHT para no quedar enterrado —
+ *                            cualquier NPC nuevo en un GLB importado
+ *                            necesita ese mismo ajuste.
+ *   ArbolScene              — luces + el modelo del templo + los 2 TempleNpc.
+ *                            OJO: el modelo va envuelto en <RigidBody
+ *                            type="fixed" colliders="trimesh"> — sin eso,
+ *                            Player.jsx cae para siempre (no hay collider
+ *                            real contra qué chocar). Cualquier mundo nuevo
+ *                            con useImportedGlbGround necesita lo mismo
  *                            (mismo patrón que Campus/Graffiti en VRPage.jsx).
  *   MovementTracker         — distancia real caminada, para practice_basics.
  *   FallRescueTracker       — mismo rescate por caída que VRPage.jsx
@@ -66,16 +92,23 @@
  *                            repetir audio (🔊) por si la voz del navegador
  *                            falla.
  *   RevealTitleCard         — texto flotante durante la fase 'reveal'.
- *   AvatarClassPicker       — lista de PLAYER_CLASSES (oculta 'hacker' salvo
- *                            admin).
+ *   AvatarClassPicker       — grid de PLAYER_CLASSES → tarjeta de detalle con
+ *                            comentario de Oliver (oculta 'hacker' salvo
+ *                            admin, y sin línea de Oliver para esa clase).
  *   ClassRevealAnnouncer    — flash de "elegiste tu clase" (avatar u oliver).
  *   AbilityRevealCard       — muestra startSkills de ambas clases elegidas.
- *   JafetCard               — el popup de clic-derecho/F (saludo + Hablar).
- *   DialogueBox             — la conversación real con Jafet (input libre +
- *                            botón de acción de la misión activa).
+ *   SkillTrialPanel         — los 2 botones para probar cada startSkill del
+ *                            Avatar de verdad (no solo leerla).
+ *   SkillBurstVfx           — el anillo de color que dispara SkillTrialPanel,
+ *                            mismo lenguaje visual que LocalAttackBurst en
+ *                            VRPage.jsx pero sin ángulo de mira (no es combate).
+ *   NpcCard                 — el popup de clic-derecho/F (saludo + Hablar),
+ *                            para cualquiera de los dos NPCs.
+ *   DialogueBox             — la conversación real con el NPC activo (input
+ *                            libre + botón de acción de la misión activa).
  *   ActionButton            — botón(es) de acción dentro de DialogueBox,
  *                            específico por missionId.
- *   JafetProximity          — distancia jugador↔Jafet → nearJafet.
+ *   NpcProximityTracker     — NPC más cercano (jafet/oliver/null) → nearNpcId.
  *   VrArbol (default)       — página principal: estado, efectos, layout.
  */
 import { Suspense, useEffect, useRef, useState } from 'react'
@@ -101,11 +134,16 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons, BubbleStack, MODEL_HALF_HEIGHT } from './engine'
 import { useImportedGlbGround } from './worlds/useImportedGlbGround'
 
-// Where Jafet stands and where the player spawns — small offsets near the
-// world's center, which is where useImportedGlbGround() recenters whatever
-// GLB is loaded, regardless of that model's native scale.
+// Where each NPC stands and where the player spawns — small offsets near
+// the world's center, which is where useImportedGlbGround() recenters
+// whatever GLB is loaded, regardless of that model's native scale. Jafet and
+// Oliver stand on opposite sides so both are visible together during the
+// welcome stage, and so walking from one to the other (as the active
+// speaker changes — see NPC_DIALOGUE) is a deliberate, visible move.
 const ARBOL_JAFET_POS = [2.5, 0, -4]
+const ARBOL_OLIVER_POS = [-2.5, 0, -4]
 const ARBOL_SPAWN = [0, 0, 4]
+const NPC_INTERACT_RADIUS = 3.5
 
 // ── TTS helper — same pattern as VrCueva.jsx's speakLine, kept local since
 // it's a small, self-contained helper with no shared state worth a module. ──
@@ -163,78 +201,139 @@ function runCinematic(cameraRef, lockedRef, { pitch, distance, yaw }, ms = 1800,
   requestAnimationFrame(tick)
 }
 
-// ── NPC Jafet definition ──────────────────────────────────────────────────────
-const JAFET = {
-  id: 'jafet',
-  name: 'Jafet',
-  emoji: '🧙‍♂️',
-  color: '#98ca3f',
-  mascotId: 10,   // mage_elder.glb
-  aiPrompt: `Eres Jafet, el guardián del Templo de Oliver Academy. Eres sabio, cercano y con buen humor.
+// ── NPCs ───────────────────────────────────────────────────────────────────
+// Jafet narrates the welcome (meet_jafet/practice_basics); from
+// choose_avatar_class onward Oliver takes over as the mission-giver — see
+// NPC_DIALOGUE's `speaker` field, which drives both the dialogue header and
+// which NPC's ❗ is currently lit.
+const NPCS = {
+  jafet: {
+    id: 'jafet',
+    name: 'Jafet',
+    emoji: '🧙‍♂️',
+    color: '#98ca3f',
+    role: 'Guardián del Templo',
+    position: ARBOL_JAFET_POS,
+    mascotId: 10,   // mage_elder.glb
+    aiPrompt: `Eres Jafet, el guardián del Templo de Oliver Academy. Eres sabio, cercano y con buen humor.
 Guías a los nuevos estudiantes a través del tutorial de bienvenida.
 Hablas en español, eres entusiasta del aprendizaje y del mundo mágico de Oliver Academy.
 Nunca salgas del personaje. Usa emojis ocasionalmente para ser expresivo.`,
+  },
+  oliver: {
+    id: 'oliver',
+    name: 'Oliver',
+    emoji: '🐱',
+    color: '#fb923c',
+    role: 'Guía de misiones',
+    position: ARBOL_OLIVER_POS,
+    mascotId: 8,   // orange_cat.glb — same Oliver as the Campus's idle NPC
+    aiPrompt: `Eres Oliver, el gato naranja guía de Oliver Academy. Eres juguetón y bromista
+(chistes de gatos y de programación), pero siempre claro sobre qué misión sigue.
+Hablas en español. Usa emojis de gato ocasionalmente. Nunca salgas del personaje.`,
+  },
 }
 
 // ── Scripted dialogue per tutorial step ──────────────────────────────────────
-// Each key holds the lines Jafet says once that step BECOMES the active one
-// (not "after finishing the previous one") — that way the same content works
-// both the first time a step starts and when the player returns to it.
-const JAFET_DIALOGUE = {
-  practice_basics: [
-    '¡Aquí estás! Antes de nada, quiero que te sueltes un poco. 🚶',
-    'Camina por aquí — usa WASD o el joystick — y cuando quieras, cuéntame algo. Así pruebas el sistema con el que vamos a hablar de ahora en adelante.',
-    'Ah, y ya que estamos: muy pronto vas a tener que elegir tu camino. Ve pensando qué tipo de estudiante quieres ser. 🤔',
-  ],
-  choose_avatar_class: [
-    '¡Ese es el espíritu! 🌟 Llegó el momento: ¿qué camino quieres seguir?',
-    'Elige la clase que más te represente. Tu mascota, más adelante, elegirá una que te complemente.',
-  ],
-  choose_mascot: [
-    '¡Bien elegido! Ese camino te queda perfecto. ⚔️',
-    'Ahora necesitas un compañero de viaje. Cada mascota tiene su propio estilo — elige la que sientas más cercana a ti.',
-  ],
-  mascot_class: [
-    '¡Un compañero increíble! 🐾 Pero un compañero sin clase es como un hechicero sin grimorio…',
-    'Elige su clase con cuidado: algunas combinan mejor con tu camino que otras, aunque al final la decisión es toda tuya.',
-  ],
-  test_ability: [
-    '¡Ya tienen camino los dos! ✨ Y eso significa que ya tienen sus primeras habilidades.',
-    'Échales un vistazo — vale la pena saber con qué cuentas antes de seguir.',
-  ],
-  setup_ai: [
-    '¡Perfecto! Tu compañero ya tiene poderes únicos. 🔮',
-    'Ahora viene algo opcional pero muy poderoso: darle una mente de IA real para que piense y responda por sí mismo.',
-  ],
-  first_chat: [
-    '¡Tu compañero está casi listo! 🤖',
-    'Ahora pruébalo: abre su menú y dile algo. Una primera conversación siempre se recuerda.',
-  ],
-  enter_campus: [
-    '¡Los escuché conversar! 💬 Ese es un vínculo que solo crece con el tiempo.',
-    'Ya completaste todo lo que el Templo tenía para enseñarte. Solo falta un paso: cruzar hacia Oliver Academy.',
-  ],
-  done: [
-    '¡Has llegado lejos, estudiante! 🎉 El campus de Oliver Academy te espera con nuevas clases, batallas y aventuras.',
-    '¡Nos vemos por ahí! 🌍',
-  ],
+// Each key holds the lines its `speaker` says once that step BECOMES the
+// active one (not "after finishing the previous one") — that way the same
+// content works both the first time a step starts and when the player
+// returns to it.
+const NPC_DIALOGUE = {
+  practice_basics: {
+    speaker: 'jafet',
+    lines: [
+      '¡Aquí estás! Antes de nada, quiero que te sueltes un poco. 🚶',
+      'Camina por aquí — usa WASD o el joystick — y cuando quieras, cuéntame algo. Así pruebas el sistema con el que vamos a hablar de ahora en adelante.',
+      'Ah, y ya que estamos: muy pronto vas a conocer a Oliver, él te va a guiar de aquí en adelante. 🐱',
+    ],
+  },
+  choose_avatar_class: {
+    speaker: 'oliver',
+    lines: [
+      '¡Miau! 🐱 Soy Oliver — de aquí en adelante, yo te voy guiando con las misiones.',
+      'Jafet ya te dio la bienvenida — ahora vamos a lo divertido: elegir tu camino.',
+      'Revisa cada clase con calma, te cuento un poco de cada una antes de que decidas. 😼',
+    ],
+  },
+  choose_mascot: {
+    speaker: 'oliver',
+    lines: [
+      '¡Excelente elección! ⚔️ Ahora necesitas un compañero de viaje.',
+      'Elige la mascota que sientas más cercana a ti — cada una tiene su propio estilo.',
+    ],
+  },
+  mascot_class: {
+    speaker: 'oliver',
+    lines: [
+      '¡Un compañero increíble! 🐾 Pero un compañero sin clase es como un gato sin sus uñas…',
+      'Elige su clase con cuidado: algunas combinan mejor con tu camino que otras, aunque al final la decisión es toda tuya.',
+    ],
+  },
+  test_ability: {
+    speaker: 'oliver',
+    lines: [
+      '¡Ya tienen camino los dos! ✨ Y eso significa que ya tienen sus primeras habilidades.',
+      'Vamos a probarlas de verdad, no solo a leerlas. 😼',
+    ],
+  },
+  setup_ai: {
+    speaker: 'oliver',
+    lines: [
+      '¡Perfecto! Tu compañero ya tiene poderes únicos. 🔮',
+      'Ahora viene algo opcional pero muy poderoso: darle una mente de IA real para que piense y responda por sí mismo.',
+    ],
+  },
+  first_chat: {
+    speaker: 'oliver',
+    lines: [
+      '¡Tu compañero está casi listo! 🤖',
+      'Ahora pruébalo: abre su menú y dile algo. Una primera conversación siempre se recuerda.',
+    ],
+  },
+  enter_campus: {
+    speaker: 'oliver',
+    lines: [
+      '¡Los escuché conversar! 💬 Ese es un vínculo que solo crece con el tiempo.',
+      'Ya completaste todo lo que el Templo tenía para enseñarte. Solo falta un paso: cruzar hacia Oliver Academy.',
+    ],
+  },
+  done: {
+    speaker: 'oliver',
+    lines: [
+      '¡Has llegado lejos, estudiante! 🎉 El campus de Oliver Academy te espera con nuevas clases, batallas y aventuras.',
+      '¡Nos vemos por ahí! 🌍',
+    ],
+  },
+}
+
+// ── Oliver's per-class commentary, shown while previewing a class in
+// AvatarClassPicker — keyed by PLAYER_CLASSES id. Only the 5 base classes;
+// Hacker is admin-only and skips this entirely (see AvatarClassPicker). ────
+const OLIVER_CLASS_LINES = {
+  programmer: '¿Programador? Buena elección, casi tan rápido como yo cazando una luz láser. ⌨️🐱',
+  cyber_strategist: 'Ciber-Estratega, ¿eh? Le gusta vigilar todo desde arriba… como yo en el librero. 🕹️',
+  ai_engineer: 'Ingeniero de IA — entrenas modelos, yo entreno a mis humanos para que me den croquetas. 🤖',
+  designer: 'Diseñador, todo arte y forma. Yo también soy una obra de arte, por si no lo habías notado. 🎨',
+  philosopher: 'Filósofo… le va a sobrar sabiduría para cuando alguien le pregunte "¿por qué un gato hace eso?". 🦉',
 }
 
 // ── 3D Scene components ───────────────────────────────────────────────────────
 
-// Jafet's own visible scale — separate from his ground position so the
-// MODEL_HALF_HEIGHT lift below can be computed against it. Without that
-// lift the model is centered on ARBOL_JAFET_POS (ground level), burying
-// roughly the bottom half of it in the floor — same convention every other
-// NPC in the VR engine uses (see IdleNpc/VrNpc in VRPage.jsx: outer group at
-// ground level, inner group lifted by scale * MODEL_HALF_HEIGHT).
-const JAFET_SCALE = 0.18
+// Every Temple NPC's visible scale — separate from their ground position so
+// the MODEL_HALF_HEIGHT lift below can be computed against it. Without that
+// lift the model is centered on its ground position, burying roughly the
+// bottom half of it in the floor — same convention every other NPC in the
+// VR engine uses (see IdleNpc/VrNpc in VRPage.jsx: outer group at ground
+// level, inner group lifted by scale * MODEL_HALF_HEIGHT).
+const NPC_SCALE = 0.18
 
-// Same left-click-for-a-line + proximity name tag/exclamation pattern as
-// every other NPC in the app (VRPage.jsx's IdleNpc/VrNpc) — see the
-// doc-comment at the top of this file for the full list of what's shared
-// vs. bespoke here. `onSayLine` returns the text to show in the bubble.
-function JafetNpc({ mascot, near, hasQuest, onSayLine }) {
+// Shared by both Jafet and Oliver — same left-click-for-a-line + proximity
+// name tag/exclamation pattern as every other NPC in the app (VRPage.jsx's
+// IdleNpc/VrNpc) — see the doc-comment at the top of this file for the full
+// list of what's shared vs. bespoke here. `onSayLine` returns the text to
+// show in the bubble; `hasQuest` lights the ❗ only on the active speaker.
+function TempleNpc({ npc, mascot, near, hasQuest, onSayLine }) {
   const groupRef = useRef()
   const [bubbles, setBubbles] = useState([])
   const bubbleIdRef = useRef(1)
@@ -242,7 +341,7 @@ function JafetNpc({ mascot, near, hasQuest, onSayLine }) {
   useFrame((_, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * 0.3
-      groupRef.current.position.y = ARBOL_JAFET_POS[1] + Math.sin(Date.now() * 0.001) * 0.06
+      groupRef.current.position.y = npc.position[1] + Math.sin(Date.now() * 0.001) * 0.06
     }
   })
 
@@ -257,32 +356,32 @@ function JafetNpc({ mascot, near, hasQuest, onSayLine }) {
   return (
     <group
       ref={groupRef}
-      position={ARBOL_JAFET_POS}
+      position={npc.position}
       onClick={(e) => { e.stopPropagation(); sayLine() }}
     >
-      <group scale={JAFET_SCALE} position={[0, JAFET_SCALE * MODEL_HALF_HEIGHT, 0]}>
+      <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <Suspense fallback={null}>
           <MascotMesh mascot={mascot} />
         </Suspense>
       </group>
       {near && (
-        <Html position={[0, JAFET_SCALE * MODEL_HALF_HEIGHT * 2 + 0.6, 0]} center distanceFactor={10}>
+        <Html position={[0, NPC_SCALE * MODEL_HALF_HEIGHT * 2 + 0.6, 0]} center distanceFactor={10}>
           <div className="pointer-events-none flex flex-col items-center gap-0.5">
             {hasQuest && (
               <span className="animate-bounce text-xl leading-none drop-shadow-lg" style={{ color: '#facc15', textShadow: '0 0 8px #f59e0b' }}>❗</span>
             )}
             <div className="whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-              🧙‍♂️ Jafet
+              {npc.emoji} {npc.name}
             </div>
           </div>
         </Html>
       )}
-      <BubbleStack bubbles={bubbles} baseY={JAFET_SCALE * MODEL_HALF_HEIGHT * 2 + 1.0} color="#98ca3f" />
+      <BubbleStack bubbles={bubbles} baseY={NPC_SCALE * MODEL_HALF_HEIGHT * 2 + 1.0} color={npc.color} />
     </group>
   )
 }
 
-function ArbolScene({ model, jafetMascot, jafetNear, jafetHasQuest, onJafetSayLine }) {
+function ArbolScene({ model, jafetMascot, oliverMascot, nearNpcId, activeSpeakerId, onNpcSayLine }) {
   return (
     <>
       <color attach="background" args={['#2a1c0f']} />
@@ -302,7 +401,20 @@ function ArbolScene({ model, jafetMascot, jafetNear, jafetHasQuest, onJafetSayLi
       <RigidBody type="fixed" colliders="trimesh">
         <primitive object={model} />
       </RigidBody>
-      <JafetNpc mascot={jafetMascot} near={jafetNear} hasQuest={jafetHasQuest} onSayLine={onJafetSayLine} />
+      <TempleNpc
+        npc={NPCS.jafet}
+        mascot={jafetMascot}
+        near={nearNpcId === 'jafet'}
+        hasQuest={activeSpeakerId === 'jafet'}
+        onSayLine={() => onNpcSayLine('jafet')}
+      />
+      <TempleNpc
+        npc={NPCS.oliver}
+        mascot={oliverMascot}
+        near={nearNpcId === 'oliver'}
+        hasQuest={activeSpeakerId === 'oliver'}
+        onSayLine={() => onNpcSayLine('oliver')}
+      />
     </>
   )
 }
@@ -450,10 +562,85 @@ function RevealTitleCard() {
 }
 
 // ── In-Templo avatar class picker — replaces the old trip to /vr/world-tree.
-// Jafet presents every class right here; the Hacker node stays admin-only,
-// same gate as WorldTree's. ──────────────────────────────────────────────────
+// Two steps: a grid to pick which class to preview, then a detail card (stat
+// bars + starting skills, same density as WorldTree's ClassPreviewCard) with
+// Oliver's own commentary on that class (OLIVER_CLASS_LINES) — "si voy a
+// elegir una, Oliver me diga un poco de cada una". Hacker stays admin-only,
+// same gate as WorldTree's, and never gets an Oliver line (see the filter
+// below — only the 5 base classes have one). ──────────────────────────────
 function AvatarClassPicker({ isAdmin, onSelect, onClose }) {
+  const [previewId, setPreviewId] = useState(null)
   const classes = Object.values(PLAYER_CLASSES).filter((c) => c.id !== 'hacker' || isAdmin)
+  const preview = previewId && PLAYER_CLASSES[previewId]
+
+  if (preview) {
+    const maxStat = 5
+    return (
+      <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-4 sm:bottom-4">
+        <div className="w-full max-w-sm overflow-hidden rounded-3xl border bg-surface/95 shadow-2xl backdrop-blur"
+          style={{ borderColor: `${preview.color}66` }}>
+          <div className="flex items-center gap-3 px-4 py-3"
+            style={{ background: `linear-gradient(135deg, ${preview.color}22, ${preview.color}08)` }}>
+            <span className="text-4xl">{preview.icon}</span>
+            <div className="flex-1">
+              <p className="text-base font-black text-text">{preview.name}</p>
+              <p className="text-xs text-text-muted">{preview.description}</p>
+            </div>
+            <button type="button" onClick={() => setPreviewId(null)} className="text-text-muted hover:text-text">←</button>
+          </div>
+
+          <div className="grid grid-cols-5 gap-1.5 px-4 py-3">
+            {Object.entries(preview.stats).map(([stat, val]) => (
+              <div key={stat} className="flex flex-col items-center gap-1">
+                <div className="flex flex-col-reverse gap-0.5">
+                  {Array.from({ length: maxStat }).map((_, i) => (
+                    <div key={i} className="h-2.5 w-3 rounded-sm"
+                      style={{ background: i < val ? preview.color : 'rgba(255,255,255,0.08)' }} />
+                  ))}
+                </div>
+                <span className="text-[9px] font-bold uppercase text-text-muted">{stat.slice(0, 3)}</span>
+              </div>
+            ))}
+          </div>
+
+          {OLIVER_CLASS_LINES[preview.id] && (
+            <div className="mx-4 mb-3 flex items-start gap-2 rounded-xl border border-orange-400/30 bg-orange-400/10 px-3 py-2">
+              <span className="text-lg">🐱</span>
+              <p className="text-[11px] italic leading-snug text-text-muted">{OLIVER_CLASS_LINES[preview.id]}</p>
+            </div>
+          )}
+
+          <div className="border-t border-border px-4 py-2">
+            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-text-muted">Habilidades iniciales</p>
+            <div className="flex gap-2">
+              {preview.startSkills.map((sid) => {
+                const skill = SKILL_REGISTRY[sid]
+                return skill ? (
+                  <div key={sid} className="flex items-center gap-1.5 rounded-lg border border-border px-2 py-1.5"
+                    style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}11` }}>
+                    <span className="text-lg">{skill.icon}</span>
+                    <div>
+                      <p className="text-[10px] font-bold text-text">{skill.name}</p>
+                      <p className="text-[9px] text-text-muted">{skill.description}</p>
+                    </div>
+                  </div>
+                ) : null
+              })}
+            </div>
+          </div>
+
+          <div className="px-4 pb-4 pt-2">
+            <button type="button" onClick={() => onSelect(preview.id)}
+              className="w-full rounded-xl py-2.5 text-sm font-black text-white transition-all hover:scale-105"
+              style={{ background: `linear-gradient(135deg, ${preview.color}, ${preview.color}cc)` }}>
+              Elegir {preview.name}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-2 px-3 pb-4 sm:bottom-4 sm:left-1/2 sm:w-[420px] sm:-translate-x-1/2">
       <div className="rounded-2xl border border-border bg-surface/95 p-3 shadow-2xl backdrop-blur">
@@ -463,7 +650,7 @@ function AvatarClassPicker({ isAdmin, onSelect, onClose }) {
         </div>
         <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
           {classes.map((cls) => (
-            <button key={cls.id} type="button" onClick={() => onSelect(cls.id)}
+            <button key={cls.id} type="button" onClick={() => setPreviewId(cls.id)}
               className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all hover:scale-[1.01]"
               style={{ borderColor: `${cls.color}55`, background: `${cls.color}0c` }}>
               <span className="text-3xl">{cls.icon}</span>
@@ -550,18 +737,74 @@ function AbilityRevealCard({ playerClass, oliverClass, onDone }) {
   )
 }
 
-// ── Jafet's interaction card — right-click/F-key/prompt-button, same
-// pattern as every other NPC's "card before chat" step (see IdleNpcCard in
-// VRPage.jsx). Shows one contextual line + a button that opens the real
-// conversation (<DialogueBox>); never opens that conversation by itself. ──
-function JafetCard({ line, onTalk, onClose }) {
+// ── Skill trial — follows AbilityRevealCard. Player taps each of their 2
+// starting skills at least once (fireSkillVfx + a real ring burst in the 3D
+// scene), so test_ability is an actual trial, not just a reveal. Only the
+// player's own startSkills, not the mascot's — Oliver's class is chosen in a
+// separate modal (VrMascotOnboarding) outside this file's flow. ───────────
+function SkillTrialPanel({ skills, tried, onTry }) {
+  return (
+    <div className="absolute bottom-20 left-1/2 z-30 w-80 -translate-x-1/2 rounded-2xl border border-primary/30 bg-surface/95 p-4 shadow-2xl backdrop-blur-sm">
+      <p className="mb-3 text-center text-xs font-black uppercase tracking-widest text-primary">Prueba tus habilidades</p>
+      <div className="flex flex-col gap-2">
+        {skills.map((skill, i) => (
+          <button key={skill.id} type="button" onClick={() => onTry(i, skill)} disabled={tried[i]}
+            className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all disabled:opacity-50"
+            style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}11` }}>
+            <span className="text-2xl">{skill.icon}</span>
+            <div className="flex-1">
+              <p className="text-xs font-black text-text">{skill.name}</p>
+              <p className="text-[10px] leading-snug text-text-muted">{skill.description}</p>
+            </div>
+            <span className="text-base">{tried[i] ? '✅' : '👆'}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Renders the ring burst fired by SkillTrialPanel — same expanding-ring
+// language as VRPage.jsx's LocalAttackBurst, just simpler (no facing angle,
+// this isn't combat) and colored per-skill via skill.vfxColor.
+function SkillBurstVfx({ playerPositionRef, burstRef }) {
+  const ringRef = useRef()
+  useFrame(() => {
+    const pos = playerPositionRef.current
+    const ring = ringRef.current
+    const burst = burstRef.current
+    if (!pos || !ring) return
+    if (!burst) { ring.visible = false; return }
+    const age = Date.now() - burst.ts
+    if (age > 900) { ring.visible = false; return }
+    ring.visible = true
+    ring.position.set(pos.x, pos.y + 0.6, pos.z)
+    const p = age / 900
+    ring.scale.setScalar(0.5 + p * 1.4)
+    ring.material.color.set(burst.color)
+    ring.material.opacity = 0.85 * (1 - p)
+  })
+  return (
+    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+      <ringGeometry args={[0.3, 0.5, 24]} />
+      <meshBasicMaterial transparent depthWrite={false} />
+    </mesh>
+  )
+}
+
+// ── NPC interaction card — right-click/F-key/prompt-button, same pattern as
+// every other NPC's "card before chat" step (see IdleNpcCard in VRPage.jsx).
+// Shows one contextual line + a button that opens the real conversation
+// (<DialogueBox>); never opens that conversation by itself. Works for
+// whichever NPC (Jafet or Oliver) is the current active speaker. ──────────
+function NpcCard({ npc, line, onTalk, onClose }) {
   return (
     <div className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 overflow-hidden rounded-2xl border border-primary/30 bg-surface/95 shadow-2xl backdrop-blur-sm sm:bottom-20">
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <span className="text-2xl">🧙‍♂️</span>
+        <span className="text-2xl">{npc.emoji}</span>
         <div className="flex-1">
-          <p className="text-sm font-black text-text">Jafet</p>
-          <p className="text-[10px] text-primary">Guardián del Templo</p>
+          <p className="text-sm font-black text-text">{npc.name}</p>
+          <p className="text-[10px] text-primary">{npc.role}</p>
         </div>
         <button type="button" onClick={onClose} className="text-text-muted hover:text-text text-lg leading-none">×</button>
       </div>
@@ -578,7 +821,7 @@ function JafetCard({ line, onTalk, onClose }) {
 
 // ── Dialogue box ──────────────────────────────────────────────────────────────
 
-function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissionId, onAction }) {
+function DialogueBox({ npc, messages, onClose, onUserMessage, isLoading, activeMissionId, onAction }) {
   const [input, setInput] = useState('')
   const bottomRef = useRef(null)
 
@@ -598,10 +841,10 @@ function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissio
         style={{ maxHeight: '55vh', minHeight: '200px' }}>
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <span className="text-2xl">🧙‍♂️</span>
+          <span className="text-2xl">{npc.emoji}</span>
           <div className="flex-1">
-            <p className="text-sm font-black text-text">Jafet</p>
-            <p className="text-[10px] text-primary">Guardián del Templo</p>
+            <p className="text-sm font-black text-text">{npc.name}</p>
+            <p className="text-[10px] text-primary">{npc.role}</p>
           </div>
           <button type="button" onClick={onClose}
             className="text-text-muted hover:text-text text-lg leading-none">×</button>
@@ -623,7 +866,7 @@ function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissio
           {isLoading && (
             <div className="flex justify-start">
               <div className="rounded-2xl rounded-bl-sm bg-background border border-border px-3 py-2">
-                <span className="text-text-muted text-xs animate-pulse">Jafet está escribiendo…</span>
+                <span className="text-text-muted text-xs animate-pulse">{npc.name} está escribiendo…</span>
               </div>
             </div>
           )}
@@ -644,7 +887,7 @@ function DialogueBox({ messages, onClose, onUserMessage, isLoading, activeMissio
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && send()}
-            placeholder="Pregúntale algo a Jafet…"
+            placeholder={`Pregúntale algo a ${npc.name}…`}
             className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs text-text outline-none focus:border-primary"
           />
           <button type="button" onClick={send}
@@ -692,19 +935,25 @@ function ActionButton({ missionId, onAction }) {
   )
 }
 
-// Tells the page when the player has walked close enough to Jafet to talk —
-// same proximity-prompt pattern as every other VR world's NPCs.
-function JafetProximity({ playerPositionRef, onNearChange }) {
-  const wasNear = useRef(false)
+// Tells the page which NPC (if any) the player is close enough to talk to —
+// same nearest-NPC pattern as VRPage.jsx's NpcProximityTracker, just over the
+// 2 Temple NPCs instead of the whole Campus roster.
+function NpcProximityTracker({ playerPositionRef, onNearChange }) {
+  const lastNear = useRef(null)
   useFrame(() => {
     const pos = playerPositionRef.current
     if (!pos) return
-    const dx = pos.x - ARBOL_JAFET_POS[0]
-    const dz = pos.z - ARBOL_JAFET_POS[2]
-    const near = Math.sqrt(dx * dx + dz * dz) < 3.5
-    if (near !== wasNear.current) {
-      wasNear.current = near
-      onNearChange(near)
+    let closestId = null
+    let closestDist = NPC_INTERACT_RADIUS
+    for (const npc of Object.values(NPCS)) {
+      const dx = pos.x - npc.position[0]
+      const dz = pos.z - npc.position[2]
+      const dist = Math.sqrt(dx * dx + dz * dz)
+      if (dist < closestDist) { closestDist = dist; closestId = npc.id }
+    }
+    if (closestId !== lastNear.current) {
+      lastNear.current = closestId
+      onNearChange(closestId)
     }
   })
   return null
@@ -736,36 +985,47 @@ export default function VrArbol() {
   const [showDialogue, setShowDialogue]         = useState(false)
   // The card (greeting + "Hablar" button) shown by right-click/F-key/the
   // bottom prompt — opening the real conversation always goes through this
-  // first, same two-step pattern as every other NPC (see JafetCard above).
-  const [showJafetCard, setShowJafetCard]       = useState(false)
+  // first, same two-step pattern as every other NPC (see NpcCard above).
+  const [showNpcCard, setShowNpcCard]           = useState(false)
   const [dialogueMessages, setDialogueMessages] = useState([])
-  const [isJafetTyping, setIsJafetTyping]       = useState(false)
+  const [isNpcTyping, setIsNpcTyping]           = useState(false)
   const [showMascotOnboarding, setShowMascotOnboarding] = useState(false)
   const [showClassPicker, setShowClassPicker]   = useState(false)
   const [showAbilityReveal, setShowAbilityReveal] = useState(false)
+  const [showSkillTrial, setShowSkillTrial]     = useState(false)
+  const [skillsTried, setSkillsTried]           = useState([false, false])
   const [classReveal, setClassReveal]           = useState(null) // { cls, ownerLabel } | null
-  const [nearJafet, setNearJafet]               = useState(false)
+  const [nearNpcId, setNearNpcId]               = useState(null) // 'jafet' | 'oliver' | null
   const [talkedFreely, setTalkedFreely]         = useState(false)
   const [movedEnough, setMovedEnough]           = useState(false)
-  // Tracks which JAFET_DIALOGUE key was last spoken, so announce() never
+  // Tracks which NPC_DIALOGUE key was last spoken, so announce() never
   // repeats itself within one mount but still speaks fresh content whenever
   // the active step actually changes.
   const lastSpokenRef = useRef('')
   const cinematicLockRef = useRef(false)
   if (phase !== 'play') cinematicLockRef.current = true
 
-  const jafetMascot = getMascotById(JAFET.mascotId)
+  const jafetMascot = getMascotById(NPCS.jafet.mascotId)
+  const oliverMascot = getMascotById(NPCS.oliver.mascotId)
 
   // Shared VR movement engine — same WASD/drag-look/touch/gamepad system as
-  // Campus, Room, Anfiteatro and the Cueva de Platón.
+  // Campus, Room, Anfiteatro and la Cueva de Platón.
   const { model: groundModel, groundRayHeight } = useImportedGlbGround('/MODELOS 3D/VR/egyptian_temple.glb')
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
   const playerPositionRef = useRef(null)
+  // VFX trigger for SkillTrialPanel — { color, ts } | null, read every frame
+  // by SkillBurstVfx inside the Canvas.
+  const skillBurstRef = useRef(null)
 
   // Detect which mission is currently active (first not done)
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
   const tutorialDone = activeMission === null
+  // Who's currently giving missions — Jafet through practice_basics, Oliver
+  // from choose_avatar_class onward (see NPC_DIALOGUE).
+  const activeSpeakerId = NPC_DIALOGUE[activeMission?.id ?? 'done']?.speaker ?? 'jafet'
+  const playerStartSkills = (PLAYER_CLASSES[playerClassId]?.startSkills ?? [])
+    .map((sid) => SKILL_REGISTRY[sid]).filter(Boolean)
 
   // Reveal cinematic: pulls back to show more of the tree around the
   // player, then settles into the normal close framing. NOTE: this engine's
@@ -787,7 +1047,7 @@ export default function VrArbol() {
       completeStep('meet_jafet')
       // Deliberately doesn't auto-open the dialogue — the player walks up
       // and interacts with Jafet themselves (right-click/F/prompt button),
-      // same as every other NPC in the app. See JafetCard/openDialogue.
+      // same as every other NPC in the app. See NpcCard/openDialogue.
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
@@ -816,21 +1076,22 @@ export default function VrArbol() {
     if (isTutorialComplete()) forceSyncToCloud().catch(() => {})
   }, [done, isTutorialComplete, forceSyncToCloud])
 
-  // F key opens Jafet's card when nearby — same shortcut + same two-step
-  // (card-then-chat) interaction as every other NPC in the app.
+  // F key opens the active speaker's card when standing next to THEM
+  // specifically — same shortcut + same two-step (card-then-chat)
+  // interaction as every other NPC in the app.
   useEffect(() => {
     const handler = (e) => {
-      if (e.code === 'KeyF' && nearJafet && phase === 'play' && !showDialogue && !showJafetCard && !showMascotOnboarding && !tutorialDone) {
-        setShowJafetCard(true)
+      if (e.code === 'KeyF' && nearNpcId === activeSpeakerId && phase === 'play' && !showDialogue && !showNpcCard && !showMascotOnboarding && !tutorialDone) {
+        setShowNpcCard(true)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearJafet, showDialogue, showJafetCard, showMascotOnboarding, tutorialDone, phase])
+  }, [nearNpcId, activeSpeakerId, showDialogue, showNpcCard, showMascotOnboarding, tutorialDone, phase])
 
-  // Push Jafet message helper
-  function pushJafet(text) {
+  // Push a message from whichever NPC is currently speaking
+  function pushNpc(text) {
     setDialogueMessages(prev => [...prev, { role: 'assistant', content: text }])
   }
 
@@ -840,23 +1101,26 @@ export default function VrArbol() {
   function announce(key) {
     if (!key || key === lastSpokenRef.current) return
     lastSpokenRef.current = key
-    const lines = JAFET_DIALOGUE[key] ?? []
-    lines.forEach((line, i) => setTimeout(() => pushJafet(line), i * 700))
+    const lines = NPC_DIALOGUE[key]?.lines ?? []
+    lines.forEach((line, i) => setTimeout(() => pushNpc(line), i * 700))
     if (key === 'done') {
       runCinematic(cameraRef, cinematicLockRef, { pitch: 0.25, distance: 2.4 })
     }
   }
 
   function openDialogue() {
-    setShowJafetCard(false)
+    setShowNpcCard(false)
     announce(activeMission?.id ?? 'done')
     setShowDialogue(true)
   }
 
-  // The line Jafet says on a plain left-click (no card, no chat) — just the
-  // first line of whatever he'd open the real conversation with right now.
-  function getAmbientLine() {
-    return JAFET_DIALOGUE[activeMission?.id ?? 'done']?.[0] ?? ''
+  // The line an NPC says on a plain left-click (no card, no chat). If it's
+  // not currently their turn to speak, they get a small flavor line instead
+  // of repeating the active speaker's mission dialogue.
+  function getAmbientLine(npcId) {
+    const entry = NPC_DIALOGUE[activeMission?.id ?? 'done']
+    if (entry?.speaker === npcId) return entry.lines[0]
+    return npcId === 'oliver' ? '¡Miau! 🐱 Cuando sea mi turno de hablar, te aviso.' : '🧙‍♂️ Ve con Oliver, él te está esperando.'
   }
 
   function handleFallRescue() {
@@ -865,20 +1129,40 @@ export default function VrArbol() {
 
   async function handleUserMessage(text) {
     setDialogueMessages(prev => [...prev, { role: 'user', content: text }])
-    setIsJafetTyping(true)
+    setIsNpcTyping(true)
     if (activeMission?.id === 'practice_basics') setTalkedFreely(true)
     try {
       const reply = await sendNpcMessage({
-        npcPrompt: JAFET.aiPrompt,
+        npcPrompt: NPCS[activeSpeakerId].aiPrompt,
         content: text,
         history: dialogueMessages,
       })
-      pushJafet(reply)
+      pushNpc(reply)
     } catch {
-      pushJafet('Parece que hay interferencia mágica… inténtalo de nuevo. 🌀')
+      pushNpc('Parece que hay interferencia mágica… inténtalo de nuevo. 🌀')
     } finally {
-      setIsJafetTyping(false)
+      setIsNpcTyping(false)
     }
+  }
+
+  // Triggers a ring burst at the player's position in the active skill's
+  // color and marks that slot tried; once both are tried, completes
+  // test_ability and hands back to Oliver's next line.
+  function handleTrySkill(i, skill) {
+    skillBurstRef.current = { color: skill.vfxColor, ts: Date.now() }
+    setSkillsTried((prev) => {
+      const next = [...prev]
+      next[i] = true
+      if (next.every(Boolean)) {
+        setTimeout(() => {
+          setShowSkillTrial(false)
+          completeStep('test_ability')
+          setShowDialogue(true)
+          announce('setup_ai')
+        }, 900)
+      }
+      return next
+    })
   }
 
   function handleMissionAction(missionId, action) {
@@ -909,7 +1193,7 @@ export default function VrArbol() {
     }
 
     if (missionId === 'first_chat') {
-      pushJafet('¡Abre el menú de tu mascota (el botón 🐱 abajo a la derecha) y envíale un mensaje!')
+      pushNpc('¡Abre el menú de tu mascota (el botón 🐱 abajo a la derecha) y envíale un mensaje!')
     }
 
     if (missionId === 'enter_campus') {
@@ -949,8 +1233,8 @@ export default function VrArbol() {
       onWheel={(e) => { if (!cinematicLockRef.current) onWheel(e) }}
       onContextMenu={(e) => {
         e.preventDefault()
-        if (phase === 'play' && nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone) {
-          setShowJafetCard((v) => !v)
+        if (phase === 'play' && nearNpcId === activeSpeakerId && !showDialogue && !showMascotOnboarding && !tutorialDone) {
+          setShowNpcCard((v) => !v)
         }
       }}
     >
@@ -962,9 +1246,10 @@ export default function VrArbol() {
             <ArbolScene
               model={groundModel}
               jafetMascot={jafetMascot}
-              jafetNear={phase === 'play' && nearJafet}
-              jafetHasQuest={!tutorialDone}
-              onJafetSayLine={getAmbientLine}
+              oliverMascot={oliverMascot}
+              nearNpcId={phase === 'play' ? nearNpcId : null}
+              activeSpeakerId={!tutorialDone ? activeSpeakerId : null}
+              onNpcSayLine={getAmbientLine}
             />
             <Player
               mascot={realMascot}
@@ -976,13 +1261,14 @@ export default function VrArbol() {
               playerPositionRef={playerPositionRef}
               spawnAt={ARBOL_SPAWN}
             />
-            <JafetProximity playerPositionRef={playerPositionRef} onNearChange={setNearJafet} />
+            <NpcProximityTracker playerPositionRef={playerPositionRef} onNearChange={setNearNpcId} />
             <MovementTracker
               playerPositionRef={playerPositionRef}
               active={phase === 'play' && activeMission?.id === 'practice_basics'}
               onThreshold={() => setMovedEnough(true)}
             />
             <FallRescueTracker playerPositionRef={playerPositionRef} onFall={handleFallRescue} />
+            <SkillBurstVfx playerPositionRef={playerPositionRef} burstRef={skillBurstRef} />
           </Suspense>
         </Physics>
       </Canvas>
@@ -991,7 +1277,7 @@ export default function VrArbol() {
       {phase === 'reveal' && <RevealTitleCard />}
 
       {/* ── Touch controls ── */}
-      {phase === 'play' && !showDialogue && !showMascotOnboarding && !showClassPicker && !showAbilityReveal && (
+      {phase === 'play' && !showDialogue && !showMascotOnboarding && !showClassPicker && !showAbilityReveal && !showSkillTrial && (
         <>
           <VirtualJoystick keysRef={keysRef} />
           <MobileButtons keysRef={keysRef} />
@@ -1012,7 +1298,7 @@ export default function VrArbol() {
       {phase === 'play' && (
         <div className="absolute left-3 top-16 z-20 w-60 sm:w-64">
           <div className="rounded-2xl border border-border bg-black/70 p-3 backdrop-blur-sm">
-            <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-primary">Tutorial de Jafet</p>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-primary">Tutorial de Oliver Academy</p>
             <div className="flex flex-col gap-1.5">
               {TUTORIAL_MISSIONS.map((m) => (
                 <MissionRow
@@ -1027,26 +1313,28 @@ export default function VrArbol() {
         </div>
       )}
 
-      {/* ── Talk to Jafet prompt — only when close enough to him. Opens the
-          card (not the chat directly) — same as right-click/F. ── */}
-      {phase === 'play' && nearJafet && !showDialogue && !showJafetCard && !showMascotOnboarding && !tutorialDone && (
+      {/* ── Talk to the active speaker prompt — only when close enough to
+          THEM specifically (the other NPC isn't who has missions right now).
+          Opens the card (not the chat directly) — same as right-click/F. ── */}
+      {phase === 'play' && nearNpcId === activeSpeakerId && !showDialogue && !showNpcCard && !showMascotOnboarding && !tutorialDone && (
         <div className="absolute bottom-20 left-1/2 z-20 -translate-x-1/2">
-          <button type="button" onClick={() => setShowJafetCard(true)}
+          <button type="button" onClick={() => setShowNpcCard(true)}
             className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-black/80 px-6 py-3 font-black text-primary shadow-lg backdrop-blur-sm animate-pulse hover:bg-primary hover:text-background transition-all">
-            <span className="hidden sm:inline">F / Clic derecho — </span>🧙‍♂️ Jafet
+            <span className="hidden sm:inline">F / Clic derecho — </span>{NPCS[activeSpeakerId].emoji} {NPCS[activeSpeakerId].name}
           </button>
         </div>
       )}
-      {phase === 'play' && !nearJafet && !showDialogue && !showMascotOnboarding && !tutorialDone && (
+      {phase === 'play' && nearNpcId !== activeSpeakerId && !showDialogue && !showMascotOnboarding && !tutorialDone && (
         <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-border bg-black/60 px-4 py-2 text-xs text-text-muted backdrop-blur-sm">
-          🚶 Camina (WASD) hacia Jafet, dentro del templo
+          🚶 Camina (WASD) hacia {NPCS[activeSpeakerId].emoji} {NPCS[activeSpeakerId].name}, dentro del templo
         </div>
       )}
 
-      {/* ── Jafet's card — right-click/F/prompt-button. Closing it does not
-          open the chat; only its "Hablar" button does (see openDialogue). ── */}
-      {phase === 'play' && showJafetCard && !showDialogue && !showMascotOnboarding && (
-        <JafetCard line={getAmbientLine()} onTalk={openDialogue} onClose={() => setShowJafetCard(false)} />
+      {/* ── Active speaker's card — right-click/F/prompt-button. Closing it
+          does not open the chat; only its "Hablar" button does (see
+          openDialogue). ── */}
+      {phase === 'play' && showNpcCard && !showDialogue && !showMascotOnboarding && (
+        <NpcCard npc={NPCS[activeSpeakerId]} line={getAmbientLine(activeSpeakerId)} onTalk={openDialogue} onClose={() => setShowNpcCard(false)} />
       )}
 
       {/* ── Tutorial complete banner ── */}
@@ -1069,10 +1357,11 @@ export default function VrArbol() {
       {/* ── Dialogue box ── */}
       {phase === 'play' && showDialogue && !showMascotOnboarding && !showClassPicker && !showAbilityReveal && (
         <DialogueBox
+          npc={NPCS[activeSpeakerId]}
           messages={dialogueMessages}
           onClose={() => setShowDialogue(false)}
           onUserMessage={handleUserMessage}
-          isLoading={isJafetTyping}
+          isLoading={isNpcTyping}
           activeMissionId={activeMission?.id}
           onAction={handleMissionAction}
         />
@@ -1088,13 +1377,19 @@ export default function VrArbol() {
         <VrMascotOnboarding onDone={handleMascotOnboardingDone} />
       )}
 
-      {/* ── Ability reveal (mission 6) ── */}
+      {/* ── Ability reveal (mission 6) — leads into the skill trial below,
+          which is what actually completes test_ability. ── */}
       {showAbilityReveal && (
         <AbilityRevealCard
           playerClass={playerClassId}
           oliverClass={oliverClass}
-          onDone={() => { setShowAbilityReveal(false); completeStep('test_ability'); setShowDialogue(true); announce('setup_ai') }}
+          onDone={() => { setShowAbilityReveal(false); setSkillsTried([false, false]); setShowSkillTrial(true) }}
         />
+      )}
+
+      {/* ── Skill trial (mission 6, cont.) — try each starting skill once ── */}
+      {showSkillTrial && (
+        <SkillTrialPanel skills={playerStartSkills} tried={skillsTried} onTry={handleTrySkill} />
       )}
 
       {/* ── Class reveal flash (avatar or mascot) ── */}
