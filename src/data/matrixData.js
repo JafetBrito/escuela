@@ -3504,6 +3504,809 @@ export const JANULUS_DATA = {
       },
     ],
   },
+
+  it: {
+    name: 'Italiano',
+    flag: '🇮🇹',
+    speechLang: 'it-IT',
+    levels: [
+      {
+        level: 1,
+        name: 'Blocchi di base',
+        oliversIntro: {
+          headline: 'Livello 1 · Blocchi di base',
+          message: 'Benvenuto in italiano! El italiano es el idioma de la ópera, el arte renacentista y la cocina más famosa del mundo. Powell Janulus lo dominó usando exactamente este método — bloque a bloque.',
+          technique: '🔵 Struttura  +  🟢 Verbo  +  🟣 Oggetto\n\n"Voglio" + "trovare" + "una chiave"\n= Voglio trovare una chiave\n(I want to find a key)',
+          funFact: '💡 El italiano es el idioma con la pronunciación más fiel a su escritura entre las lenguas romances — casi cada letra suena siempre igual.',
+        },
+        bases: [
+          { id: 'b1', text: 'Voglio', emoji: '💭', anim: 'wantHover', definition: 'Expresa un deseo o una voluntad. (Expresa un deseo o voluntad.)', definitionEn: 'Expresses a wish or desire.', etymology: 'Del verbo "volere", del latín "velle" (querer, desear).', oliversTip: '"Voglio" es la forma más usada para expresar deseos en italiano. 💭', examples: [{ s: 'Voglio andare al parco.', t: 'Quiero ir al parque.' }] },
+          { id: 'b2', text: 'Devo', emoji: '❗', anim: 'needPulse', definition: 'Expresa una necesidad u obligación. (Expresa una necesidad u obligación.)', definitionEn: 'Expresses a need or obligation.', etymology: 'Del verbo "dovere", del latín "debere" (deber).', oliversTip: '"Devo" marca algo necesario, no solo un deseo. ❗', examples: [{ s: 'Devo andare al mercato.', t: 'Necesito ir al mercado.' }] },
+          { id: 'b3', text: 'Mi piace', emoji: '😊', anim: 'likeBounce', definition: 'Expresa que algo te agrada. (Expresa que algo te agrada.)', definitionEn: 'Expresses that something pleases you.', etymology: 'Del verbo "piacere", del latín "placere" (agradar, complacer).', oliversTip: '¡"Mi piace" funciona al revés que en español! Literalmente "a mí place". 😊', examples: [{ s: 'Mi piace questo parco.', t: 'Me gusta este parque.' }] },
+          { id: 'b4', text: 'Posso', emoji: '✅', anim: 'canNod', definition: 'Expresa capacidad o permiso. (Expresa capacidad o permiso.)', definitionEn: 'Expresses ability or permission.', etymology: 'Del verbo "potere", del latín "posse" (poder, ser capaz).', oliversTip: '"Posso" es perfecto para pedir permiso educadamente. ✅', examples: [{ s: 'Posso andarci?', t: '¿Puedo ir?' }] },
+          { id: 'b5', text: 'Vado a', emoji: '🚶', anim: 'goWalk', definition: 'Expresa una acción inmediata o futura. (Expresa una acción inmediata o futura.)', definitionEn: 'Expresses an immediate or future action.', etymology: 'Del verbo "andare" + preposición "a", construcción propia del italiano para el futuro próximo.', oliversTip: '"Vado a" es como el "voy a" español — ¡acción que pasará pronto! 🚶', examples: [{ s: 'Vado a uscire ora.', t: 'Voy a salir ahora.' }] },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'trovare', emoji: '🔍', anim: 'search',
+            definition: 'Encontrar o localizar algo que se buscaba.',
+            definitionEn: 'To find or locate something.',
+            etymology: 'Del latín tardío "tropare" (componer, hallar una melodía) — la misma raíz que el francés "trouver" y el catalán "trobar".',
+            examples: [
+              { s: 'Voglio trovare una chiave.', t: 'Quiero encontrar una llave.' },
+              { s: 'Puoi trovare un libro?', t: '¿Puedes encontrar un libro?' },
+            ],
+          },
+          {
+            id: 'v2', text: 'portare', emoji: '💪', anim: 'lift',
+            definition: 'Llevar, transportar o cargar algo; también vestir una prenda.',
+            definitionEn: 'To carry or bring something; also to wear clothing.',
+            etymology: 'Del latín "portare" (llevar) — misma raíz que "transportar", "importar" y el catalán/francés "portar/porter".',
+            examples: [
+              { s: 'Devo portare l\'acqua.', t: 'Debo llevar el agua.' },
+              { s: 'Mi piace portare un libro.', t: 'Me gusta llevar un libro.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'vedere', emoji: '👁️', anim: 'blink',
+            definition: 'Percibir algo con los ojos; observar.',
+            definitionEn: 'To see or perceive with the eyes.',
+            etymology: 'Del latín "videre" (ver) — la misma raíz que "video", "visión" y el español "ver".',
+            examples: [
+              { s: 'Posso vedere una candela.', t: 'Puedo ver una vela.' },
+              { s: 'Voglio vedere lo specchio.', t: 'Quiero ver el espejo.' },
+            ],
+          },
+          {
+            id: 'v4', text: 'usare', emoji: '🔧', anim: 'spin',
+            definition: 'Emplear algo para un propósito determinado.',
+            definitionEn: 'To use something for a purpose.',
+            etymology: 'Del latín "usare", de "uti" (usar) — misma raíz que "útil" y el inglés "use".',
+            examples: [
+              { s: 'Devo usare una bussola.', t: 'Debo usar una brújula.' },
+              { s: 'Posso usare il libro?', t: '¿Puedo usar el libro?' },
+            ],
+          },
+          {
+            id: 'v5', text: 'cercare', emoji: '🔎', anim: 'lookAround',
+            definition: 'Intentar encontrar algo o a alguien buscando activamente.',
+            definitionEn: 'To search or look for something.',
+            etymology: 'Del latín "circare" (rodear, dar vueltas), de "circus" (círculo) — buscar era originalmente "dar vueltas alrededor".',
+            examples: [
+              { s: 'Vado a cercare una chiave.', t: 'Voy a buscar una llave.' },
+              { s: 'Mi piace cercare libri.', t: 'Me gusta buscar libros.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'una chiave', emoji: '🗝️', keyword: 'chiave',
+            definition: 'Pieza metálica que encaja en una cerradura para abrir o cerrar algo.',
+            definitionEn: 'A key used to lock or unlock something.',
+            etymology: 'Del latín "clavis" — misma raíz que el español "clave", el catalán "clau" y el francés "clé".',
+            oliversTip: '"Chiave" y "clave" sin parecerse mucho a simple vista, vienen exactamente de la misma palabra latina "clavis". 🗝️',
+            examples: [
+              { s: 'Voglio trovare una chiave.', t: 'Quiero encontrar una llave.' },
+              { s: 'Ho una chiave.', t: 'Tengo una llave.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'una mela', emoji: '🍎', keyword: 'mela',
+            definition: 'Fruta redonda, de piel roja, verde o amarilla y pulpa blanca.',
+            definitionEn: 'An apple.',
+            etymology: 'Del latín "malum" (fruta en general, y manzana en particular) — origen también de "melograno" (granada, "manzana con semillas").',
+            oliversTip: 'En latín "malum" significaba tanto "manzana" como "fruta" en general — por eso tantas frutas italianas se relacionan con esa raíz. 🍎',
+            examples: [
+              { s: 'Voglio una mela.', t: 'Quiero una manzana.' },
+              { s: 'Posso vedere una mela?', t: '¿Puedo ver una manzana?' },
+            ],
+          },
+          {
+            id: 'w3', text: 'l\'acqua', emoji: '💧', keyword: 'acqua',
+            definition: 'Líquido incoloro e insípido esencial para la vida (H₂O).',
+            definitionEn: 'Water.',
+            etymology: 'Del latín "aqua" — la misma raíz que el español "agua", el inglés "aquatic" y el francés "eau".',
+            oliversTip: '"Acqua" es casi idéntica al español "agua" — ambas vienen directo del latín sin apenas cambios en 2.000 años. 💧',
+            examples: [
+              { s: 'Devo portare l\'acqua.', t: 'Debo llevar el agua.' },
+              { s: 'Voglio dell\'acqua.', t: 'Quiero agua.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'una candela', emoji: '🕯️', keyword: 'candela',
+            definition: 'Cilindro de cera con mecha que da luz al encenderse.',
+            definitionEn: 'A candle.',
+            etymology: 'Del latín "candela", de "candere" (brillar, ser blanco incandescente) — misma raíz que "candidato" e "incandescente".',
+            oliversTip: 'Un "candidato" político y una "candela" comparten raíz: en la Antigua Roma, los candidatos vestían togas blancas brillantes ("candidus"). 🕯️',
+            examples: [
+              { s: 'Posso vedere una candela.', t: 'Puedo ver una vela.' },
+              { s: 'Devo usare una candela.', t: 'Debo usar una vela.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'uno specchio', emoji: '🪞', keyword: 'specchio',
+            definition: 'Superficie pulida que refleja la imagen de los objetos.',
+            definitionEn: 'A mirror.',
+            etymology: 'Del latín "speculum" (espejo), de "specere" (mirar, observar) — misma raíz que "espectáculo" e "inspección".',
+            oliversTip: '"Specchio", "espejo" y "espectáculo" vienen de la misma raíz latina "specere" (mirar). 🪞',
+            examples: [
+              { s: 'Voglio vedere uno specchio.', t: 'Quiero ver un espejo.' },
+              { s: 'Lei usa uno specchio.', t: 'Ella usa un espejo.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'una campana', emoji: '🔔', keyword: 'campana',
+            definition: 'Instrumento de metal hueco que produce un sonido al ser golpeado.',
+            definitionEn: 'A bell.',
+            etymology: 'Del latín medieval "campana", de la región italiana de Campania, famosa por fundir bronce de alta calidad para campanas.',
+            oliversTip: 'La región italiana de Campania (cerca de Nápoles) le dio su nombre a la campana en casi toda Europa. 🔔',
+            examples: [
+              { s: 'Posso vedere una campana.', t: 'Puedo ver una campana.' },
+              { s: 'Sento una campana.', t: 'Escucho una campana.' },
+            ],
+          },
+          {
+            id: 'w7', text: 'una bussola', emoji: '🧭', keyword: 'bussola',
+            definition: 'Instrumento de orientación con una aguja magnética que señala el norte.',
+            definitionEn: 'A compass.',
+            etymology: 'De "bossolo" (cajita de madera de boj, del latín "buxus") — la cajita que protegía la aguja magnética le dio nombre al instrumento entero.',
+            oliversTip: '¡La brújula nació aquí! "Bussola" viajó del italiano al francés ("boussole") y de ahí a buena parte de Europa. 🧭',
+            examples: [
+              { s: 'Devo usare una bussola.', t: 'Debo usar una brújula.' },
+              { s: 'Voglio trovare la bussola.', t: 'Quiero encontrar la brújula.' },
+            ],
+          },
+          {
+            id: 'w8', text: 'un libro', emoji: '📖', keyword: 'libro',
+            definition: 'Conjunto de páginas escritas o impresas encuadernadas con cubiertas.',
+            definitionEn: 'A book.',
+            etymology: 'Del latín "liber" (corteza interior del árbol usada para escribir; también "libre/libertad").',
+            oliversTip: '"Libro" y "libre" comparten la misma raíz latina "liber" — los romanos veían los libros como herramientas de libertad. 📚',
+            examples: [
+              { s: 'Voglio trovare un libro.', t: 'Quiero encontrar un libro.' },
+              { s: 'Mi piace portare un libro.', t: 'Me gusta llevar un libro.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 2,
+        name: 'Cibo e Bevande',
+        oliversIntro: {
+          headline: 'Livello 2 · Cibo e Bevande',
+          message: 'La cocina italiana es Patrimonio cultural — pizza, pasta, café, todo tiene su palabra exacta. Este nivel te prepara para pedir comida y hablar de lo que te gusta comer.',
+          technique: '🔵 Struttura  +  🟢 Verbo  +  🟣 Cibo\n\n"Voglio" + "ordinare" + "una pizza"\n= Voglio ordinare una pizza\n(I want to order a pizza)',
+          funFact: '💡 La "vera pizza napoletana" tiene denominación de origen protegida por la UE — solo puede llamarse así si se hace con reglas muy específicas.',
+        },
+        bases: [
+          { id: 'b1', text: 'Voglio', emoji: '💭', anim: 'wantHover', definition: 'Expresa un deseo o una voluntad.', definitionEn: 'Expresses a wish or desire.', etymology: 'Del verbo "volere", del latín "velle".', oliversTip: '"Voglio" es la forma más usada para expresar deseos. 💭', examples: [{ s: 'Voglio andare al parco.', t: 'Quiero ir al parque.' }] },
+          { id: 'b2', text: 'Devo', emoji: '❗', anim: 'needPulse', definition: 'Expresa una necesidad u obligación.', definitionEn: 'Expresses a need or obligation.', etymology: 'Del verbo "dovere", del latín "debere".', oliversTip: '"Devo" marca algo necesario. ❗', examples: [{ s: 'Devo andare al mercato.', t: 'Necesito ir al mercado.' }] },
+          { id: 'b3', text: 'Mi piace', emoji: '😊', anim: 'likeBounce', definition: 'Expresa que algo te agrada.', definitionEn: 'Expresses that something pleases you.', etymology: 'Del verbo "piacere", del latín "placere".', oliversTip: '¡"Mi piace" funciona al revés que en español! 😊', examples: [{ s: 'Mi piace questo parco.', t: 'Me gusta este parque.' }] },
+          { id: 'b4', text: 'Posso', emoji: '✅', anim: 'canNod', definition: 'Expresa capacidad o permiso.', definitionEn: 'Expresses ability or permission.', etymology: 'Del verbo "potere", del latín "posse".', oliversTip: '"Posso" es perfecto para pedir permiso. ✅', examples: [{ s: 'Posso andarci?', t: '¿Puedo ir?' }] },
+          { id: 'b5', text: 'Vado a', emoji: '🚶', anim: 'goWalk', definition: 'Expresa una acción inmediata o futura.', definitionEn: 'Expresses an immediate or future action.', etymology: 'Del verbo "andare" + "a".', oliversTip: '"Vado a" es como el "voy a" español. 🚶', examples: [{ s: 'Vado a uscire ora.', t: 'Voy a salir ahora.' }] },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'comprare', emoji: '🛍️', anim: 'reachOut',
+            definition: 'Adquirir algo a cambio de dinero.',
+            definitionEn: 'To buy something.',
+            etymology: 'Del latín "comparare" (adquirir, conseguir), emparentado con "comparar".',
+            examples: [
+              { s: 'Voglio comprare il pane.', t: 'Quiero comprar el pan.' },
+              { s: 'Devo comprare il caffè.', t: 'Debo comprar el café.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'assaggiare', emoji: '👅', anim: 'tasteSavor',
+            definition: 'Probar una pequeña cantidad de comida o bebida para conocer su sabor.',
+            definitionEn: 'To taste a small amount of food or drink.',
+            etymology: 'Del latín vulgar "exagiare" (pesar, evaluar), de "exagium" (pesaje) — probar algo era originalmente "calcular su valor".',
+            examples: [
+              { s: 'Posso assaggiare la pizza?', t: '¿Puedo probar la pizza?' },
+              { s: 'Mi piace assaggiare la frutta.', t: 'Me gusta probar la fruta.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'preferire', emoji: '❤️', anim: 'heartPulse',
+            definition: 'Gustar más una cosa que otra; elegir como favorito.',
+            definitionEn: 'To like something more than another; to prefer.',
+            etymology: 'Del latín "praeferre" (llevar delante, anteponer), de "prae" (antes) + "ferre" (llevar).',
+            examples: [
+              { s: 'Preferisco il caffè.', t: 'Prefiero el café.' },
+              { s: 'Lei preferisce la pasta.', t: 'Ella prefiere la pasta.' },
+            ],
+          },
+          {
+            id: 'v4', text: 'ordinare', emoji: '📋', anim: 'pointForward',
+            definition: 'Pedir formalmente comida o bebida, normalmente en un restaurante.',
+            definitionEn: 'To order food or drink, usually at a restaurant.',
+            etymology: 'Del latín "ordinare" (poner en orden), de "ordo" (orden, fila).',
+            examples: [
+              { s: 'Vado a ordinare una pizza.', t: 'Voy a pedir una pizza.' },
+              { s: 'Posso ordinare la pasta?', t: '¿Puedo pedir la pasta?' },
+            ],
+          },
+          {
+            id: 'v5', text: 'portare', emoji: '🍽️', anim: 'lift',
+            definition: 'Llevar o traer algo, en este caso comida o bebida a la mesa.',
+            definitionEn: 'To bring or carry something, here food or drink.',
+            etymology: 'Del latín "portare" (llevar) — la misma raíz vista en el Nivel 1.',
+            examples: [
+              { s: 'Il cameriere porta il pane.', t: 'El camarero trae el pan.' },
+              { s: 'Devo portare la frutta.', t: 'Debo llevar la fruta.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'il pane', emoji: '🍞', keyword: 'pane',
+            definition: 'Alimento horneado hecho de harina, agua y levadura.',
+            definitionEn: 'Bread.',
+            etymology: 'Del latín "panis" — misma raíz que "compañero" (literalmente "quien comparte el pan contigo").',
+            oliversTip: '"Compañero" viene del latín "cum panis" — ¡alguien con quien compartes el pan! 🍞',
+            examples: [
+              { s: 'Voglio comprare il pane.', t: 'Quiero comprar el pan.' },
+              { s: 'Mi piace il pane fresco.', t: 'Me gusta el pan fresco.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'il formaggio', emoji: '🧀', keyword: 'formaggio',
+            definition: 'Alimento sólido elaborado a partir de leche cuajada.',
+            definitionEn: 'Cheese.',
+            etymology: 'Del latín tardío "formaticum" (moldeado en una forma), de "forma" (molde).',
+            oliversTip: '"Formaggio" y el francés "fromage" vienen de "forma" — el queso es, literalmente, "lo que se hace en un molde". 🧀',
+            examples: [
+              { s: 'Voglio assaggiare il formaggio.', t: 'Quiero probar el queso.' },
+              { s: 'Preferisco il formaggio italiano.', t: 'Prefiero el queso italiano.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'il succo', emoji: '🧃', keyword: 'succo',
+            definition: 'Líquido extraído de frutas u otros alimentos.',
+            definitionEn: 'Juice.',
+            etymology: 'Del latín "sucus" (jugo, savia de una planta).',
+            oliversTip: '"Succo" y la palabra española poco usada "suco" (jugoso) comparten la misma raíz latina "sucus". 🧃',
+            examples: [
+              { s: 'Voglio un succo d\'arancia.', t: 'Quiero un jugo de naranja.' },
+              { s: 'Posso ordinare un succo?', t: '¿Puedo pedir un jugo?' },
+            ],
+          },
+          {
+            id: 'w4', text: 'il latte', emoji: '🥛', keyword: 'latte',
+            definition: 'Líquido blanco producido por mamíferos, usado como alimento.',
+            definitionEn: 'Milk.',
+            etymology: 'Del latín "lac/lactis" — misma raíz que "lácteo" y "lactancia".',
+            oliversTip: '¡El famoso "caffè latte" significa literalmente "café con leche"! 🥛',
+            examples: [
+              { s: 'Devo comprare il latte.', t: 'Debo comprar la leche.' },
+              { s: 'Mi piace il latte caldo.', t: 'Me gusta la leche caliente.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'il caffè', emoji: '☕', keyword: 'caffè',
+            definition: 'Bebida estimulante hecha con granos de café tostados y molidos.',
+            definitionEn: 'Coffee.',
+            etymology: 'Del turco "kahve", del árabe "qahwa" — la palabra viajó de Etiopía a Arabia, a Turquía y a Italia en el siglo XVI.',
+            oliversTip: 'Italia no descubrió el café, ¡pero le dio al mundo el espresso, el cappuccino y el caffè latte! ☕',
+            examples: [
+              { s: 'Voglio ordinare un caffè.', t: 'Quiero pedir un café.' },
+              { s: 'Preferisco il caffè la mattina.', t: 'Prefiero el café por la mañana.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'la frutta', emoji: '🍇', keyword: 'frutta',
+            definition: 'Conjunto de alimentos comestibles producidos por las plantas, generalmente dulces.',
+            definitionEn: 'Fruit.',
+            etymology: 'Del latín "fructus" (fruto, producto), de "frui" (disfrutar).',
+            oliversTip: '"Frutta" y "disfrutar" comparten la misma raíz latina "frui" — la fruta siempre estuvo ligada al placer de comer. 🍇',
+            examples: [
+              { s: 'Mi piace la frutta fresca.', t: 'Me gusta la fruta fresca.' },
+              { s: 'Voglio comprare la frutta.', t: 'Quiero comprar la fruta.' },
+            ],
+          },
+          {
+            id: 'w7', text: 'la pizza', emoji: '🍕', keyword: 'pizza',
+            definition: 'Plato horneado de masa plana cubierta con salsa de tomate, queso y otros ingredientes.',
+            definitionEn: 'Pizza.',
+            etymology: 'De origen incierto, posiblemente del latín vulgar "pinsa" (masa aplastada), de "pinsere" (machacar, aplastar).',
+            oliversTip: 'La pizza margherita se creó en 1889 en honor a la reina Margarita de Saboya — sus colores imitan la bandera italiana. 🍕',
+            examples: [
+              { s: 'Vado a ordinare una pizza.', t: 'Voy a pedir una pizza.' },
+              { s: 'Preferisco la pizza margherita.', t: 'Prefiero la pizza margarita.' },
+            ],
+          },
+          {
+            id: 'w8', text: 'la pasta', emoji: '🍝', keyword: 'pasta',
+            definition: 'Alimento elaborado con masa de harina y agua, cocido en agua hirviendo.',
+            definitionEn: 'Pasta.',
+            etymology: 'Del latín tardío "pasta" (masa, pastel), del griego "pastá" (harina mezclada con salsa).',
+            oliversTip: '¡"Pasta" y "pastel" son la misma palabra! Ambas describen una masa mezclada. 🍝',
+            examples: [
+              { s: 'Voglio assaggiare la pasta.', t: 'Quiero probar la pasta.' },
+              { s: 'Mi piace la pasta al pomodoro.', t: 'Me gusta la pasta con tomate.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 3,
+        name: 'La Famiglia e gli Amici',
+        oliversIntro: {
+          headline: 'Livello 3 · La Famiglia e gli Amici',
+          message: 'En italiano, la familia y los amigos se nombran con mucho cariño. Este nivel te prepara para hablar de tu gente.',
+          technique: '🔵 Struttura  +  🟢 Verbo  +  🟣 Persona\n\n"Voglio" + "conoscere" + "il mio amico"\n= Voglio conoscere il mio amico\n(I want to meet my friend)',
+          funFact: '💡 En italiano, "conoscere" sirve tanto para "conocer a alguien por primera vez" como para "saber dónde está algo" — un solo verbo para dos ideas relacionadas.',
+        },
+        bases: [
+          { id: 'b1', text: 'Voglio', emoji: '💭', anim: 'wantHover', definition: 'Expresa un deseo o una voluntad.', definitionEn: 'Expresses a wish or desire.', etymology: 'Del verbo "volere", del latín "velle".', oliversTip: '"Voglio" es la forma más usada para expresar deseos. 💭', examples: [{ s: 'Voglio andare al parco.', t: 'Quiero ir al parque.' }] },
+          { id: 'b2', text: 'Devo', emoji: '❗', anim: 'needPulse', definition: 'Expresa una necesidad u obligación.', definitionEn: 'Expresses a need or obligation.', etymology: 'Del verbo "dovere", del latín "debere".', oliversTip: '"Devo" marca algo necesario. ❗', examples: [{ s: 'Devo andare al mercato.', t: 'Necesito ir al mercado.' }] },
+          { id: 'b3', text: 'Mi piace', emoji: '😊', anim: 'likeBounce', definition: 'Expresa que algo te agrada.', definitionEn: 'Expresses that something pleases you.', etymology: 'Del verbo "piacere", del latín "placere".', oliversTip: '¡"Mi piace" funciona al revés que en español! 😊', examples: [{ s: 'Mi piace questo parco.', t: 'Me gusta este parque.' }] },
+          { id: 'b4', text: 'Posso', emoji: '✅', anim: 'canNod', definition: 'Expresa capacidad o permiso.', definitionEn: 'Expresses ability or permission.', etymology: 'Del verbo "potere", del latín "posse".', oliversTip: '"Posso" es perfecto para pedir permiso. ✅', examples: [{ s: 'Posso andarci?', t: '¿Puedo ir?' }] },
+          { id: 'b5', text: 'Vado a', emoji: '🚶', anim: 'goWalk', definition: 'Expresa una acción inmediata o futura.', definitionEn: 'Expresses an immediate or future action.', etymology: 'Del verbo "andare" + "a".', oliversTip: '"Vado a" es como el "voy a" español. 🚶', examples: [{ s: 'Vado a uscire ora.', t: 'Voy a salir ahora.' }] },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'trovare', emoji: '🔍', anim: 'search',
+            definition: 'Encontrar o localizar a alguien o algo.',
+            definitionEn: 'To find someone or something.',
+            etymology: 'Del latín tardío "tropare" — la misma raíz vista en el Nivel 1.',
+            examples: [
+              { s: 'Voglio trovare mio padre.', t: 'Quiero encontrar a mi padre.' },
+              { s: 'Puoi trovare tua sorella?', t: '¿Puedes encontrar a tu hermana?' },
+            ],
+          },
+          {
+            id: 'v2', text: 'portare', emoji: '💪', anim: 'lift',
+            definition: 'Llevar a alguien contigo a algún lugar.',
+            definitionEn: 'To bring someone along with you.',
+            etymology: 'Del latín "portare" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Devo portare mia madre.', t: 'Debo llevar a mi madre.' },
+              { s: 'Vado a portare il mio amico.', t: 'Voy a llevar a mi amigo.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'vedere', emoji: '👁️', anim: 'blink',
+            definition: 'Encontrarse con alguien visualmente; ver a una persona.',
+            definitionEn: 'To see a person.',
+            etymology: 'Del latín "videre" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Posso vedere mio nonno?', t: '¿Puedo ver a mi abuelo?' },
+              { s: 'Mi piace vedere i miei amici.', t: 'Me gusta ver a mis amigos.' },
+            ],
+          },
+          {
+            id: 'v4', text: 'conoscere', emoji: '🤝', anim: 'handshake',
+            definition: 'Saber quién es alguien, o llegar a tener trato con una persona.',
+            definitionEn: 'To know or meet someone.',
+            etymology: 'Del latín "cognoscere" (conocer a fondo), de "cum" (con) + "gnoscere" (saber).',
+            examples: [
+              { s: 'Voglio conoscere tua nonna.', t: 'Quiero conocer a tu abuela.' },
+              { s: 'Posso conoscere la tua amica?', t: '¿Puedo conocer a tu amiga?' },
+            ],
+          },
+          {
+            id: 'v5', text: 'cercare', emoji: '🔎', anim: 'lookAround',
+            definition: 'Buscar activamente a alguien.',
+            definitionEn: 'To look for someone.',
+            etymology: 'Del latín "circare" — la misma raíz vista en el Nivel 1.',
+            examples: [
+              { s: 'Vado a cercare mio fratello.', t: 'Voy a buscar a mi hermano.' },
+              { s: 'Devo cercare il mio amico.', t: 'Debo buscar a mi amigo.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'il padre', emoji: '👨', keyword: 'padre',
+            definition: 'El progenitor masculino de una persona.',
+            definitionEn: 'Father.',
+            etymology: 'Del latín "pater" — misma raíz indoeuropea que el español "padre", el inglés "father" y el catalán "pare".',
+            oliversTip: '"Padre", "father", "père", "pare" — todos descienden de la misma palabra indoeuropea original "pater". 👨',
+            examples: [
+              { s: 'Voglio trovare mio padre.', t: 'Quiero encontrar a mi padre.' },
+              { s: 'Mio padre cucina bene.', t: 'Mi padre cocina bien.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'la madre', emoji: '👩', keyword: 'madre',
+            definition: 'La progenitora femenina de una persona.',
+            definitionEn: 'Mother.',
+            etymology: 'Del latín "mater" — misma raíz indoeuropea que "madre", "mother" y "maternidad".',
+            oliversTip: '"Madre" es casi idéntica en italiano y español — ambas conservan casi intacta la palabra latina "mater". 👩',
+            examples: [
+              { s: 'Devo portare mia madre.', t: 'Debo llevar a mi madre.' },
+              { s: 'Mia madre legge molto.', t: 'Mi madre lee mucho.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'il fratello', emoji: '👦', keyword: 'fratello',
+            definition: 'Hermano; hijo de los mismos padres.',
+            definitionEn: 'Brother.',
+            etymology: 'Del latín "frater" — misma raíz que "fraternidad" y el catalán "germà" (este viene de otra raíz latina, "germanus").',
+            oliversTip: 'El italiano "fratello" y el catalán "germà" describen lo mismo pero vienen de dos palabras latinas distintas. 👦',
+            examples: [
+              { s: 'Posso vedere mio fratello?', t: '¿Puedo ver a mi hermano?' },
+              { s: 'Mio fratello è alto.', t: 'Mi hermano es alto.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'la sorella', emoji: '👧', keyword: 'sorella',
+            definition: 'Hermana; hija de los mismos padres.',
+            definitionEn: 'Sister.',
+            etymology: 'Del latín "soror" — misma raíz que "sororidad".',
+            oliversTip: '"Sorella" es un diminutivo cariñoso de "soror" en latín — el italiano suaviza muchas palabras con esa terminación "-ella". 👧',
+            examples: [
+              { s: 'Voglio trovare mia sorella.', t: 'Quiero encontrar a mi hermana.' },
+              { s: 'Mia sorella studia molto.', t: 'Mi hermana estudia mucho.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'il nonno', emoji: '👴', keyword: 'nonno',
+            definition: 'El padre de uno de los padres de una persona.',
+            definitionEn: 'Grandfather.',
+            etymology: 'Del latín tardío "nonnus" (forma cariñosa para un anciano respetado).',
+            oliversTip: '"Nonno" y "nonna" vienen de una palabra latina tardía de cariño y respeto hacia los mayores — no de "nueve" (nove). 👴',
+            examples: [
+              { s: 'Posso conoscere tuo nonno?', t: '¿Puedo conocer a tu abuelo?' },
+              { s: 'Mio nonno racconta storie.', t: 'Mi abuelo cuenta historias.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'la nonna', emoji: '👵', keyword: 'nonna',
+            definition: 'La madre de uno de los padres de una persona.',
+            definitionEn: 'Grandmother.',
+            etymology: 'Misma raíz que "nonno" — el latín tardío "nonna".',
+            oliversTip: '¡Las "nonne" italianas son legendarias por su cocina! 👵',
+            examples: [
+              { s: 'Vado a cercare mia nonna.', t: 'Voy a buscar a mi abuela.' },
+              { s: 'Mia nonna cucina la pasta.', t: 'Mi abuela cocina la pasta.' },
+            ],
+          },
+          {
+            id: 'w7', text: 'un amico', emoji: '🧑‍🤝‍🧑', keyword: 'amico',
+            definition: 'Persona con quien se tiene una relación de afecto y confianza (masculino).',
+            definitionEn: 'A (male) friend.',
+            etymology: 'Del latín "amicus", de "amare" (amar) — un amigo es, literalmente, "alguien a quien se ama".',
+            oliversTip: '"Amico", "amigo" y "amar" comparten la misma raíz latina "amare". 🧑‍🤝‍🧑',
+            examples: [
+              { s: 'Voglio conoscere il tuo amico.', t: 'Quiero conocer a tu amigo.' },
+              { s: 'Il mio amico è simpatico.', t: 'Mi amigo es simpático.' },
+            ],
+          },
+          {
+            id: 'w8', text: 'un\'amica', emoji: '👭', keyword: 'amica',
+            definition: 'Persona con quien se tiene una relación de afecto y confianza (femenino).',
+            definitionEn: 'A (female) friend.',
+            etymology: 'Misma raíz que "amico" — el latín "amica", forma femenina de "amicus".',
+            oliversTip: 'En italiano, "amico" y "amica" cambian solo una letra según el género. 👭',
+            examples: [
+              { s: 'Mi piace vedere la mia amica.', t: 'Me gusta ver a mi amiga.' },
+              { s: 'Devo portare la mia amica.', t: 'Debo llevar a mi amiga.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 4,
+        name: 'La Casa',
+        oliversIntro: {
+          headline: 'Livello 4 · La Casa',
+          message: 'Cada rincón de una casa italiana tiene su palabra precisa — y muchas pasaron directo al español y al inglés sin cambiar casi nada. Este nivel te prepara para describir tu hogar.',
+          technique: '🔵 Struttura  +  🟢 Verbo  +  🟣 Oggetto\n\n"Voglio" + "avere" + "un divano"\n= Voglio avere un divano\n(I want to have a sofa)',
+          funFact: '💡 La palabra "divano" (italiano) viene del árabe "diwan" — un salón de gobierno con asientos a los lados en las cortes otomanas.',
+        },
+        bases: [
+          { id: 'b1', text: 'Voglio', emoji: '💭', anim: 'wantHover', definition: 'Expresa un deseo o una voluntad.', definitionEn: 'Expresses a wish or desire.', etymology: 'Del verbo "volere", del latín "velle".', oliversTip: '"Voglio" es la forma más usada para expresar deseos. 💭', examples: [{ s: 'Voglio andare al parco.', t: 'Quiero ir al parque.' }] },
+          { id: 'b2', text: 'Devo', emoji: '❗', anim: 'needPulse', definition: 'Expresa una necesidad u obligación.', definitionEn: 'Expresses a need or obligation.', etymology: 'Del verbo "dovere", del latín "debere".', oliversTip: '"Devo" marca algo necesario. ❗', examples: [{ s: 'Devo andare al mercato.', t: 'Necesito ir al mercado.' }] },
+          { id: 'b3', text: 'Mi piace', emoji: '😊', anim: 'likeBounce', definition: 'Expresa que algo te agrada.', definitionEn: 'Expresses that something pleases you.', etymology: 'Del verbo "piacere", del latín "placere".', oliversTip: '¡"Mi piace" funciona al revés que en español! 😊', examples: [{ s: 'Mi piace questo parco.', t: 'Me gusta este parque.' }] },
+          { id: 'b4', text: 'Posso', emoji: '✅', anim: 'canNod', definition: 'Expresa capacidad o permiso.', definitionEn: 'Expresses ability or permission.', etymology: 'Del verbo "potere", del latín "posse".', oliversTip: '"Posso" es perfecto para pedir permiso. ✅', examples: [{ s: 'Posso andarci?', t: '¿Puedo ir?' }] },
+          { id: 'b5', text: 'Vado a', emoji: '🚶', anim: 'goWalk', definition: 'Expresa una acción inmediata o futura.', definitionEn: 'Expresses an immediate or future action.', etymology: 'Del verbo "andare" + "a".', oliversTip: '"Vado a" es como el "voy a" español. 🚶', examples: [{ s: 'Vado a uscire ora.', t: 'Voy a salir ahora.' }] },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'avere', emoji: '🤲', anim: 'holdOut',
+            definition: 'Poseer o tener algo.',
+            definitionEn: 'To have or possess something.',
+            etymology: 'Del latín "habere" (tener, poseer) — misma raíz que "hábito".',
+            examples: [
+              { s: 'Voglio avere un divano.', t: 'Quiero tener un sofá.' },
+              { s: 'Ho una lampada nuova.', t: 'Tengo una lámpara nueva.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'comprare', emoji: '🛍️', anim: 'reachOut',
+            definition: 'Adquirir algo a cambio de dinero.',
+            definitionEn: 'To buy something.',
+            etymology: 'Del latín "comparare" — la misma raíz vista en el Nivel 2.',
+            examples: [
+              { s: 'Devo comprare una sedia.', t: 'Debo comprar una silla.' },
+              { s: 'Vado a comprare un armadio.', t: 'Voy a comprar un armario.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'pulire', emoji: '🧹', anim: 'sweep',
+            definition: 'Quitar la suciedad de algo; limpiar.',
+            definitionEn: 'To clean something.',
+            etymology: 'Del latín "polire" (pulir, alisar, dejar brillante) — la misma raíz que el español "pulir".',
+            examples: [
+              { s: 'Devo pulire la finestra.', t: 'Debo limpiar la ventana.' },
+              { s: 'Vado a pulire la porta.', t: 'Voy a limpiar la puerta.' },
+            ],
+          },
+          {
+            id: 'v4', text: 'cercare', emoji: '🔎', anim: 'lookAround',
+            definition: 'Buscar algo activamente.',
+            definitionEn: 'To look for something.',
+            etymology: 'Del latín "circare" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Cerco il tavolo giusto.', t: 'Busco la mesa correcta.' },
+              { s: 'Vado a cercare una sedia.', t: 'Voy a buscar una silla.' },
+            ],
+          },
+          {
+            id: 'v5', text: 'vedere', emoji: '👁️', anim: 'blink',
+            definition: 'Percibir algo con los ojos.',
+            definitionEn: 'To see something.',
+            etymology: 'Del latín "videre" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Posso vedere il letto?', t: '¿Puedo ver la cama?' },
+              { s: 'Mi piace vedere la casa.', t: 'Me gusta ver la casa.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'il tavolo', emoji: '🍽️', keyword: 'tavolo',
+            definition: 'Mueble con una superficie plana sostenida por patas, usado para comer o trabajar.',
+            definitionEn: 'Table.',
+            etymology: 'Del latín "tabula" (tabla, plancha de madera) — misma raíz que "tabla" y "tablero".',
+            oliversTip: '"Tavolo" y "tabla" son básicamente la misma palabra latina "tabula". 🍽️',
+            examples: [
+              { s: 'Voglio avere un tavolo grande.', t: 'Quiero tener una mesa grande.' },
+              { s: 'Devo comprare un tavolo.', t: 'Debo comprar una mesa.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'la sedia', emoji: '🪑', keyword: 'sedia',
+            definition: 'Mueble individual con respaldo, usado para sentarse.',
+            definitionEn: 'Chair.',
+            etymology: 'Del latín "sedes" (asiento), de "sedere" (sentarse) — misma raíz que "sede" y "sedentario".',
+            oliversTip: '"Sedia" y "sede" comparten la raíz latina "sedere" (sentarse). 🪑',
+            examples: [
+              { s: 'Devo comprare una sedia.', t: 'Debo comprar una silla.' },
+              { s: 'Cerco una sedia comoda.', t: 'Busco una silla cómoda.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'il letto', emoji: '🛏️', keyword: 'letto',
+            definition: 'Mueble usado para dormir o descansar.',
+            definitionEn: 'Bed.',
+            etymology: 'Del latín "lectus" (cama, lecho) — misma raíz que el español "lecho".',
+            oliversTip: '"Letto" y el español "lecho" vienen de la misma palabra latina "lectus". 🛏️',
+            examples: [
+              { s: 'Voglio vedere il letto.', t: 'Quiero ver la cama.' },
+              { s: 'Vado a comprare un letto.', t: 'Voy a comprar una cama.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'la finestra', emoji: '🪟', keyword: 'finestra',
+            definition: 'Abertura en una pared para dar luz y ventilación.',
+            definitionEn: 'Window.',
+            etymology: 'Del latín "fenestra" — origen incierto, posiblemente etrusco; misma raíz que el francés "fenêtre".',
+            oliversTip: '"Finestra" no viene de "fine" (final) — su origen real es más misterioso, probablemente prerromano. 🪟',
+            examples: [
+              { s: 'Devo pulire la finestra.', t: 'Debo limpiar la ventana.' },
+              { s: 'Posso vedere la finestra?', t: '¿Puedo ver la ventana?' },
+            ],
+          },
+          {
+            id: 'w5', text: 'la porta', emoji: '🚪', keyword: 'porta',
+            definition: 'Estructura que permite el paso de entrada o salida de un espacio.',
+            definitionEn: 'Door.',
+            etymology: 'Del latín "porta" (puerta, paso) — misma raíz que "portal", "aeropuerto" y el catalán "porta".',
+            oliversTip: '"Porta" es idéntica en italiano y catalán — ambas conservan la palabra latina casi sin cambios. 🚪',
+            examples: [
+              { s: 'Vado a pulire la porta.', t: 'Voy a limpiar la puerta.' },
+              { s: 'Cerco la porta giusta.', t: 'Busco la puerta correcta.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'il divano', emoji: '🛋️', keyword: 'divano',
+            definition: 'Mueble largo y acolchado para sentarse varias personas.',
+            definitionEn: 'Sofa.',
+            etymology: 'Del turco "divan" (consejo, sala de reunión), del árabe/persa "diwan".',
+            oliversTip: '"Divano" viajó de las cortes persas y otomanas hasta los salones italianos. 🛋️',
+            examples: [
+              { s: 'Voglio avere un divano.', t: 'Quiero tener un sofá.' },
+              { s: 'Mi piace il divano nuovo.', t: 'Me gusta el sofá nuevo.' },
+            ],
+          },
+          {
+            id: 'w7', text: 'la lampada', emoji: '💡', keyword: 'lampada',
+            definition: 'Aparato que produce luz artificial.',
+            definitionEn: 'Lamp.',
+            etymology: 'Del griego "lampás" (antorcha), de "lampein" (brillar) — misma raíz que "lámpara" y "relámpago".',
+            oliversTip: '"Lampada", "lámpara" y "relámpago" comparten la raíz griega "lampein" (brillar). 💡',
+            examples: [
+              { s: 'Ho una lampada nuova.', t: 'Tengo una lámpara nueva.' },
+              { s: 'Devo comprare una lampada.', t: 'Debo comprar una lámpara.' },
+            ],
+          },
+          {
+            id: 'w8', text: 'l\'armadio', emoji: '🗄️', keyword: 'armadio',
+            definition: 'Mueble alto con puertas usado para guardar ropa u objetos.',
+            definitionEn: 'Closet / wardrobe.',
+            etymology: 'Del latín "armarium" (lugar para guardar armas o herramientas), de "arma" (armas) — originalmente un mueble militar.',
+            oliversTip: '¡El armario donde guardas la ropa viene de la misma palabra que "arma"! 🗄️',
+            examples: [
+              { s: 'Vado a cercare l\'armadio.', t: 'Voy a buscar el armario.' },
+              { s: 'Devo pulire l\'armadio.', t: 'Debo limpiar el armario.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 5,
+        name: 'I Vestiti',
+        oliversIntro: {
+          headline: 'Livello 5 · I Vestiti',
+          message: 'Italia es sinónimo de moda en todo el mundo — y muchas palabras de ropa en inglés y español llegaron directo del italiano. Este nivel te prepara para hablar de lo que llevas puesto.',
+          technique: '🔵 Struttura  +  🟢 Verbo  +  🟣 Capo\n\n"Voglio" + "portare" + "un cappotto"\n= Voglio portare un cappotto\n(I want to wear a coat)',
+          funFact: '💡 "Portare" en italiano significa tanto "llevar" como "vestir" — igual que el catalán "portar" y el francés "porter".',
+        },
+        bases: [
+          { id: 'b1', text: 'Voglio', emoji: '💭', anim: 'wantHover', definition: 'Expresa un deseo o una voluntad.', definitionEn: 'Expresses a wish or desire.', etymology: 'Del verbo "volere", del latín "velle".', oliversTip: '"Voglio" es la forma más usada para expresar deseos. 💭', examples: [{ s: 'Voglio andare al parco.', t: 'Quiero ir al parque.' }] },
+          { id: 'b2', text: 'Devo', emoji: '❗', anim: 'needPulse', definition: 'Expresa una necesidad u obligación.', definitionEn: 'Expresses a need or obligation.', etymology: 'Del verbo "dovere", del latín "debere".', oliversTip: '"Devo" marca algo necesario. ❗', examples: [{ s: 'Devo andare al mercato.', t: 'Necesito ir al mercado.' }] },
+          { id: 'b3', text: 'Mi piace', emoji: '😊', anim: 'likeBounce', definition: 'Expresa que algo te agrada.', definitionEn: 'Expresses that something pleases you.', etymology: 'Del verbo "piacere", del latín "placere".', oliversTip: '¡"Mi piace" funciona al revés que en español! 😊', examples: [{ s: 'Mi piace questo parco.', t: 'Me gusta este parque.' }] },
+          { id: 'b4', text: 'Posso', emoji: '✅', anim: 'canNod', definition: 'Expresa capacidad o permiso.', definitionEn: 'Expresses ability or permission.', etymology: 'Del verbo "potere", del latín "posse".', oliversTip: '"Posso" es perfecto para pedir permiso. ✅', examples: [{ s: 'Posso andarci?', t: '¿Puedo ir?' }] },
+          { id: 'b5', text: 'Vado a', emoji: '🚶', anim: 'goWalk', definition: 'Expresa una acción inmediata o futura.', definitionEn: 'Expresses an immediate or future action.', etymology: 'Del verbo "andare" + "a".', oliversTip: '"Vado a" es como el "voy a" español. 🚶', examples: [{ s: 'Vado a uscire ora.', t: 'Voy a salir ahora.' }] },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'portare', emoji: '👕', anim: 'lift',
+            definition: 'Llevar puesta una prenda de ropa.',
+            definitionEn: 'To wear a piece of clothing.',
+            etymology: 'Del latín "portare" — la misma raíz vista en los niveles anteriores, aquí con el sentido de "vestir".',
+            examples: [
+              { s: 'Voglio portare un cappotto.', t: 'Quiero llevar un abrigo.' },
+              { s: 'Lei porta una camicia blu.', t: 'Ella lleva una camisa azul.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'comprare', emoji: '🛍️', anim: 'reachOut',
+            definition: 'Adquirir algo a cambio de dinero.',
+            definitionEn: 'To buy something.',
+            etymology: 'Del latín "comparare" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Devo comprare le scarpe.', t: 'Debo comprar los zapatos.' },
+              { s: 'Vado a comprare un cappello.', t: 'Voy a comprar un sombrero.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'scegliere', emoji: '☑️', anim: 'pointChoose',
+            definition: 'Elegir una opción entre varias posibles.',
+            definitionEn: 'To choose or select something.',
+            etymology: 'Del latín "exeligere" (elegir, escoger), de "ex" (fuera) + "legere" (recoger, leer).',
+            examples: [
+              { s: 'Posso scegliere i guanti?', t: '¿Puedo elegir los guantes?' },
+              { s: 'Voglio scegliere una sciarpa.', t: 'Quiero elegir una bufanda.' },
+            ],
+          },
+          {
+            id: 'v4', text: 'cercare', emoji: '🔎', anim: 'lookAround',
+            definition: 'Buscar algo activamente.',
+            definitionEn: 'To look for something.',
+            etymology: 'Del latín "circare" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Cerco i pantaloni giusti.', t: 'Busco los pantalones correctos.' },
+              { s: 'Vado a cercare i calzini.', t: 'Voy a buscar los calcetines.' },
+            ],
+          },
+          {
+            id: 'v5', text: 'vedere', emoji: '👁️', anim: 'blink',
+            definition: 'Percibir algo con los ojos.',
+            definitionEn: 'To see something.',
+            etymology: 'Del latín "videre" — la misma raíz vista antes.',
+            examples: [
+              { s: 'Posso vedere la camicia?', t: '¿Puedo ver la camisa?' },
+              { s: 'Mi piace vedere i vestiti nuovi.', t: 'Me gusta ver la ropa nueva.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'una camicia', emoji: '👕', keyword: 'camicia',
+            definition: 'Prenda superior con mangas y botones, generalmente con cuello.',
+            definitionEn: 'Shirt.',
+            etymology: 'Del latín tardío "camisia" (prenda de lino), probablemente de origen celta — misma raíz que el español "camisa".',
+            oliversTip: '"Camicia" y "camisa" son casi la misma palabra — ambas vienen del latín tardío "camisia". 👕',
+            examples: [
+              { s: 'Voglio portare una camicia.', t: 'Quiero llevar una camisa.' },
+              { s: 'Devo comprare una camicia.', t: 'Debo comprar una camisa.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'le scarpe', emoji: '👟', keyword: 'scarpe',
+            definition: 'Calzado que cubre y protege el pie.',
+            definitionEn: 'Shoes.',
+            etymology: 'Del longobardo "skarpa" (bolsa de cuero) — palabra de origen germánico que entró al italiano durante las invasiones longobardas.',
+            oliversTip: '"Scarpe" no viene del latín — entró al italiano con los longobardos, un pueblo germánico que invadió Italia en el siglo VI. 👟',
+            examples: [
+              { s: 'Devo comprare le scarpe.', t: 'Debo comprar los zapatos.' },
+              { s: 'Cerco scarpe comode.', t: 'Busco zapatos cómodos.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'un cappotto', emoji: '🧥', keyword: 'cappotto',
+            definition: 'Prenda larga y abrigada que se lleva sobre la ropa para protegerse del frío.',
+            definitionEn: 'Coat.',
+            etymology: 'Del francés "capot" (capa con capucha), de "cape" — misma raíz que "capa" y "capucha".',
+            oliversTip: '"Cappotto" entró al italiano desde el francés "capot" — la misma familia que "capa" y "capucha". 🧥',
+            examples: [
+              { s: 'Voglio portare un cappotto.', t: 'Quiero llevar un abrigo.' },
+              { s: 'Fa freddo, devo portare il cappotto.', t: 'Hace frío, debo llevar el abrigo.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'un cappello', emoji: '🎩', keyword: 'cappello',
+            definition: 'Prenda que se lleva en la cabeza, con copa y a menudo con ala.',
+            definitionEn: 'Hat.',
+            etymology: 'Del latín tardío "cappellus", diminutivo de "cappa" (capa, capucha) — un sombrero era, literalmente, "una pequeña capa para la cabeza".',
+            oliversTip: '"Cappello" y "cappotto" comparten la misma raíz latina "cappa". 🎩',
+            examples: [
+              { s: 'Mi piace questo cappello.', t: 'Me gusta este sombrero.' },
+              { s: 'Vado a comprare un cappello.', t: 'Voy a comprar un sombrero.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'una sciarpa', emoji: '🧣', keyword: 'sciarpa',
+            definition: 'Prenda larga y estrecha que se enrolla alrededor del cuello para dar calor.',
+            definitionEn: 'Scarf.',
+            etymology: 'Del francés "écharpe" (banda, bandolera), de origen germánico — relacionado con el inglés "scarf".',
+            oliversTip: '"Sciarpa", el francés "écharpe" y el inglés "scarf" son todos parientes. 🧣',
+            examples: [
+              { s: 'Posso scegliere una sciarpa?', t: '¿Puedo elegir una bufanda?' },
+              { s: 'Devo portare una sciarpa.', t: 'Debo llevar una bufanda.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'i guanti', emoji: '🧤', keyword: 'guanti',
+            definition: 'Prendas que cubren las manos, con espacio para cada dedo.',
+            definitionEn: 'Gloves.',
+            etymology: 'Del franco "want" (guante), palabra germánica que entró al italiano y al francés tras las invasiones francas.',
+            oliversTip: '"Guanti" tiene raíz germánica, no latina — entró con los pueblos francos, igual que pasó con el catalán "guants". 🧤',
+            examples: [
+              { s: 'Devo comprare i guanti.', t: 'Debo comprar los guantes.' },
+              { s: 'Fa freddo, cerco i guanti.', t: 'Hace frío, busco los guantes.' },
+            ],
+          },
+          {
+            id: 'w7', text: 'i pantaloni', emoji: '👖', keyword: 'pantaloni',
+            definition: 'Prenda que cubre desde la cintura hasta los tobillos, con una pierna separada para cada extremidad.',
+            definitionEn: 'Pants / trousers.',
+            etymology: 'Del personaje teatral veneciano "Pantalone", de la Commedia dell\'Arte, que vestía unos calzones largos característicos.',
+            oliversTip: '"Pantaloni" nació en el teatro italiano — el personaje "Pantalone" le dio nombre a la prenda en medio mundo. 👖',
+            examples: [
+              { s: 'Voglio comprare i pantaloni nuovi.', t: 'Quiero comprar pantalones nuevos.' },
+              { s: 'Posso scegliere questi pantaloni?', t: '¿Puedo elegir estos pantalones?' },
+            ],
+          },
+          {
+            id: 'w8', text: 'i calzini', emoji: '🧦', keyword: 'calzini',
+            definition: 'Prendas que cubren el pie y parte de la pierna, dentro del zapato.',
+            definitionEn: 'Socks.',
+            etymology: 'Diminutivo de "calza" (media), del latín "calceus" (zapato) — misma raíz que "calzado" y "calcetín".',
+            oliversTip: '"Calzini", "calzado" y "calcetín" comparten la raíz latina "calceus" (zapato). 🧦',
+            examples: [
+              { s: 'Devo comprare i calzini.', t: 'Debo comprar los calcetines.' },
+              { s: 'Cerco calzini caldi.', t: 'Busco calcetines calientes.' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 }
 
 export function getJanulusLanguages() {

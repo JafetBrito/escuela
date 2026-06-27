@@ -99,73 +99,75 @@ function getOliverPrompt(sentence) {
   const s = sentence.toLowerCase()
   const has = (w) => hasWord(s, w)
 
-  if (has('key') || has('clé') || has('clau'))
+  if (has('key') || has('clé') || has('clau') || has('chiave'))
     return "You're locked out and can't find what you need to get back in. What do you reach for?"
   if (has('caixa') || has('cofre'))
     return "You're packing up your room and need somewhere to put your things. What do you grab?"
   if (has('torch'))
     return "The power just went out and it's pitch black. What do you reach for?"
-  if (has('candle') || has('bougie') || has('espelma'))
+  if (has('candle') || has('bougie') || has('espelma') || has('candela'))
     return "The lights flicker during the storm. What do you light instead?"
-  if (has('apple') || has('pomme') || has('poma'))
+  if (has('apple') || has('pomme') || has('poma') || has('mela'))
     return "You're hungry and there's a fruit bowl on the table. What do you grab?"
-  if (has('water') || has('eau') || has('aigua'))
+  if (has('water') || has('eau') || has('aigua') || has('acqua'))
     return "You've been out in the sun all afternoon and you're really thirsty. What do you ask for?"
-  if (has('pa'))
+  if (has('pa') || has('pane'))
     return "You stop by the bakery on your way home. What do you buy?"
-  if (has('formatge') || has('cheese'))
+  if (has('formatge') || has('cheese') || has('formaggio'))
     return "You're putting together a snack plate for some guests. What do you add?"
-  if (has('suc') || has('juice'))
+  if (has('suc') || has('juice') || has('succo'))
     return "It's breakfast time and you want something refreshing to drink. What do you pour?"
-  if (has('llet') || has('milk'))
+  if (has('llet') || has('milk') || has('latte'))
     return "You're making coffee and the fridge is almost empty. What do you check for?"
-  if (has('cafè'))
+  if (has('cafè') || has('caffè'))
     return "You need a short break to recharge during a busy afternoon. What sounds good right now?"
-  if (has('fruita'))
+  if (has('fruita') || has('frutta'))
     return "You're trying to eat healthier this week. What do you add to the shopping list?"
-  if (has('pare') || has('father'))
+  if (has('pizza') || has('pasta'))
+    return "You're deciding what to order for dinner with friends. What are you craving?"
+  if (has('pare') || has('father') || has('padre'))
     return "You're introducing your family to a new friend. Who do you point out first?"
-  if (has('mare') || has('mother'))
+  if (has('mare') || has('mother') || has('madre'))
     return "Someone asks who taught you to cook. Who do you mention?"
-  if (has('germà') || has('brother'))
+  if (has('germà') || has('brother') || has('fratello'))
     return "You're showing old photos to a friend. Who's the boy standing next to you?"
-  if (has('germana') || has('sister'))
+  if (has('germana') || has('sister') || has('sorella'))
     return "Someone asks who's in the photo with you. Who do you say it is?"
-  if (has('avi') || has('àvia'))
+  if (has('avi') || has('àvia') || has('nonno') || has('nonna'))
     return "It's a family lunch and someone asks who's coming. Who do you mention?"
-  if (has('amic') || has('amiga') || has('friend'))
+  if (has('amic') || has('amiga') || has('friend') || has('amico') || has('amica'))
     return "You're at a party and don't know anyone there. Who do you wish were with you?"
-  if (has('taula') || has('table'))
+  if (has('taula') || has('table') || has('tavolo'))
     return "You're setting up dinner for a few friends. What do you pull more chairs around?"
-  if (has('cadira') || has('chair'))
+  if (has('cadira') || has('chair') || has('sedia'))
     return "A guest just arrived and there's nowhere to sit. What do you bring over?"
-  if (has('llit') || has('bed'))
+  if (has('llit') || has('bed') || has('letto'))
     return "It's been a long day and you're exhausted. Where are you headed?"
   if (has('finestra') || has('window'))
     return "The room feels stuffy. What do you open to get some air?"
   if (has('porta') || has('door'))
     return "Someone's knocking. What do you go open?"
-  if (has('sofà') || has('sofa'))
+  if (has('sofà') || has('sofa') || has('divano'))
     return "You just got home and want to relax in front of the TV. Where do you sit?"
-  if (has('llum') || has('lamp'))
+  if (has('llum') || has('lamp') || has('lampada'))
     return "It's getting dark in the room and you want to keep reading. What do you turn on?"
-  if (has('armari'))
+  if (has('armari') || has('armadio'))
     return "You just did the laundry and need to put everything away. Where does it go?"
-  if (has('camisa') || has('shirt'))
+  if (has('camisa') || has('shirt') || has('camicia'))
     return "You're getting dressed for a meeting. What do you put on first?"
-  if (has('sabates') || has('shoes'))
+  if (has('sabates') || has('shoes') || has('scarpe'))
     return "You're about to go for a long walk. What do you check are comfortable?"
-  if (has('abric') || has('coat'))
+  if (has('abric') || has('coat') || has('cappotto'))
     return "It's freezing outside today. What do you grab before leaving?"
-  if (has('barret') || has('hat'))
+  if (has('barret') || has('hat') || has('cappello'))
     return "It's really sunny out and you forgot your sunglasses. What do you wear instead?"
-  if (has('bufanda'))
+  if (has('bufanda') || has('sciarpa'))
     return "There's a cold wind outside today. What do you wrap around your neck?"
-  if (has('guants'))
+  if (has('guants') || has('guanti'))
     return "Your hands are freezing in this weather. What do you put on?"
-  if (has('pantalons') || has('pants'))
+  if (has('pantalons') || has('pants') || has('pantaloni'))
     return "You spilled coffee right before leaving the house. What do you need to change?"
-  if (has('mitjons'))
+  if (has('mitjons') || has('calzini'))
     return "Your feet are cold inside the house. What do you put on?"
   if (has('botiga') || has('store'))
     return "You need to buy a gift for a friend's birthday. Where do you go?"
@@ -181,17 +183,17 @@ function getOliverPrompt(sentence) {
     return "You need a quiet place to study for an exam. Where do you go?"
   if (has('restaurant'))
     return "You're celebrating a friend's birthday tonight. Where are you taking them?"
-  if (has('mirror') || has('miroir') || has('mirall'))
+  if (has('mirror') || has('miroir') || has('mirall') || has('specchio'))
     return "You're getting ready in the morning. What do you check yourself in?"
   if (has('bell') || has('cloche') || has('campana'))
     return "Someone's at the front door. What do you hear ring?"
-  if (has('compass') || has('boussole') || has('brúixola'))
+  if (has('compass') || has('boussole') || has('brúixola') || has('bussola'))
     return "You're hiking and you're not sure which direction to go. What would help you?"
   if (has('ladder'))
     return "You need to change a lightbulb on the ceiling. What do you need?"
   if (has('bucket') || has('seau'))
     return "There's a small leak in the roof during the rain. What do you put underneath it?"
-  if (has('book') || has('livre') || has('llibre'))
+  if (has('book') || has('livre') || has('llibre') || has('libro'))
     return "You have a free afternoon with nothing planned. What do you pick up to relax?"
   if (has('map') || has('mapa'))
     return "You're visiting a new city and you're a bit lost. What would help you find your way?"
@@ -219,23 +221,23 @@ function getOliverPrompt(sentence) {
     return "Someone asks what you've come to enjoy since you started this. What do you say?"
   if (has('open') || has('ouvrir') || has('obrir'))
     return "Something in front of you needs to be opened. What do you do?"
-  if (has('carry') || has('porter') || has('portar'))
+  if (has('carry') || has('porter') || has('portar') || has('portare'))
     return "Your hands are full and you need to bring something along. What are you doing?"
-  if (has('find') || has('trouver') || has('trobar') || has('buscar'))
+  if (has('find') || has('trouver') || has('trobar') || has('buscar') || has('trovare') || has('cercare'))
     return "You're looking for something you misplaced. What are you doing?"
-  if (has('use') || has('utiliser') || has('fer servir'))
+  if (has('use') || has('utiliser') || has('fer servir') || has('usare'))
     return "You need a hand with something. What are you about to do?"
-  if (has('see') || has('voir') || has('veure'))
+  if (has('see') || has('voir') || has('veure') || has('vedere'))
     return "Something just caught your attention. What do you notice?"
   if (has('hold'))
     return "Someone needs an extra hand for a second. What are you doing?"
-  if (has('visitar') || has('recomanar') || has('conèixer'))
+  if (has('visitar') || has('recomanar') || has('conèixer') || has('conoscere'))
     return "A friend's visiting your city this weekend and wants suggestions. What do you tell them?"
-  if (has('comprar') || has('triar') || has('demanar'))
+  if (has('comprar') || has('triar') || has('demanar') || has('comprare') || has('scegliere') || has('ordinare'))
     return "You're out running errands today. What are you up to?"
-  if (has('tastar') || has('preferir'))
+  if (has('tastar') || has('preferir') || has('assaggiare') || has('preferire'))
     return "You're trying new things at a friend's dinner party. What's going on?"
-  if (has('netejar') || has('tenir'))
+  if (has('netejar') || has('tenir') || has('avere') || has('pulire'))
     return "You're getting your place ready for guests. What are you doing?"
   return "Tell me — how would you use what you just learned in a real conversation?"
 }
@@ -255,6 +257,11 @@ const CONV_SCENARIOS = {
     intro:   'Has fet servir aquestes frases molt bé! Mirem com sonen en una conversa normal...',
     setting: 'Fem una mica de xerrada fent servir el que acabes de practicar.',
     outro:   'Genial! Ja has tingut la teva primera conversa real en català. 🌹\n\nEl català té 1.000 anys de literatura. Avui has començat la teva pròpia història, bloc a bloc.',
+  },
+  it: {
+    intro:   'Hai usato queste frasi molto bene! Vediamo come suonano in una conversazione normale...',
+    setting: 'Facciamo una piccola chiacchierata usando quello che hai appena praticato.',
+    outro:   'Fantastico! Hai appena avuto la tua prima vera conversazione in italiano. 🍝\n\nPowell Janulus ha imparato l\'italiano esattamente così — blocco per blocco. Tu hai già iniziato.',
   },
 }
 
