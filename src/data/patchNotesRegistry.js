@@ -1,12 +1,28 @@
 // ─── Patch Notes Registry ─────────────────────────────────────────────────
 // To release a new version:
-//  1. Add a new entry at the TOP of the PATCH_NOTES array
+//  1. Add a new entry at the TOP of PATCH_NOTES_ALL (full history, newest first)
 //  2. Update LATEST_VERSION to match
-//  The PatchNotesModal shows once per version (gated by localStorage).
+//  The PatchNotesModal only renders PATCH_NOTES (the 5 most recent — that tab
+//  strip would grow forever otherwise). Older entries slide automatically
+//  into PATCH_NOTES_ARCHIVE: still here, still real data, just not rendered
+//  anywhere — nothing is deleted, the modal just stops indexing it.
 
-export const LATEST_VERSION = '0.9.0'
+export const LATEST_VERSION = '0.10.0'
 
-export const PATCH_NOTES = [
+const PATCH_NOTES_ALL = [
+  {
+    version: '0.10.0',
+    date: '2026-06-26',
+    title: 'Templo: Oliver se une a la aventura',
+    emoji: '🐱',
+    tag: 'NOVEDAD',
+    tagColor: '#22c55e',
+    changes: [
+      { icon: '🐱', text: 'Oliver (el gato naranja) ahora aparece en el Templo junto a Jafet: Jafet te da la bienvenida, y de ahí en adelante es Oliver quien te da las misiones.' },
+      { icon: '⚔️', text: 'Pantalla de selección de clase renovada en el Templo, con barras de estadísticas y habilidades — y Oliver comentando cada clase antes de que decidas.' },
+      { icon: '✨', text: '"Prueba tus habilidades" ya no es solo una tarjeta para leer: ahora activas cada una de tus 2 habilidades iniciales y ves su efecto en el mundo.' },
+    ],
+  },
   {
     version: '0.9.0',
     date: '2026-06-24',
@@ -168,3 +184,10 @@ export const PATCH_NOTES = [
     ],
   },
 ]
+
+// What the PatchNotesModal actually renders — newest 5 only.
+export const PATCH_NOTES = PATCH_NOTES_ALL.slice(0, 5)
+
+// Everything older — kept as real data (nothing deleted), just not surfaced
+// in the modal's tab strip. Read this if you ever need the full history.
+export const PATCH_NOTES_ARCHIVE = PATCH_NOTES_ALL.slice(5)
