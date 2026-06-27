@@ -48,6 +48,10 @@ function freshRS(ld) {
 
 // ── TTS helpers ───────────────────────────────────────────────────────────────
 
+// ponytail: some OS/browser combos ship zero Catalan voices at all — closest
+// phonetic match beats letting the browser silently pick an unrelated default.
+const RELATED_LANG_PREFIX = { ca: 'es' }
+
 function doSpeak(text, langCode, rate) {
   const synth = window.speechSynthesis
   if (!synth) return
@@ -57,7 +61,10 @@ function doSpeak(text, langCode, rate) {
     utt.lang   = getSpeechLangJanulus(langCode)
     utt.rate   = rate
     const all  = synth.getVoices()
-    const voice = all.find((v) => v.lang === utt.lang) ?? all.find((v) => v.lang.startsWith(langCode.slice(0, 2)))
+    const related = RELATED_LANG_PREFIX[langCode]
+    const voice = all.find((v) => v.lang === utt.lang)
+      ?? all.find((v) => v.lang.startsWith(langCode.slice(0, 2)))
+      ?? (related && all.find((v) => v.lang.startsWith(related)))
     if (voice) utt.voice = voice
     synth.speak(utt)
   }
