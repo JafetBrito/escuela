@@ -8,11 +8,20 @@
  * DOS NPCs, ROLES FIJOS (ver NPCS más abajo): Jafet narra la bienvenida;
  * desde choose_avatar_class en adelante, Oliver (el mismo gato naranja
  * mascotId 8 que ya existe como NPC idle en el Campus — ver OLIVER_NPC en
- * vrNpcRegistry.js) da el resto de las misiones. NPC_DIALOGUE define, por
- * cada paso de misión, quién habla (`speaker`) — eso es lo único que decide
- * a cuál NPC hay que acercarse, cuál tiene el ❗, y con cuál se abre el
- * DialogueBox. "Por stages" = cada entrada de NPC_DIALOGUE es, en efecto, un
- * stage: cambia quién habla y qué se puede hacer en la escena.
+ * vrNpcRegistry.js) da el resto de las misiones.
+ *
+ * MOTOR DE MISIONES DECLARATIVO — cada paso vive ENTERO como un objeto en
+ * src/data/tutorialMissions.js: id/xp/título (ya existía) + speaker/dialogue
+ * (quién habla y qué dice) + cta (qué botón mostrar y qué hace: abrir un
+ * overlay, navegar, soltar un hint, o completar+navegar). Agregar o editar
+ * un paso normal es tocar SOLO ese archivo — este archivo solo interpreta la
+ * data (getStepDialogue, ActionButton, handleMissionAction, openOverlayId).
+ * Lo que NO entra en esa data (el tracker de movimiento+chat de
+ * practice_basics, el watcher del chat-store de first_chat, el modal
+ * encadenado de test_ability) sigue siendo código a propósito — son
+ * mecánicas genuinamente distintas, no haría sentido forzarlas a una forma
+ * común. "Por stages" = cada mission.speaker es, en efecto, un stage: cambia
+ * quién habla y qué se puede hacer en la escena.
  *
  * FLUJO DE MISIONES (ver src/data/tutorialMissions.js para XP/orden real):
  *   1. meet_jafet        — cinemática de bienvenida (10 líneas con voz) +
@@ -67,8 +76,8 @@
  *                            momentos de cámara dirigida de este archivo.
  *   NPCS                    — Jafet + Oliver: nombre/emoji/posición/mascotId
  *                            /aiPrompt de cada uno.
- *   NPC_DIALOGUE            — líneas por paso de misión + quién las dice
- *                            (`speaker`) — esto define los "stages".
+ *   getStepDialogue()       — speaker+dialogue de un paso (o el terminal
+ *                            TUTORIAL_DONE_STEP), leído de tutorialMissions.js.
  *   OLIVER_CLASS_LINES      — comentario de Oliver por cada PLAYER_CLASSES
  *                            id, usado en AvatarClassPicker.
  *   TempleNpc               — modelo 3D compartido por Jafet y Oliver (clic
@@ -126,7 +135,7 @@ import { getMascotById } from '../../data/mascotRegistry'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { getSkinById } from '../../data/skinsRegistry'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
-import { TUTORIAL_MISSIONS } from '../../data/tutorialMissions'
+import { TUTORIAL_MISSIONS, TUTORIAL_DONE_STEP, getTutorialMission } from '../../data/tutorialMissions'
 import { sendNpcMessage } from '../../services/chat/npcTransport'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import MascotMesh from '../mascot/MascotMesh'
@@ -139,7 +148,8 @@ import { useImportedGlbGround } from './worlds/useImportedGlbGround'
 // whatever GLB is loaded, regardless of that model's native scale. Jafet and
 // Oliver stand on opposite sides so both are visible together during the
 // welcome stage, and so walking from one to the other (as the active
-// speaker changes — see NPC_DIALOGUE) is a deliberate, visible move.
+// speaker changes — see each mission's `speaker` in tutorialMissions.js) is
+// a deliberate, visible move.
 const ARBOL_JAFET_POS = [2.5, 0, -4]
 const ARBOL_OLIVER_POS = [-2.5, 0, -4]
 const ARBOL_SPAWN = [0, 0, 4]
@@ -204,8 +214,8 @@ function runCinematic(cameraRef, lockedRef, { pitch, distance, yaw }, ms = 1800,
 // ── NPCs ───────────────────────────────────────────────────────────────────
 // Jafet narrates the welcome (meet_jafet/practice_basics); from
 // choose_avatar_class onward Oliver takes over as the mission-giver — see
-// NPC_DIALOGUE's `speaker` field, which drives both the dialogue header and
-// which NPC's ❗ is currently lit.
+// each step's `speaker` field in tutorialMissions.js, which drives both the
+// dialogue header and which NPC's ❗ is currently lit.
 const NPCS = {
   jafet: {
     id: 'jafet',
@@ -234,77 +244,13 @@ Hablas en español. Usa emojis de gato ocasionalmente. Nunca salgas del personaj
   },
 }
 
-// ── Scripted dialogue per tutorial step ──────────────────────────────────────
-// Each key holds the lines its `speaker` says once that step BECOMES the
-// active one (not "after finishing the previous one") — that way the same
-// content works both the first time a step starts and when the player
-// returns to it.
-const NPC_DIALOGUE = {
-  practice_basics: {
-    speaker: 'jafet',
-    lines: [
-      '¡Aquí estás! Antes de nada, quiero que te sueltes un poco. 🚶',
-      'Camina por aquí — usa WASD o el joystick — y cuando quieras, cuéntame algo. Así pruebas el sistema con el que vamos a hablar de ahora en adelante.',
-      'Ah, y ya que estamos: muy pronto vas a conocer a Oliver, él te va a guiar de aquí en adelante. 🐱',
-    ],
-  },
-  choose_avatar_class: {
-    speaker: 'oliver',
-    lines: [
-      '¡Miau! 🐱 Soy Oliver — de aquí en adelante, yo te voy guiando con las misiones.',
-      'Jafet ya te dio la bienvenida — ahora vamos a lo divertido: elegir tu camino.',
-      'Revisa cada clase con calma, te cuento un poco de cada una antes de que decidas. 😼',
-    ],
-  },
-  choose_mascot: {
-    speaker: 'oliver',
-    lines: [
-      '¡Excelente elección! ⚔️ Ahora necesitas un compañero de viaje.',
-      'Elige la mascota que sientas más cercana a ti — cada una tiene su propio estilo.',
-    ],
-  },
-  mascot_class: {
-    speaker: 'oliver',
-    lines: [
-      '¡Un compañero increíble! 🐾 Pero un compañero sin clase es como un gato sin sus uñas…',
-      'Elige su clase con cuidado: algunas combinan mejor con tu camino que otras, aunque al final la decisión es toda tuya.',
-    ],
-  },
-  test_ability: {
-    speaker: 'oliver',
-    lines: [
-      '¡Ya tienen camino los dos! ✨ Y eso significa que ya tienen sus primeras habilidades.',
-      'Vamos a probarlas de verdad, no solo a leerlas. 😼',
-    ],
-  },
-  setup_ai: {
-    speaker: 'oliver',
-    lines: [
-      '¡Perfecto! Tu compañero ya tiene poderes únicos. 🔮',
-      'Ahora viene algo opcional pero muy poderoso: darle una mente de IA real para que piense y responda por sí mismo.',
-    ],
-  },
-  first_chat: {
-    speaker: 'oliver',
-    lines: [
-      '¡Tu compañero está casi listo! 🤖',
-      'Ahora pruébalo: abre su menú y dile algo. Una primera conversación siempre se recuerda.',
-    ],
-  },
-  enter_campus: {
-    speaker: 'oliver',
-    lines: [
-      '¡Los escuché conversar! 💬 Ese es un vínculo que solo crece con el tiempo.',
-      'Ya completaste todo lo que el Templo tenía para enseñarte. Solo falta un paso: cruzar hacia Oliver Academy.',
-    ],
-  },
-  done: {
-    speaker: 'oliver',
-    lines: [
-      '¡Has llegado lejos, estudiante! 🎉 El campus de Oliver Academy te espera con nuevas clases, batallas y aventuras.',
-      '¡Nos vemos por ahí! 🌍',
-    ],
-  },
+// Dialogue/speaker per step now lives on each TUTORIAL_MISSIONS entry (see
+// tutorialMissions.js) — adding/editing a step's lines no longer touches
+// this file. This just looks a step's {speaker, dialogue} up by id, falling
+// back to the terminal TUTORIAL_DONE_STEP once every mission is complete.
+function getStepDialogue(id) {
+  if (!id || id === 'done') return TUTORIAL_DONE_STEP
+  return getTutorialMission(id) ?? TUTORIAL_DONE_STEP
 }
 
 // ── Oliver's per-class commentary, shown while previewing a class in
@@ -900,21 +846,13 @@ function DialogueBox({ npc, messages, onClose, onUserMessage, isLoading, activeM
   )
 }
 
+// Reads label/skipLabel straight off the mission's own `cta`/`skipLabel`
+// fields (tutorialMissions.js) — a new mission's button is just data, not a
+// new entry in a map here.
 function ActionButton({ missionId, onAction }) {
-  const labels = {
-    practice_basics:     null,   // completes automatically (move + send a message)
-    choose_avatar_class: '🌳 Elegir mi clase',
-    choose_mascot:       '🐾 Elegir compañero',
-    mascot_class:        null,   // handled inside VrMascotOnboarding
-    test_ability:        '✨ Ver mis habilidades',
-    setup_ai:            '⚙️ Ir a Ajustes',
-    first_chat:          '💬 Abrir chat',
-    enter_campus:        '🏛️ Entrar al Campus',
-  }
-  const skips = { setup_ai: '⏭️ Saltar por ahora' }
-
-  const label = labels[missionId]
-  const skip  = skips[missionId]
+  const mission = getTutorialMission(missionId)
+  const label = mission?.cta?.label
+  const skip  = mission?.skippable ? mission.skipLabel : null
   if (!label && !skip) return null
 
   return (
@@ -989,18 +927,23 @@ export default function VrArbol() {
   const [showNpcCard, setShowNpcCard]           = useState(false)
   const [dialogueMessages, setDialogueMessages] = useState([])
   const [isNpcTyping, setIsNpcTyping]           = useState(false)
-  const [showMascotOnboarding, setShowMascotOnboarding] = useState(false)
-  const [showClassPicker, setShowClassPicker]   = useState(false)
-  const [showAbilityReveal, setShowAbilityReveal] = useState(false)
+  // Which mission CTA overlay is open, if any — driven by the active
+  // mission's `cta.open` (see tutorialMissions.js + OVERLAY_COMPONENTS
+  // below). One state var instead of one boolean per overlay; adding a new
+  // CTA-triggered overlay is "register it in OVERLAY_COMPONENTS", not "add
+  // another showX boolean + another render block".
+  const [openOverlayId, setOpenOverlayId]       = useState(null)
+  // SkillTrialPanel isn't CTA-driven — it's a chained continuation that
+  // AbilityRevealCard's onDone opens, so it stays its own boolean.
   const [showSkillTrial, setShowSkillTrial]     = useState(false)
   const [skillsTried, setSkillsTried]           = useState([false, false])
   const [classReveal, setClassReveal]           = useState(null) // { cls, ownerLabel } | null
   const [nearNpcId, setNearNpcId]               = useState(null) // 'jafet' | 'oliver' | null
   const [talkedFreely, setTalkedFreely]         = useState(false)
   const [movedEnough, setMovedEnough]           = useState(false)
-  // Tracks which NPC_DIALOGUE key was last spoken, so announce() never
-  // repeats itself within one mount but still speaks fresh content whenever
-  // the active step actually changes.
+  // Tracks which dialogue key was last spoken, so announce() never repeats
+  // itself within one mount but still speaks fresh content whenever the
+  // active step actually changes.
   const lastSpokenRef = useRef('')
   const cinematicLockRef = useRef(false)
   if (phase !== 'play') cinematicLockRef.current = true
@@ -1022,8 +965,9 @@ export default function VrArbol() {
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
   const tutorialDone = activeMission === null
   // Who's currently giving missions — Jafet through practice_basics, Oliver
-  // from choose_avatar_class onward (see NPC_DIALOGUE).
-  const activeSpeakerId = NPC_DIALOGUE[activeMission?.id ?? 'done']?.speaker ?? 'jafet'
+  // from choose_avatar_class onward (see each step's `speaker` in
+  // tutorialMissions.js).
+  const activeSpeakerId = getStepDialogue(activeMission?.id)?.speaker ?? 'jafet'
   const playerStartSkills = (PLAYER_CLASSES[playerClassId]?.startSkills ?? [])
     .map((sid) => SKILL_REGISTRY[sid]).filter(Boolean)
 
@@ -1081,14 +1025,14 @@ export default function VrArbol() {
   // interaction as every other NPC in the app.
   useEffect(() => {
     const handler = (e) => {
-      if (e.code === 'KeyF' && nearNpcId === activeSpeakerId && phase === 'play' && !showDialogue && !showNpcCard && !showMascotOnboarding && !tutorialDone) {
+      if (e.code === 'KeyF' && nearNpcId === activeSpeakerId && phase === 'play' && !showDialogue && !showNpcCard && !openOverlayId && !tutorialDone) {
         setShowNpcCard(true)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearNpcId, activeSpeakerId, showDialogue, showNpcCard, showMascotOnboarding, tutorialDone, phase])
+  }, [nearNpcId, activeSpeakerId, showDialogue, showNpcCard, openOverlayId, tutorialDone, phase])
 
   // Push a message from whichever NPC is currently speaking
   function pushNpc(text) {
@@ -1101,7 +1045,7 @@ export default function VrArbol() {
   function announce(key) {
     if (!key || key === lastSpokenRef.current) return
     lastSpokenRef.current = key
-    const lines = NPC_DIALOGUE[key]?.lines ?? []
+    const lines = getStepDialogue(key)?.dialogue ?? []
     lines.forEach((line, i) => setTimeout(() => pushNpc(line), i * 700))
     if (key === 'done') {
       runCinematic(cameraRef, cinematicLockRef, { pitch: 0.25, distance: 2.4 })
@@ -1118,8 +1062,8 @@ export default function VrArbol() {
   // not currently their turn to speak, they get a small flavor line instead
   // of repeating the active speaker's mission dialogue.
   function getAmbientLine(npcId) {
-    const entry = NPC_DIALOGUE[activeMission?.id ?? 'done']
-    if (entry?.speaker === npcId) return entry.lines[0]
+    const entry = getStepDialogue(activeMission?.id)
+    if (entry?.speaker === npcId) return entry.dialogue?.[0] ?? ''
     return npcId === 'oliver' ? '¡Miau! 🐱 Cuando sea mi turno de hablar, te aviso.' : '🧙‍♂️ Ve con Oliver, él te está esperando.'
   }
 
@@ -1165,6 +1109,9 @@ export default function VrArbol() {
     })
   }
 
+  // Reads what to do straight off the mission's `cta` (tutorialMissions.js)
+  // instead of a hardcoded if-chain per missionId — a new CTA-driven mission
+  // just needs the right `cta` shape in the data, not a new branch here.
   function handleMissionAction(missionId, action) {
     if (action === 'skip') {
       completeStep(missionId)
@@ -1173,39 +1120,26 @@ export default function VrArbol() {
       return
     }
 
-    if (missionId === 'choose_avatar_class') {
-      setShowClassPicker(true)
+    const cta = getTutorialMission(missionId)?.cta
+    if (!cta) return
+
+    if (cta.open) {
+      setOpenOverlayId(cta.open)
       setShowDialogue(false)
-    }
-
-    if (missionId === 'choose_mascot') {
-      setShowMascotOnboarding(true)
-      setShowDialogue(false)
-    }
-
-    if (missionId === 'test_ability') {
-      setShowAbilityReveal(true)
-      setShowDialogue(false)
-    }
-
-    if (missionId === 'setup_ai') {
-      navigate('/ajustes')
-    }
-
-    if (missionId === 'first_chat') {
-      pushNpc('¡Abre el menú de tu mascota (el botón 🐱 abajo a la derecha) y envíale un mensaje!')
-    }
-
-    if (missionId === 'enter_campus') {
-      completeStep('enter_campus')
-      announce('done')
-      setTimeout(() => navigate('/vr'), 2400)
+    } else if (cta.hint) {
+      pushNpc(cta.hint)
+    } else if (cta.completeFirst) {
+      completeStep(missionId)
+      announce(cta.announce)
+      setTimeout(() => navigate(cta.navigate), cta.delayMs ?? 0)
+    } else if (cta.navigate) {
+      navigate(cta.navigate)
     }
   }
 
   function handleSelectAvatarClass(classId) {
     useGameStore.getState().selectPlayerClass(classId)
-    setShowClassPicker(false)
+    setOpenOverlayId(null)
     completeStep('choose_avatar_class')
     setClassReveal({ cls: PLAYER_CLASSES[classId], ownerLabel: 'Tu Avatar es' })
     setTimeout(() => { setClassReveal(null); setShowDialogue(true); announce('choose_mascot') }, 3700)
@@ -1214,7 +1148,7 @@ export default function VrArbol() {
   // VrMascotOnboarding finished → completes both the model+name step and
   // the mascot's class step, since that single modal covers both.
   function handleMascotOnboardingDone() {
-    setShowMascotOnboarding(false)
+    setOpenOverlayId(null)
     completeStep('choose_mascot')
     completeStep('mascot_class')
     const newOliverClass = useGameStore.getState().oliver.class
@@ -1233,7 +1167,7 @@ export default function VrArbol() {
       onWheel={(e) => { if (!cinematicLockRef.current) onWheel(e) }}
       onContextMenu={(e) => {
         e.preventDefault()
-        if (phase === 'play' && nearNpcId === activeSpeakerId && !showDialogue && !showMascotOnboarding && !tutorialDone) {
+        if (phase === 'play' && nearNpcId === activeSpeakerId && !showDialogue && !openOverlayId && !tutorialDone) {
           setShowNpcCard((v) => !v)
         }
       }}
@@ -1277,7 +1211,7 @@ export default function VrArbol() {
       {phase === 'reveal' && <RevealTitleCard />}
 
       {/* ── Touch controls ── */}
-      {phase === 'play' && !showDialogue && !showMascotOnboarding && !showClassPicker && !showAbilityReveal && !showSkillTrial && (
+      {phase === 'play' && !showDialogue && !openOverlayId && !showSkillTrial && (
         <>
           <VirtualJoystick keysRef={keysRef} />
           <MobileButtons keysRef={keysRef} />
@@ -1316,7 +1250,7 @@ export default function VrArbol() {
       {/* ── Talk to the active speaker prompt — only when close enough to
           THEM specifically (the other NPC isn't who has missions right now).
           Opens the card (not the chat directly) — same as right-click/F. ── */}
-      {phase === 'play' && nearNpcId === activeSpeakerId && !showDialogue && !showNpcCard && !showMascotOnboarding && !tutorialDone && (
+      {phase === 'play' && nearNpcId === activeSpeakerId && !showDialogue && !showNpcCard && !openOverlayId && !tutorialDone && (
         <div className="absolute bottom-20 left-1/2 z-20 -translate-x-1/2">
           <button type="button" onClick={() => setShowNpcCard(true)}
             className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-black/80 px-6 py-3 font-black text-primary shadow-lg backdrop-blur-sm animate-pulse hover:bg-primary hover:text-background transition-all">
@@ -1324,7 +1258,7 @@ export default function VrArbol() {
           </button>
         </div>
       )}
-      {phase === 'play' && nearNpcId !== activeSpeakerId && !showDialogue && !showMascotOnboarding && !tutorialDone && (
+      {phase === 'play' && nearNpcId !== activeSpeakerId && !showDialogue && !openOverlayId && !tutorialDone && (
         <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-border bg-black/60 px-4 py-2 text-xs text-text-muted backdrop-blur-sm">
           🚶 Camina (WASD) hacia {NPCS[activeSpeakerId].emoji} {NPCS[activeSpeakerId].name}, dentro del templo
         </div>
@@ -1333,7 +1267,7 @@ export default function VrArbol() {
       {/* ── Active speaker's card — right-click/F/prompt-button. Closing it
           does not open the chat; only its "Hablar" button does (see
           openDialogue). ── */}
-      {phase === 'play' && showNpcCard && !showDialogue && !showMascotOnboarding && (
+      {phase === 'play' && showNpcCard && !showDialogue && !openOverlayId && (
         <NpcCard npc={NPCS[activeSpeakerId]} line={getAmbientLine(activeSpeakerId)} onTalk={openDialogue} onClose={() => setShowNpcCard(false)} />
       )}
 
@@ -1355,7 +1289,7 @@ export default function VrArbol() {
       )}
 
       {/* ── Dialogue box ── */}
-      {phase === 'play' && showDialogue && !showMascotOnboarding && !showClassPicker && !showAbilityReveal && (
+      {phase === 'play' && showDialogue && !openOverlayId && (
         <DialogueBox
           npc={NPCS[activeSpeakerId]}
           messages={dialogueMessages}
@@ -1367,23 +1301,25 @@ export default function VrArbol() {
         />
       )}
 
-      {/* ── Avatar class picker (mission 3) ── */}
-      {showClassPicker && (
-        <AvatarClassPicker isAdmin={isAdmin} onSelect={handleSelectAvatarClass} onClose={() => setShowClassPicker(false)} />
+      {/* ── Mission CTA overlays — which one (if any) is driven by
+          openOverlayId, set generically from the active mission's cta.open
+          (see handleMissionAction). Each still needs its own props, so this
+          stays 3 explicit blocks rather than a one-size-fits-all renderer. ── */}
+      {openOverlayId === 'classPicker' && (
+        <AvatarClassPicker isAdmin={isAdmin} onSelect={handleSelectAvatarClass} onClose={() => setOpenOverlayId(null)} />
       )}
 
-      {/* ── Mascot onboarding overlay (missions 4+5) ── */}
-      {showMascotOnboarding && !oliverClass && (
+      {openOverlayId === 'mascotOnboarding' && !oliverClass && (
         <VrMascotOnboarding onDone={handleMascotOnboardingDone} />
       )}
 
-      {/* ── Ability reveal (mission 6) — leads into the skill trial below,
-          which is what actually completes test_ability. ── */}
-      {showAbilityReveal && (
+      {/* Ability reveal leads into the skill trial below, which is what
+          actually completes test_ability. */}
+      {openOverlayId === 'abilityReveal' && (
         <AbilityRevealCard
           playerClass={playerClassId}
           oliverClass={oliverClass}
-          onDone={() => { setShowAbilityReveal(false); setSkillsTried([false, false]); setShowSkillTrial(true) }}
+          onDone={() => { setOpenOverlayId(null); setSkillsTried([false, false]); setShowSkillTrial(true) }}
         />
       )}
 
