@@ -87,86 +87,174 @@ function doSpeakEN(text, rate = 0.85) {
   doSpeak(text, 'en', rate)
 }
 
-// ── Conversation: coherent story prompts ──────────────────────────────────────
+// ── Conversation: natural, everyday prompts ────────────────────────────────────
+
+// Word-exact match (not substring) so e.g. "porta" (door) never matches inside
+// "portar" (to carry/wear) — both are real words across the Catalan levels.
+function hasWord(sentence, word) {
+  return sentence.split(/[^a-zàèéíïòóúüçñ]+/).includes(word)
+}
 
 function getOliverPrompt(sentence) {
   const s = sentence.toLowerCase()
-  // vocab-first matching (most specific)
-  if (s.includes('key') || s.includes('clé') || s.includes('clau'))
-    return s.includes('find') || s.includes('trouver') || s.includes('trobar')
-      ? "The door ahead is locked tight! We need to get through. What are you going to do?"
-      : "We have this locked chest right here. Tell me — what can you do with it?"
-  if (s.includes('torch')) return "It's pitch dark in this tunnel. I can't see anything at all! What should we do?"
-  if (s.includes('apple') || s.includes('pomme') || s.includes('poma'))
-    return "After hours of exploring these tunnels, we're both starving. I see a fruit tree over there! What do you want?"
-  if (s.includes('water') || s.includes('eau') || s.includes('aigua'))
-    return "We've been walking for so long in the heat. I'm incredibly thirsty. What do we need right now?"
-  if (s.includes('candle') || s.includes('bougie') || s.includes('espelma'))
-    return "Look — there's a faint flickering light in that dark corner. Tell me, what can you see?"
-  if (s.includes('mirror') || s.includes('miroir') || s.includes('mirall'))
-    return "Something is reflecting light on that old stone wall over there. What do you see?"
-  if (s.includes('bell') || s.includes('cloche') || s.includes('campana'))
-    return "Legend says there's a magic bell hidden somewhere in this tower. What are we looking for?"
-  if (s.includes('compass') || s.includes('boussole') || s.includes('brúixola'))
-    return "We keep going in circles in these tunnels! Do you have any idea how we navigate?"
-  if (s.includes('ladder')) return "The treasure is up on that high ledge — but there's no way up! What do we need?"
-  if (s.includes('bucket') || s.includes('seau'))
-    return "Water is flooding the passage! We need something to bail it out. What do you suggest?"
-  if (s.includes('book') || s.includes('livre') || s.includes('llibre'))
-    return "We found the castle's secret library! Dusty old tomes everywhere. What do you want to do?"
-  if (s.includes('map') || s.includes('mapa'))
-    return "We're completely lost in this maze. We have an old parchment... how can it help us?"
-  // abstract / L2 vocab
-  if (s.includes('language') || s.includes('idioma'))
-    return "Learning a new language is our greatest adventure! What's your biggest goal right now?"
-  if (s.includes('culture') || s.includes('cultura'))
-    return "Every place we visit has its own unique way of life. What do you want to do?"
-  if (s.includes('vocabulary') || s.includes('vocabulario'))
-    return "Words are the keys to every door in this castle! What do you need to work on?"
-  if (s.includes('pronunciation') || s.includes('pronunciación') || s.includes('pronunciation'))
-    return "Speaking a language perfectly is its own kind of adventure. What are you working on?"
-  if (s.includes('grammar') || s.includes('gramática'))
-    return "The rules of language are like a map of the castle — without them you get lost! What's your goal?"
-  if (s.includes('tradition') || s.includes('tradición'))
-    return "Every culture has its ancient customs and secrets. What do you want to discover?"
-  if (s.includes('history') || s.includes('historia'))
-    return "The past holds all the secrets of this place! What do you want to do?"
-  if (s.includes('skill') || s.includes('habilidad'))
-    return "Every day in this adventure makes us stronger. What are you working toward?"
-  if (s.includes('discover') || s.includes('explore'))
-    return "The world beyond this door is full of wonders. What do you want to do?"
-  if (s.includes('remember')) return "Our journey will fill our minds with new knowledge. What do you need to do?"
-  if (s.includes('appreciate')) return "This castle is teaching us to see beauty everywhere. What have you learned to do?"
-  // verb fallbacks
-  if (s.includes('open') || s.includes('ouvrir') || s.includes('obrir'))
-    return "There's a massive door blocking our path forward. What can you do?"
-  if (s.includes('carry') || s.includes('porter') || s.includes('portar'))
-    return "We need to bring supplies for the journey ahead. What are you going to do?"
-  if (s.includes('find') || s.includes('trouver') || s.includes('trobar'))
-    return "Something important is hidden in this castle. What are you going to do?"
-  if (s.includes('use') || s.includes('utiliser') || s.includes('fer servir'))
-    return "We have tools at our disposal. What are you going to do with them?"
-  if (s.includes('see') || s.includes('voir') || s.includes('veure'))
-    return "Something caught your eye in the shadows. Tell me — what do you see?"
-  if (s.includes('hold')) return "I need both hands free to pick the lock. Can you help me?"
-  return "¡Momento clave en nuestra aventura! Say what you would do next."
+  const has = (w) => hasWord(s, w)
+
+  if (has('key') || has('clé') || has('clau'))
+    return "You're locked out and can't find what you need to get back in. What do you reach for?"
+  if (has('caixa') || has('cofre'))
+    return "You're packing up your room and need somewhere to put your things. What do you grab?"
+  if (has('torch'))
+    return "The power just went out and it's pitch black. What do you reach for?"
+  if (has('candle') || has('bougie') || has('espelma'))
+    return "The lights flicker during the storm. What do you light instead?"
+  if (has('apple') || has('pomme') || has('poma'))
+    return "You're hungry and there's a fruit bowl on the table. What do you grab?"
+  if (has('water') || has('eau') || has('aigua'))
+    return "You've been out in the sun all afternoon and you're really thirsty. What do you ask for?"
+  if (has('pa'))
+    return "You stop by the bakery on your way home. What do you buy?"
+  if (has('formatge') || has('cheese'))
+    return "You're putting together a snack plate for some guests. What do you add?"
+  if (has('suc') || has('juice'))
+    return "It's breakfast time and you want something refreshing to drink. What do you pour?"
+  if (has('llet') || has('milk'))
+    return "You're making coffee and the fridge is almost empty. What do you check for?"
+  if (has('cafè'))
+    return "You need a short break to recharge during a busy afternoon. What sounds good right now?"
+  if (has('fruita'))
+    return "You're trying to eat healthier this week. What do you add to the shopping list?"
+  if (has('pare') || has('father'))
+    return "You're introducing your family to a new friend. Who do you point out first?"
+  if (has('mare') || has('mother'))
+    return "Someone asks who taught you to cook. Who do you mention?"
+  if (has('germà') || has('brother'))
+    return "You're showing old photos to a friend. Who's the boy standing next to you?"
+  if (has('germana') || has('sister'))
+    return "Someone asks who's in the photo with you. Who do you say it is?"
+  if (has('avi') || has('àvia'))
+    return "It's a family lunch and someone asks who's coming. Who do you mention?"
+  if (has('amic') || has('amiga') || has('friend'))
+    return "You're at a party and don't know anyone there. Who do you wish were with you?"
+  if (has('taula') || has('table'))
+    return "You're setting up dinner for a few friends. What do you pull more chairs around?"
+  if (has('cadira') || has('chair'))
+    return "A guest just arrived and there's nowhere to sit. What do you bring over?"
+  if (has('llit') || has('bed'))
+    return "It's been a long day and you're exhausted. Where are you headed?"
+  if (has('finestra') || has('window'))
+    return "The room feels stuffy. What do you open to get some air?"
+  if (has('porta') || has('door'))
+    return "Someone's knocking. What do you go open?"
+  if (has('sofà') || has('sofa'))
+    return "You just got home and want to relax in front of the TV. Where do you sit?"
+  if (has('llum') || has('lamp'))
+    return "It's getting dark in the room and you want to keep reading. What do you turn on?"
+  if (has('armari'))
+    return "You just did the laundry and need to put everything away. Where does it go?"
+  if (has('camisa') || has('shirt'))
+    return "You're getting dressed for a meeting. What do you put on first?"
+  if (has('sabates') || has('shoes'))
+    return "You're about to go for a long walk. What do you check are comfortable?"
+  if (has('abric') || has('coat'))
+    return "It's freezing outside today. What do you grab before leaving?"
+  if (has('barret') || has('hat'))
+    return "It's really sunny out and you forgot your sunglasses. What do you wear instead?"
+  if (has('bufanda'))
+    return "There's a cold wind outside today. What do you wrap around your neck?"
+  if (has('guants'))
+    return "Your hands are freezing in this weather. What do you put on?"
+  if (has('pantalons') || has('pants'))
+    return "You spilled coffee right before leaving the house. What do you need to change?"
+  if (has('mitjons'))
+    return "Your feet are cold inside the house. What do you put on?"
+  if (has('botiga') || has('store'))
+    return "You need to buy a gift for a friend's birthday. Where do you go?"
+  if (has('mercat'))
+    return "You want fresh vegetables for dinner tonight. Where do you head?"
+  if (has('parc') || has('park'))
+    return "It's a sunny Sunday and you want some fresh air. Where do you go?"
+  if (has('platja'))
+    return "It's the hottest day of summer. Where do you want to go?"
+  if (has('museu'))
+    return "Some friends are visiting your city for the weekend. What do you recommend they see?"
+  if (has('biblioteca'))
+    return "You need a quiet place to study for an exam. Where do you go?"
+  if (has('restaurant'))
+    return "You're celebrating a friend's birthday tonight. Where are you taking them?"
+  if (has('mirror') || has('miroir') || has('mirall'))
+    return "You're getting ready in the morning. What do you check yourself in?"
+  if (has('bell') || has('cloche') || has('campana'))
+    return "Someone's at the front door. What do you hear ring?"
+  if (has('compass') || has('boussole') || has('brúixola'))
+    return "You're hiking and you're not sure which direction to go. What would help you?"
+  if (has('ladder'))
+    return "You need to change a lightbulb on the ceiling. What do you need?"
+  if (has('bucket') || has('seau'))
+    return "There's a small leak in the roof during the rain. What do you put underneath it?"
+  if (has('book') || has('livre') || has('llibre'))
+    return "You have a free afternoon with nothing planned. What do you pick up to relax?"
+  if (has('map') || has('mapa'))
+    return "You're visiting a new city and you're a bit lost. What would help you find your way?"
+  if (has('language') || has('idioma'))
+    return "Someone asks why you're learning a new language. What do you tell them?"
+  if (has('culture') || has('cultura'))
+    return "A friend asks what you find most interesting about other countries. What do you say?"
+  if (has('vocabulary') || has('vocabulario'))
+    return "Someone asks what's been hardest about learning so far. What do you say?"
+  if (has('pronunciation') || has('pronunciación'))
+    return "A friend asks what you still need to practice. What do you say?"
+  if (has('grammar') || has('gramática'))
+    return "Someone asks what part of the language confuses you most. What do you say?"
+  if (has('tradition') || has('tradición'))
+    return "A friend asks about something special your family does every year. What do you mention?"
+  if (has('history') || has('historia'))
+    return "Someone asks what subject you'd want to learn more about. What do you say?"
+  if (has('skill') || has('habilidad'))
+    return "A friend asks what you're trying to get better at this year. What do you say?"
+  if (has('discover') || has('explore'))
+    return "Someone asks what you're most looking forward to this weekend. What do you say?"
+  if (has('remember'))
+    return "A friend asks how you keep new words in your head. What do you tell them?"
+  if (has('appreciate'))
+    return "Someone asks what you've come to enjoy since you started this. What do you say?"
+  if (has('open') || has('ouvrir') || has('obrir'))
+    return "Something in front of you needs to be opened. What do you do?"
+  if (has('carry') || has('porter') || has('portar'))
+    return "Your hands are full and you need to bring something along. What are you doing?"
+  if (has('find') || has('trouver') || has('trobar') || has('buscar'))
+    return "You're looking for something you misplaced. What are you doing?"
+  if (has('use') || has('utiliser') || has('fer servir'))
+    return "You need a hand with something. What are you about to do?"
+  if (has('see') || has('voir') || has('veure'))
+    return "Something just caught your attention. What do you notice?"
+  if (has('hold'))
+    return "Someone needs an extra hand for a second. What are you doing?"
+  if (has('visitar') || has('recomanar') || has('conèixer'))
+    return "A friend's visiting your city this weekend and wants suggestions. What do you tell them?"
+  if (has('comprar') || has('triar') || has('demanar'))
+    return "You're out running errands today. What are you up to?"
+  if (has('tastar') || has('preferir'))
+    return "You're trying new things at a friend's dinner party. What's going on?"
+  if (has('netejar') || has('tenir'))
+    return "You're getting your place ready for guests. What are you doing?"
+  return "Tell me — how would you use what you just learned in a real conversation?"
 }
 
 const CONV_SCENARIOS = {
   en: {
-    intro:   'You used these phrases perfectly. Now watch how they all come together in a real situation...',
-    setting: '🏰 You and Oliver are exploring an ancient castle at night. The lanterns are burning low...',
-    outro:   "You see? With just 3 blocks, you told an entire story. That's the Janulus Technique.\n\nPowell Janulus mastered 42 languages exactly like this — block by block. You've already started. 🌟",
+    intro:   'You used these phrases well. Now let\'s see them come up in a normal, everyday conversation...',
+    setting: 'Let\'s have a quick chat using what you just practiced.',
+    outro:   "See that? With just 3 blocks, you carried a real conversation. That's the Janulus Technique.\n\nPowell Janulus mastered 42 languages exactly like this — block by block. You've already started. 🌟",
   },
   fr: {
-    intro:   'Tu as utilisé ces phrases parfaitement! Regarde comment elles coulent dans une situation réelle...',
-    setting: '🗼 Oliver et toi vous promenez dans un vieux château au coucher du soleil...',
-    outro:   'Voilà! Tu as maintenant ton premier français conversationnel. 🥐\n\nJanulus a appris son français exactement comme ça — bloc à bloc. Le plus beau des idiomes est à ta portée.',
+    intro:   'Tu as bien utilisé ces phrases! Voyons comment elles s\'intègrent dans une conversation normale...',
+    setting: 'Discutons un peu en utilisant ce que tu viens de pratiquer.',
+    outro:   'Voilà! Tu viens d\'avoir ta première vraie conversation en français. 🥐\n\nJanulus a appris son français exactement comme ça — bloc à bloc. Tu as déjà commencé.',
   },
   ca: {
-    intro:   'Has fet servir aquestes frases perfectament! Mira com flueixen en una situació real...',
-    setting: '🌹 Oliver i tu visiteu el Barri Gòtic de Barcelona de nit. Les llums de gas il·luminen el carrer...',
-    outro:   'Fantàstic! Ja parles català. 🌹\n\nEl català té 1,000 anys de literatura. Avui has començat la teva pròpia història. Bloc a bloc.',
+    intro:   'Has fet servir aquestes frases molt bé! Mirem com sonen en una conversa normal...',
+    setting: 'Fem una mica de xerrada fent servir el que acabes de practicar.',
+    outro:   'Genial! Ja has tingut la teva primera conversa real en català. 🌹\n\nEl català té 1.000 anys de literatura. Avui has començat la teva pròpia història, bloc a bloc.',
   },
 }
 
