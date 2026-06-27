@@ -136,14 +136,16 @@ export default function ChessGame() {
       {/* Board */}
       <div className="w-full max-w-[min(90vw,520px)]">
         <Chessboard
-          position={fen}
-          onPieceDrop={onPieceDrop}
-          canDragPiece={canDragPiece}
-          squareStyles={squareStyles}
-          boardOrientation="white"
-          boardStyle={{ borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
-          darkSquareStyle={{ backgroundColor: '#5a7a4a' }}
-          lightSquareStyle={{ backgroundColor: '#e8f0d8' }}
+          options={{
+            position: fen,
+            onPieceDrop,
+            canDragPiece,
+            squareStyles,
+            boardOrientation: 'white',
+            boardStyle: { borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' },
+            darkSquareStyle: { backgroundColor: '#5a7a4a' },
+            lightSquareStyle: { backgroundColor: '#e8f0d8' },
+          }}
         />
       </div>
 
