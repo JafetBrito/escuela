@@ -1,4 +1,5 @@
 import { getJanulusLevels } from '../../../data/matrixData'
+import VoiceSetupNotice from './VoiceSetupNotice'
 
 export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack }) {
   const all = getJanulusLevels(lang).map((l) => ({ ...l, locked: false }))
@@ -18,6 +19,8 @@ export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack 
       </div>
 
       <div className="flex-1 overflow-auto py-6">
+        <VoiceSetupNotice langCode={lang} langName={langName} />
+
         <p className="mb-8 text-center text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
           Mapa de Niveles
         </p>

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { getJanulusLevel, getSpeechLangJanulus } from '../../../data/matrixData'
+import { getPreferredVoiceURI } from './voicePrefs'
 import VerbAnimation from './VerbAnimation'
 
 const ROUNDS = 8
@@ -61,8 +62,10 @@ function doSpeak(text, langCode, rate) {
     utt.lang   = getSpeechLangJanulus(langCode)
     utt.rate   = rate
     const all  = synth.getVoices()
-    const related = RELATED_LANG_PREFIX[langCode]
-    const voice = all.find((v) => v.lang === utt.lang)
+    const savedURI = getPreferredVoiceURI(langCode)
+    const related  = RELATED_LANG_PREFIX[langCode]
+    const voice = (savedURI && all.find((v) => v.voiceURI === savedURI))
+      ?? all.find((v) => v.lang === utt.lang)
       ?? all.find((v) => v.lang.startsWith(langCode.slice(0, 2)))
       ?? (related && all.find((v) => v.lang.startsWith(related)))
     if (voice) utt.voice = voice
