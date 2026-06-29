@@ -34,6 +34,7 @@ import DevToolsPanel from './components/shared/DevToolsPanel'
 import IntroMissionDevTool from './components/admin/IntroMissionDevTool'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
+import { useSyncStatusStore } from './stores/useSyncStatusStore'
 
 /**
  * 📦 CODE SPLITTING (CARGA DIFERIDA)
@@ -74,6 +75,20 @@ function RouteFallback() {
   )
 }
 
+// Antes solo el admin veía si un guardado a la nube fallaba (DevToolsPanel).
+// Para todos los demás un fallo de RLS/columna faltante era invisible: el
+// progreso simplemente "no se guardaba" sin ninguna pista de por qué.
+function SyncErrorBanner() {
+  const status = useSyncStatusStore((s) => s.status)
+  const lastError = useSyncStatusStore((s) => s.lastError)
+  if (status !== 'error') return null
+  return (
+    <div className="fixed bottom-3 left-1/2 z-[999] -translate-x-1/2 rounded-lg border border-danger/40 bg-danger/15 px-3 py-1.5 text-xs text-danger shadow-lg">
+      ⚠️ No se pudo guardar tu progreso en la nube{lastError ? `: ${lastError}` : ''}
+    </div>
+  )
+}
+
 export default function App() {
   // Estado global para saber si el usuario abrió un libro desde cualquier parte de la app.
   const openBookId = useLibraryStore((s) => s.openBookId)
@@ -93,6 +108,7 @@ export default function App() {
       <DevToolsPanel />
       <IntroMissionDevTool />
       <AiCredentialsLoader />
+      <SyncErrorBanner />
 
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 
@@ -256,7 +272,7 @@ export default function App() {
         <Route
           path="/vr"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage />
               </Suspense>
@@ -266,7 +282,7 @@ export default function App() {
         <Route
           path="/vr/room"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage roomMode />
               </Suspense>
@@ -276,7 +292,7 @@ export default function App() {
         <Route
           path="/vr/anfiteatro"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage anfiteatroMode />
               </Suspense>
@@ -286,7 +302,7 @@ export default function App() {
         <Route
           path="/vr/world-tree"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage worldTreeMode />
               </Suspense>
@@ -296,18 +312,18 @@ export default function App() {
         <Route
           path="/vr/graffiti"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage graffitiMode />
               </Suspense>
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/vr/cueva-platon"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VrCueva />
               </Suspense>
