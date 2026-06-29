@@ -7,6 +7,9 @@
 // step.type === 'talk'      -> avanza con solo hablar (botón "Continuar").
 // step.type === 'condition' -> solo avanza cuando check(missionState) es true
 //                               (mismo `missionState` que usa useMissionState).
+// step.type === 'terminal'  -> abre <BashTerminalModal> (VRPage.jsx) en vez del
+//                               botón normal; avanza cuando el jugador completa
+//                               todos los `checkpoints` (texto libre + validate()).
 export const QUESTS = [
   {
     id: 'bienvenida-campus',
@@ -57,6 +60,55 @@ export const QUESTS = [
       },
     ],
     reward: { coins: 1800, xp: 60 },
+  },
+  {
+    // Misión de prueba: BashMishi "invita" al jugador al mundo de Bash que
+    // todavía no existe. Pensada como plantilla para las muchas misiones de
+    // este estilo que vendrán después — sin prisa, solo validando el formato.
+    id: 'bash-basico',
+    title: 'Primeros Pasos en Bash',
+    icon: '💻',
+    description: 'BashMishi te enseña tus primeros comandos en la terminal.',
+    steps: [
+      {
+        npcId: 'bash-mishi',
+        type: 'talk',
+        prompt: '¡Miau! Soy BashMishi 🐾. Voy a enseñarte a hablar con la computadora usando Bash. ¿Listo para tu primera terminal?',
+      },
+      {
+        npcId: 'bash-mishi',
+        type: 'terminal',
+        checkpoints: [
+          {
+            instruction: 'Para empezar, usa "echo" para imprimir un mensaje en pantalla.',
+            placeholder: 'echo "Hola Mundo"',
+            validate: (input) => /^echo\s+.+/i.test(input.trim()),
+            success: '¡Perfecto! "echo" imprime texto en la terminal — es lo primero que aprende todo programador.',
+            hint: 'Escribe la palabra "echo" seguida de un mensaje, por ejemplo: echo "Hola Mundo"',
+          },
+          {
+            instruction: 'Ahora escribe un comentario explicando qué hace tu script. En Bash, los comentarios empiezan con "#" y la computadora los ignora — son para los humanos.',
+            placeholder: '# Este script saluda al usuario',
+            validate: (input) => /^#.+/.test(input.trim()),
+            success: '¡Bien hecho! Los comentarios no se ejecutan, pero ayudan a entender el código después.',
+            hint: 'La línea debe empezar con el símbolo #, por ejemplo: # Este script saluda al usuario',
+          },
+          {
+            instruction: 'Último paso: combina "read" para pedir el nombre del usuario y "echo" para saludarlo usando esa variable. Ejemplo:\nread -p "¿Cómo te llamas? " nombre\necho "Hola, $nombre"',
+            placeholder: 'read -p "¿Cómo te llamas? " nombre\necho "Hola, $nombre"',
+            validate: (input) => /read\s/.test(input) && /echo\s+.*\$\w+/.test(input),
+            success: '¡Excelente! Acabas de combinar entrada (read) y salida (echo) usando una variable. Eso es un programa real.',
+            hint: 'Necesitas una línea con "read" que guarde el nombre en una variable, y otra con "echo" que use esa variable con "$".',
+          },
+        ],
+      },
+      {
+        npcId: 'bash-mishi',
+        type: 'talk',
+        prompt: '¡Lo lograste! 🎉 Esto es solo el comienzo — pronto abriremos todo un mundo de Bash. Por ahora, toma tu recompensa.',
+      },
+    ],
+    reward: { coins: 1200, xp: 40 },
   },
 ]
 

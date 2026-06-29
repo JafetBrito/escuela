@@ -32,6 +32,7 @@ import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
 import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import GmConsole from '../shared/GmConsole'
+import BashTerminalModal from './BashTerminalModal'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { formatCurrency } from '../../utils/currency'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
@@ -1912,7 +1913,7 @@ function World({
 // WoW-style NPC dialogue card for mission NPCs (right-click / E key).
 function NpcMissionCard({
   npcId, accepted, claimed, missionState, onAccept, onClaim, onClose, onBattle,
-  questsActive, questsCompleted, onAcceptQuest, onAdvanceQuest, onClaimQuest,
+  questsActive, questsCompleted, onAcceptQuest, onAdvanceQuest, onClaimQuest, onOpenBashTerminal,
 }) {
   const npc = getVrNpcById(npcId)
   const mission = npc && getGlobalMissionById(npc.missionId)
@@ -2058,10 +2059,19 @@ function NpcMissionCard({
               </>
             ) : (
               <>
-                <p className="text-xs leading-relaxed mb-3" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {activeStep.step.prompt}
-                </p>
-                {stepReady ? (
+                {activeStep.step.type !== 'terminal' && (
+                  <p className="text-xs leading-relaxed mb-3" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    {activeStep.step.prompt}
+                  </p>
+                )}
+                {activeStep.step.type === 'terminal' ? (
+                  <button type="button"
+                    onClick={() => { onOpenBashTerminal(activeStep); onClose() }}
+                    className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}>
+                    🖥️ Abrir terminal
+                  </button>
+                ) : stepReady ? (
                   <button type="button" onClick={handleAdvanceStep}
                     className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
                     style={{ background: isLastStep
@@ -3195,6 +3205,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const acceptQuest = useQuestsStore((s) => s.acceptQuest)
   const advanceQuestStep = useQuestsStore((s) => s.advanceStep)
   const claimQuestReward = useQuestsStore((s) => s.claimReward)
+  const [bashTerminalStep, setBashTerminalStep] = useState(null)
   const openLocked = useMascotCompanionStore((s) => s.openLocked)
   const flashlightOn = useItemEffectsStore((s) => s.activeItems['linterna'])
   const flashlightPurchased = useShopStore((s) => s.purchased.includes('linterna'))
@@ -3517,6 +3528,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
                 onAcceptQuest={acceptQuest}
                 onAdvanceQuest={advanceQuestStep}
                 onClaimQuest={claimQuestReward}
+                onOpenBashTerminal={setBashTerminalStep}
                 onClose={() => setActiveNpcId(null)}
               />
             )
@@ -3668,6 +3680,18 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <TerminalModal
             tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
             onClose={() => setTerminalOpen(false)}
+          />
+        )}
+
+        {/* BashMishi's free-text Bash exercise (see questsRegistry.js step.type 'terminal') */}
+        {bashTerminalStep && (
+          <BashTerminalModal
+            checkpoints={bashTerminalStep.step.checkpoints}
+            onComplete={() => {
+              advanceQuestStep(bashTerminalStep.quest.id)
+              setBashTerminalStep(null)
+            }}
+            onClose={() => setBashTerminalStep(null)}
           />
         )}
 

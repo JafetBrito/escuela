@@ -168,6 +168,18 @@ export const VR_NPCS = [
     dialogue: 'Quien construye su círculo de confianza, construye su futuro.',
     questId: 'circulo-confianza',
   },
+  {
+    // Primera misión de un futuro "mundo Bash" todavía sin construir — de
+    // momento es solo la plantilla de prueba para este estilo de misión.
+    id: 'bash-mishi',
+    emoji: '🐈‍⬛',
+    name: 'BashMishi',
+    color: '#10b981',
+    position: [0, 0, -30],
+    mascotId: 16,
+    dialogue: 'Miau. ¿Quieres aprender a hablar con la computadora?',
+    questId: 'bash-basico',
+  },
 ]
 
 export function getVrNpcById(id) {
