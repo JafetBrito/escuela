@@ -155,6 +155,15 @@ export const MASCOTS = [
     description: 'Sabio y observador, ve lo que otros pasan por alto.',
     modelPath: '/MODELOS 3D/MASCOTAS/owl.glb',
   },
+  {
+    id: 18,
+    name: 'Viajero Encapuchado',
+    icon: '🥷',
+    geometry: 'cat',
+    color: '#6b7280',
+    description: 'Un misterioso viajero que conoce todos los rincones del campus.',
+    modelPath: '/MODELOS 3D/NPC/avatar_capuchon.glb',
+  },
 ]
 
 /**

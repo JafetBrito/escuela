@@ -21,6 +21,7 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
+import { useQuestsStore } from '../../stores/useQuestsStore'
 import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
@@ -138,6 +139,7 @@ export function buildProgressSnapshot() {
     gameState: { player: gamePlayer, oliver: gameOliver, worldTreeCompleted },
     tutorial: useTutorialStore.getState(),
     dailyRewards: useDailyRewardsStore.getState(),
+    quests: useQuestsStore.getState(),
     terminalRewards: useTerminalRewardsStore.getState(),
     voice: useVoiceStore.getState(),
     equippedItems: useEquipmentStore.getState().equipped,
@@ -195,6 +197,7 @@ export function applyProgressSnapshot(snapshot) {
   useGameStore.getState().loadGameState(snapshot.gameState ?? null)
   useTutorialStore.getState().loadTutorial(snapshot.tutorial ?? null)
   useDailyRewardsStore.getState().loadDailyRewards(snapshot.dailyRewards ?? {})
+  useQuestsStore.getState().loadQuests(snapshot.quests ?? {})
   useTerminalRewardsStore.getState().loadTerminalRewards(snapshot.terminalRewards ?? {})
   useVoiceStore.getState().loadVoice(snapshot.voice ?? {})
   useEquipmentStore.getState().loadEquipped(snapshot.equippedItems)

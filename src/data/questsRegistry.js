@@ -1,0 +1,84 @@
+// Misiones encadenadas: varios pasos, cada uno entregado por un NPC distinto
+// (o el mismo NPC varias veces, p. ej. para el saludo y la entrega final).
+// A diferencia de globalMissionsRegistry.js (una sola condición booleana),
+// aquí el jugador avanza paso a paso y el NPC correcto se calcula en
+// VRPage.jsx según en qué paso esté cada quest activa.
+//
+// step.type === 'talk'      -> avanza con solo hablar (botón "Continuar").
+// step.type === 'condition' -> solo avanza cuando check(missionState) es true
+//                               (mismo `missionState` que usa useMissionState).
+export const QUESTS = [
+  {
+    id: 'bienvenida-campus',
+    title: 'Bienvenida al Campus',
+    icon: '🗺️',
+    description: 'Conoce a los guías cercanos al Gran Aula y demuestra tu progreso.',
+    steps: [
+      {
+        npcId: 'viajero-encapuchado',
+        type: 'talk',
+        prompt: '¡Bienvenido! Habla con el Mago Novato para que evalúe tu progreso.',
+      },
+      {
+        npcId: 'mago-novato',
+        type: 'condition',
+        check: (s) => s.level >= 2,
+        prompt: 'Sube al nivel 2 y vuelve a verme.',
+      },
+      {
+        npcId: 'viajero-encapuchado',
+        type: 'talk',
+        prompt: '¡Lo lograste! Toma tu recompensa.',
+      },
+    ],
+    reward: { coins: 1500, xp: 50 },
+  },
+  {
+    id: 'circulo-confianza',
+    title: 'Círculo de Confianza',
+    icon: '🤝',
+    description: 'Conecta con otros estudiantes del campus.',
+    steps: [
+      {
+        npcId: 'bibliotecario-menor',
+        type: 'talk',
+        prompt: 'Para crecer en el campus necesitas aliados. Habla con el Zorro Mensajero.',
+      },
+      {
+        npcId: 'zorro-mensajero',
+        type: 'condition',
+        check: (s) => s.friendsCount > 0,
+        prompt: 'Agrega al menos un amigo desde la página de Amigos.',
+      },
+      {
+        npcId: 'guardian-lagarto',
+        type: 'talk',
+        prompt: '¡Bien hecho! Toma tu recompensa.',
+      },
+    ],
+    reward: { coins: 1800, xp: 60 },
+  },
+]
+
+export function getQuestById(id) {
+  return QUESTS.find((q) => q.id === id)
+}
+
+// A quest not yet accepted, not yet completed, whose first step belongs to
+// this NPC — i.e. "this NPC can hand you this quest right now".
+export function getStartableQuestForNpc(npcId, active, completed) {
+  return QUESTS.find(
+    (q) => q.steps[0].npcId === npcId && active[q.id] == null && !completed.includes(q.id),
+  )
+}
+
+// Among the player's accepted quests, the one whose CURRENT step belongs to
+// this NPC — i.e. "this NPC is who you need to talk to right now".
+export function getActiveQuestStepForNpc(npcId, active) {
+  for (const [questId, stepIndex] of Object.entries(active)) {
+    const quest = getQuestById(questId)
+    const step = quest?.steps[stepIndex]
+    if (step?.npcId === npcId) return { quest, stepIndex, step }
+  }
+  return null
+}

@@ -4,8 +4,11 @@ import PageVideoModal from '../shared/PageVideoModal'
 import NpcViewport from '../mascot/NpcViewport'
 import NpcChatPanel from '../shared/NpcChatPanel'
 import GlobalMissionCard from './GlobalMissionCard'
+import QuestCard from './QuestCard'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
+import { QUESTS } from '../../data/questsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
+import { useQuestsStore } from '../../stores/useQuestsStore'
 import { useMissionState } from '../../stores/useMissionState'
 
 const MAGE_MASCOT_ID = 9
@@ -18,6 +21,11 @@ export default function MissionsBoardPage() {
   const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
   const claimReward = useGlobalMissionsStore((s) => s.claimReward)
   const missionState = useMissionState()
+  const questsActive = useQuestsStore((s) => s.active)
+  const questsCompleted = useQuestsStore((s) => s.completed)
+  const questsClaimed = useQuestsStore((s) => s.claimed)
+  const acceptQuest = useQuestsStore((s) => s.acceptQuest)
+  const claimQuestReward = useQuestsStore((s) => s.claimReward)
 
   const completedCount = GLOBAL_MISSIONS.filter((m) => m.check(missionState)).length
   const claimedCount = claimed.length
@@ -66,6 +74,24 @@ export default function MissionsBoardPage() {
           </div>
 
           <div className="flex flex-col gap-3">
+            <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+              🗺️ Misiones de cadena
+            </p>
+            {QUESTS.filter((quest) => !questsClaimed.includes(quest.id)).map((quest) => (
+              <QuestCard
+                key={quest.id}
+                quest={quest}
+                stepIndex={questsActive[quest.id]}
+                completed={questsCompleted.includes(quest.id)}
+                claimed={false}
+                missionState={missionState}
+                onAccept={acceptQuest}
+                onClaim={claimQuestReward}
+              />
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3">
             {GLOBAL_MISSIONS.filter((mission) => !claimed.includes(mission.id)).map((mission) => {
               const isAccepted = accepted.includes(mission.id)
               const isCompleted = mission.check(missionState)
@@ -83,12 +109,15 @@ export default function MissionsBoardPage() {
             })}
           </div>
 
-          {claimed.length > 0 && (
+          {(claimed.length > 0 || questsClaimed.length > 0) && (
             <div className="flex flex-col gap-3">
               <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">
                 ✅ Misiones realizadas
               </p>
               <div className="flex flex-col gap-3">
+                {QUESTS.filter((quest) => questsClaimed.includes(quest.id)).map((quest) => (
+                  <QuestCard key={quest.id} quest={quest} stepIndex={0} completed claimed />
+                ))}
                 {GLOBAL_MISSIONS.filter((mission) => claimed.includes(mission.id)).map((mission) => (
                   <GlobalMissionCard
                     key={mission.id}

@@ -11,10 +11,12 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
-import { getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
+import { getVrNpcById, VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
+import { getStartableQuestForNpc, getActiveQuestStepForNpc } from '../../data/questsRegistry'
+import { useQuestsStore } from '../../stores/useQuestsStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -1071,7 +1073,13 @@ function VrNpc({ npc, playerPositionRef }) {
   const bubbleIdRef = useRef(1)
   const accepted = useGlobalMissionsStore((s) => s.accepted)
   const mission  = useMemo(() => getGlobalMissionById(npc.missionId), [npc.missionId])
-  const hasQuest = mission && !accepted.includes(mission.id)
+  const questsActive = useQuestsStore((s) => s.active)
+  const questsCompleted = useQuestsStore((s) => s.completed)
+  const hasQuest = (mission && !accepted.includes(mission.id)) ||
+    (npc.questId && (
+      getStartableQuestForNpc(npc.id, questsActive, questsCompleted) ||
+      getActiveQuestStepForNpc(npc.id, questsActive)
+    ))
 
   useFrame(() => {
     const pos = playerPositionRef?.current
@@ -1505,12 +1513,14 @@ function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 }
 
 // Watches the distance from the player to every NPC and reports the closest
-// one within INTERACT_RADIUS via onNearbyChange. Only Oliver, Einstein and
-// Jafet remain in the main Campus world — mission NPCs/portals were removed.
+// one within INTERACT_RADIUS via onNearbyChange. Oliver/Einstein/Jafet (idle
+// chat NPCs) plus every VR_NPCS entry (flat-mission, battle and quest NPCs,
+// reactivated near spawn) are all tracked the same way.
 const ALL_NPC_POSITIONS = [
   OLIVER_NPC,
   EINSTEIN_NPC,
   JAFET_NPC,
+  ...VR_NPCS,
 ].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) }))
 
 // Ids that belong to idle (non-mission) NPCs — used to decide which card to show.
@@ -1883,6 +1893,7 @@ function World({
       <IdleNpc config={OLIVER_NPC}    playerPositionRef={playerPositionRef} />
       <IdleNpc config={EINSTEIN_NPC} playerPositionRef={playerPositionRef} />
       <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
+      {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />)}
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
       <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} />
@@ -1899,7 +1910,10 @@ function World({
 }
 
 // WoW-style NPC dialogue card for mission NPCs (right-click / E key).
-function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onClaim, onClose, onBattle }) {
+function NpcMissionCard({
+  npcId, accepted, claimed, missionState, onAccept, onClaim, onClose, onBattle,
+  questsActive, questsCompleted, onAcceptQuest, onAdvanceQuest, onClaimQuest,
+}) {
   const npc = getVrNpcById(npcId)
   const mission = npc && getGlobalMissionById(npc.missionId)
   if (!npc) return null
@@ -1907,6 +1921,20 @@ function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onCl
   const isAccepted  = mission ? accepted.includes(mission.id) : false
   const isClaimed   = mission ? claimed.includes(mission.id)  : false
   const isCompleted = mission ? mission.check(missionState)   : false
+
+  // Quest encadenada (ver questsRegistry.js): a diferencia de `mission`
+  // (una sola condición), aquí el NPC correcto cambia según el paso actual.
+  const startableQuest = npc.questId
+    ? getStartableQuestForNpc(npc.id, questsActive, questsCompleted)
+    : null
+  const activeStep = npc.questId ? getActiveQuestStepForNpc(npc.id, questsActive) : null
+  const isLastStep = activeStep && activeStep.stepIndex === activeStep.quest.steps.length - 1
+  const stepReady = activeStep?.step.type === 'talk' ||
+    (activeStep?.step.type === 'condition' && activeStep.step.check(missionState))
+  const handleAdvanceStep = () => {
+    onAdvanceQuest(activeStep.quest.id)
+    if (isLastStep) onClaimQuest(activeStep.quest.id)
+  }
 
   return (
     <div
@@ -2000,6 +2028,63 @@ function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onCl
         </div>
       )}
 
+      {/* Quest section (misión encadenada) */}
+      {npc.questId && (startableQuest || activeStep) && (
+        <div className="p-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest"
+            style={{ color: 'rgba(255,255,255,0.35)' }}>🗺️ Misión de cadena</p>
+          <div className="rounded-xl p-3"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            {startableQuest ? (
+              <>
+                <div className="flex items-start gap-2.5 mb-2">
+                  <span className="text-2xl shrink-0">{startableQuest.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-white text-sm">{startableQuest.title}</p>
+                    <p className="text-xs leading-relaxed mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      {startableQuest.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-xs mt-2 mb-3">
+                  <span style={{ color: '#fbbf24' }}>🪙 {formatCurrency(startableQuest.reward.coins)}</span>
+                  {startableQuest.reward.xp && <span style={{ color: '#a78bfa' }}>✨ {startableQuest.reward.xp} XP</span>}
+                </div>
+                <button type="button" onClick={() => onAcceptQuest(startableQuest.id)}
+                  className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
+                  📜 Aceptar misión
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs leading-relaxed mb-3" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  {activeStep.step.prompt}
+                </p>
+                {stepReady ? (
+                  <button type="button" onClick={handleAdvanceStep}
+                    className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
+                    style={{ background: isLastStep
+                      ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                      : 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
+                    {isLastStep ? '🎁 Reclamar recompensa' : 'Continuar'}
+                  </button>
+                ) : (
+                  <p className="text-center text-xs py-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    🕓 Misión en progreso…
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {npc.questId && !startableQuest && !activeStep && (
+        <p className="px-4 pb-3 text-xs italic" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          Ya hiciste tu parte aquí. Vuelve cuando tengas progreso.
+        </p>
+      )}
+
       {/* Battle option */}
       {npc.battle && (
         <div className="px-4 pb-4">
@@ -2012,7 +2097,7 @@ function NpcMissionCard({ npcId, accepted, claimed, missionState, onAccept, onCl
       )}
 
       {/* Close without mission */}
-      {!mission && !npc.battle && (
+      {!mission && !npc.battle && !npc.questId && (
         <div className="px-4 pb-4">
           <button type="button" onClick={onClose}
             className="w-full rounded-xl py-2 text-xs font-semibold transition"
@@ -2218,11 +2303,9 @@ function TransportMenu({ onNavigate, onClose }) {
 // marker for the player's position. Opened/closed with the M key.
 // NPCs and points of interest that really exist (and are walkable-to) in the
 // live Campus right now — kept in sync by hand with World()'s render list
-// below. The old map used to draw an "Anfiteatro portal" pin and a wider
-// cast of quest-giver NPCs from vrNpcRegistry.js that were removed from the
-// live Campus a while back (see the ALL_NPC_POSITIONS comment above); this
-// list only shows what a player can actually walk up to and use.
-const MAP_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC]
+// below. VR_NPCS (flat-mission, battle and quest NPCs) were reactivated
+// near spawn, so they show up here too now.
+const MAP_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, ...VR_NPCS]
 
 // WoW-style world map: bigger, labeled zones, real NPC pins, and the
 // location-based interactables (daily reward chest, hacker terminal, the
@@ -3107,6 +3190,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
   const claimReward = useGlobalMissionsStore((s) => s.claimReward)
   const missionState = useMissionState()
+  const questsActive = useQuestsStore((s) => s.active)
+  const questsCompleted = useQuestsStore((s) => s.completed)
+  const acceptQuest = useQuestsStore((s) => s.acceptQuest)
+  const advanceQuestStep = useQuestsStore((s) => s.advanceStep)
+  const claimQuestReward = useQuestsStore((s) => s.claimReward)
   const openLocked = useMascotCompanionStore((s) => s.openLocked)
   const flashlightOn = useItemEffectsStore((s) => s.activeItems['linterna'])
   const flashlightPurchased = useShopStore((s) => s.purchased.includes('linterna'))
@@ -3424,6 +3512,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
                 missionState={missionState}
                 onAccept={acceptMission}
                 onClaim={claimReward}
+                questsActive={questsActive}
+                questsCompleted={questsCompleted}
+                onAcceptQuest={acceptQuest}
+                onAdvanceQuest={advanceQuestStep}
+                onClaimQuest={claimQuestReward}
                 onClose={() => setActiveNpcId(null)}
               />
             )
