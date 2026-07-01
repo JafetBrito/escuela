@@ -12,7 +12,33 @@ export const WORLD_CINEMATIC = [
   { text: DIALOGUES.worldCinematic[6], cameraPos: [0, 2.5, 4],   lookAt: [0, 1.5, -4],  duration: 6000 },
 ]
 
+// ── Cave enemies (for turn-based combat via useCombatStore) ──────────────────
+export const CAVE_ENEMIES = {
+  sombra: {
+    id: 'sombra_ignorancia',
+    name: 'Sombra de la Ignorancia',
+    emoji: '👤',
+    color: '#2a1040',
+    battleStats: { level: 2, hp: 60, minDamage: 4, maxDamage: 10, xpReward: 40, coinReward: 150, questionCategory: 'filosofia' },
+  },
+  maestro: {
+    id: 'maestro_esclavos',
+    name: 'Maestro de los Esclavos',
+    emoji: '🗝️',
+    color: '#0d0520',
+    boss: true,
+    battleStats: { level: 5, hp: 160, minDamage: 10, maxDamage: 22, xpReward: 120, coinReward: 700, questionCategory: 'filosofia' },
+  },
+}
+
+// ── Sombra spawn points (near the fire, stage 3) ──────────────────────────
+export const SOMBRA_POSITIONS = [
+  [2.5, 0, -9.5],
+  [-2.5, 0, -10],
+]
+
 // ── Missions per stage ────────────────────────────────────────────────────────
+// optional:true → gives XP but not required for stage advancement (won't break old saves)
 export const CAVE_MISSIONS = [
   // Stage 1
   { id: 'talk_prisoner',        stage: 1, title: 'Habla con un Prisionero',        icon: '⛓️',  desc: 'Conversa con uno de tus compañeros de cadenas',       xp: 20  },
@@ -26,6 +52,7 @@ export const CAVE_MISSIONS = [
   // Stage 3
   { id: 'reach_fire_esceptico', stage: 3, title: 'Llega al Fuego',                icon: '🔥', desc: 'Acompaña al Escéptico hasta el fuego',                xp: 35 },
   { id: 'talk_custodio',        stage: 3, title: 'Habla con un Custodio',          icon: '🗣️',  desc: 'Confronta a uno de los Custodios',                    xp: 30 },
+  { id: 'defeat_sombras',       stage: 3, title: 'Derrota las Sombras',            icon: '⚔️', desc: 'Vence 2 Sombras de la Ignorancia con tu conocimiento', xp: 80, optional: true },
   // Stage 4
   { id: 'exit_cave',            stage: 4, title: 'Sal de la Cueva',               icon: '🌅', desc: 'Encuentra la salida y ve la luz por primera vez',     xp: 50 },
   { id: 'talk_jafet_outside',   stage: 4, title: 'Reflexiona con Jafet',          icon: '🎓', desc: 'Habla con Jafet Brito fuera de la cueva',             xp: 30 },
@@ -33,6 +60,7 @@ export const CAVE_MISSIONS = [
   { id: 'return_cave',          stage: 5, title: 'Regresa a la Cueva',            icon: '↩️',  desc: 'Vuelve a la cueva para liberar a los demás',          xp: 20 },
   { id: 'free_all_prisoners',   stage: 5, title: 'Despierta a los Demás',         icon: '☀️', desc: 'Libera a los 3 prisioneros con tu habilidad',         xp: 100 },
   { id: 'final_custodio',       stage: 5, title: 'Habla con el Custodio Mayor',   icon: '⚖️',  desc: 'Confrontación final con quien sostuvo el sistema',    xp: 30 },
+  { id: 'defeat_maestro',       stage: 5, title: 'Vence al Maestro de los Esclavos', icon: '⚔️', desc: 'Derrota al Maestro con tu conocimiento filosófico', xp: 150, optional: true },
 ]
 
 // ── Skills per stage ──────────────────────────────────────────────────────────

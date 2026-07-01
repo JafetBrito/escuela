@@ -18,11 +18,14 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
+import { useCombatStore } from '../../stores/useCombatStore'
+import BattleScreen from '../battle/BattleScreen'
 import { MOUSE_SENSITIVITY } from './engine'
 import DIALOGUES from './cuevaDialogues.json'
 import {
   WORLD_CINEMATIC, CAVE_MISSIONS, STAGE_SKILLS, NPC_CONFIGS,
   JAFET_OUTSIDE_PROMPT, CHECKPOINT_KEY, CAVE_SOUVENIR_ITEM,
+  CAVE_ENEMIES, SOMBRA_POSITIONS,
 } from './cuevaData'
 
 const FILO_MODULE_2 = courseFilosofia.modules.find(m => m.id === 2)
@@ -156,6 +159,28 @@ function ShadowProjections() {
       </mesh>
     ))}
   </>)
+}
+
+// Sombra de la Ignorancia — combat-triggering enemy mesh (stage 3)
+function SombraMesh({ position, index, onClick }) {
+  const g = useRef(); const aura = useRef(); const [hov, setHov] = useState(false)
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    if (g.current) g.current.position.y = Math.sin(t * 1.4 + index) * 0.08
+    if (aura.current) aura.current.material.opacity = 0.14 + Math.abs(Math.sin(t * 2.1 + index)) * 0.12
+  })
+  return (
+    <group ref={g} position={position}
+      onClick={e => { e.stopPropagation(); onClick(index) }}
+      onPointerOver={() => setHov(true)} onPointerOut={() => setHov(false)}>
+      <mesh position={[0,0.9,0]}><cylinderGeometry args={[0.22,0.3,1.6,8]}/><meshStandardMaterial color="#1a0530" emissive="#2d0f4a" emissiveIntensity={1.5} transparent opacity={0.88} roughness={1}/></mesh>
+      <mesh position={[0,1.85,0]}><sphereGeometry args={[0.24,8,7]}/><meshStandardMaterial color="#0a021a" emissive="#3b0f6e" emissiveIntensity={2.5} transparent opacity={0.92}/></mesh>
+      {[-0.08,0.08].map((x,i) => <mesh key={i} position={[x,1.9,0.2]}><sphereGeometry args={[0.035,5,5]}/><meshStandardMaterial color="#d946ef" emissive="#d946ef" emissiveIntensity={5}/></mesh>)}
+      <mesh ref={aura} position={[0,0.9,0]}><sphereGeometry args={[0.55,10,8]}/><meshStandardMaterial color="#1a0530" emissive="#2d0f4a" emissiveIntensity={0.8} transparent opacity={0.18}/></mesh>
+      {hov && <mesh rotation={[-Math.PI/2,0,0]} position={[0,0.01,0]}><ringGeometry args={[0.38,0.55,20]}/><meshBasicMaterial color="#d946ef" transparent opacity={0.4}/></mesh>}
+      <pointLight color="#7c3aed" intensity={hov ? 4 : 1.5} distance={3}/>
+    </group>
+  )
 }
 
 // Custodio 3D (hooded shadow-puppeteer)
@@ -293,7 +318,7 @@ function CaveEntrance({ onEnter }) {
 }
 
 // Full cave world — switched between cave interior and outdoor by `isOutside` prop
-function CaveScene({ stage, phase, isOutside, freedIds, canFree, playerMascot, onTalkNpc, onFreeNpc, onExitCave, onReturnCave }) {
+function CaveScene({ stage, phase, isOutside, freedIds, canFree, defeatedSombras, playerMascot, onTalkNpc, onFreeNpc, onExitCave, onReturnCave, onSombraClick }) {
   const torches = [[-7.4,2.8,-3],[-7.4,2.8,-8],[7.4,2.8,-4],[7.4,2.8,-9],[0,2.8,-14]]
 
   if (isOutside) return (
@@ -353,6 +378,10 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, playerMascot, o
             onTalk={onTalkNpc} onFree={onFreeNpc} isSpecial/>
         )}
         {stage >= 2 && <EscepticoNpcMesh stage={stage} onTalk={onTalkNpc}/>}
+        {/* Stage 3: Sombras de la Ignorancia near the fire */}
+        {stage === 3 && defeatedSombras < 2 && SOMBRA_POSITIONS.slice(defeatedSombras).map((pos, i) => (
+          <SombraMesh key={i} position={pos} index={i} onClick={onSombraClick}/>
+        ))}
         <CustodioMesh cfg={NPC_CONFIGS.custodio_mayor} onClick={onTalkNpc}/>
         <CustodioMesh cfg={NPC_CONFIGS.custodio_joven} onClick={onTalkNpc}/>
         <CaveExitPortal visible={stage >= 4} onEnter={onExitCave}/>
@@ -864,6 +893,12 @@ export default function VrCueva() {
   const [done, setDone]       = useState([])
   const [freedIds, setFreedIds] = useState([])
   const [usedLaPregunta, setUsedLaPregunta] = useState(0)
+  const [defeatedSombras, setDefeatedSombras] = useState(0)
+
+  // ── Combat wiring ──────────────────────────────────────────────────────────
+  const combatPhase  = useCombatStore(s => s.phase)
+  const combatActive = useCombatStore(s => s.active)
+  const battleCtxRef = useRef(null) // 'sombra' | 'maestro'
 
   // ── NPC dialogue ───────────────────────────────────────────────────────────
   const [activeNpc, setActiveNpc]   = useState(null)
@@ -915,13 +950,30 @@ export default function VrCueva() {
   // ── Stage advancement ─────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'play') return
-    const required = CAVE_MISSIONS.filter(m => m.stage === stage).map(m => m.id)
+    const required = CAVE_MISSIONS.filter(m => m.stage === stage && !m.optional).map(m => m.id)
     if (required.length > 0 && required.every(id => done.includes(id)) && stage < 5) {
       const next = stage + 1
       setTimeout(() => { setStage(next); saveCheckpoint(next, done, freedIds) }, 800)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, phase])
+
+  // ── Combat victory → complete mission ────────────────────────────────────
+  useEffect(() => {
+    if (combatPhase !== 'victory') return
+    if (battleCtxRef.current === 'sombra') {
+      setDefeatedSombras(n => {
+        const next = n + 1
+        if (next >= 2) completeMission('defeat_sombras')
+        return next
+      })
+      battleCtxRef.current = null
+    } else if (battleCtxRef.current === 'maestro') {
+      completeMission('defeat_maestro')
+      battleCtxRef.current = null
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [combatPhase])
 
   // ── F key + 1/2/3 skill shortcuts ────────────────────────────────────────
   useEffect(() => {
@@ -1004,13 +1056,28 @@ export default function VrCueva() {
     else teleportRef.current = [0, 2, 4]
   }
 
+  // ── Sombra click → battle ─────────────────────────────────────────────────
+  function handleSombraClick() {
+    if (defeatedSombras >= 2) return
+    battleCtxRef.current = 'sombra'
+    useCombatStore.getState().startBattle(CAVE_ENEMIES.sombra)
+  }
+
   // ── NPC click from 3D ──────────────────────────────────────────────────────
   function handleTalkNpc(id) {
-    setActiveNpc(id)
-    if (['creyente','sonador','miedoso','mascota'].includes(id)) completeMission('talk_prisoner')
-    else if (id === 'esceptico') completeMission('meet_esceptico')
-    else if (id === 'custodio_mayor' || id === 'custodio_joven') completeMission('talk_custodio')
-    else if (id === 'jafet') completeMission('talk_jafet_outside')
+    if (['creyente','sonador','miedoso','mascota'].includes(id)) { completeMission('talk_prisoner'); setActiveNpc(id) }
+    else if (id === 'esceptico') { completeMission('meet_esceptico'); setActiveNpc(id) }
+    else if (id === 'custodio_mayor') {
+      completeMission('talk_custodio')
+      if (stage === 5 && !done.includes('defeat_maestro')) {
+        battleCtxRef.current = 'maestro'
+        useCombatStore.getState().startBattle(CAVE_ENEMIES.maestro)
+      } else {
+        setActiveNpc(id)
+      }
+    }
+    else if (id === 'custodio_joven') { completeMission('talk_custodio'); setActiveNpc(id) }
+    else if (id === 'jafet') { completeMission('talk_jafet_outside'); setActiveNpc(id) }
   }
 
   // ── Jafet AI ──────────────────────────────────────────────────────────────
@@ -1043,9 +1110,11 @@ export default function VrCueva() {
         <CaveScene
           stage={stage} phase={phase} isOutside={isOutside}
           freedIds={freedIds} canFree={canFree}
+          defeatedSombras={defeatedSombras}
           playerMascot={playerMascot}
           onTalkNpc={handleTalkNpc} onFreeNpc={handleFreePrisoner}
           onExitCave={handleExitCave} onReturnCave={handleReturnCave}
+          onSombraClick={handleSombraClick}
         />
         {phase === 'play' && <>
           <FirstPersonController lockedRef={cineLocked} teleportRef={teleportRef} touchMoveRef={touchMoveRef} touchYawRef={touchYawRef} onMove={handlePlayerMove}/>
@@ -1102,6 +1171,9 @@ export default function VrCueva() {
           <MascotCompanion courseId="course-filo-001" module={FILO_MODULE_2}/>
         </>
       )}
+
+      {/* ── Battle screen ── */}
+      {combatActive && <BattleScreen/>}
 
       {/* ── NPC dialogue ── */}
       {activeNpc && (

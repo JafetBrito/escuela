@@ -129,6 +129,68 @@ export const BATTLE_QUESTIONS = [
     correct: 1,
   },
 
+  // ── Filosofía — Alegoría de la Cueva y epistemología (para combate en VrCueva) ──
+  {
+    id: 'fq1', category: 'filosofia',
+    text: '¿Qué representan las sombras en la Alegoría de la Cueva de Platón?',
+    options: ['La realidad verdadera', 'Las ilusiones que tomamos por realidad', 'El mundo de las ideas', 'Los recuerdos del pasado'],
+    correct: 1,
+  },
+  {
+    id: 'fq2', category: 'filosofia',
+    text: '¿Quiénes proyectan las sombras en la pared de la cueva?',
+    options: ['Los prisioneros mismos', 'Los dioses del Olimpo', 'Los Custodios que caminan con objetos frente al fuego', 'Los filósofos en el exterior'],
+    correct: 2,
+  },
+  {
+    id: 'fq3', category: 'filosofia',
+    text: '¿Qué simboliza el Sol en la Alegoría de la Cueva?',
+    options: ['El calor y la energía', 'La idea del Bien — la fuente de todo conocimiento verdadero', 'La libertad física', 'Los dioses olímpicos'],
+    correct: 1,
+  },
+  {
+    id: 'fq4', category: 'filosofia',
+    text: 'Según Platón, ¿qué le ocurre al filósofo que regresa a la cueva después de ver la luz?',
+    options: ['Es aclamado como héroe', 'Los demás lo escuchan con atención', 'No ve bien en la oscuridad y los prisioneros se burlan de él', 'Recibe una recompensa'],
+    correct: 2,
+  },
+  {
+    id: 'fq5', category: 'filosofia',
+    text: '¿Qué nombre le da Platón al conocimiento del mundo de las ideas?',
+    options: ['Doxa (opinión)', 'Episteme (conocimiento verdadero)', 'Mythos (mito)', 'Logos (razón superficial)'],
+    correct: 1,
+  },
+  {
+    id: 'fq6', category: 'filosofia',
+    text: '¿En cuál diálogo de Platón aparece la Alegoría de la Cueva?',
+    options: ['El Banquete', 'Fedón', 'La República', 'Menón'],
+    correct: 2,
+  },
+  {
+    id: 'fq7', category: 'filosofia',
+    text: '¿Qué es la "mayéutica" socrática?',
+    options: ['Un método de discurso de masas', 'El arte de hacer preguntas para que el interlocutor descubra la verdad por sí mismo', 'Un tipo de demostración matemática', 'Una forma de gobierno'],
+    correct: 1,
+  },
+  {
+    id: 'fq8', category: 'filosofia',
+    text: 'Según la Teoría de las Ideas de Platón, ¿dónde existe la belleza perfecta?',
+    options: ['Solo en las obras de arte', 'En el mundo sensible que podemos tocar', 'En el mundo inteligible de las Ideas, no en lo físico', 'En la mente de los dioses'],
+    correct: 2,
+  },
+  {
+    id: 'fq9', category: 'filosofia',
+    text: '¿Qué significa "ignorancia" en la filosofía socrática?',
+    options: ['No saber leer ni escribir', 'No conocer la opinión de los demás', 'Creer que sabes algo que en realidad no sabes', 'No haber estudiado en la academia'],
+    correct: 2,
+  },
+  {
+    id: 'fq10', category: 'filosofia',
+    text: 'Para Platón, ¿qué tiene más valor: el conocimiento de las sombras o el de las Ideas?',
+    options: ['Las sombras, porque son visibles', 'Las Ideas, porque son eternas e inmutables', 'Ambos tienen el mismo valor', 'Ninguno, porque todo es ilusión'],
+    correct: 1,
+  },
+
   // ── Lógica / Filosofía ────────────────────────────────────────────────────
   {
     id: 'q21', category: 'philosophy',
