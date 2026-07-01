@@ -4,6 +4,27 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { getSkillById } from '../../data/skillRegistry'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
+import { VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
+import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
+
+// ─── Minimap world bounds (campus VR coordinate space) ─────────────────────
+const MM = { x0: -18, x1: 18, z0: -60, z1: 15 }
+function w2m(wx, wz, size) {
+  return [
+    ((wx - MM.x0) / (MM.x1 - MM.x0)) * size,
+    ((wz - MM.z0) / (MM.z1 - MM.z0)) * size,
+  ]
+}
+const MINIMAP_NPCS = [
+  { id: 'oliver',   pos: OLIVER_NPC.position,   color: '#22c55e' },
+  { id: 'einstein', pos: EINSTEIN_NPC.position,  color: '#22c55e' },
+  { id: 'jafet',   pos: JAFET_NPC.position,     color: '#22c55e' },
+  ...VR_NPCS.map((n) => ({
+    id: n.id,
+    pos: n.position,
+    color: (n.questId || n.missionId) ? '#facc15' : '#94a3b8',
+  })),
+]
 
 // ─── Cooldown hook ─────────────────────────────────────────────────────────
 function useCooldown(cooldownMs) {
@@ -104,6 +125,103 @@ function ThinBar({ current, max, color, label }) {
       </div>
       <span className="text-white/35 tabular-nums" style={{ fontSize: 9, minWidth: 28, textAlign: 'right' }}>
         {current}/{max}
+      </span>
+    </div>
+  )
+}
+
+// ─── Circular minimap (WoC-inspired, top-right, desktop only) ─────────────
+const MM_SIZE = 84
+
+function VrMinimap({ playerPosRef }) {
+  const cx = MM_SIZE / 2
+  const r  = MM_SIZE / 2 - 2
+  const [px, setPx] = useState(cx)
+  const [pz, setPz] = useState(cx)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const pos = playerPosRef?.current
+      if (!pos) return
+      const [mx, mz] = w2m(pos.x, pos.z, MM_SIZE)
+      setPx(Math.max(4, Math.min(MM_SIZE - 4, mx)))
+      setPz(Math.max(4, Math.min(MM_SIZE - 4, mz)))
+    }, 400)
+    return () => clearInterval(id)
+  }, [playerPosRef])
+
+  return (
+    <div className="hidden sm:flex flex-col items-center pointer-events-none" style={{ gap: 3 }}>
+      <svg width={MM_SIZE} height={MM_SIZE} viewBox={`0 0 ${MM_SIZE} ${MM_SIZE}`}>
+        <defs>
+          <clipPath id="mm-clip">
+            <circle cx={cx} cy={cx} r={r} />
+          </clipPath>
+        </defs>
+        <circle cx={cx} cy={cx} r={r} fill="rgba(0,0,0,0.78)" />
+        {/* crosshair */}
+        <line x1={cx} y1={2} x2={cx} y2={MM_SIZE-2} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" clipPath="url(#mm-clip)" />
+        <line x1={2} y1={cx} x2={MM_SIZE-2} y2={cx} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" clipPath="url(#mm-clip)" />
+        {/* NPC dots */}
+        {MINIMAP_NPCS.map(({ id, pos, color }) => {
+          const [mx, mz] = w2m(pos[0], pos[2], MM_SIZE)
+          if (mx < 0 || mx > MM_SIZE || mz < 0 || mz > MM_SIZE) return null
+          return <circle key={id} cx={mx} cy={mz} r={2.5} fill={color} opacity={0.8} clipPath="url(#mm-clip)" />
+        })}
+        {/* player dot */}
+        <circle cx={px} cy={pz} r={5}   fill="rgba(139,92,246,0.6)"  clipPath="url(#mm-clip)" />
+        <circle cx={px} cy={pz} r={3}   fill="rgba(168,85,247,1)"    clipPath="url(#mm-clip)" />
+        <circle cx={px} cy={pz} r={1.5} fill="white"                 clipPath="url(#mm-clip)" />
+        {/* border ring */}
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="rgba(139,92,246,0.45)" strokeWidth="1.5" />
+      </svg>
+      <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: '0.12em', fontFamily: 'monospace' }}>
+        CAMPUS
+      </span>
+    </div>
+  )
+}
+
+// ─── XP bar (bottom strip, WoC-inspired) ───────────────────────────────────
+function XpBar() {
+  const xp = useLevelStore((s) => s.xp)
+  const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
+  const pct = isMaxLevel ? 1 : xpIntoLevel / xpForNextLevel
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-center gap-2 px-3"
+      style={{
+        height: 22,
+        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 80%, transparent)',
+      }}
+    >
+      <span
+        className="shrink-0 rounded px-1.5 font-black tabular-nums"
+        style={{
+          fontSize: 9,
+          lineHeight: '16px',
+          background: isMaxLevel ? 'rgba(234,179,8,0.22)' : 'rgba(139,92,246,0.28)',
+          border: `1px solid ${isMaxLevel ? 'rgba(234,179,8,0.5)' : 'rgba(139,92,246,0.5)'}`,
+          color: isMaxLevel ? '#fbbf24' : '#c4b5fd',
+        }}
+      >
+        Nv.{level}
+      </span>
+      <div className="relative flex-1 overflow-hidden rounded-full bg-white/10" style={{ height: 3 }}>
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+          style={{
+            width: `${pct * 100}%`,
+            background: isMaxLevel
+              ? 'linear-gradient(90deg, #ca8a04, #eab308)'
+              : 'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
+            boxShadow: isMaxLevel ? '0 0 5px rgba(234,179,8,0.5)' : '0 0 5px rgba(168,85,247,0.55)',
+          }}
+        />
+      </div>
+      <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', flexShrink: 0 }}>
+        {isMaxLevel ? 'MAX' : `${xpIntoLevel}/${xpForNextLevel}`}
       </span>
     </div>
   )
@@ -281,7 +399,7 @@ function VrUtilBar({
   ]
 
   return (
-    <div className="pointer-events-none absolute right-2 top-16 z-20 flex flex-col items-end gap-1.5 md:right-3 md:top-14">
+    <div className="pointer-events-none absolute right-2 top-16 z-20 flex flex-col items-end gap-1.5 sm:top-[112px] md:right-3 md:top-[112px]">
       {BTNS.filter(b => !b.hidden).map(({ icon, title, onClick }) => (
         <button
           key={title}
@@ -333,11 +451,13 @@ export default function VrHud({
   onOpenArenaConfirm,
   onOpenCharacterPanel,
   isPrivateWorld = false,
+  playerPosRef = null,
 }) {
   return (
     <>
       {hudVisible && <DayNightClock />}
-      {/* Utility strip — always rendered so the eye/Ajustes buttons are accessible */}
+
+      {/* Utility strip — always rendered so eye/Ajustes are accessible */}
       <VrUtilBar
         onOpenSettings={onOpenSettings}
         onOpenChat={onOpenChat}
@@ -360,10 +480,18 @@ export default function VrHud({
             </div>
           </div>
 
-          {/* Bottom-center: skill bar (draggable — drag the panel to reposition) */}
-          <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 sm:bottom-16">
+          {/* Top-right: circular minimap (hidden on mobile, shown on sm+) */}
+          <div className="pointer-events-none absolute right-2 top-2 z-20 md:right-3">
+            <VrMinimap playerPosRef={playerPosRef} />
+          </div>
+
+          {/* Bottom-center: skill bar (draggable) — sits above the XpBar (22px) */}
+          <div className="pointer-events-none absolute bottom-8 left-1/2 z-20 -translate-x-1/2">
             <SkillBar />
           </div>
+
+          {/* Bottom: XP bar strip */}
+          <XpBar />
         </>
       )}
     </>

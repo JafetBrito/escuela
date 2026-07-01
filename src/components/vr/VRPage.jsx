@@ -3636,6 +3636,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenArenaConfirm={() => setArenaConfirmOpen(true)}
           onOpenCharacterPanel={() => openLocked('avatar-personaje', 'avatar')}
           isPrivateWorld={isPrivateWorld}
+          playerPosRef={playerPositionRef}
         />
 
         {/* Daily rewards board overlay */}
