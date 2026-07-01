@@ -40,6 +40,7 @@ import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useShopStore } from '../../stores/useShopStore'
 import VrLoadingScreen from './VrLoadingScreen'
+import VrAssetProgress from './VrAssetProgress'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import BattleScreen from '../battle/BattleScreen'
 import { useCombatStore } from '../../stores/useCombatStore'
@@ -3450,6 +3451,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           </Suspense>
           </Physics>
         </Canvas>}
+
+        {/* GLB asset progress — slim bar while models stream in after Canvas mounts */}
+        {vrReady && <VrAssetProgress />}
 
         {/* Character switcher — centered above skill bar */}
         <CharSwitcherHud playerPositionRef={playerPositionRef} hudVisible={hudVisible} />
