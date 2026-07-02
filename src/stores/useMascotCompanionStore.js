@@ -12,7 +12,11 @@ export const useMascotCompanionStore = create((set) => ({
   // switch to the other — outside VR (the learning app's companion) this
   // stays null and the Avatar/Mascota switcher behaves as before.
   lockedEntity: null,
+  // Text pre-fill for the mascot chat (set by TextSelectionMenu's "ask mascot" button)
+  chatPrefill: null,
   setOpen: (open) => set({ open }),
   setPanel: (panel) => set({ panel }),
   openLocked: (panel, entityId) => set({ open: true, panel, lockedEntity: entityId }),
+  setChatPrefill: (text) => set({ chatPrefill: text }),
+  clearChatPrefill: () => set({ chatPrefill: null }),
 }))

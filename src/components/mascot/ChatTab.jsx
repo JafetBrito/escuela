@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ChatPanel from '../chat/ChatPanel'
 import { useChatStore } from '../../stores/useChatStore'
 import { useChatHistoryStore, todayKey } from '../../stores/useChatHistoryStore'
+import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 
 // Same normalization used by ChatsPage: old snapshots stored a plain array
 // of messages per day, new ones store { label, messages, archivedAt }.
@@ -22,9 +23,20 @@ function getSessions(raw) {
 export default function ChatTab({ courseId, module, className = '' }) {
   const [view, setView] = useState('menu')
   const [openDay, setOpenDay] = useState(null)
+  const [pendingPrefill, setPendingPrefill] = useState('')
   const messages = useChatStore((s) => s.messages)
   const startNewChat = useChatStore((s) => s.startNewChat)
   const chatHistory = useChatHistoryStore((s) => s.history)
+  const chatPrefill = useMascotCompanionStore((s) => s.chatPrefill)
+  const clearChatPrefill = useMascotCompanionStore((s) => s.clearChatPrefill)
+
+  useEffect(() => {
+    if (chatPrefill) {
+      setPendingPrefill(chatPrefill)
+      clearChatPrefill()
+      setView('current')
+    }
+  }, [chatPrefill, clearChatPrefill])
 
   if (view === 'current') {
     return (
@@ -35,7 +47,7 @@ export default function ChatTab({ courseId, module, className = '' }) {
         >
           ← Menú
         </button>
-        <ChatPanel courseId={courseId} module={module} className="h-full flex-1 border-0" />
+        <ChatPanel courseId={courseId} module={module} prefill={pendingPrefill} className="h-full flex-1 border-0" />
       </div>
     )
   }

@@ -10,8 +10,8 @@ import { useMascotMemoryStore } from '../../stores/useMascotMemoryStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getCourseData } from '../../data/courseRegistry'
 
-export default function ChatPanel({ className = '', module, courseId }) {
-  const [input, setInput] = useState('')
+export default function ChatPanel({ className = '', module, courseId, prefill = '' }) {
+  const [input, setInput] = useState(prefill)
   const messages = useChatStore((s) => s.messages)
   const isSending = useChatStore((s) => s.isSending)
   const send = useChatStore((s) => s.send)
