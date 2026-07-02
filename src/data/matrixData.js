@@ -4943,6 +4943,486 @@ export const JANULUS_DATA = {
       },
     ],
   },
+  eu: {
+    name: 'Euskara',
+    flag: '⛰️',
+    speechLang: 'eu-ES',
+    history: {
+      badge: '⛰️',
+      title: 'El idioma más misterioso de Europa',
+      subtitle: 'Una lengua de 10,000 años que no se parece a ninguna otra en el mundo',
+      intro: 'El euskera (en vasco, "Euskara") es la única lengua viva de Europa occidental que no pertenece a ninguna familia lingüística conocida. No es romance, no es germánico, no es celta, no es eslavo. Es un enigma viviente que lleva milenios hablándose en los mismos montes.',
+      sections: [
+        {
+          emoji: '🌋',
+          title: 'El Misterio del Origen',
+          text: 'Lingüistas de todo el mundo han intentado relacionar el euskera con otras lenguas: con el georgiano, con el bereber, con las lenguas del Cáucaso, incluso con el sumerio. Ninguna teoría ha resistido el escrutinio científico.\n\nLa hipótesis más aceptada es que el euskera desciende del idioma hablado en la Península Ibérica antes de la llegada de los pueblos indoeuropeos — hace más de 5,000 años. Los vascos serían los herederos lingüísticos de los primeros europeos del Paleolítico.',
+        },
+        {
+          emoji: '⚔️',
+          title: 'La Gran Resistencia',
+          text: 'El euskera sobrevivió a imperios y siglos de presión:\n\n🏛️ Los romanos colonizaron casi toda Iberia, pero no pudieron romanizar completamente a los vascos. El euskera absorbió algunas palabras latinas ("errege" de "rex" = rey, "liburu" de "librum" = libro) pero su gramática central permaneció intacta.\n\n☪️ Los árabes conquistaron casi toda la Península entre 711 y 722 d.C., pero los vascos en sus montañas mantuvieron su lengua.\n\n🚫 Durante la dictadura de Franco (1936–1975), hablar euskera en público estaba prohibido. Se borraron los nombres vascos de las calles y publicar en euskera era ilegal.',
+        },
+        {
+          emoji: '🏫',
+          title: 'Las Ikastolas: Escuelas de Resistencia',
+          text: 'En los años 1960, madres vascas comenzaron a enseñar a sus hijos en euskera de forma clandestina en sus propias casas — burlando la prohibición franquista. Estas "escuelas secretas" se llamaron ikastolas.\n\nHoy las ikastolas son centros educativos oficiales donde la enseñanza es completamente en euskera. Gracias a ellas, una nueva generación creció con el idioma — y el euskera no solo sobrevivió sino que se revitalizó.',
+        },
+        {
+          emoji: '📖',
+          title: 'La Primera Literatura',
+          text: 'El primer libro impreso en euskera fue "Linguae Vasconum Primitiae" (1545), un conjunto de poemas del sacerdote Bernard Detchepare. En su prólogo escribió: "Euskara jalgi hadi plazara" — "Euskera, sal a la plaza pública".\n\nAntes del siglo XVI, el euskera era principalmente oral. Llegó a la escritura tarde, en parte porque nunca necesitó conquistar ni administrar: le bastaba con existir en las montañas.',
+        },
+        {
+          emoji: '🌍',
+          title: 'El Euskera Hoy',
+          text: 'Hoy el euskera es co-oficial en la Comunidad Autónoma Vasca y parte de Navarra. Lo hablan unas 750,000 personas en España y Francia — un número pequeño, pero enorme comparado con la extinción que casi sufrió.\n\nGracias a televisión (EiTB), radio, redes sociales, videojuegos y cine en euskera, el idioma avanza entre los jóvenes. Bilbao — la mayor ciudad vasca — era mayoritariamente castellanohablante hace 40 años. Hoy sus jóvenes hablan euskera con naturalidad.',
+        },
+        {
+          emoji: '🔬',
+          title: 'Lo Que Hace Único al Euskera',
+          text: 'El euskera tiene características que fascinan a los lingüistas:\n\n⚡ Sin género gramatical: ni masculino ni femenino. "Adiskide" es amigo y amiga, sin distinción.\n\n⚡ Sistema ergativo: el sujeto de un verbo transitivo usa una forma diferente al de un intransitivo. Rarísimo en Europa, común en lenguas del Cáucaso.\n\n⚡ Verbos policontrollados: un solo verbo puede expresar sujeto, objeto, tiempo y modo en una sola palabra.\n\n⚡ Sistema vigesimal: los números van en base 20. "Hogei" = 20, "berrogei" = 40 (dos veintes). El francés también usa esto ("quatre-vingts" = 80) — herencia de los vascos que vivieron en esa región.',
+        },
+      ],
+      funFacts: [
+        '🗺️ Aguirre, Garmendia, Etxeverría, Gaztañaga — apellidos vascos que llegaron a América con miles de emigrantes en los siglos XIX y XX.',
+        '🔢 El vasco cuenta en base 20: "hogei" (20) + "hamar" (10) = 30. Los franceses dicen "quatre-vingts" (80) por influencia vasca.',
+        '🧬 Estudios genéticos muestran que los vascos tienen el ADN más diferente del resto de europeos — posibles descendientes directos de los primeros Homo sapiens que llegaron a Europa hace 45,000 años.',
+        '🌊 Los marineros vascos llegaban a Terranova (Canadá) a pescar bacalao en el siglo XV — antes que Colón "descubriera" América — y aprendieron palabras de la lengua local.',
+        '🐑 El queso "Idiazabal" (vasco, ahumado, de leche de oveja) tiene nombre vasco. Los vascos han pastoreado ovejas en sus montañas durante milenios.',
+      ],
+    },
+    levels: [
+      {
+        level: 1,
+        name: 'Lehenengo urratsak',
+        oliversIntro: {
+          headline: '1. Maila · Lehenengo Urratsak! 🍎',
+          message: '¡Bienvenido al euskera, el idioma más misterioso de Europa! No existe ningún otro idioma en el mundo relacionado con él. Hoy aprenderás palabras de comida básica usando el Método Janulus: 3 bloques que juntos forman frases reales.',
+          technique: '🔵 Oinarria  +  🟢 Aditza  +  🟣 Hitza\n\n"Nahi dut" + "aurkitu" + "sagarra"\n= Nahi dut aurkitu sagarra\n(Quiero encontrar la manzana)',
+          funFact: '💡 En euskera el artículo determinado ("el", "la") va AL FINAL de la palabra: "sagar" = manzana, "sagarra" = la manzana. Sin masculino ni femenino — ¡el euskera no distingue género!',
+        },
+        bases: [
+          { id: 'b1', text: 'Nahi dut' },
+          { id: 'b2', text: 'Behar dut' },
+          { id: 'b3', text: 'Ezin dut' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'aurkitu', emoji: '🔍', anim: 'search',
+            definition: 'Encontrar o localizar algo que se busca.',
+            definitionEn: 'To find something you were looking for.',
+            etymology: 'Del vasco "aurki" (cerca, pronto) + "-tu" (sufijo de infinitivo). Etimología propia del euskera, sin parentesco documentado con ningún otro idioma del mundo.',
+            etymologyEn: 'From Basque "aurki" (nearby, soon) + "-tu" infinitive suffix. Native Basque root with no documented relation to any other language.',
+            examples: [
+              { s: 'Nahi dut aurkitu sagarra.', t: 'Quiero encontrar la manzana.' },
+              { s: 'Behar dut aurkitu ogia.', t: 'Necesito encontrar el pan.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'ikusi', emoji: '👀', anim: 'blink',
+            definition: 'Ver, observar, mirar algo con los ojos.',
+            definitionEn: 'To see, to look at, to observe something.',
+            etymology: 'Raíz vasca "ikus-" (percibir visualmente) + "-i" (sufijo de infinitivo). Completamente ajeno al latín "videre" o al griego "horáō".',
+            etymologyEn: 'Basque root "ikus-" (visual perception) + "-i" infinitive suffix. Completely unrelated to Latin "videre" or Greek "horáō".',
+            examples: [
+              { s: 'Nahi dut ikusi ura.', t: 'Quiero ver el agua.' },
+              { s: 'Ezin dut ikusi esnea.', t: 'No puedo ver la leche.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'eraman', emoji: '🏋️', anim: 'carry',
+            definition: 'Llevar, transportar, cargar algo de un lugar a otro.',
+            definitionEn: 'To carry, to bring, to take something from one place to another.',
+            etymology: 'Del vasco "e-" (prefijo verbal) + "raman" (raíz de movimiento con objeto). La morfología vasca encadena prefijos y raíces de manera única en Europa.',
+            etymologyEn: 'From Basque verbal prefix "e-" + movement root "raman". Basque morphology chains prefixes and roots in a way unique in Europe.',
+            examples: [
+              { s: 'Behar dut eraman ogia.', t: 'Necesito llevar el pan.' },
+              { s: 'Nahi dut eraman arraultza.', t: 'Quiero llevar el huevo.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'sagarra', emoji: '🍎', keyword: 'sagarra',
+            definition: 'La manzana (forma determinada: "sagar" + artículo "-a").',
+            definitionEn: 'The apple (definite form: "sagar" + article "-a").',
+            etymology: 'Del vasco "sagar" (manzana), posiblemente pre-indoeuropeo. Aparece en topónimos vascos como "Sagarminaga" y en apellidos como "Sagarna".',
+            oliversTip: '"Sagar" = manzana, "sagarra" = la manzana. En euskera el artículo va AL FINAL. Sin masculino ni femenino — ¡una sola forma para todo! 🍎',
+            examples: [
+              { s: 'Nahi dut aurkitu sagarra.', t: 'Quiero encontrar la manzana.' },
+              { s: 'Ezin dut eraman sagarra.', t: 'No puedo llevar la manzana.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'ogia', emoji: '🍞', keyword: 'ogia',
+            definition: 'El pan (forma determinada: "ogi" + artículo "-a").',
+            definitionEn: 'The bread (definite form: "ogi" + article "-a").',
+            etymology: 'Del vasco "ogi" (pan), sin equivalente en ningún idioma conocido. Una de las palabras más antiguas del vocabulario vasco.',
+            oliversTip: 'La panadería vasca es famosa — el "talo" (pan de maíz) es tradición milenaria. "Ogi" no se parece en nada al latín "panis" ni al inglés "bread". 🍞',
+            examples: [
+              { s: 'Behar dut eraman ogia.', t: 'Necesito llevar el pan.' },
+              { s: 'Nahi dut aurkitu ogia.', t: 'Quiero encontrar el pan.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'ura', emoji: '💧', keyword: 'ura',
+            definition: 'El agua (forma determinada: "ur" + artículo "-a").',
+            definitionEn: 'The water (definite form: "ur" + article "-a").',
+            etymology: 'Del vasco "ur" (agua). Raíz proto-aquitana que aparece en miles de topónimos: "Urola", "Urdaibai", "Uribe". Completamente aislado del latín "aqua".',
+            oliversTip: '"Ur" es tan corta porque el agua es vital — y el País Vasco tiene lluvia abundante. Mira el mapa: miles de ríos con "ur-" en su nombre. 💧',
+            examples: [
+              { s: 'Nahi dut ikusi ura.', t: 'Quiero ver el agua.' },
+              { s: 'Behar dut aurkitu ura.', t: 'Necesito encontrar el agua.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'esnea', emoji: '🥛', keyword: 'esnea',
+            definition: 'La leche (forma determinada: "esne" + artículo "-a").',
+            definitionEn: 'The milk (definite form: "esne" + article "-a").',
+            etymology: 'Del vasco "esne" (leche), sin parentesco con el latín "lac/lactis" ni con ninguna familia lingüística conocida.',
+            oliversTip: 'El queso vasco "Idiazabal" (de leche de oveja, ahumado) es famoso en todo el mundo. "Esne" no se parece en nada a "leche", "milk", "lait" o "latte". 🐑',
+            examples: [
+              { s: 'Nahi dut ikusi esnea.', t: 'Quiero ver la leche.' },
+              { s: 'Behar dut eraman esnea.', t: 'Necesito llevar la leche.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'arraultza', emoji: '🥚', keyword: 'arraultza',
+            definition: 'El huevo (las palabras largas son muy típicas del euskera).',
+            definitionEn: 'The egg (long words are very typical in Basque).',
+            etymology: 'Del vasco "arrautze" + evolución fonética. Las palabras largas son características del euskera, que encadena morfemas para crear conceptos complejos.',
+            oliversTip: '"Arraultza" tiene 9 letras — ¡bienvenido al euskera! La "tz" se pronuncia como "ts" en "tsar". Los niños vascos también tardaron en aprenderla. 💪',
+            examples: [
+              { s: 'Nahi dut aurkitu arraultza.', t: 'Quiero encontrar el huevo.' },
+              { s: 'Behar dut eraman arraultza.', t: 'Necesito llevar el huevo.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 2,
+        name: 'Etxea',
+        oliversIntro: {
+          headline: '2. Maila · Etxea! 🏠',
+          message: 'Etxea significa "la casa" en euskera. Hoy aprenderás el vocabulario del hogar con verbos de acción muy útiles. Los vascos tienen un dicho: "Etxea txikia, txukuna bedi" — "Si la casa es pequeña, que esté limpia".',
+          technique: '🔵 Oinarria  +  🟢 Aditza  +  🟣 Hitza\n\n"Nahi dut" + "ireki" + "atea"\n= Nahi dut ireki atea\n(Quiero abrir la puerta)',
+          funFact: '💡 El apellido "Etxeverría" — muy común en América Latina — viene del euskera: "etxe" (casa) + "berri" (nueva) + "-a" (artículo). ¡Literalmente "la casa nueva"!',
+        },
+        bases: [
+          { id: 'b1', text: 'Nahi dut' },
+          { id: 'b2', text: 'Behar dut' },
+          { id: 'b3', text: 'Ezin dut' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'ireki', emoji: '🔓', anim: 'open',
+            definition: 'Abrir algo que estaba cerrado.',
+            definitionEn: 'To open something that was closed.',
+            etymology: 'Del vasco "ireki" (abrir). El sufijo "-i" indica infinitivo — el mismo patrón que "ikusi", "aurkitu" y casi todos los verbos vascos.',
+            etymologyEn: 'From Basque "ireki" (to open). The "-i" suffix indicates infinitive — the same pattern as "ikusi", "aurkitu" and almost all Basque verbs.',
+            examples: [
+              { s: 'Nahi dut ireki atea.', t: 'Quiero abrir la puerta.' },
+              { s: 'Behar dut ireki leihoa.', t: 'Necesito abrir la ventana.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'itxi', emoji: '🔒', anim: 'close',
+            definition: 'Cerrar algo que estaba abierto.',
+            definitionEn: 'To close something that was open.',
+            etymology: 'Del vasco "itxi" (cerrar). Sin parentesco con el español "cerrar", el inglés "close" o el francés "fermer" — vocabulario completamente propio.',
+            etymologyEn: 'From Basque "itxi" (to close). Unrelated to Spanish "cerrar", English "close" or French "fermer" — completely native Basque vocabulary.',
+            examples: [
+              { s: 'Behar dut itxi atea.', t: 'Necesito cerrar la puerta.' },
+              { s: 'Ezin dut itxi leihoa.', t: 'No puedo cerrar la ventana.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'garbitu', emoji: '🧹', anim: 'clean',
+            definition: 'Limpiar, quitar la suciedad de algo.',
+            definitionEn: 'To clean, to remove dirt from something.',
+            etymology: 'Del vasco "garbi" (limpio, puro) + "-tu" (sufijo de infinitivo). "Garbi" también se usa metafóricamente: tener fama "garbia" es tener buena reputación.',
+            etymologyEn: 'From Basque "garbi" (clean, pure) + "-tu" infinitive suffix. "Garbi" is also used metaphorically — good reputation is "garbia".',
+            examples: [
+              { s: 'Behar dut garbitu mahaia.', t: 'Necesito limpiar la mesa.' },
+              { s: 'Nahi dut garbitu aulkia.', t: 'Quiero limpiar la silla.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'atea', emoji: '🚪', keyword: 'atea',
+            definition: 'La puerta (forma determinada: "ate" + artículo "-a").',
+            definitionEn: 'The door (definite form: "ate" + article "-a").',
+            etymology: 'Del vasco "ate" (puerta). Aparece en topónimos como "Ataungo atea" y en el nombre del escritor Bernardo Atxaga (de "atx", peña + "aga", lugar de).',
+            oliversTip: '"Ate" es la forma base; "atea" lleva el artículo. La cultura vasca tiene una palabra especial para cada parte de la casa — el hogar es sagrado en Euskadi. 🚪',
+            examples: [
+              { s: 'Nahi dut ireki atea.', t: 'Quiero abrir la puerta.' },
+              { s: 'Behar dut itxi atea.', t: 'Necesito cerrar la puerta.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'leihoa', emoji: '🪟', keyword: 'leihoa',
+            definition: 'La ventana (forma determinada: "leiho" + artículo "-a").',
+            definitionEn: 'The window (definite form: "leiho" + article "-a").',
+            etymology: 'Del vasco "leiho" (ventana). Posiblemente del latín tardío, pero adaptado de forma tan única al vasco que su origen se debate entre los filólogos.',
+            oliversTip: '"Leiho" es una de las pocas palabras vascas con posible origen latino — pero ya no se parece en nada al latín, ni al español "ventana", ni al inglés "window". 🪟',
+            examples: [
+              { s: 'Behar dut ireki leihoa.', t: 'Necesito abrir la ventana.' },
+              { s: 'Ezin dut itxi leihoa.', t: 'No puedo cerrar la ventana.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'mahaia', emoji: '🪑', keyword: 'mahaia',
+            definition: 'La mesa (forma determinada: "mahai" + artículo "-a").',
+            definitionEn: 'The table (definite form: "mahai" + article "-a").',
+            etymology: 'Del vasco "mahai" (mesa). La vida vasca tradicional gira alrededor de la mesa — los clubs gastronómicos "txokos" son una institución social centenaria.',
+            oliversTip: 'El "txoko" (club gastronómico vasco, tradición de más de 150 años) pone la mesa en el centro de la vida social. La cocina vasca es de las mejores del mundo. 🍽️',
+            examples: [
+              { s: 'Behar dut garbitu mahaia.', t: 'Necesito limpiar la mesa.' },
+              { s: 'Nahi dut ireki mahaia.', t: 'Quiero preparar la mesa.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'aulkia', emoji: '🪑', keyword: 'aulkia',
+            definition: 'La silla (forma determinada: "aulki" + artículo "-a").',
+            definitionEn: 'The chair (definite form: "aulki" + article "-a").',
+            etymology: 'Del vasco "aulki" (silla, asiento). También significa "trono" o "silla de autoridad" en contextos formales. Raíz propia del euskera sin parentesco conocido.',
+            oliversTip: '"Aulki" suena diferente a "silla", "chair", "sedia" o "chaise" — ¡el euskera no tomó prestada ninguna de esas palabras! Cada concepto tiene su raíz propia. 🪑',
+            examples: [
+              { s: 'Nahi dut garbitu aulkia.', t: 'Quiero limpiar la silla.' },
+              { s: 'Ezin dut ireki aulkia.', t: 'No puedo preparar la silla.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'ohea', emoji: '🛏️', keyword: 'ohea',
+            definition: 'La cama (forma determinada: "ohe" + artículo "-a").',
+            definitionEn: 'The bed (definite form: "ohe" + article "-a").',
+            etymology: 'Del vasco "ohe" (cama, lecho). Sin parentesco con el latín "lectus", el inglés "bed" o el francés "lit". Vocabulario completamente independiente.',
+            oliversTip: 'El euskera tiene una rica tradición oral de "bertsolaritza" (poesía improvisada), que se cantaba a menudo en las casas junto a la chimenea, antes de dormir. 🛏️',
+            examples: [
+              { s: 'Nahi dut garbitu ohea.', t: 'Quiero limpiar la cama.' },
+              { s: 'Behar dut ireki ohea.', t: 'Necesito preparar la cama.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 3,
+        name: 'Familia',
+        oliversIntro: {
+          headline: '3. Maila · Familia! 👨‍👩‍👧‍👦',
+          message: 'La familia en el País Vasco tiene un papel central. Durante siglos los vascos tomaban el apellido de su caserío (granja), no del padre — el lugar antes que la persona. Hoy aprenderás los nombres de familia más importantes.',
+          technique: '🔵 Oinarria  +  🟢 Aditza  +  🟣 Hitza\n\n"Nahi dut" + "deitu" + "aita"\n= Nahi dut deitu aita\n(Quiero llamar al padre)',
+          funFact: '💡 "Aita" (padre) y "ama" (madre) en vasco son casi universales — similares a palabras de padre y madre en árabe, hebreo y swahili. Puede que sean las palabras más antiguas del lenguaje humano.',
+        },
+        bases: [
+          { id: 'b1', text: 'Nahi dut' },
+          { id: 'b2', text: 'Behar dut' },
+          { id: 'b3', text: 'Nahiago dut' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'ezagutu', emoji: '🤝', anim: 'greet',
+            definition: 'Conocer a alguien, estar familiarizado con alguien.',
+            definitionEn: 'To know someone, to be acquainted with someone.',
+            etymology: 'Del vasco "ezagun" (conocido, familiar) + "-tu" (sufijo verbal). El prefijo "ez-" normalmente niega en euskera, pero aquí es parte de la raíz — una excepción fascinante.',
+            etymologyEn: 'From Basque "ezagun" (known, familiar) + "-tu" verbal suffix. The prefix "ez-" normally negates, but here it is part of the root — a fascinating exception.',
+            examples: [
+              { s: 'Nahi dut ezagutu laguna.', t: 'Quiero conocer al amigo.' },
+              { s: 'Behar dut ezagutu anaia.', t: 'Necesito conocer al hermano.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'deitu', emoji: '📞', anim: 'call',
+            definition: 'Llamar a alguien (por teléfono o por su nombre).',
+            definitionEn: 'To call someone (by phone or by name).',
+            etymology: 'Del vasco "deitu" (llamar). También significa "tener un nombre": "Oliver deitzen naiz" = "Me llamo Oliver" (literalmente "Oliver me llaman").',
+            etymologyEn: 'From Basque "deitu" (to call). Also means "to be named": "Oliver deitzen naiz" = "My name is Oliver" (literally "Oliver they call me").',
+            examples: [
+              { s: 'Nahi dut deitu ama.', t: 'Quiero llamar a la madre.' },
+              { s: 'Behar dut deitu anaia.', t: 'Necesito llamar al hermano.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'bisitatu', emoji: '🏠', anim: 'walk',
+            definition: 'Visitar, ir a ver a alguien en su lugar.',
+            definitionEn: 'To visit, to go see someone at their place.',
+            etymology: 'Del latín "visitare", préstamo del romance al euskera. El euskera absorbió ciertos términos de viaje del latín tardío, manteniendo su gramática propia intacta.',
+            etymologyEn: 'From Latin "visitare", a Romance loanword into Basque. Basque absorbed some travel terms from Late Latin while keeping its own grammar intact.',
+            examples: [
+              { s: 'Nahi dut bisitatu aita.', t: 'Quiero visitar al padre.' },
+              { s: 'Nahiago dut bisitatu laguna.', t: 'Prefiero visitar al amigo.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'aita', emoji: '👨', keyword: 'aita',
+            definition: 'El padre (vocativo o referencia directa; sin artículo determinado).',
+            definitionEn: 'Father (vocative or direct reference; no definite article needed).',
+            etymology: 'Del vasco "aita" (padre). Posiblemente una de las palabras más antiguas de la humanidad — variantes similares existen en docenas de lenguas sin parentesco.',
+            oliversTip: '"Aita!" también se usa para expresar sorpresa, como "¡Vaya!". La religión vasca tradicional tenía un dios llamado "Aita" — el Padre del Universo. 👨',
+            examples: [
+              { s: 'Nahi dut bisitatu aita.', t: 'Quiero visitar al padre.' },
+              { s: 'Behar dut deitu aita.', t: 'Necesito llamar al padre.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'ama', emoji: '👩', keyword: 'ama',
+            definition: 'La madre (vocativo o referencia directa; sin artículo determinado).',
+            definitionEn: 'Mother (vocative or direct reference; no definite article needed).',
+            etymology: 'Del vasco "ama" (madre). Universal en muchas lenguas no relacionadas: "ama" en árabe, "mama" en swahili, "má" en chino. Una de las primeras sílabas de todo bebé.',
+            oliversTip: 'Bilbao tiene un barrio llamado "Amara" — de "ama" + "hara" (hacia allá). En euskera la madre está en el centro del hogar y del idioma. 👩',
+            examples: [
+              { s: 'Nahi dut deitu ama.', t: 'Quiero llamar a la madre.' },
+              { s: 'Nahiago dut bisitatu ama.', t: 'Prefiero visitar a la madre.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'anaia', emoji: '👦', keyword: 'anaia',
+            definition: 'El hermano (forma determinada: "anai" + artículo "-a").',
+            definitionEn: 'The brother (definite form: "anai" + article "-a").',
+            etymology: 'Del vasco "anai" (hermano) + artículo "-a". "Anaitasuna" (fraternidad) viene de aquí — el sufijo "-tasuna" convierte el sustantivo en concepto abstracto.',
+            oliversTip: 'El escritor vasco Bernardo Atxaga ganó el Premio Nacional de Narrativa con "Obabakoak" — una colección de cuentos donde los hermanos y la familia son protagonistas. 👦',
+            examples: [
+              { s: 'Nahi dut deitu anaia.', t: 'Quiero llamar al hermano.' },
+              { s: 'Behar dut ezagutu anaia.', t: 'Necesito conocer al hermano.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'ahizpa', emoji: '👧', keyword: 'ahizpa',
+            definition: 'La hermana (de una mujer) / la hermana en general.',
+            definitionEn: 'Sister (of a woman) / sister in general.',
+            etymology: 'Del vasco "ahizpa". Dato único: en vasco antiguo la palabra "hermana" cambiaba según el género del hablante — "arreba" si lo dice un hombre, "ahizpa" si lo dice una mujer.',
+            oliversTip: '¡Dato único en el mundo! En euskera clásico: "hermana" es "arreba" para un hombre, "ahizpa" para una mujer. El euskera tiene perspectiva del hablante — una característica rarísima. 👧',
+            examples: [
+              { s: 'Nahi dut bisitatu ahizpa.', t: 'Quiero visitar a la hermana.' },
+              { s: 'Nahiago dut ezagutu ahizpa.', t: 'Prefiero conocer a la hermana.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'laguna', emoji: '🤝', keyword: 'laguna',
+            definition: 'El amigo / la amiga (sin distinción de género en euskera).',
+            definitionEn: 'Friend (no gender distinction in Basque).',
+            etymology: 'Del vasco "lagun" (compañero, acompañante) + artículo "-a". "Lagundu" significa "ayudar" — un amigo es literalmente alguien que te acompaña y ayuda.',
+            oliversTip: '"Lagun" → "laguna" (el/la amigo/a) y "lagundu" (ayudar). Sin distinción de género. El euskera era feminista antes que nadie — una sola palabra para todos. 🤝',
+            examples: [
+              { s: 'Nahi dut ezagutu laguna.', t: 'Quiero conocer al amigo/a.' },
+              { s: 'Nahiago dut bisitatu laguna.', t: 'Prefiero visitar al amigo/a.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 4,
+        name: 'Natura',
+        oliversIntro: {
+          headline: '4. Maila · Natura! 🏔️',
+          message: '¡Has llegado al nivel más especial! La naturaleza es el alma del País Vasco — sus verdes montañas, sus costas bravas y sus bosques milenarios han protegido al euskera durante siglos. Hoy aprenderás el vocabulario que describe ese paisaje único.',
+          technique: '🔵 Oinarria  +  🟢 Aditza  +  🟣 Hitza\n\n"Nahi dut" + "ikusi" + "mendia"\n= Nahi dut ikusi mendia\n(Quiero ver la montaña)',
+          funFact: '💡 "Baso" (bosque) puede ser el origen del nombre "Vasconia" — la tierra de los vascos. Los romanos llamaban "vascos" a los pueblos del bosque del norte de Iberia.',
+        },
+        bases: [
+          { id: 'b1', text: 'Nahi dut' },
+          { id: 'b2', text: 'Behar dut' },
+          { id: 'b3', text: 'Ezin dut' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'ikusi', emoji: '👀', anim: 'blink',
+            definition: 'Ver, observar, contemplar algo.',
+            definitionEn: 'To see, to observe, to contemplate something.',
+            etymology: 'Raíz vasca "ikus-" (ver). Ya la conoces del Nivel 1 — ahora la usarás para contemplar el majestuoso paisaje vasco.',
+            etymologyEn: 'Basque root "ikus-" (to see). You already know it from Level 1 — now use it to contemplate the majestic Basque landscape.',
+            examples: [
+              { s: 'Nahi dut ikusi mendia.', t: 'Quiero ver la montaña.' },
+              { s: 'Behar dut ikusi itsasoa.', t: 'Necesito ver el mar.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'ukitu', emoji: '✋', anim: 'touch',
+            definition: 'Tocar, entrar en contacto físico con algo.',
+            definitionEn: 'To touch, to make physical contact with something.',
+            etymology: 'Del vasco "ukitu" (tocar). También se usa para "afectar emocionalmente" — una historia conmovedora "ukitu" al oyente.',
+            etymologyEn: 'From Basque "ukitu" (to touch). Also used to mean "to move emotionally" — a touching story "ukitu"s the listener.',
+            examples: [
+              { s: 'Nahi dut ukitu basoa.', t: 'Quiero tocar el bosque.' },
+              { s: 'Ezin dut ukitu zerua.', t: 'No puedo tocar el cielo.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'entzun', emoji: '👂', anim: 'listen',
+            definition: 'Escuchar, oír, prestar atención al sonido.',
+            definitionEn: 'To listen, to hear, to pay attention to sound.',
+            etymology: 'Del vasco "entzun" (oír). También significa "ser escuchado / ser famoso": "entzuna da" = "es famoso" (literalmente "es escuchado").',
+            etymologyEn: 'From Basque "entzun" (to hear). Also means "to be heard / to be famous": "entzuna da" = "they are famous" (literally "they are listened to").',
+            examples: [
+              { s: 'Nahi dut entzun itsasoa.', t: 'Quiero escuchar el mar.' },
+              { s: 'Behar dut entzun ibaia.', t: 'Necesito escuchar el río.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'mendia', emoji: '⛰️', keyword: 'mendia',
+            definition: 'La montaña (forma determinada: "mendi" + artículo "-a").',
+            definitionEn: 'The mountain (definite form: "mendi" + article "-a").',
+            etymology: 'Del vasco "mendi" (montaña). Aparece en centenares de apellidos vascos: Mendieta, Mendiola, Mendizabal. Las montañas son la identidad misma del pueblo vasco.',
+            oliversTip: 'El "Aizkorri" (2,041m), el "Txindoki" y el "Aralar" son las montañas más míticas del País Vasco. Los vascos tienen un nombre propio para cada cumbre — y un poema sobre ella. ⛰️',
+            examples: [
+              { s: 'Nahi dut ikusi mendia.', t: 'Quiero ver la montaña.' },
+              { s: 'Behar dut ukitu mendia.', t: 'Necesito tocar la montaña.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'itsasoa', emoji: '🌊', keyword: 'itsasoa',
+            definition: 'El mar (forma determinada: "itsaso" + artículo "-a").',
+            definitionEn: 'The sea (definite form: "itsaso" + article "-a").',
+            etymology: 'Del vasco "itsaso" (mar). Sin parentesco con "mar", "sea", "mer" o "mare". Los vascos llamaban al Atlántico "Itsaso Handia" (el Gran Mar) y fueron marineros legendarios.',
+            oliversTip: 'Los marineros vascos llegaban a Terranova (Canadá) a pescar bacalao en el siglo XV — antes que Colón. Tenían palabras propias para cada corriente, viento y estrella del mar. 🌊',
+            examples: [
+              { s: 'Nahi dut entzun itsasoa.', t: 'Quiero escuchar el mar.' },
+              { s: 'Behar dut ikusi itsasoa.', t: 'Necesito ver el mar.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'basoa', emoji: '🌲', keyword: 'basoa',
+            definition: 'El bosque (forma determinada: "baso" + artículo "-a").',
+            definitionEn: 'The forest (definite form: "baso" + article "-a").',
+            etymology: 'Del vasco "baso" (bosque, silvestre, salvaje). Puede ser el origen de "Vasconia". Los bosques de roble y haya del País Vasco son de los más antiguos de Europa.',
+            oliversTip: '"Baso" también significa "vaso" o "copa" en algunos dialectos vascos — ambas cosas huecas que contienen algo. El euskera une el bosque y el vaso en una misma raíz. 🌲',
+            examples: [
+              { s: 'Nahi dut ukitu basoa.', t: 'Quiero tocar el bosque.' },
+              { s: 'Behar dut ikusi basoa.', t: 'Necesito ver el bosque.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'ibaia', emoji: '🏞️', keyword: 'ibaia',
+            definition: 'El río (forma determinada: "ibai" + artículo "-a").',
+            definitionEn: 'The river (definite form: "ibai" + article "-a").',
+            etymology: 'Del vasco "ibai" (río). Aparece en topónimos como "Ibaizabal" (el río ancho) — nombre vasco del Nervión, que atraviesa Bilbao hacia el mar Cantábrico.',
+            oliversTip: 'El Nervión (en vasco "Ibaizabal", el río ancho) pasa por Bilbao. En los años 90 estaba muy contaminado. Hoy los salmones han vuelto — una historia de recuperación extraordinaria. 🏞️',
+            examples: [
+              { s: 'Behar dut entzun ibaia.', t: 'Necesito escuchar el río.' },
+              { s: 'Nahi dut ikusi ibaia.', t: 'Quiero ver el río.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'zerua', emoji: '☁️', keyword: 'zerua',
+            definition: 'El cielo (forma determinada: "zeru" + artículo "-a"). También significa "paraíso".',
+            definitionEn: 'The sky / heaven (definite form: "zeru" + article "-a").',
+            etymology: 'Del latín "caelum" (cielo) → vasco "zeru". Una de las palabras que el euskera tomó del latín y adaptó completamente a su propia fonología.',
+            oliversTip: '"Zerua" significa tanto "el cielo" (lo que ves arriba) como "el paraíso". El País Vasco es famoso por sus cielos lluviosos — "Zerua euria dakar" = "El cielo trae lluvia". ☁️',
+            examples: [
+              { s: 'Ezin dut ukitu zerua.', t: 'No puedo tocar el cielo.' },
+              { s: 'Nahi dut ikusi zerua.', t: 'Quiero ver el cielo.' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 }
 
 export function getJanulusLanguages() {
@@ -4956,4 +5436,7 @@ export function getJanulusLevel(langCode, levelNum) {
 }
 export function getSpeechLangJanulus(langCode) {
   return JANULUS_DATA[langCode]?.speechLang ?? 'en-US'
+}
+export function getJanulusLangData(code) {
+  return JANULUS_DATA[code] ?? null
 }

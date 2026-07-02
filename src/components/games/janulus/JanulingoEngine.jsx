@@ -51,7 +51,7 @@ function freshRS(ld) {
 
 // ponytail: some OS/browser combos ship zero Catalan voices at all — closest
 // phonetic match beats letting the browser silently pick an unrelated default.
-const RELATED_LANG_PREFIX = { ca: 'es' }
+const RELATED_LANG_PREFIX = { ca: 'es', eu: 'es' }
 
 function doSpeak(text, langCode, rate) {
   const synth = window.speechSynthesis
@@ -117,17 +117,17 @@ function getOliverPrompt(sentence) {
     return "The power just went out and it's pitch black. What do you reach for?"
   if (has('candle') || has('bougie') || has('espelma') || has('candela'))
     return "The lights flicker during the storm. What do you light instead?"
-  if (has('apple') || has('pomme') || has('poma') || has('mela'))
+  if (has('apple') || has('pomme') || has('poma') || has('mela') || has('sagarra'))
     return "You're hungry and there's a fruit bowl on the table. What do you grab?"
-  if (has('water') || has('eau') || has('aigua') || has('acqua'))
+  if (has('water') || has('eau') || has('aigua') || has('acqua') || has('ura'))
     return "You've been out in the sun all afternoon and you're really thirsty. What do you ask for?"
-  if (has('pa') || has('pane'))
+  if (has('pa') || has('pane') || has('ogia'))
     return "You stop by the bakery on your way home. What do you buy?"
   if (has('formatge') || has('cheese') || has('formaggio'))
     return "You're putting together a snack plate for some guests. What do you add?"
   if (has('suc') || has('juice') || has('succo'))
     return "It's breakfast time and you want something refreshing to drink. What do you pour?"
-  if (has('llet') || has('milk') || has('latte'))
+  if (has('llet') || has('milk') || has('latte') || has('esnea'))
     return "You're making coffee and the fridge is almost empty. What do you check for?"
   if (has('cafè') || has('caffè'))
     return "You need a short break to recharge during a busy afternoon. What sounds good right now?"
@@ -135,27 +135,29 @@ function getOliverPrompt(sentence) {
     return "You're trying to eat healthier this week. What do you add to the shopping list?"
   if (has('pizza') || has('pasta'))
     return "You're deciding what to order for dinner with friends. What are you craving?"
-  if (has('pare') || has('father') || has('padre'))
+  if (has('arraultza'))
+    return "You're making breakfast and there's almost nothing left in the fridge. What do you grab?"
+  if (has('pare') || has('father') || has('padre') || has('aita'))
     return "You're introducing your family to a new friend. Who do you point out first?"
-  if (has('mare') || has('mother') || has('madre'))
+  if (has('mare') || has('mother') || has('madre') || has('ama'))
     return "Someone asks who taught you to cook. Who do you mention?"
-  if (has('germà') || has('brother') || has('fratello'))
+  if (has('germà') || has('brother') || has('fratello') || has('anaia'))
     return "You're showing old photos to a friend. Who's the boy standing next to you?"
-  if (has('germana') || has('sister') || has('sorella'))
+  if (has('germana') || has('sister') || has('sorella') || has('ahizpa'))
     return "Someone asks who's in the photo with you. Who do you say it is?"
   if (has('avi') || has('àvia') || has('nonno') || has('nonna'))
     return "It's a family lunch and someone asks who's coming. Who do you mention?"
-  if (has('amic') || has('amiga') || has('friend') || has('amico') || has('amica'))
+  if (has('amic') || has('amiga') || has('friend') || has('amico') || has('amica') || has('laguna'))
     return "You're at a party and don't know anyone there. Who do you wish were with you?"
-  if (has('taula') || has('table') || has('tavolo'))
+  if (has('taula') || has('table') || has('tavolo') || has('mahaia'))
     return "You're setting up dinner for a few friends. What do you pull more chairs around?"
-  if (has('cadira') || has('chair') || has('sedia'))
+  if (has('cadira') || has('chair') || has('sedia') || has('aulkia'))
     return "A guest just arrived and there's nowhere to sit. What do you bring over?"
-  if (has('llit') || has('bed') || has('letto'))
+  if (has('llit') || has('bed') || has('letto') || has('ohea'))
     return "It's been a long day and you're exhausted. Where are you headed?"
-  if (has('finestra') || has('window'))
+  if (has('finestra') || has('window') || has('leihoa'))
     return "The room feels stuffy. What do you open to get some air?"
-  if (has('porta') || has('door'))
+  if (has('porta') || has('door') || has('atea'))
     return "Someone's knocking. What do you go open?"
   if (has('sofà') || has('sofa') || has('divano'))
     return "You just got home and want to relax in front of the TV. Where do you sit?"
@@ -229,26 +231,44 @@ function getOliverPrompt(sentence) {
     return "A friend asks how you keep new words in your head. What do you tell them?"
   if (has('appreciate'))
     return "Someone asks what you've come to enjoy since you started this. What do you say?"
-  if (has('open') || has('ouvrir') || has('obrir'))
+  if (has('open') || has('ouvrir') || has('obrir') || has('ireki'))
     return "Something in front of you needs to be opened. What do you do?"
-  if (has('carry') || has('porter') || has('portar') || has('portare'))
+  if (has('itxi'))
+    return "You keep feeling the cold draft from somewhere. What do you need to do?"
+  if (has('carry') || has('porter') || has('portar') || has('portare') || has('eraman'))
     return "Your hands are full and you need to bring something along. What are you doing?"
-  if (has('find') || has('trouver') || has('trobar') || has('buscar') || has('trovare') || has('cercare'))
+  if (has('find') || has('trouver') || has('trobar') || has('buscar') || has('trovare') || has('cercare') || has('aurkitu'))
     return "You're looking for something you misplaced. What are you doing?"
   if (has('use') || has('utiliser') || has('fer servir') || has('usare'))
     return "You need a hand with something. What are you about to do?"
-  if (has('see') || has('voir') || has('veure') || has('vedere'))
+  if (has('see') || has('voir') || has('veure') || has('vedere') || has('ikusi'))
     return "Something just caught your attention. What do you notice?"
   if (has('hold'))
     return "Someone needs an extra hand for a second. What are you doing?"
-  if (has('visitar') || has('recomanar') || has('conèixer') || has('conoscere'))
+  if (has('visitar') || has('recomanar') || has('conèixer') || has('conoscere') || has('bisitatu') || has('ezagutu'))
     return "A friend's visiting your city this weekend and wants suggestions. What do you tell them?"
+  if (has('deitu'))
+    return "You haven't heard from someone important in a while. What do you decide to do?"
   if (has('comprar') || has('triar') || has('demanar') || has('comprare') || has('scegliere') || has('ordinare'))
     return "You're out running errands today. What are you up to?"
   if (has('tastar') || has('preferir') || has('assaggiare') || has('preferire'))
     return "You're trying new things at a friend's dinner party. What's going on?"
-  if (has('netejar') || has('tenir') || has('avere') || has('pulire'))
+  if (has('netejar') || has('tenir') || has('avere') || has('pulire') || has('garbitu'))
     return "You're getting your place ready for guests. What are you doing?"
+  if (has('ukitu'))
+    return "You're in nature and everything around you feels alive. What do you reach out and feel?"
+  if (has('entzun'))
+    return "You close your eyes and let the world speak. What do you listen to?"
+  if (has('mendia'))
+    return "You're planning a weekend escape from the city. What destination do you have in mind?"
+  if (has('itsasoa'))
+    return "The air is salty, waves everywhere. Where are you?"
+  if (has('basoa'))
+    return "You need a few hours of quiet and fresh air away from everything. Where do you go?"
+  if (has('ibaia'))
+    return "On a hot afternoon you head somewhere cool to sit by the water. Where do you end up?"
+  if (has('zerua'))
+    return "You're lying on your back in the grass, staring straight up. What fills your view?"
   return "Tell me — how would you use what you just learned in a real conversation?"
 }
 
@@ -272,6 +292,11 @@ const CONV_SCENARIOS = {
     intro:   'Hai usato queste frasi molto bene! Vediamo come suonano in una conversazione normale...',
     setting: 'Facciamo una piccola chiacchierata usando quello che hai appena praticato.',
     outro:   'Fantastico! Hai appena avuto la tua prima vera conversazione in italiano. 🍝\n\nPowell Janulus ha imparato l\'italiano esattamente così — blocco per blocco. Tu hai già iniziato.',
+  },
+  eu: {
+    intro:   'Oso ondo erabili dituzu esaldi hauek! Ikus dezagun nola erabiltzen diren eguneroko elkarrizketa arrunt batean...',
+    setting: 'Egin dezagun elkarrizketa txiki bat praktikatu duzun hori erabiliz.',
+    outro:   'Bikaina! Euskaraz lehen benetako elkarrizketa egin duzu. ⛰️\n\nEuskarara ez da beste ezein hizkuntzarekin lotuta — 10.000 urteko historia du. Bloke batetik besterako, hizkuntzarik misteriotsuena ari zara ikasten.',
   },
 }
 

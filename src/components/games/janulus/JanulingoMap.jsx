@@ -1,7 +1,7 @@
 import { getJanulusLevels } from '../../../data/matrixData'
 import VoiceSetupNotice from './VoiceSetupNotice'
 
-export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack }) {
+export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack, onHistory }) {
   const all = getJanulusLevels(lang).map((l) => ({ ...l, locked: false }))
 
   return (
@@ -15,7 +15,10 @@ export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack 
           <span className="text-lg">{langFlag}</span>
           <span className="font-bold">{langName}</span>
         </div>
-        <span className="w-16" aria-hidden="true" />
+        {onHistory
+          ? <button type="button" onClick={onHistory} className="text-sm text-primary transition-colors hover:opacity-80">📜 Historia</button>
+          : <span className="w-16" aria-hidden="true" />
+        }
       </div>
 
       <div className="flex-1 overflow-auto py-6">
