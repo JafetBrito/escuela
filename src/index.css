@@ -14,6 +14,11 @@
   --color-danger: #ef4444;
 }
 
+::selection {
+  background-color: rgba(245, 158, 11, 0.38);
+  color: inherit;
+}
+
 body {
   margin: 0;
   background-color: var(--color-background);

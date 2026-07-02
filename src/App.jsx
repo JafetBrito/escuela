@@ -29,6 +29,7 @@ import ProtectedRoute from './components/shared/ProtectedRoute'
 import AchievementWatcher from './components/achievements/AchievementWatcher'
 import AchievementToast from './components/achievements/AchievementToast'
 import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
+import TextSelectionMenu from './components/shared/TextSelectionMenu'
 import PatchNotesModal from './components/shared/PatchNotesModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
@@ -103,6 +104,7 @@ export default function App() {
       <AchievementWatcher />
       <AchievementToast />
       <LevelUpAnnouncer />
+      <TextSelectionMenu />
       <PatchNotesModal />
       <DevToolsPanel />
       <AiCredentialsLoader />
