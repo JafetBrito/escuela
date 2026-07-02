@@ -245,7 +245,8 @@ function GlbNpcMesh({ modelPath, rotationY = 0 }) {
     box.getSize(size); box.getCenter(center)
     const s = 1.7 / (Math.max(size.x, size.y, size.z) || 1)
     clone.scale.setScalar(s)
-    clone.position.set(-center.x * s, -center.y * s, -center.z * s)
+    // anchor feet to y=0 (min y of bounding box), not the center
+    clone.position.set(-center.x * s, -box.min.y * s, -center.z * s)
     return clone
   }, [scene])
   return <primitive object={model} rotation={[0, rotationY, 0]} />
@@ -383,19 +384,25 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, defeatedSombras
       <fog attach="fog" args={['#0d0804', 28, 70]}/>
 
       {/* ── Lighting ── */}
-      <ambientLight intensity={0.3} color="#6b3e18"/>
+      <ambientLight intensity={0.85} color="#7a4a22"/>
       {/* Entrance warm glow */}
-      <pointLight position={[0,4,6]}  color="#8a5028" intensity={6} distance={20} decay={2}/>
+      <pointLight position={[0,3,6]}   color="#a06030" intensity={10} distance={24} decay={2}/>
       {/* Main fire lights */}
-      <pointLight position={[0,2.5,-22]} color="#f97316" intensity={20} distance={55} decay={2}/>
-      <pointLight position={[0,1.5,-22]} color="#fbbf24" intensity={10} distance={35} decay={2}/>
-      {/* Side torch lights (mid cave) */}
-      <pointLight position={[-13,3.5,-13]} color="#f97316" intensity={6} distance={14} decay={2}/>
-      <pointLight position={[ 13,3.5,-18]} color="#f97316" intensity={6} distance={14} decay={2}/>
-      <pointLight position={[-13,3.5,-36]} color="#f97316" intensity={5} distance={13} decay={2}/>
-      <pointLight position={[ 13,3.5,-42]} color="#f97316" intensity={5} distance={13} decay={2}/>
+      <pointLight position={[0,2.5,-22]} color="#f97316" intensity={22} distance={60} decay={2}/>
+      <pointLight position={[0,1.5,-22]} color="#fbbf24" intensity={12} distance={40} decay={2}/>
+      {/* Floor-bounce from fire — illuminates ground near the pit */}
+      <pointLight position={[0,0.4,-22]} color="#f97316" intensity={10} distance={22} decay={2}/>
+      {/* Side torch lights — wider reach */}
+      <pointLight position={[-13,3.5,-13]} color="#f97316" intensity={8} distance={20} decay={2}/>
+      <pointLight position={[ 13,3.5,-18]} color="#f97316" intensity={8} distance={20} decay={2}/>
+      <pointLight position={[-13,3.5,-36]} color="#f97316" intensity={7} distance={18} decay={2}/>
+      <pointLight position={[ 13,3.5,-42]} color="#f97316" intensity={7} distance={18} decay={2}/>
+      {/* Floor fill lights along cave path so ground is always readable */}
+      <pointLight position={[0,0.5,-8]}  color="#8a4020" intensity={6} distance={16} decay={2}/>
+      <pointLight position={[0,0.5,-32]} color="#8a4020" intensity={6} distance={16} decay={2}/>
+      <pointLight position={[0,0.5,-48]} color="#6a3010" intensity={5} distance={14} decay={2}/>
       {/* Eerie glow near shadow wall */}
-      <pointLight position={[0,4,-52]} color="#4a1a08" intensity={3} distance={18} decay={2}/>
+      <pointLight position={[0,3,-52]} color="#6a2a10" intensity={5} distance={22} decay={2}/>
 
       {/* ── Cave geometry ── */}
       {/* Floor */}
