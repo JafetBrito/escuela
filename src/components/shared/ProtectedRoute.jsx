@@ -34,10 +34,8 @@ export default function ProtectedRoute({ children, requireTutorial = false }) {
     return <Navigate to="/crear-cuenta" replace />
   }
 
-  // VR world routes: the tutorial (/vr-templo) is where mascot + Oliver's
-  // class get chosen. Without this, anyone who reaches /vr with no Oliver
-  // class (sync failure, old account, etc.) saw a bare picker modal floating
-  // in the world instead of being sent back to the place that explains it.
+  // VR campus routes require the tutorial to be done first (mascot + Oliver's
+  // class chosen). Send new users to the tutorial (/vr-templo).
   if (requireTutorial && !oliverClass && !adminBypass) {
     return <Navigate to="/vr-templo" replace />
   }

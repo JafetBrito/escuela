@@ -31,7 +31,6 @@ import AchievementToast from './components/achievements/AchievementToast'
 import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import PatchNotesModal from './components/shared/PatchNotesModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
-import IntroMissionDevTool from './components/admin/IntroMissionDevTool'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
@@ -106,7 +105,6 @@ export default function App() {
       <LevelUpAnnouncer />
       <PatchNotesModal />
       <DevToolsPanel />
-      <IntroMissionDevTool />
       <AiCredentialsLoader />
       <SyncErrorBanner />
 
@@ -295,16 +293,6 @@ export default function App() {
             <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage anfiteatroMode />
-              </Suspense>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/vr/world-tree"
-          element={
-            <ProtectedRoute requireTutorial>
-              <Suspense fallback={<RouteFallback />}>
-                <VRPage worldTreeMode />
               </Suspense>
             </ProtectedRoute>
           }
