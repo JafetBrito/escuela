@@ -33,8 +33,8 @@ export const CAVE_ENEMIES = {
 
 // ── Sombra spawn points (near the fire, stage 3) ──────────────────────────
 export const SOMBRA_POSITIONS = [
-  [2.5, 0, -9.5],
-  [-2.5, 0, -10],
+  [3.5, 0, -26],
+  [-3.5, 0, -27],
 ]
 
 // ── Missions per stage ────────────────────────────────────────────────────────
@@ -86,12 +86,12 @@ export const STAGE_SKILLS = {
 // ── NPC definitions — dialogue text comes from cuevaDialogues.json ───────────
 const D = DIALOGUES.npcs
 export const NPC_CONFIGS = {
-  creyente:        { id: 'creyente',        name: 'El Creyente',        type: 'prisoner',  position: [-5.5, 0, -2],  color: '#b8956a', dialogue: D.creyente },
-  sonador:         { id: 'sonador',         name: 'El Soñador',         type: 'prisoner',  position: [0,    0, -5],  color: '#9b7eb8', dialogue: D.sonador },
-  miedoso:         { id: 'miedoso',         name: 'El Miedoso',         type: 'prisoner',  position: [5.5,  0, -2],  color: '#7a8a6a', dialogue: D.miedoso },
-  esceptico:       { id: 'esceptico',       name: 'El Escéptico',       type: 'esceptico', position: [3,    0, 1],   color: '#c4a87a', dialogue: D.esceptico },
-  custodio_mayor:  { id: 'custodio_mayor',  name: 'El Custodio Mayor',  type: 'custodio',  position: [-3,   0, -11], color: '#2a2020', dialogue: D.custodio_mayor },
-  custodio_joven:  { id: 'custodio_joven',  name: 'El Custodio Joven',  type: 'custodio',  position: [3,    0, -11], color: '#3a2828', dialogue: D.custodio_joven },
+  creyente:        { id: 'creyente',        name: 'El Creyente',        type: 'prisoner',  position: [-5.5, 0, -4],  color: '#b8956a', dialogue: D.creyente },
+  sonador:         { id: 'sonador',         name: 'El Soñador',         type: 'prisoner',  position: [0,    0, -7],  color: '#9b7eb8', dialogue: D.sonador },
+  miedoso:         { id: 'miedoso',         name: 'El Miedoso',         type: 'prisoner',  position: [5.5,  0, -4],  color: '#7a8a6a', dialogue: D.miedoso },
+  esceptico:       { id: 'esceptico',       name: 'El Escéptico',       type: 'esceptico', position: [3,    0, 2],   color: '#c4a87a', dialogue: D.esceptico },
+  custodio_mayor:  { id: 'custodio_mayor',  name: 'El Custodio Mayor',  type: 'custodio',  position: [-3,   0, -29], color: '#2a2020', dialogue: D.custodio_mayor },
+  custodio_joven:  { id: 'custodio_joven',  name: 'El Custodio Joven',  type: 'custodio',  position: [3,    0, -28], color: '#3a2828', dialogue: D.custodio_joven },
 }
 
 // ── JAFET outside-cave AI system prompt ───────────────────────────────────────

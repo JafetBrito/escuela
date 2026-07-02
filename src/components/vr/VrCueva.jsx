@@ -18,6 +18,7 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
+import { useGameStore } from '../../stores/useGameStore'
 import { useCombatStore } from '../../stores/useCombatStore'
 import BattleScreen from '../battle/BattleScreen'
 import { MOUSE_SENSITIVITY } from './engine'
@@ -141,24 +142,41 @@ function WallTorch({ position }) {
   )
 }
 
+// Fire-cast shadow projections on the FAR wall (z≈-56).
+// Fire at z=-22, custodios at z=-29 → ~3× scale magnification on wall at z=-56.
 function ShadowProjections() {
   const refs = useRef([])
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
     refs.current.forEach((m, i) => {
       if (!m) return
-      m.scale.x = 1 + Math.sin(t * 1.2 + i * 2.1) * 0.06
-      m.scale.y = 1 + Math.cos(t * 0.9 + i) * 0.05
-      m.material.opacity = 0.45 + Math.abs(Math.sin(t * 0.8 + i)) * 0.2
+      const flicker = 1 + Math.sin(t * 7.3 + i * 1.7) * 0.06
+      m.scale.x = flicker * (1 + Math.sin(t * 1.1 + i * 2.1) * 0.07)
+      m.scale.y = flicker * (1 + Math.cos(t * 0.85 + i) * 0.05)
+      m.material.opacity = 0.68 + Math.abs(Math.sin(t * 0.75 + i * 0.5)) * 0.18
     })
   })
-  return (<>
-    {[{p:[-4,3.5,-14.8],w:0.9,h:2.2},{p:[0,3.2,-14.8],w:1,h:2.5},{p:[4,3.6,-14.8],w:0.85,h:2.1},{p:[-2,4.4,-14.8],w:2.5,h:0.6},{p:[2.2,4.5,-14.8],w:1.8,h:0.5}].map((s,i) => (
-      <mesh key={i} ref={el => { refs.current[i] = el }} position={s.p}>
-        <planeGeometry args={[s.w,s.h]}/><meshBasicMaterial color="#050203" transparent opacity={0.5}/>
-      </mesh>
-    ))}
-  </>)
+  // Humanoid silhouettes ~3× actual custodio size (fire magnification)
+  const SHAPES = [
+    { p:[-5.5,5.5,-55.8], w:1.5, h:7.0 },  // figure A body
+    { p:[-5.5,9.8,-55.8], w:1.7, h:1.9 },  // figure A head
+    { p:[-2.8,7.4,-55.8], w:3.8, h:1.0 },  // figure A arm
+    { p:[-1.1,9.2,-55.8], w:1.3, h:2.8 },  // object A (statue/puppet)
+    { p:[5.5, 5.0,-55.8], w:1.3, h:6.5 },  // figure B body
+    { p:[5.5, 8.7,-55.8], w:1.5, h:1.7 },  // figure B head
+    { p:[3.0, 6.8,-55.8], w:3.4, h:0.9 },  // figure B arm
+    { p:[1.6, 8.0,-55.8], w:1.2, h:2.4 },  // object B
+  ]
+  return (
+    <>
+      {SHAPES.map((s, i) => (
+        <mesh key={i} ref={el => { refs.current[i] = el }} position={s.p}>
+          <planeGeometry args={[s.w, s.h]}/>
+          <meshBasicMaterial color="#030108" transparent opacity={0.7}/>
+        </mesh>
+      ))}
+    </>
+  )
 }
 
 // Sombra de la Ignorancia — combat-triggering enemy mesh (stage 3)
@@ -183,21 +201,36 @@ function SombraMesh({ position, index, onClick }) {
   )
 }
 
-// Custodio 3D (hooded shadow-puppeteer)
-function CustodioMesh({ cfg, onClick }) {
+// Custodio 3D — uses avatar_capuchon.glb (mascotId 18)
+function CustodioMesh({ cfg, onClick, isBoss = false }) {
   const g = useRef(); const [hov, setHov] = useState(false)
-  useFrame(({ clock }) => { if (g.current) g.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.3 + cfg.position[0]) * 0.1 })
-  const dark = hov ? '#4a3030' : cfg.color
+  useFrame(({ clock }) => {
+    if (!g.current) return
+    const t = clock.getElapsedTime()
+    g.current.rotation.y = Math.sin(t * 0.3 + cfg.position[0]) * 0.12
+    g.current.position.y = Math.sin(t * 0.7 + cfg.position[0]) * 0.04
+  })
   return (
-    <group ref={g} position={cfg.position} onClick={e => { e.stopPropagation(); onClick(cfg.id) }} onPointerOver={() => setHov(true)} onPointerOut={() => setHov(false)}>
-      <mesh position={[0,0.9,0]}><cylinderGeometry args={[0.32,0.44,1.8,8]}/><meshStandardMaterial color={dark} roughness={0.95}/></mesh>
-      <mesh position={[0,1.95,0]}><coneGeometry args={[0.29,0.58,8]}/><meshStandardMaterial color={dark} roughness={0.95}/></mesh>
-      {[-0.09,0.09].map((x,i) => <mesh key={i} position={[x,1.82,0.21]}><sphereGeometry args={[0.04,6,6]}/><meshStandardMaterial color="#f97316" emissive="#f97316" emissiveIntensity={3}/></mesh>)}
-      <group position={[0.52,1.0,0.2]} rotation={[0.3,0,-0.3]}>
-        <mesh><cylinderGeometry args={[0.04,0.04,0.85,6]}/><meshStandardMaterial color="#5a3a10" roughness={1}/></mesh>
-        <mesh position={[0,0.6,0]}><sphereGeometry args={[0.18,8,6]}/><meshStandardMaterial color="#7a5a2a" roughness={0.8}/></mesh>
+    <group ref={g} position={cfg.position}
+      onClick={e => { e.stopPropagation(); onClick(cfg.id) }}
+      onPointerOver={() => setHov(true)} onPointerOut={() => setHov(false)}>
+      <Suspense fallback={
+        <mesh position={[0,0.9,0]}><cylinderGeometry args={[0.32,0.44,1.8,8]}/><meshStandardMaterial color={cfg.color ?? '#2a2020'} roughness={0.95}/></mesh>
+      }>
+        <GlbNpcMesh modelPath="/MODELOS 3D/NPC/avatar_capuchon.glb"/>
+      </Suspense>
+      {/* Puppet-theater prop (staff + orb) */}
+      <group position={[0.55,0.9,0.25]} rotation={[0.2,0,-0.25]}>
+        <mesh><cylinderGeometry args={[0.04,0.04,1.1,6]}/><meshStandardMaterial color="#5a3a10" roughness={1}/></mesh>
+        <mesh position={[0,0.72,0]}><sphereGeometry args={[0.2,8,6]}/><meshStandardMaterial color={isBoss?'#f97316':'#7a5a2a'} emissive={isBoss?'#f97316':'#5a3a10'} emissiveIntensity={isBoss?2:0.5} roughness={0.7}/></mesh>
       </group>
-      {hov && <mesh rotation={[-Math.PI/2,0,0]} position={[0,0.01,0]}><ringGeometry args={[0.5,0.68,20]}/><meshBasicMaterial color="#f97316" transparent opacity={0.4}/></mesh>}
+      {isBoss && <pointLight color="#f97316" intensity={5} distance={8}/>}
+      {hov && (
+        <mesh rotation={[-Math.PI/2,0,0]} position={[0,0.01,0]}>
+          <ringGeometry args={[0.5,0.72,24]}/>
+          <meshBasicMaterial color={isBoss ? '#f97316' : '#ef4444'} transparent opacity={0.45}/>
+        </mesh>
+      )}
     </group>
   )
 }
@@ -252,7 +285,7 @@ function GlbPrisonerNpc({ cfg, freed, canFree, modelPath, modelRotY = 0, onTalk,
 function EscepticoNpcMesh({ stage, onTalk }) {
   const cfg = NPC_CONFIGS.esceptico
   const g = useRef(); const gl = useRef(); const [hov, setHov] = useState(false)
-  const pos = stage >= 3 ? [-1.5, 0, -8] : cfg.position
+  const pos = stage >= 3 ? [-2, 0, -18] : cfg.position
   useFrame(({ clock }) => {
     if (!g.current) return
     g.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.6) * 0.15
@@ -289,13 +322,13 @@ function JafetOutdoorNpc({ onTalk }) {
   )
 }
 
-// Cave exit portal
+// Cave exit portal — deep inside the cave at the shadow wall
 function CaveExitPortal({ onEnter, visible }) {
   const gl = useRef()
   useFrame(({ clock }) => { if (gl.current) gl.current.material.opacity = 0.6 + Math.sin(clock.getElapsedTime() * 2) * 0.25 })
   if (!visible) return null
   return (
-    <group position={[-5.5, 1.5, -12]}>
+    <group position={[-5, 1.5, -52]}>
       <mesh ref={gl} rotation={[0,Math.PI/4,0]}><coneGeometry args={[1.2,4.5,12,1,true]}/><meshBasicMaterial color="#fde68a" transparent opacity={0.65} side={THREE.DoubleSide}/></mesh>
       <pointLight color="#fde68a" intensity={7} distance={9}/>
       <mesh onClick={e => { e.stopPropagation(); onEnter() }}>
@@ -317,9 +350,16 @@ function CaveEntrance({ onEnter }) {
   )
 }
 
-// Full cave world — switched between cave interior and outdoor by `isOutside` prop
+// ── Cave layout (z-axis):
+// z=+12 entrance · z=0 to -10 prisoners · z=-17 low barrier wall
+// z=-22 FIRE · z=-28/-29 custodios (project shadows onto far wall)
+// z=-55.8 shadow wall (what prisoners stare at) · z=-52 exit portal
 function CaveScene({ stage, phase, isOutside, freedIds, canFree, defeatedSombras, playerMascot, onTalkNpc, onFreeNpc, onExitCave, onReturnCave, onSombraClick }) {
-  const torches = [[-7.4,2.8,-3],[-7.4,2.8,-8],[7.4,2.8,-4],[7.4,2.8,-9],[0,2.8,-14]]
+  // Torch positions along both walls, spread across the full depth
+  const TORCHES = [
+    [-13,3.5,-3],[-13,3.5,-13],[-13,3.5,-24],[-13,3.5,-36],[-13,3.5,-48],
+    [13,3.5,-7], [13,3.5,-18],[13,3.5,-30], [13,3.5,-42],[13,3.5,-50],
+  ]
 
   if (isOutside) return (
     <>
@@ -338,33 +378,105 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, defeatedSombras
 
   return (
     <>
-      <color attach="background" args={['#1a0e06']}/>
-      <fog attach="fog" args={['#1a0e06',18,40]}/>
-      <ambientLight intensity={0.55} color="#6b3e18"/>
-      <pointLight position={[0,2.5,-12]} color="#f97316" intensity={14} distance={36} decay={2}/>
-      <pointLight position={[0,1.5,-12]} color="#fbbf24" intensity={6} distance={24} decay={2}/>
-      <pointLight position={[-7,3,-3]} color="#f97316" intensity={5} distance={12} decay={2}/>
-      <pointLight position={[-7,3,-8]} color="#f97316" intensity={5} distance={12} decay={2}/>
-      <pointLight position={[7,3,-4]}  color="#f97316" intensity={5} distance={12} decay={2}/>
-      <pointLight position={[7,3,-9]}  color="#f97316" intensity={5} distance={12} decay={2}/>
-      <pointLight position={[0,4,2]}   color="#8a5028" intensity={5} distance={16} decay={2}/>
-      <pointLight position={[0,3,-6]}  color="#7a4518" intensity={4} distance={14} decay={2}/>
-      <mesh rotation={[-Math.PI/2,0,0]} position={[0,-0.02,0]}><planeGeometry args={[28,36]}/><meshStandardMaterial color="#3a2510" roughness={1}/></mesh>
-      <mesh rotation={[Math.PI/2,0,0]} position={[0,8,-5]}><planeGeometry args={[28,36]}/><meshStandardMaterial color="#1e1408" roughness={1}/></mesh>
-      <mesh rotation={[0,Math.PI/2,0]} position={[-8,4,-5]}><planeGeometry args={[36,9]}/><meshStandardMaterial color="#4a2e12" roughness={1}/></mesh>
-      <mesh rotation={[0,-Math.PI/2,0]} position={[8,4,-5]}><planeGeometry args={[36,9]}/><meshStandardMaterial color="#4a2e12" roughness={1}/></mesh>
-      <mesh position={[0,4.5,-15]}><planeGeometry args={[20,12]}/><meshStandardMaterial color="#3a2210" roughness={1}/></mesh>
-      {[[-4,8,-6],[0,8,-9],[4,8,-7],[-2,8,-12],[2.5,8,-11]].map(([x,y,z],i) => (
-        <mesh key={i} position={[x,y-0.3,z]} rotation={[Math.PI,0,0]}><coneGeometry args={[0.2+i*0.04,0.8+i*0.3,7]}/><meshStandardMaterial color="#3c2a14" roughness={1}/></mesh>
-      ))}
-      {[[-7,0.5,-3],[-7,0.5,-8],[7,0.5,-4],[7,0.5,-9]].map(([x,y,z],i) => (
-        <mesh key={i} position={[x,y,z]}><dodecahedronGeometry args={[0.7+i*0.15,0]}/><meshStandardMaterial color="#3e2a12" roughness={1}/></mesh>
-      ))}
-      {torches.map((p,i) => <WallTorch key={i} position={p}/>)}
-      <FirePit position={[0,0,-12]}/>
+      <color attach="background" args={['#0d0804']}/>
+      {/* Fog: dense at back so shadows emerge from darkness */}
+      <fog attach="fog" args={['#0d0804', 28, 70]}/>
+
+      {/* ── Lighting ── */}
+      <ambientLight intensity={0.3} color="#6b3e18"/>
+      {/* Entrance warm glow */}
+      <pointLight position={[0,4,6]}  color="#8a5028" intensity={6} distance={20} decay={2}/>
+      {/* Main fire lights */}
+      <pointLight position={[0,2.5,-22]} color="#f97316" intensity={20} distance={55} decay={2}/>
+      <pointLight position={[0,1.5,-22]} color="#fbbf24" intensity={10} distance={35} decay={2}/>
+      {/* Side torch lights (mid cave) */}
+      <pointLight position={[-13,3.5,-13]} color="#f97316" intensity={6} distance={14} decay={2}/>
+      <pointLight position={[ 13,3.5,-18]} color="#f97316" intensity={6} distance={14} decay={2}/>
+      <pointLight position={[-13,3.5,-36]} color="#f97316" intensity={5} distance={13} decay={2}/>
+      <pointLight position={[ 13,3.5,-42]} color="#f97316" intensity={5} distance={13} decay={2}/>
+      {/* Eerie glow near shadow wall */}
+      <pointLight position={[0,4,-52]} color="#4a1a08" intensity={3} distance={18} decay={2}/>
+
+      {/* ── Cave geometry ── */}
+      {/* Floor */}
+      <mesh rotation={[-Math.PI/2,0,0]} position={[0,-0.02,-22]}>
+        <planeGeometry args={[36,80]}/><meshStandardMaterial color="#3a2510" roughness={1}/>
+      </mesh>
+      {/* Ceiling */}
+      <mesh rotation={[Math.PI/2,0,0]} position={[0,11,-22]}>
+        <planeGeometry args={[36,80]}/><meshStandardMaterial color="#191006" roughness={1}/>
+      </mesh>
+      {/* Left wall */}
+      <mesh rotation={[0,Math.PI/2,0]} position={[-14,5.5,-22]}>
+        <planeGeometry args={[80,13]}/><meshStandardMaterial color="#4a2e12" roughness={1}/>
+      </mesh>
+      {/* Right wall */}
+      <mesh rotation={[0,-Math.PI/2,0]} position={[14,5.5,-22]}>
+        <planeGeometry args={[80,13]}/><meshStandardMaterial color="#4a2e12" roughness={1}/>
+      </mesh>
+      {/* Back shadow wall */}
+      <mesh position={[0,5.5,-56]}>
+        <planeGeometry args={[36,13]}/><meshStandardMaterial color="#1a0e06" roughness={1}/>
+      </mesh>
+      {/* Entrance wall */}
+      <mesh position={[0,5.5,+12]}>
+        <planeGeometry args={[36,13]}/><meshStandardMaterial color="#3a2210" roughness={1}/>
+      </mesh>
+
+      {/* Low puppet-theater barrier wall (custodios walk behind this) */}
+      <mesh position={[0, 0.85, -17]}>
+        <boxGeometry args={[26, 1.7, 0.55]}/><meshStandardMaterial color="#3a2a18" roughness={1}/>
+      </mesh>
+
+      {/* Procedural stalactites (ceiling) */}
+      {Array.from({length:42}, (_,i) => {
+        const angle = i * 137.508 * Math.PI / 180
+        const x = Math.sin(angle) * (8 + (i%3) * 2)
+        const z = -1 - (i * 56 / 42)
+        const h = 0.55 + (i%5)*0.5 + (i%7)*0.28
+        return (
+          <mesh key={i} position={[x, 11-h*0.5, z]} rotation={[Math.PI,0,0]}>
+            <coneGeometry args={[0.07+(i%4)*0.05, h, 5]}/><meshStandardMaterial color="#3c2a14" roughness={1}/>
+          </mesh>
+        )
+      })}
+      {/* Stalagmites (floor) */}
+      {Array.from({length:18}, (_,i) => {
+        const angle = i * 222.5 * Math.PI / 180
+        const x = Math.sin(angle) * (10 + (i%3)*1.5)
+        const z = -1 - (i * 54 / 18)
+        const h = 0.35 + (i%4)*0.3
+        return (
+          <mesh key={i} position={[x, h*0.5, z]}>
+            <coneGeometry args={[0.08+(i%3)*0.04, h, 5]}/><meshStandardMaterial color="#4a3018" roughness={1}/>
+          </mesh>
+        )
+      })}
+      {/* Floor rocks / boulders */}
+      {Array.from({length:30}, (_,i) => {
+        const angle = i * 179.3 * Math.PI / 180
+        const x = Math.sin(angle) * (8 + (i%5)*1.2)
+        const z = -0.5 - (i * 56 / 30)
+        const s = 0.15 + (i%6)*0.1
+        return (
+          <mesh key={i} position={[x, s*0.4, z]}>
+            <dodecahedronGeometry args={[s, 0]}/><meshStandardMaterial color="#3e2a12" roughness={1}/>
+          </mesh>
+        )
+      })}
+
+      {/* Torches along both walls */}
+      {TORCHES.map((p,i) => <WallTorch key={i} position={p}/>)}
+
+      {/* Fire at z=-22 */}
+      <FirePit position={[0,0,-22]}/>
+
+      {/* Shadow projections on far wall — cast by fire through custodios */}
       <ShadowProjections/>
+
+      {/* ── NPCs ── */}
       {phase === 'play' && (<>
-        {/* 3 main prisoners with GLB models */}
+        {/* Stage 1-5: prisoners chained near entrance */}
         {['creyente','sonador','miedoso'].map(id => (
           <GlbPrisonerNpc key={id} cfg={NPC_CONFIGS[id]} freed={freedIds.includes(id)}
             canFree={canFree} modelPath={PRISONER_MODELS[id].path} modelRotY={PRISONER_MODELS[id].rotY}
@@ -372,18 +484,22 @@ function CaveScene({ stage, phase, isOutside, freedIds, canFree, defeatedSombras
         ))}
         {/* Player's mascot as 4th prisoner */}
         {playerMascot && (
-          <GlbPrisonerNpc cfg={{ id:'mascota', position:[-2,0,1], color:'#a78bfa' }}
+          <GlbPrisonerNpc cfg={{ id:'mascota', position:[-2,0,0], color:'#a78bfa' }}
             freed={freedIds.includes('mascota')} canFree={canFree}
             modelPath={playerMascot.modelPath ?? '/MODELOS 3D/MASCOTAS/orange_cat.glb'} modelRotY={playerMascot.modelRotationY ?? 0}
             onTalk={onTalkNpc} onFree={onFreeNpc} isSpecial/>
         )}
         {stage >= 2 && <EscepticoNpcMesh stage={stage} onTalk={onTalkNpc}/>}
+
         {/* Stage 3: Sombras de la Ignorancia near the fire */}
         {stage === 3 && defeatedSombras < 2 && SOMBRA_POSITIONS.slice(defeatedSombras).map((pos, i) => (
           <SombraMesh key={i} position={pos} index={i} onClick={onSombraClick}/>
         ))}
-        <CustodioMesh cfg={NPC_CONFIGS.custodio_mayor} onClick={onTalkNpc}/>
+
+        {/* Custodios — always visible, isBoss in stage 5 */}
+        <CustodioMesh cfg={NPC_CONFIGS.custodio_mayor} onClick={onTalkNpc} isBoss={stage === 5}/>
         <CustodioMesh cfg={NPC_CONFIGS.custodio_joven} onClick={onTalkNpc}/>
+
         <CaveExitPortal visible={stage >= 4} onEnter={onExitCave}/>
       </>)}
     </>
@@ -467,8 +583,8 @@ function FirstPersonController({ lockedRef, teleportRef, touchMoveRef, touchYawR
       p.addScaledVector(fwd, -tm.z * speed * 1.5)
       p.addScaledVector(right, tm.x * speed * 1.5)
     }
-    p.x = Math.max(-7, Math.min(7, p.x))
-    p.z = Math.max(-14, Math.min(25, p.z))
+    p.x = Math.max(-12, Math.min(12, p.x))
+    p.z = Math.max(-54, Math.min(18, p.z))
     p.y = 2.0
     camera.rotation.set(0, yaw.current, 0, 'YXZ')
     onMove([p.x, p.y, p.z])
@@ -511,12 +627,12 @@ function ProximityDetector({ stage, onNearby }) {
   const { camera } = useThree()
   const prevRef = useRef(null)
   const ALL_NPC_IDS = ['creyente','sonador','miedoso','mascota','custodio_mayor','custodio_joven', ...(stage >= 2 ? ['esceptico'] : []), ...(stage >= 4 ? ['jafet'] : [])]
-  const POSITIONS = { creyente:[-5.5,0,-2], sonador:[0,0,-5], miedoso:[5.5,0,-2], mascota:[-2,0,1], custodio_mayor:[-3,0,-11], custodio_joven:[3,0,-11], esceptico:[3,0,1], jafet:[0,2,20] }
+  const POSITIONS = { creyente:[-5.5,0,-4], sonador:[0,0,-7], miedoso:[5.5,0,-4], mascota:[-2,0,0], custodio_mayor:[-3,0,-29], custodio_joven:[3,0,-28], esceptico:[3,0,2], jafet:[0,2,20] }
 
   useFrame(() => {
     let closest = null; let closestDist = 3.8
     for (const id of ALL_NPC_IDS) {
-      const pos = id === 'esceptico' ? (stage >= 3 ? [-1.5,0,-8] : (POSITIONS[id] ?? [0,0,0])) : (POSITIONS[id] ?? [0,0,0])
+      const pos = id === 'esceptico' ? (stage >= 3 ? [-2,0,-18] : (POSITIONS[id] ?? [0,0,0])) : (POSITIONS[id] ?? [0,0,0])
       const dx = camera.position.x - pos[0]; const dz = camera.position.z - pos[2]
       const dist = Math.sqrt(dx*dx + dz*dz)
       if (dist < closestDist) { closestDist = dist; closest = id }
@@ -682,14 +798,38 @@ function NpcDialogueUI({ npcId, stage, freedIds, playerMascotName, onClose, onAi
 
 // Prisoner-mode HUD overlay (stage 1-3)
 function PrisonerModeHud({ stage }) {
-  if (stage >= 4) return null
+  const hp    = useGameStore(s => s.player.hp.current)
+  const maxHp = useGameStore(s => s.player.hp.max)
+  const en    = useGameStore(s => s.player.energy.current)
+  const maxEn = useGameStore(s => s.player.energy.max)
+  const hpPct = Math.max(0, Math.min(100, (hp / maxHp) * 100))
+  const enPct = Math.max(0, Math.min(100, (en / maxEn) * 100))
   return (
-    <div className="pointer-events-none absolute top-16 right-4 z-20">
-      <div className="rounded-2xl px-3 py-2 flex items-center gap-2" style={{ background:'rgba(120,20,20,0.88)', border:'1px solid rgba(239,68,68,0.4)' }}>
-        <span className="text-base">⛓️</span>
-        <div>
-          <p className="text-xs font-black" style={{ color:'#fca5a5' }}>Modo Prisionero</p>
-          <p className="text-[9px]" style={{ color:'rgba(255,255,255,0.35)' }}>Habilidades limitadas</p>
+    <div className="pointer-events-none absolute top-16 right-4 z-20 flex flex-col gap-2">
+      {stage < 4 && (
+        <div className="rounded-2xl px-3 py-2 flex items-center gap-2" style={{ background:'rgba(120,20,20,0.88)', border:'1px solid rgba(239,68,68,0.4)' }}>
+          <span className="text-base">⛓️</span>
+          <div>
+            <p className="text-xs font-black" style={{ color:'#fca5a5' }}>Modo Prisionero</p>
+            <p className="text-[9px]" style={{ color:'rgba(255,255,255,0.35)' }}>Habilidades limitadas</p>
+          </div>
+        </div>
+      )}
+      {/* Player HP / Energy — always shown so combat state is visible */}
+      <div className="rounded-2xl px-3 py-2.5 flex flex-col gap-1.5 min-w-[130px]" style={{ background:'rgba(12,6,4,0.9)', border:'1px solid rgba(255,255,255,0.1)' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px]">❤️</span>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.5)' }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width:`${hpPct}%`, background:hpPct > 50 ? '#22c55e' : hpPct > 25 ? '#eab308' : '#ef4444', boxShadow:`0 0 6px currentColor` }}/>
+          </div>
+          <span className="text-[9px] font-bold" style={{ color:'rgba(255,255,255,0.45)', minWidth:32, textAlign:'right' }}>{Math.ceil(hp)}/{maxHp}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px]">⚡</span>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.5)' }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width:`${enPct}%`, background:'#6366f1' }}/>
+          </div>
+          <span className="text-[9px] font-bold" style={{ color:'rgba(255,255,255,0.45)', minWidth:32, textAlign:'right' }}>{Math.ceil(en)}/{maxEn}</span>
         </div>
       </div>
     </div>
@@ -996,9 +1136,9 @@ export default function VrCueva() {
 
   // ── Player movement: proximity auto-missions ──────────────────────────────
   const handlePlayerMove = useCallback(([x,,z]) => {
-    if (z < -12.5 && !done.includes('observe_shadows')) completeMission('observe_shadows')
-    if (z < -9    && !done.includes('approach_fire') && stage >= 2) completeMission('approach_fire')
-    if (z < -7    && !done.includes('reach_fire_esceptico') && stage >= 3) completeMission('reach_fire_esceptico')
+    if (z < -34 && !done.includes('observe_shadows')) completeMission('observe_shadows')
+    if (z < -18 && !done.includes('approach_fire') && stage >= 2) completeMission('approach_fire')
+    if (z < -14 && !done.includes('reach_fire_esceptico') && stage >= 3) completeMission('reach_fire_esceptico')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, stage])
 
@@ -1149,9 +1289,9 @@ export default function VrCueva() {
               <p className="text-center text-[10px]" style={{ color:'rgba(255,255,255,0.3)' }}>
                 {stage===1&&'Etapa 1: El Prisionero — habla, observa, usa tus habilidades'}
                 {stage===2&&'Etapa 2: La Duda — encuentra al Escéptico, usa ❓ 2 veces'}
-                {stage===3&&'Etapa 3: El Fuego — acompaña al Escéptico, habla con el Custodio'}
+                {stage===3&&'Etapa 3: El Fuego — acompaña al Escéptico · ⚔️ derrota las Sombras'}
                 {stage===4&&`Etapa 4: La Salida — habla con Jafet. Luego decide si vuelves.`}
-                {stage===5&&`Etapa 5: El Regreso — libera a todos (${freedIds.length}/4) · incluida tu mascota`}
+                {stage===5&&`Etapa 5: El Regreso — libera a todos (${freedIds.length}/4) · ⚔️ vence al Maestro`}
               </p>
             </div>
           </div>
