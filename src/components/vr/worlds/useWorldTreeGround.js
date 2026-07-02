@@ -1,15 +1,18 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 
+// 9 WoC classes arranged in a ring + hacker at the canopy top (admin-only).
 export const WT_CLASS_NODES = {
-  programmer:       { pos: [0, 2.5, -12],         color: '#22c55e' },
-  cyber_strategist: { pos: [11.4, 2.5, -3.7],     color: '#3b82f6' },
-  ai_engineer:      { pos: [7.0, 2.5, 9.7],        color: '#a855f7' },
-  designer:         { pos: [-7.0, 2.5, 9.7],       color: '#f97316' },
-  philosopher:      { pos: [-11.4, 2.5, -3.7],     color: '#eab308' },
-  // Grows from the top of the canopy instead of the ring of 5 — admin-only,
-  // see the isAdmin check in ClassPreviewCard (VRPage.jsx).
-  hacker:           { pos: [0, 15.5, 4.5],         color: '#39ff14' },
+  warrior:  { pos: [0,    2.5, -12],    color: '#c79c6e' },
+  paladin:  { pos: [7.6,  2.5, -9.6],  color: '#f58cba' },
+  hunter:   { pos: [12,   2.5, -2],    color: '#abd473' },
+  rogue:    { pos: [11.4, 2.5,  7.0],  color: '#fff569' },
+  priest:   { pos: [3.7,  2.5,  11.4], color: '#fffff0' },
+  shaman:   { pos: [-3.7, 2.5,  11.4], color: '#0070de' },
+  mage:     { pos: [-11.4,2.5,  7.0],  color: '#69ccf0' },
+  warlock:  { pos: [-12,  2.5, -2],    color: '#9482c9' },
+  druid:    { pos: [-7.6, 2.5, -9.6],  color: '#ff7d0a' },
+  hacker:   { pos: [0,    15.5, 4.5],  color: '#39ff14' },
 }
 
 export function useWorldTreeGround() {
@@ -47,11 +50,10 @@ export function useWorldTreeGround() {
       g.add(root)
     }
 
-    // ─── Main branches (5, one per class) ────────────────────────────────
-    const branchColors = ['#22c55e', '#3b82f6', '#a855f7', '#f97316', '#eab308', '#39ff14']
+    // ─── Main branches (one per class) ───────────────────────────────────
     const classIds = Object.keys(WT_CLASS_NODES)
 
-    classIds.forEach((cid, i) => {
+    classIds.forEach((cid) => {
       const node = WT_CLASS_NODES[cid]
       const [nx, , nz] = node.pos
       const dist = Math.sqrt(nx * nx + nz * nz)
@@ -70,8 +72,8 @@ export function useWorldTreeGround() {
       g.add(branch)
 
       const leafMat = new THREE.MeshStandardMaterial({
-        color: branchColors[i],
-        emissive: branchColors[i],
+        color: node.color,
+        emissive: node.color,
         emissiveIntensity: 0.25,
         transparent: true,
         opacity: 0.7,

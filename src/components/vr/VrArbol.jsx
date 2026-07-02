@@ -254,14 +254,17 @@ function getStepDialogue(id) {
 }
 
 // ── Oliver's per-class commentary, shown while previewing a class in
-// AvatarClassPicker — keyed by PLAYER_CLASSES id. Only the 5 base classes;
-// Hacker is admin-only and skips this entirely (see AvatarClassPicker). ────
+// WocClassPicker — keyed by PLAYER_CLASSES id. Hacker is admin-only. ────────
 const OLIVER_CLASS_LINES = {
-  programmer: '¿Programador? Buena elección, casi tan rápido como yo cazando una luz láser. ⌨️🐱',
-  cyber_strategist: 'Ciber-Estratega, ¿eh? Le gusta vigilar todo desde arriba… como yo en el librero. 🕹️',
-  ai_engineer: 'Ingeniero de IA — entrenas modelos, yo entreno a mis humanos para que me den croquetas. 🤖',
-  designer: 'Diseñador, todo arte y forma. Yo también soy una obra de arte, por si no lo habías notado. 🎨',
-  philosopher: 'Filósofo… le va a sobrar sabiduría para cuando alguien le pregunte "¿por qué un gato hace eso?". 🦉',
+  warrior:  '¿Guerrero? Eso es lo mío — pelear con garras afiladas. Aunque yo uso las patas. ⚔️🐱',
+  paladin:  'Paladín, fuerza y luz en uno. Yo también soy fuente de luz (la que bloquea tu sueño a las 3 AM). 🛡️',
+  hunter:   'Cazador. Rastrear presas… igual que yo cuando acecho al cursor del mouse por horas. 🏹',
+  rogue:    'Pícaro, ¿eh? Sigiloso y astuto, justo como cuando me acerco sin hacer ruido y te asusto. 🗡️',
+  priest:   'Sacerdote, el que sostiene al equipo. Yo sostengo el sofá. Una gran responsabilidad. ✨',
+  shaman:   'Chamán, ¡el que habla con los elementos! Yo le hablo a la croqueta y ella nunca responde. ⚡',
+  mage:     'Mago, el pensador de largo alcance. Yo también predigo cosas… como cuándo me vas a dar atún. 🔮',
+  warlock:  'Brujo… invocas sombras y demonios. Yo invoco atención a las 3 AM. Básicamente somos iguales. 🌑',
+  druid:    'Druida, maestro de las formas. Yo también tengo muchas formas: dormido, hambriento y caótico. 🌿',
 }
 
 // ── 3D Scene components ───────────────────────────────────────────────────────
@@ -507,106 +510,144 @@ function RevealTitleCard() {
   )
 }
 
-// ── In-Templo avatar class picker — replaces the old trip to /vr/world-tree.
-// Two steps: a grid to pick which class to preview, then a detail card (stat
-// bars + starting skills, same density as WorldTree's ClassPreviewCard) with
-// Oliver's own commentary on that class (OLIVER_CLASS_LINES) — "si voy a
-// elegir una, Oliver me diga un poco de cada una". Hacker stays admin-only,
-// same gate as WorldTree's, and never gets an Oliver line (see the filter
-// below — only the 5 base classes have one). ──────────────────────────────
-function AvatarClassPicker({ isAdmin, onSelect, onClose }) {
-  const [previewId, setPreviewId] = useState(null)
+// ── WoC-style fullscreen class picker — shown as the first screen of the
+// tutorial (pre-tutorial phase) AND as the overlay if the tutorial's
+// choose_avatar_class mission fires before a class was picked. Left panel:
+// scrollable list of 9 classes. Right panel: stats, abilities, Oliver line. ──
+const STAT_LABELS = { str: 'Fuerza', agi: 'Agilidad', sta: 'Resistencia', int: 'Intelecto', spi: 'Espíritu' }
+
+function WocClassPicker({ isAdmin, onSelect, onClose }) {
   const classes = Object.values(PLAYER_CLASSES).filter((c) => c.id !== 'hacker' || isAdmin)
-  const preview = previewId && PLAYER_CLASSES[previewId]
-
-  if (preview) {
-    const maxStat = 5
-    return (
-      <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-4 sm:bottom-4">
-        <div className="w-full max-w-sm overflow-hidden rounded-3xl border bg-surface/95 shadow-2xl backdrop-blur"
-          style={{ borderColor: `${preview.color}66` }}>
-          <div className="flex items-center gap-3 px-4 py-3"
-            style={{ background: `linear-gradient(135deg, ${preview.color}22, ${preview.color}08)` }}>
-            <span className="text-4xl">{preview.icon}</span>
-            <div className="flex-1">
-              <p className="text-base font-black text-text">{preview.name}</p>
-              <p className="text-xs text-text-muted">{preview.description}</p>
-            </div>
-            <button type="button" onClick={() => setPreviewId(null)} className="text-text-muted hover:text-text">←</button>
-          </div>
-
-          <div className="grid grid-cols-5 gap-1.5 px-4 py-3">
-            {Object.entries(preview.stats).map(([stat, val]) => (
-              <div key={stat} className="flex flex-col items-center gap-1">
-                <div className="flex flex-col-reverse gap-0.5">
-                  {Array.from({ length: maxStat }).map((_, i) => (
-                    <div key={i} className="h-2.5 w-3 rounded-sm"
-                      style={{ background: i < val ? preview.color : 'rgba(255,255,255,0.08)' }} />
-                  ))}
-                </div>
-                <span className="text-[9px] font-bold uppercase text-text-muted">{stat.slice(0, 3)}</span>
-              </div>
-            ))}
-          </div>
-
-          {OLIVER_CLASS_LINES[preview.id] && (
-            <div className="mx-4 mb-3 flex items-start gap-2 rounded-xl border border-orange-400/30 bg-orange-400/10 px-3 py-2">
-              <span className="text-lg">🐱</span>
-              <p className="text-[11px] italic leading-snug text-text-muted">{OLIVER_CLASS_LINES[preview.id]}</p>
-            </div>
-          )}
-
-          <div className="border-t border-border px-4 py-2">
-            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-text-muted">Habilidades iniciales</p>
-            <div className="flex gap-2">
-              {preview.startSkills.map((sid) => {
-                const skill = SKILL_REGISTRY[sid]
-                return skill ? (
-                  <div key={sid} className="flex items-center gap-1.5 rounded-lg border border-border px-2 py-1.5"
-                    style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}11` }}>
-                    <span className="text-lg">{skill.icon}</span>
-                    <div>
-                      <p className="text-[10px] font-bold text-text">{skill.name}</p>
-                      <p className="text-[9px] text-text-muted">{skill.description}</p>
-                    </div>
-                  </div>
-                ) : null
-              })}
-            </div>
-          </div>
-
-          <div className="px-4 pb-4 pt-2">
-            <button type="button" onClick={() => onSelect(preview.id)}
-              className="w-full rounded-xl py-2.5 text-sm font-black text-white transition-all hover:scale-105"
-              style={{ background: `linear-gradient(135deg, ${preview.color}, ${preview.color}cc)` }}>
-              Elegir {preview.name}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const [selectedId, setSelectedId] = useState(classes[0]?.id ?? null)
+  const cls = PLAYER_CLASSES[selectedId]
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-2 px-3 pb-4 sm:bottom-4 sm:left-1/2 sm:w-[420px] sm:-translate-x-1/2">
-      <div className="rounded-2xl border border-border bg-surface/95 p-3 shadow-2xl backdrop-blur">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-widest text-primary">Elige tu camino</p>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text">✕</button>
+    <div className="fixed inset-0 z-[200] flex flex-col select-none" style={{ background: 'linear-gradient(160deg,#0a0407 0%,#140a12 100%)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-5 py-3.5" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-[0.25em]" style={{ color: '#c79c6e' }}>Oliver Academy</p>
+          <p className="text-lg font-black text-white">Elige tu Clase</p>
         </div>
-        <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
-          {classes.map((cls) => (
-            <button key={cls.id} type="button" onClick={() => setPreviewId(cls.id)}
-              className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all hover:scale-[1.01]"
-              style={{ borderColor: `${cls.color}55`, background: `${cls.color}0c` }}>
-              <span className="text-3xl">{cls.icon}</span>
-              <div className="flex-1">
-                <p className="text-sm font-black text-text">{cls.name}</p>
-                <p className="text-[10px] leading-snug text-text-muted">{cls.description}</p>
+        <div className="flex items-center gap-3">
+          <p className="hidden text-[10px] sm:block" style={{ color: 'rgba(255,255,255,0.25)' }}>Podrás cambiarla más adelante</p>
+          {onClose && (
+            <button type="button" onClick={onClose}
+              className="rounded-xl px-3 py-1.5 text-xs font-bold transition-colors"
+              style={{ color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left: class list */}
+        <div className="w-44 shrink-0 overflow-y-auto border-r p-2 sm:w-52" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          {classes.map((c) => (
+            <button key={c.id} type="button" onClick={() => setSelectedId(c.id)}
+              className="mb-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all"
+              style={{
+                background: selectedId === c.id ? `${c.color}1a` : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${selectedId === c.id ? c.color : 'rgba(255,255,255,0.07)'}`,
+              }}>
+              <span className="text-xl shrink-0">{c.icon}</span>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-black" style={{ color: selectedId === c.id ? c.color : 'rgba(255,255,255,0.85)' }}>{c.name}</p>
+                <p className="truncate text-[8px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{c.role}</p>
               </div>
             </button>
           ))}
         </div>
+
+        {/* Right: detail panel */}
+        {cls && (
+          <div className="flex-1 overflow-y-auto p-5">
+            {/* Class header */}
+            <div className="mb-4 flex items-center gap-4">
+              <span className="text-5xl">{cls.icon}</span>
+              <div>
+                <p className="text-2xl font-black" style={{ color: cls.color }}>{cls.name}</p>
+                <span className="mt-1 inline-block rounded-full px-3 py-0.5 text-[10px] font-black"
+                  style={{ background: `${cls.color}22`, color: cls.color, border: `1px solid ${cls.color}44` }}>
+                  {cls.role}
+                </span>
+              </div>
+            </div>
+
+            {/* Lore */}
+            <p className="mb-5 max-w-lg text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>{cls.lore}</p>
+
+            {/* Stats + meta */}
+            <div className="mb-5 flex gap-5">
+              {/* Stat bars */}
+              <div className="flex-1">
+                <p className="mb-2 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Estadísticas</p>
+                <div className="flex flex-col gap-2">
+                  {Object.entries(cls.baseStats).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-20 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{STAT_LABELS[key]}</span>
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                        <div className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.round((val / 25) * 100)}%`, background: cls.color }} />
+                      </div>
+                      <span className="w-5 text-right text-[10px] font-black" style={{ color: 'rgba(255,255,255,0.5)' }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Meta: resource + armor */}
+              <div className="w-36 shrink-0 flex flex-col gap-3">
+                <div>
+                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Recurso</p>
+                  <p className="text-sm font-bold" style={{ color: cls.resourceType === 'rage' ? '#f97316' : cls.resourceType === 'energy' ? '#eab308' : '#69ccf0' }}>
+                    {cls.resourceType === 'rage' ? '🔥 Rabia' : cls.resourceType === 'energy' ? '⚡ Energía' : '💧 Maná'}
+                  </p>
+                </div>
+                <div>
+                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Armadura</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{cls.armor}</p>
+                </div>
+                <div>
+                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Armas</p>
+                  <p className="text-[10px] leading-snug" style={{ color: 'rgba(255,255,255,0.5)' }}>{cls.weapons.join(', ')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Signature abilities */}
+            <div className="mb-5">
+              <p className="mb-2 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Habilidades características</p>
+              <div className="flex gap-2">
+                {cls.signatureAbilities.map((ab) => (
+                  <div key={ab.id} className="flex-1 rounded-xl px-3 py-2.5"
+                    style={{ border: `1px solid ${cls.color}33`, background: `${cls.color}08` }}>
+                    <p className="mb-1 text-xs font-black" style={{ color: 'rgba(255,255,255,0.9)' }}>{ab.name}</p>
+                    <p className="text-[9px] leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>{ab.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Oliver comment */}
+            {OLIVER_CLASS_LINES[cls.id] && (
+              <div className="mb-5 flex items-start gap-2.5 rounded-xl px-3.5 py-2.5"
+                style={{ border: '1px solid rgba(251,146,60,0.25)', background: 'rgba(251,146,60,0.06)' }}>
+                <span className="text-xl shrink-0">🐱</span>
+                <p className="text-[11px] italic leading-snug" style={{ color: 'rgba(253,186,116,0.8)' }}>{OLIVER_CLASS_LINES[cls.id]}</p>
+              </div>
+            )}
+
+            {/* Confirm */}
+            <button type="button" onClick={() => onSelect(selectedId)}
+              className="w-full rounded-2xl py-3.5 text-base font-black transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: `linear-gradient(135deg, ${cls.color} 0%, ${cls.color}cc 100%)`, color: '#0a0407' }}>
+              Elegir {cls.name} →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -938,6 +979,14 @@ export default function VrArbol() {
   const [showSkillTrial, setShowSkillTrial]     = useState(false)
   const [skillsTried, setSkillsTried]           = useState([false, false])
   const [classReveal, setClassReveal]           = useState(null) // { cls, ownerLabel } | null
+  // Pre-tutorial: fullscreen class+mascot selection before any NPC dialogue.
+  // Initialized from live store so returning players (who already have both)
+  // skip it entirely and land straight in the tutorial/play phase.
+  const [preTutorial, setPreTutorial]           = useState(() => {
+    if (!playerClassId) return 'class'
+    if (!oliverClass)   return 'mascot'
+    return null
+  })
   const [nearNpcId, setNearNpcId]               = useState(null) // 'jafet' | 'oliver' | null
   const [talkedFreely, setTalkedFreely]         = useState(false)
   const [movedEnough, setMovedEnough]           = useState(false)
@@ -1137,6 +1186,24 @@ export default function VrArbol() {
     }
   }
 
+  // Pre-tutorial handlers — class and mascot selection that happens BEFORE the
+  // intro cinematic. After both are done, preTutorial → null and the normal
+  // tutorial flow begins (the relevant missions will already be marked done).
+  function handlePreTutorialClass(classId) {
+    useGameStore.getState().selectPlayerClass(classId)
+    completeStep('choose_avatar_class')
+    setClassReveal({ cls: PLAYER_CLASSES[classId], ownerLabel: 'Tu Avatar es' })
+    setTimeout(() => { setClassReveal(null); setPreTutorial('mascot') }, 3700)
+  }
+
+  function handlePreTutorialMascot() {
+    completeStep('choose_mascot')
+    completeStep('mascot_class')
+    const newOliverClass = useGameStore.getState().oliver.class
+    setClassReveal({ cls: OLIVER_CLASSES[newOliverClass], ownerLabel: 'Tu mascota es' })
+    setTimeout(() => { setClassReveal(null); setPreTutorial(null) }, 3700)
+  }
+
   function handleSelectAvatarClass(classId) {
     useGameStore.getState().selectPlayerClass(classId)
     setOpenOverlayId(null)
@@ -1306,7 +1373,7 @@ export default function VrArbol() {
           (see handleMissionAction). Each still needs its own props, so this
           stays 3 explicit blocks rather than a one-size-fits-all renderer. ── */}
       {openOverlayId === 'classPicker' && (
-        <AvatarClassPicker isAdmin={isAdmin} onSelect={handleSelectAvatarClass} onClose={() => setOpenOverlayId(null)} />
+        <WocClassPicker isAdmin={isAdmin} onSelect={handleSelectAvatarClass} onClose={() => setOpenOverlayId(null)} />
       )}
 
       {openOverlayId === 'mascotOnboarding' && !oliverClass && (
@@ -1331,9 +1398,17 @@ export default function VrArbol() {
       {/* ── Class reveal flash (avatar or mascot) ── */}
       {classReveal && <ClassRevealAnnouncer cls={classReveal.cls} ownerLabel={classReveal.ownerLabel} onDone={() => setClassReveal(null)} />}
 
-      {/* ── Intro cinematic (10 lines, TTS) ── */}
-      {phase === 'intro' && (
+      {/* ── Intro cinematic (10 lines, TTS) — blocked until pre-tutorial done ── */}
+      {!preTutorial && phase === 'intro' && (
         <IntroCinematicOverlay onDone={() => setPhase('reveal')} />
+      )}
+
+      {/* ── Pre-tutorial: class + mascot selection before any NPC dialogue ── */}
+      {preTutorial === 'class' && (
+        <WocClassPicker isAdmin={isAdmin} onSelect={handlePreTutorialClass} />
+      )}
+      {preTutorial === 'mascot' && (
+        <VrMascotOnboarding onDone={handlePreTutorialMascot} />
       )}
 
       {/* ── Floating mascot companion — only once a mascot actually exists ── */}
