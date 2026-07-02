@@ -27,7 +27,9 @@ export function getPitchRange(cameraMode) {
 // frame to position itself; this hook only tracks pointer/wheel input.
 export function useCameraControls() {
   const initialDistance = useVrSettingsStore.getState().cameraDistance ?? CAMERA_DISTANCE
-  const camera = useRef({ yaw: 0, pitch: 0, distance: initialDistance, targetDistance: initialDistance })
+  // `orbiting` is stored on the camera object itself so Player.jsx can read
+  // it without needing a separate prop threaded through every world component.
+  const camera = useRef({ yaw: 0, pitch: 0, distance: initialDistance, targetDistance: initialDistance, orbiting: false })
   const drag = useRef(null)
   const pointers = useRef(new Map())
   const pinchDistance = useRef(null)
@@ -35,7 +37,15 @@ export function useCameraControls() {
   const onPointerDown = (e) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointers.current.size === 1) {
-      drag.current = { x: e.clientX, y: e.clientY }
+      // Mouse: only right-click rotates the camera (left-click is free for 3D
+      // interactions like clicking NPCs). Touch/pen: any single-finger drag rotates.
+      const canDrag = e.pointerType !== 'mouse' || e.button === 2
+      if (canDrag) {
+        drag.current = { x: e.clientX, y: e.clientY }
+        camera.current.orbiting = true
+      } else {
+        drag.current = null
+      }
     } else {
       drag.current = null
       pinchDistance.current = null
@@ -80,6 +90,7 @@ export function useCameraControls() {
     pinchDistance.current = null
     const remaining = Array.from(pointers.current.values())
     drag.current = remaining.length === 1 ? { x: remaining[0].x, y: remaining[0].y } : null
+    if (remaining.length === 0) camera.current.orbiting = false
   }
   const onWheel = (e) => {
     const { zoomMin, zoomMax } = useVrSettingsStore.getState()

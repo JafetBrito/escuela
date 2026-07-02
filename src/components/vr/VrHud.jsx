@@ -243,6 +243,12 @@ function PortraitHud({ onOpenCharacterPanel }) {
   const MASCOT_EMOJI = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
   const mascotEmoji = MASCOT_EMOJI[mascotId] ?? '🐱'
 
+  // Resource bar color + label follow the class's resourceType (WoC-style)
+  const RES_COLOR = { mana: '#3b82f6', rage: '#ef4444', energy: '#22c55e' }
+  const RES_LABEL = { mana: 'MA', rage: 'RA', energy: 'EN' }
+  const resColor = RES_COLOR[cls?.resourceType] ?? '#22c55e'
+  const resLabel = RES_LABEL[cls?.resourceType] ?? 'EN'
+
   return (
     <button
       type="button"
@@ -290,7 +296,7 @@ function PortraitHud({ onOpenCharacterPanel }) {
       </div>
 
       <ThinBar current={hp.current} max={hp.max} color="#ef4444" label="HP" />
-      <ThinBar current={energy.current} max={energy.max} color="#22c55e" label="EN" />
+      <ThinBar current={energy.current} max={energy.max} color={resColor} label={resLabel} />
       {oCls && <ThinBar current={oliverHp.current} max={oliverHp.max} color="#f97316" label={mascotEmoji} />}
     </button>
   )
@@ -344,8 +350,8 @@ function SkillBar() {
         </span>
       )}
       <div className="flex items-center gap-1.5">
-        {equippedSkills.map((id, i) => (
-          <SkillBtn key={i} skillId={id} hotkey={String(i + 1)} size={50} />
+        {Array.from({ length: 8 }, (_, i) => (
+          <SkillBtn key={i} skillId={equippedSkills[i] ?? null} hotkey={String(i + 1)} size={50} />
         ))}
       </div>
     </div>

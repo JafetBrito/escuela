@@ -294,6 +294,16 @@ export function Player({
     // smoothly instead of snapping, and the camera follow uses delta-based
     // smoothing so it feels consistent regardless of frame rate.
     const cam = cameraRef.current
+
+    // WoC-style auto-follow: when moving and not manually orbiting (right-drag),
+    // ease the camera yaw behind the player's travel direction at settle rate 6.
+    if (isMoving && !cam.orbiting && cameraMode !== 'first') {
+      const movDir = Math.atan2(velocityXZ.current.x, velocityXZ.current.z)
+      let yawDelta = movDir - cam.yaw
+      yawDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta))  // wrap to [-π, π]
+      cam.yaw += clamp(yawDelta * (1 - Math.exp(-6 * delta)), -0.16, 0.16)
+    }
+
     cam.distance += (cam.targetDistance - cam.distance) * Math.min(1, ZOOM_SMOOTHING * delta)
     // Re-clamp every frame (not just on input) so switching camera mode from
     // the "📷 Cámara" menu immediately respects the new mode's pitch range,
