@@ -57,8 +57,8 @@ export default defineConfig({
       workbox: {
         // VRPage chunk is ~2.4 MB — raise limit to cover it
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        // Precache app shell + epub/pdf books marked offline
-        globPatterns: ['**/*.{js,css,html,ico,svg,epub,pdf}'],
+        // Precache app shell only — epub/pdf are too large; cached at runtime via CacheFirst below
+        globPatterns: ['**/*.{js,css,html,ico,svg}'],
         // Belt-and-suspenders: explicitly delete any precache from a
         // previous deploy once the new service worker activates, instead of
         // relying on the plugin's default. The other half of "never see a
@@ -68,6 +68,16 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // Runtime caching rules
         runtimeCaching: [
+          {
+            // Books (epub/pdf) — cache first on first open; enables offline reading
+            urlPattern: /\.(epub|pdf)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'books-v1',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             // 3D models — cache first, they never change once deployed
             urlPattern: /\.glb$/i,
