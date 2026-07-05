@@ -72,6 +72,16 @@ export const GAMES = [
     reward: 200,
   },
   {
+    id: 'aprendiendo-memes',
+    title: 'Aprendiendo con Memes',
+    icon: '😂',
+    category: 'Pruebas',
+    description: 'Selecciona una materia y aprende conceptos a través de memes con explicación educativa. Psicología, Medicina, Historia, Física y más.',
+    type: 'component',
+    component: 'memes',
+    reward: 150,
+  },
+  {
     id: 'trivia-clases',
     title: 'Trivia por Clase',
     icon: '🎯',

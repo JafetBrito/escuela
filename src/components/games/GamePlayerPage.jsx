@@ -8,6 +8,7 @@ const COMPONENT_MAP = {
   chess: lazy(() => import('./chess/ChessGame')),
   'emoji-language': lazy(() => import('./emoji-language/EmojiLanguageGame')),
   janulus: lazy(() => import('./janulus/JanulingoMain')),
+  memes: lazy(() => import('./memes/MemesGame')),
 }
 
 export default function GamePlayerPage() {

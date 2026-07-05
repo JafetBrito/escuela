@@ -62,6 +62,7 @@ const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoard
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
 const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
+const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -128,6 +129,13 @@ export default function App() {
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unlock" element={<PortalPage />} />
+        {/* Meme compartido — acceso público, sin login */}
+        <Route path="/m/:memeId" element={
+          <Suspense fallback={<RouteFallback />}>
+            <MemeSharePage />
+          </Suspense>
+        } />
+
         <Route path="/admin-setup" element={
           <Suspense fallback={<RouteFallback />}>
             <AdminSetupPage />
