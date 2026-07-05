@@ -160,8 +160,15 @@ export default function HackerTerminalGame() {
 
   const scenario = useMemo(() => CTF_SCENARIOS.find((s) => s.id === activeId), [activeId])
 
-  // Recreate shell when scenario changes
+  // Recreate shell when scenario changes.
+  // ponytail: initialized synchronously so Terminal never gets shell=null on first render.
   const shellRef = useRef(null)
+  if (!shellRef.current) {
+    shellRef.current = createShell(scenario.initialFs, {
+      passwords:    scenario.passwords    ?? {},
+      sudoPassword: scenario.sudoPassword ?? null,
+    })
+  }
   const [shellKey, setShellKey] = useState(0) // forces Terminal remount
 
   useEffect(() => {

@@ -3,30 +3,132 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useTasksStore } from '../../stores/useTasksStore'
 
-const STATUS_META = {
-  pendiente:  { label: 'Pendiente',  cls: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  entregada:  { label: 'Entregada', cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  revisada:   { label: 'Revisada',  cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+// ── Subject config ─────────────────────────────────────────────────────────────
+const SUBJECTS = {
+  Matemáticas:  { color: '#3b82f6', icon: '📐' },
+  Física:       { color: '#f59e0b', icon: '⚡' },
+  Historia:     { color: '#f97316', icon: '🏛️' },
+  Biología:     { color: '#10b981', icon: '🧬' },
+  Química:      { color: '#8b5cf6', icon: '⚗️' },
+  Filosofía:    { color: '#eab308', icon: '💭' },
+  Psicología:   { color: '#ec4899', icon: '🧠' },
+  Programación: { color: '#06b6d4', icon: '💻' },
+  Inglés:       { color: '#6366f1', icon: '🌐' },
+  Literatura:   { color: '#f43f5e', icon: '📖' },
+  Geografía:    { color: '#84cc16', icon: '🌍' },
+  Arte:         { color: '#f472b6', icon: '🎨' },
 }
 
-const SUBJECT_COLORS = {
-  Matemáticas: 'text-blue-400', Física: 'text-amber-400', Historia: 'text-orange-400',
-  Biología: 'text-emerald-400', Química: 'text-purple-400', Filosofía: 'text-yellow-400',
-  Psicología: 'text-pink-400', Programación: 'text-cyan-400', Inglés: 'text-indigo-400',
+const DEFAULT_SUBJECT = { color: '#98ca3f', icon: '📚' }
+
+function subjectOf(name) { return SUBJECTS[name] ?? DEFAULT_SUBJECT }
+
+// ── Grade helpers ──────────────────────────────────────────────────────────────
+function letterGrade(pct) {
+  if (pct >= 0.95) return 'A+'
+  if (pct >= 0.90) return 'A'
+  if (pct >= 0.85) return 'A−'
+  if (pct >= 0.80) return 'B+'
+  if (pct >= 0.75) return 'B'
+  if (pct >= 0.70) return 'B−'
+  if (pct >= 0.65) return 'C+'
+  if (pct >= 0.60) return 'C'
+  if (pct >= 0.55) return 'C−'
+  if (pct >= 0.50) return 'D'
+  return 'F'
 }
 
-function gradeColor(grade, max) {
-  const pct = grade / max
-  if (pct >= 0.9) return 'text-emerald-400'
-  if (pct >= 0.7) return 'text-amber-400'
-  return 'text-red-400'
+function gradeColor(pct) {
+  if (pct >= 0.85) return '#10b981'
+  if (pct >= 0.70) return '#f59e0b'
+  if (pct >= 0.50) return '#f97316'
+  return '#ef4444'
 }
 
+// ── Due-date helpers ───────────────────────────────────────────────────────────
+function dueInfo(dueDate, status) {
+  if (!dueDate) return null
+  const due  = new Date(dueDate + 'T12:00:00')
+  const now  = new Date()
+  const diff = Math.ceil((due - now) / 86_400_000)
+
+  if (status !== 'pendiente') {
+    return { text: due.toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' }), urgency: 'none' }
+  }
+  if (diff < 0)  return { text: `Venció hace ${Math.abs(diff)} día${Math.abs(diff) === 1 ? '' : 's'}`, urgency: 'overdue' }
+  if (diff === 0) return { text: '¡Vence hoy!', urgency: 'today' }
+  if (diff === 1) return { text: 'Vence mañana', urgency: 'soon' }
+  if (diff <= 3)  return { text: `Vence en ${diff} días`, urgency: 'soon' }
+  if (diff <= 7)  return { text: `Vence en ${diff} días`, urgency: 'week' }
+  return { text: due.toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' }), urgency: 'later' }
+}
+
+const URGENCY_LABEL = {
+  overdue: 'text-red-400',
+  today:   'text-red-400',
+  soon:    'text-amber-400',
+  week:    'text-yellow-400',
+  later:   'text-text-muted',
+  none:    'text-text-muted',
+}
+
+// ── Task grouping ──────────────────────────────────────────────────────────────
+function classifyTask(task) {
+  if (task.status !== 'pendiente') return 'done'
+  if (!task.due_date) return 'later'
+  const diff = Math.ceil((new Date(task.due_date + 'T12:00:00') - new Date()) / 86_400_000)
+  if (diff < 0)   return 'overdue'
+  if (diff <= 2)  return 'urgent'
+  if (diff <= 7)  return 'week'
+  return 'later'
+}
+
+const GROUPS = [
+  { key: 'overdue', label: '⚠️ Vencidas',          cls: 'text-red-400 border-red-500/20' },
+  { key: 'urgent',  label: '🔥 Urgente — 48 hrs',   cls: 'text-amber-400 border-amber-500/20' },
+  { key: 'week',    label: '📅 Esta semana',         cls: 'text-yellow-400 border-yellow-500/20' },
+  { key: 'later',   label: '📚 Más adelante',        cls: 'text-text-muted border-border/40' },
+  { key: 'done',    label: '✅ Entregadas y revisadas', cls: 'text-emerald-400 border-emerald-500/20' },
+]
+
+// ── GPA ring ───────────────────────────────────────────────────────────────────
+function GpaRing({ value, max = 10 }) {
+  const pct  = Math.min(value / max, 1)
+  const r    = 28
+  const circ = 2 * Math.PI * r
+  const dash = circ * pct
+  const color = gradeColor(pct)
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 80, height: 80 }}>
+      <svg width="80" height="80" className="-rotate-90">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="6" />
+        <circle
+          cx="40" cy="40" r={r} fill="none"
+          stroke={color} strokeWidth="6"
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dasharray 0.6s ease' }}
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-xl font-black text-white leading-none">{value.toFixed(1)}</span>
+        <span className="text-[10px] font-bold" style={{ color }}>{letterGrade(pct)}</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Task card ──────────────────────────────────────────────────────────────────
 function TaskCard({ task, onSubmit }) {
   const [confirming, setConfirming] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const meta = STATUS_META[task.status] ?? STATUS_META.pendiente
-  const isOverdue = task.due_date && task.status === 'pendiente' && new Date(task.due_date) < new Date()
+  const [busy, setBusy]             = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+
+  const subj    = subjectOf(task.subject)
+  const due     = dueInfo(task.due_date, task.status)
+  const hasGrade = task.grade != null
+  const gradePct = hasGrade ? task.grade / (task.grade_max ?? 10) : null
 
   const handleSubmit = async () => {
     setBusy(true)
@@ -36,178 +138,316 @@ function TaskCard({ task, onSubmit }) {
   }
 
   return (
-    <div className={`rounded-2xl border bg-surface p-4 transition ${isOverdue ? 'border-red-500/30' : 'border-border'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {task.subject && (
-              <span className={`text-xs font-bold ${SUBJECT_COLORS[task.subject] ?? 'text-text-muted'}`}>
-                {task.subject}
-              </span>
-            )}
-            {isOverdue && (
-              <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-400">
-                Vencida
-              </span>
-            )}
-          </div>
-          <h3 className="mt-1 font-bold text-text">{task.title}</h3>
-          {task.description && (
-            <p className="mt-1 text-sm text-text-muted">{task.description}</p>
-          )}
-          {task.due_date && (
-            <p className="mt-1.5 text-xs text-text-muted/60">
-              📅 Entrega: {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { weekday:'short', day:'numeric', month:'short', year:'numeric' })}
-            </p>
-          )}
-        </div>
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-border/80"
+      style={{ borderLeft: `4px solid ${subj.color}` }}
+    >
+      {/* ── Card body ─────────────────────────────────────── */}
+      <div className="p-4">
 
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${meta.cls}`}>
-            {meta.label}
+        {/* Top row: subject + status + grade */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+            style={{ backgroundColor: `${subj.color}18`, color: subj.color, border: `1px solid ${subj.color}30` }}
+          >
+            {subj.icon} {task.subject ?? 'General'}
           </span>
-          {task.status === 'revisada' && task.grade != null && (
-            <span className={`text-xl font-extrabold ${gradeColor(task.grade, task.grade_max ?? 10)}`}>
-              {task.grade}/{task.grade_max ?? 10}
+
+          {/* Status badge */}
+          {task.status === 'pendiente' && due?.urgency === 'overdue' && (
+            <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-bold text-red-400">
+              Vencida
+            </span>
+          )}
+          {task.status === 'pendiente' && due?.urgency !== 'overdue' && (
+            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-400">
+              Pendiente
+            </span>
+          )}
+          {task.status === 'entregada' && (
+            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-bold text-blue-400">
+              ✓ Entregada
+            </span>
+          )}
+          {task.status === 'revisada' && (
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
+              ★ Revisada
+            </span>
+          )}
+
+          {/* Grade pill */}
+          {hasGrade && (
+            <span
+              className="ml-auto rounded-full px-3 py-0.5 text-sm font-extrabold"
+              style={{ color: gradeColor(gradePct), backgroundColor: `${gradeColor(gradePct)}15`, border: `1px solid ${gradeColor(gradePct)}30` }}
+            >
+              {task.grade}/{task.grade_max ?? 10} · {letterGrade(gradePct)}
             </span>
           )}
         </div>
+
+        {/* Title & description */}
+        <h3 className="mt-2.5 text-base font-bold text-text">{task.title}</h3>
+        {task.description && (
+          <p className="mt-1 text-sm leading-relaxed text-text-muted line-clamp-2">{task.description}</p>
+        )}
+
+        {/* Grade bar (when graded) */}
+        {hasGrade && (
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-1.5 flex-1 rounded-full bg-surface-hover">
+              <div
+                className="h-1.5 rounded-full transition-all"
+                style={{ width: `${gradePct * 100}%`, backgroundColor: gradeColor(gradePct) }}
+              />
+            </div>
+            <span className="shrink-0 text-xs font-bold text-text-muted">{Math.round(gradePct * 100)}%</span>
+          </div>
+        )}
+
+        {/* Bottom row: due date + action */}
+        <div className="mt-3 flex items-center justify-between gap-3">
+          {due ? (
+            <p className={`flex items-center gap-1.5 text-xs font-medium ${URGENCY_LABEL[due.urgency]}`}>
+              <span>📅</span>
+              {due.text}
+            </p>
+          ) : <span />}
+
+          <div className="flex items-center gap-2">
+            {task.status === 'revisada' && task.feedback && (
+              <button
+                type="button"
+                onClick={() => setFeedbackOpen((v) => !v)}
+                className="rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
+              >
+                💬 {feedbackOpen ? 'Ocultar' : 'Ver comentarios'}
+              </button>
+            )}
+            {task.status === 'pendiente' && !confirming && (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-background transition"
+                style={{ backgroundColor: subj.color }}
+              >
+                Marcar entregada
+              </button>
+            )}
+            {task.status === 'pendiente' && confirming && (
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setConfirming(false)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted hover:text-text">
+                  Cancelar
+                </button>
+                <button type="button" disabled={busy} onClick={handleSubmit}
+                  className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                  {busy ? 'Enviando…' : '✅ Confirmar'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Feedback from teacher */}
-      {task.status === 'revisada' && task.feedback && (
-        <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
-          <p className="text-[10px] font-bold uppercase text-primary/60">Comentarios del profesor</p>
-          <p className="mt-0.5 text-sm text-text">{task.feedback}</p>
-        </div>
-      )}
-
-      {/* Submit button */}
-      {task.status === 'pendiente' && (
-        <div className="mt-3 flex justify-end">
-          {confirming ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted hover:text-text"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={handleSubmit}
-                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background disabled:opacity-50"
-              >
-                {busy ? 'Enviando…' : '✅ Confirmar entrega'}
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
-            >
-              Marcar como entregada
-            </button>
-          )}
+      {/* Feedback section */}
+      {feedbackOpen && task.feedback && (
+        <div className="border-t border-border/50 bg-surface-hover px-4 py-3">
+          <p className="mb-1 text-[10px] font-extrabold uppercase tracking-widest" style={{ color: subj.color }}>
+            Comentarios del profesor
+          </p>
+          <p className="text-sm leading-relaxed text-text">{task.feedback}</p>
         </div>
       )}
     </div>
   )
 }
 
+// ── Main page ──────────────────────────────────────────────────────────────────
 export default function TasksPage() {
-  const tasks = useTasksStore((s) => s.tasks)
-  const loading = useTasksStore((s) => s.loading)
+  const tasks        = useTasksStore((s) => s.tasks)
+  const loading      = useTasksStore((s) => s.loading)
   const fetchMyTasks = useTasksStore((s) => s.fetchMyTasks)
-  const submitTask = useTasksStore((s) => s.submitTask)
+  const submitTask   = useTasksStore((s) => s.submitTask)
 
-  const [filter, setFilter] = useState('all')
+  const [activeSubject, setActiveSubject] = useState('all')
 
   useEffect(() => { fetchMyTasks() }, [fetchMyTasks])
 
-  const filtered = filter === 'all' ? tasks : tasks.filter((t) => t.status === filter)
+  // ── Derived stats ────────────────────────────────────────────────────────────
+  const graded  = tasks.filter((t) => t.grade != null)
+  const avgPct  = graded.length ? graded.reduce((s, t) => s + t.grade / (t.grade_max ?? 10), 0) / graded.length : null
+  const avgVal  = avgPct != null ? (avgPct * 10) : null
 
-  const counts = {
-    pendiente: tasks.filter((t) => t.status === 'pendiente').length,
-    entregada: tasks.filter((t) => t.status === 'entregada').length,
-    revisada:  tasks.filter((t) => t.status === 'revisada').length,
-  }
+  const pending   = tasks.filter((t) => t.status === 'pendiente').length
+  const delivered = tasks.filter((t) => t.status === 'entregada').length
+  const reviewed  = tasks.filter((t) => t.status === 'revisada').length
+  const total     = tasks.length
+  const completionPct = total ? Math.round(((delivered + reviewed) / total) * 100) : 0
 
-  const avgGrade = (() => {
-    const graded = tasks.filter((t) => t.grade != null)
-    if (!graded.length) return null
-    const avg = graded.reduce((sum, t) => sum + (t.grade / (t.grade_max ?? 10)) * 10, 0) / graded.length
-    return avg.toFixed(1)
-  })()
+  // ── Subject sidebar ──────────────────────────────────────────────────────────
+  const subjects = [...new Set(tasks.map((t) => t.subject).filter(Boolean))].sort()
+
+  // ── Filtered + grouped tasks ─────────────────────────────────────────────────
+  const filtered = activeSubject === 'all' ? tasks : tasks.filter((t) => t.subject === activeSubject)
+
+  const grouped = GROUPS.map((g) => ({
+    ...g,
+    tasks: filtered
+      .filter((t) => classifyTask(t) === g.key)
+      .sort((a, b) => {
+        if (!a.due_date && !b.due_date) return 0
+        if (!a.due_date) return 1
+        if (!b.due_date) return -1
+        return new Date(a.due_date) - new Date(b.due_date)
+      }),
+  })).filter((g) => g.tasks.length > 0)
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
 
-      <main className="flex-1 px-4 py-8 md:px-8">
-        <div className="mx-auto max-w-3xl">
+      <main className="flex-1 px-4 py-6 md:px-8">
+        <div className="mx-auto max-w-6xl">
 
-          {/* Header */}
-          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-500 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📋 Mis Tareas</h1>
-            <p className="mt-1 text-sm font-medium text-white/85">
-              Aquí aparecen todas las tareas que tu profesor te ha asignado.
-            </p>
-          </div>
+          {/* ── Hero stats ──────────────────────────────────────────── */}
+          <div
+            className="overflow-hidden rounded-2xl p-6 shadow-xl"
+            style={{ background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1030 50%, #0f1a24 100%)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <div className="flex flex-wrap items-center gap-6">
 
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl border border-border bg-surface p-4 text-center">
-              <p className="text-2xl font-extrabold text-amber-400">{counts.pendiente}</p>
-              <p className="text-xs text-text-muted">Pendientes</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-surface p-4 text-center">
-              <p className="text-2xl font-extrabold text-blue-400">{counts.entregada}</p>
-              <p className="text-xs text-text-muted">Entregadas</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-surface p-4 text-center">
-              <p className="text-2xl font-extrabold text-emerald-400">{counts.revisada}</p>
-              <p className="text-xs text-text-muted">Revisadas</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-surface p-4 text-center">
-              <p className={`text-2xl font-extrabold ${avgGrade ? gradeColor(parseFloat(avgGrade), 10) : 'text-text-muted'}`}>
-                {avgGrade ?? '—'}
-              </p>
-              <p className="text-xs text-text-muted">Promedio</p>
-            </div>
-          </div>
+              {/* GPA ring */}
+              {avgVal != null ? (
+                <GpaRing value={avgVal} />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-white/10">
+                  <span className="text-2xl text-white/20">—</span>
+                </div>
+              )}
 
-          {/* Filter tabs */}
-          <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
-            {[['all', 'Todas'], ['pendiente', 'Pendientes'], ['entregada', 'Entregadas'], ['revisada', 'Revisadas']].map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilter(key)}
-                className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${filter === key ? 'bg-background text-text shadow-sm' : 'text-text-muted hover:text-text'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+              {/* Text stats */}
+              <div className="flex-1">
+                <h1 className="text-2xl font-extrabold text-white">Mis Tareas</h1>
+                <p className="mt-0.5 text-sm text-white/50">
+                  {avgVal != null ? `Promedio general: ${avgVal.toFixed(1)}/10 · ${letterGrade(avgPct)}` : 'Sin calificaciones aún'}
+                </p>
 
-          {/* Task list */}
-          <div className="mt-4 space-y-3">
-            {loading ? (
-              <p className="py-12 text-center text-sm text-text-muted">Cargando tareas…</p>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-2xl border border-border bg-surface py-12 text-center">
-                <p className="text-3xl">✅</p>
-                <p className="mt-2 text-sm text-text-muted">No hay tareas en esta categoría.</p>
+                {/* Completion bar */}
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="h-2 flex-1 rounded-full bg-white/10">
+                    <div
+                      className="h-2 rounded-full bg-emerald-400 transition-all"
+                      style={{ width: `${completionPct}%` }}
+                    />
+                  </div>
+                  <span className="shrink-0 text-xs font-bold text-white/50">{completionPct}% completado</span>
+                </div>
               </div>
-            ) : (
-              filtered.map((task) => (
-                <TaskCard key={task.id} task={task} onSubmit={submitTask} />
-              ))
-            )}
+
+              {/* Pill counters */}
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5">
+                  <span className="text-xl font-extrabold text-amber-400">{pending}</span>
+                  <span className="text-[10px] font-semibold text-amber-500/70">Pendientes</span>
+                </div>
+                <div className="flex flex-col items-center rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5">
+                  <span className="text-xl font-extrabold text-blue-400">{delivered}</span>
+                  <span className="text-[10px] font-semibold text-blue-500/70">Entregadas</span>
+                </div>
+                <div className="flex flex-col items-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5">
+                  <span className="text-xl font-extrabold text-emerald-400">{reviewed}</span>
+                  <span className="text-[10px] font-semibold text-emerald-500/70">Revisadas</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Body: sidebar + tasks ────────────────────────────────── */}
+          <div className="mt-6 flex gap-6">
+
+            {/* Sidebar: subject filter */}
+            <aside className="hidden w-52 shrink-0 md:block">
+              <div className="sticky top-4 rounded-2xl border border-border bg-surface p-3">
+                <p className="mb-2 px-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted/60">
+                  Materias
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveSubject('all')}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    activeSubject === 'all' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  <span>📚 Todas</span>
+                  <span className="rounded-full bg-surface-hover px-2 py-0.5 text-xs">{tasks.length}</span>
+                </button>
+
+                {subjects.map((subj) => {
+                  const cfg = subjectOf(subj)
+                  const cnt = tasks.filter((t) => t.subject === subj).length
+                  const active = activeSubject === subj
+                  return (
+                    <button
+                      key={subj}
+                      type="button"
+                      onClick={() => setActiveSubject(subj)}
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                        active ? 'text-white' : 'text-text-muted hover:text-text'
+                      }`}
+                      style={active ? { backgroundColor: `${cfg.color}20`, color: cfg.color } : {}}
+                    >
+                      <span>{cfg.icon} {subj}</span>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs"
+                        style={active ? { backgroundColor: `${cfg.color}30`, color: cfg.color } : { backgroundColor: 'var(--color-surface-hover)' }}
+                      >
+                        {cnt}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </aside>
+
+            {/* Task groups */}
+            <div className="min-w-0 flex-1">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                  <p className="text-sm text-text-muted">Cargando tareas…</p>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
+                  <span className="text-5xl">🎉</span>
+                  <div>
+                    <p className="font-bold text-text">¡Todo al día!</p>
+                    <p className="mt-1 text-sm text-text-muted">No hay tareas pendientes por aquí.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {grouped.map((group) => (
+                    <section key={group.key}>
+                      {/* Group header */}
+                      <div className={`mb-3 flex items-center gap-3 border-b pb-2 ${group.cls}`}>
+                        <h2 className="text-sm font-extrabold">{group.label}</h2>
+                        <span className="text-xs font-bold opacity-60">{group.tasks.length} {group.tasks.length === 1 ? 'tarea' : 'tareas'}</span>
+                      </div>
+
+                      {/* Task cards */}
+                      <div className="space-y-3">
+                        {group.tasks.map((task) => (
+                          <TaskCard key={task.id} task={task} onSubmit={submitTask} />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
