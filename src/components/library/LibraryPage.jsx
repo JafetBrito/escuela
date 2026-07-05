@@ -115,6 +115,12 @@ export default function LibraryPage() {
                           </span>
                         )}
 
+                        {book.offline && !comingSoon && !locked && (
+                          <span className="absolute left-2 top-2 z-20 rounded-full bg-teal-900/80 px-2 py-0.5 text-[9px] font-semibold text-teal-300">
+                            📴 Sin internet
+                          </span>
+                        )}
+
                         {!comingSoon && !locked && (
                           <span className="absolute right-2 top-2 z-20 rounded-full bg-background/80 px-2 py-1 text-[11px] font-semibold text-text opacity-0 transition-opacity group-hover:opacity-100">
                             📖 Leer

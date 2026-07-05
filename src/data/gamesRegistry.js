@@ -72,6 +72,16 @@ export const GAMES = [
     reward: 200,
   },
   {
+    id: 'hacker-terminal',
+    title: 'Terminal Hacker',
+    icon: '🖥️',
+    category: 'Hacking',
+    description: 'Resuelve misiones CTF en una terminal Linux simulada. Navega el filesystem, descifra mensajes, escala privilegios y captura flags al estilo Grey Hat.',
+    type: 'component',
+    component: 'hacker-terminal',
+    reward: 400,
+  },
+  {
     id: 'aprendiendo-memes',
     title: 'Aprendiendo con Memes',
     icon: '😂',

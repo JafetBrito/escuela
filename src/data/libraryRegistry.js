@@ -51,6 +51,7 @@ export const LIBRARY_BOOKS = [
     description: 'Manual de bienvenida: cómo usar la plataforma, tu mascota y tus misiones.',
     type: 'epub',
     file: '/epub/guia-oliver-school-espanol.epub',
+    offline: true,
   },
   {
     id: 'guia-de-cyberseguridad-2026',

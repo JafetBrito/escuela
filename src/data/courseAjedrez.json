@@ -1,0 +1,263 @@
+{
+  "courseId": "course-ajedrez",
+  "title": "Ajedrez desde Cero",
+  "description": "Aprende a jugar ajedrez paso a paso: piezas, aperturas, tácticas y finales. Con retos prácticos en el tablero del campus.",
+  "aiInstructions": "Eres Oliver, el tutor de ajedrez de la plataforma. Tu rol es enseñar ajedrez de forma clara y paciente, desde reglas básicas hasta tácticas intermedias. Cuando el alumno pregunte sobre movimientos, explica con notación algebraica (pe. e4, Nf3, O-O). Si hace una pregunta fuera del ajedrez, puedes responder brevemente pero recuérdales que estás aquí para ayudar con el ajedrez. Usa emojis de piezas (♙♘♗♖♕♔) cuando sea útil. Anima al alumno a practicar en el juego de ajedrez del campus.",
+
+  "modules": [
+    {
+      "id": 1,
+      "title": "Historia y objetivo del ajedrez",
+      "order": 1,
+      "videoId": "OCSbzArwB10",
+      "description": "El ajedrez tiene más de 1500 años de historia. Nació en India como 'chaturanga', viajó a Persia y llegó a Europa en la Edad Media. Hoy lo juegan más de 600 millones de personas en el mundo. El objetivo es simple: dar jaque mate al rey contrario — ponerlo en una posición donde no puede escapar de la captura. El tablero tiene 64 casillas (8×8), alternadas en claro y oscuro. Las blancas siempre mueven primero.",
+      "exercises": [
+        {
+          "id": "aj-1-1",
+          "type": "challenge",
+          "prompt": "Abre el juego de Ajedrez en la sección Games del campus. Observa el tablero vacío antes de empezar. ¿Cuántas casillas hay en total? ¿De qué colores se alternan? Escribe tu respuesta.",
+          "solution": ""
+        },
+        {
+          "id": "aj-1-2",
+          "type": "challenge",
+          "prompt": "Inicia una partida en modo Fácil contra la IA. Mueve cualquier pieza blanca en tu primer turno y observa cómo responde la IA. ¿Qué pieza movió la IA? Descríbelo aquí.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "Historia del ajedrez — Wikipedia",
+          "url": "https://es.wikipedia.org/wiki/Ajedrez",
+          "type": "link"
+        },
+        {
+          "label": "Chess.com — Aprende gratis",
+          "url": "https://www.chess.com/es/learn-how-to-play-chess",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Cuál es el objetivo principal del ajedrez?",
+        "options": [
+          "Capturar todas las piezas del oponente",
+          "Dar jaque mate al rey contrario",
+          "Llegar al otro lado del tablero con un peón",
+          "Tener más piezas que el rival al final"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 2,
+      "title": "Las piezas: cómo mueven y cuánto valen",
+      "order": 2,
+      "videoId": "OCSbzArwB10",
+      "description": "Cada bando tiene 16 piezas: 1 rey, 1 reina, 2 torres, 2 alfiles, 2 caballos y 8 peones. El valor relativo de cada pieza (en puntos): Peón=1, Caballo=3, Alfil=3, Torre=5, Reina=9, Rey=∞ (no se intercambia). El rey se mueve una casilla en cualquier dirección. La reina combina torre y alfil — es la más poderosa. Las torres se mueven en líneas rectas. Los alfiles en diagonal (uno siempre en casillas claras, otro en oscuras). El caballo salta en 'L' y es la única pieza que salta sobre otras. Los peones avanzan hacia adelante pero capturan en diagonal.",
+      "exercises": [
+        {
+          "id": "aj-2-1",
+          "type": "challenge",
+          "prompt": "En una partida contra la IA (modo Fácil), intenta mover tu caballo en las primeras jugadas. El caballo va dos casillas en una dirección y una en perpendicular (forma de L). ¿Desde qué casilla lo moviste y a cuál fue? Usa notación como 'g1 → f3'.",
+          "solution": ""
+        },
+        {
+          "id": "aj-2-2",
+          "type": "challenge",
+          "prompt": "¿Cuánto valen las piezas que tienes en el tablero al inicio? Suma el valor de todas las piezas blancas (sin contar al rey). Escribe el total.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "Movimientos de las piezas — chess.com",
+          "url": "https://www.chess.com/es/como-se-juega-al-ajedrez/movimientos-de-las-piezas",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué pieza puede saltar por encima de otras piezas?",
+        "options": [
+          "La torre",
+          "El alfil",
+          "El caballo",
+          "La reina"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    },
+    {
+      "id": 3,
+      "title": "Principios de apertura: los primeros movimientos",
+      "order": 3,
+      "videoId": "OCSbzArwB10",
+      "description": "La apertura es todo lo que pasa al inicio de la partida. Hay tres principios fundamentales que todo jugador debe seguir: 1) Controla el centro — mueve peones a e4/d4 (blancas) o e5/d5 (negras) para dominar las 4 casillas centrales. 2) Desarrolla tus piezas — saca caballos y alfiles antes de la reina. 3) Enroca pronto — el enroque pone al rey seguro detrás de los peones y conecta las torres. Evita mover la misma pieza dos veces en la apertura y no saques la reina muy temprano — la van a atacar.",
+      "exercises": [
+        {
+          "id": "aj-3-1",
+          "type": "challenge",
+          "prompt": "Juega una partida en modo Fácil e intenta seguir los 3 principios: controla el centro con e4 y d4, saca tus caballos y alfiles, y enroca. ¿Lograste enrocar? ¿En qué jugada aproximadamente?",
+          "solution": ""
+        },
+        {
+          "id": "aj-3-2",
+          "type": "challenge",
+          "prompt": "La apertura más clásica se llama 'Apertura Italiana'. Comienza con: 1.e4 e5 2.Nf3 Nc6 3.Bc4. Busca en YouTube 'Apertura Italiana ajedrez' y escribe qué amenaza crea el alfil en c4.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "Las mejores aperturas para principiantes",
+          "url": "https://www.chess.com/es/article/view/mejores-aperturas-de-ajedrez-para-principiantes",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Cuál de estas acciones NO es un principio correcto de apertura?",
+        "options": [
+          "Controlar las casillas centrales con peones",
+          "Desarrollar los caballos y alfiles rápido",
+          "Mover la reina en el primer movimiento para atacar",
+          "Enrocar para proteger al rey"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    },
+    {
+      "id": 4,
+      "title": "Tácticas básicas: la horquilla, la clavada y la descubierta",
+      "order": 4,
+      "videoId": "OCSbzArwB10",
+      "description": "Las tácticas son combinaciones cortas que ganan material o dan mate. Las tres más comunes: HORQUILLA — una pieza ataca dos piezas al mismo tiempo (el caballo es el rey de la horquilla). CLAVADA — una pieza ataca a través de una pieza enemiga a otra pieza más valiosa detrás; la pieza del frente está 'clavada' porque moverla expondría la de atrás. DESCUBIERTA — mover una pieza revela el ataque de otra pieza propia que estaba bloqueada. Reconocer estas tácticas te permite ganar piezas gratis.",
+      "exercises": [
+        {
+          "id": "aj-4-1",
+          "type": "challenge",
+          "prompt": "Busca en YouTube 'horquilla de caballo ajedrez' (o 'knight fork chess'). Explica con tus palabras: ¿cómo usarías un caballo para hacer una horquilla al rey y la reina contrarios?",
+          "solution": ""
+        },
+        {
+          "id": "aj-4-2",
+          "type": "challenge",
+          "prompt": "Juega una partida en modo Medio contra la IA. Intenta crear alguna táctica: un ataque doble, o mover una pieza para revelar el ataque de otra. Describe qué táctica intentaste y si funcionó.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "Tácticas de ajedrez para principiantes",
+          "url": "https://www.chess.com/es/article/view/las-mejores-tacticas-de-ajedrez-para-principiantes",
+          "type": "link"
+        },
+        {
+          "label": "Puzzles de táctica gratis — Lichess",
+          "url": "https://lichess.org/training",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué es una 'horquilla' en ajedrez?",
+        "options": [
+          "Cuando el rey no puede escapar del jaque",
+          "Cuando una pieza ataca dos piezas enemigas al mismo tiempo",
+          "Cuando una pieza está bloqueada por otra pieza aliada",
+          "El movimiento especial del rey y la torre"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 5,
+      "title": "Finales básicos: cómo dar mate con pocas piezas",
+      "order": 5,
+      "videoId": "OCSbzArwB10",
+      "description": "El final de partida comienza cuando quedan pocas piezas. Los finales más importantes para aprender: REY Y REINA vs REY — es la base. La reina acorrala al rey enemigo mientras el rey propio se acerca para asistir. Regla: evita el ahogado (poner al rey rival sin movimientos sin estar en jaque — eso es tablas). REY Y TORRE vs REY — similar, usa la torre para 'empujar' al rey contrario hacia el borde. PEÓN vs REY — un peón que llega al otro lado se convierte en reina. La oposición de reyes (reyes frente a frente) es la técnica clave.",
+      "exercises": [
+        {
+          "id": "aj-5-1",
+          "type": "challenge",
+          "prompt": "En una partida contra la IA en modo Fácil, intenta llegar al final con tu reina activa. Si logras tener Rey+Reina vs Rey solo, ¿diste mate? Describe cómo fue el final de la partida.",
+          "solution": ""
+        },
+        {
+          "id": "aj-5-2",
+          "type": "challenge",
+          "prompt": "¿Qué es el 'ahogado' y por qué es un error común al dar mate con la reina? Explícalo con tus palabras.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "Guía de finales para principiantes",
+          "url": "https://www.chess.com/es/article/view/guia-de-finales-de-ajedrez-para-principiantes",
+          "type": "link"
+        },
+        {
+          "label": "Endgame practice — Lichess",
+          "url": "https://lichess.org/practice",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué es el 'ahogado' (stalemate) en ajedrez?",
+        "options": [
+          "Cuando el rey está en jaque sin poder escapar",
+          "Cuando el jugador se rinde voluntariamente",
+          "Cuando el rey no está en jaque pero no tiene ningún movimiento legal",
+          "Cuando las negras y las blancas tienen el mismo material"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    },
+    {
+      "id": 6,
+      "title": "Estrategia: estructura de peones y plan de juego",
+      "order": 6,
+      "videoId": "OCSbzArwB10",
+      "description": "La estrategia es el plan a largo plazo de la partida. Las piezas son temporales — los peones son permanentes. Conceptos clave: PEÓN PASADO — un peón sin oponentes en su columna ni en las columnas adyacentes; es muy poderoso en el final. PEÓN DOBLADO — dos peones en la misma columna; generalmente es una debilidad. PEÓN AISLADO — un peón sin peones aliados en columnas adyacentes; es difícil de defender. La regla de Nimzovich: primero restringe, luego bloquea, luego destruye las debilidades del rival. Con plan, el ajedrez deja de ser improvisación y se vuelve arte.",
+      "exercises": [
+        {
+          "id": "aj-6-1",
+          "type": "challenge",
+          "prompt": "Juega una partida completa en modo Difícil contra la IA. No importa si ganas o pierdes — después de la partida, mira tu historial de movimientos y reflexiona: ¿hubo algún momento donde la IA tenía un peón pasado o tú tenías peones doblados? Descríbelo.",
+          "solution": ""
+        },
+        {
+          "id": "aj-6-2",
+          "type": "challenge",
+          "prompt": "Busca una partida famosa en la historia del ajedrez (por ejemplo: 'Kasparov vs Deep Blue 1997' o 'La Inmortal de Anderssen'). Escribe el nombre de la partida y por qué se considera memorable.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "Estructura de peones — chess.com",
+          "url": "https://www.chess.com/es/terms/pawn-structure",
+          "type": "link"
+        },
+        {
+          "label": "Partidas históricas — ChessTempo",
+          "url": "https://www.chesstempo.com/",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué es un 'peón pasado'?",
+        "options": [
+          "Un peón que ya fue capturado",
+          "Un peón que se convirtió en reina",
+          "Un peón sin rivales en su columna ni en las adyacentes",
+          "Un peón que está en la misma columna que otro peón aliado"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    }
+  ]
+}

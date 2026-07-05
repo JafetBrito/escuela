@@ -57,8 +57,8 @@ export default defineConfig({
       workbox: {
         // VRPage chunk is ~2.4 MB — raise limit to cover it
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        // Precache all JS/CSS chunks (app shell)
-        globPatterns: ['**/*.{js,css,html,ico,svg}'],
+        // Precache app shell + epub/pdf books marked offline
+        globPatterns: ['**/*.{js,css,html,ico,svg,epub,pdf}'],
         // Belt-and-suspenders: explicitly delete any precache from a
         // previous deploy once the new service worker activates, instead of
         // relying on the plugin's default. The other half of "never see a

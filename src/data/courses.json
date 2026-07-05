@@ -108,6 +108,15 @@
     "locked": false
   },
   {
+    "id": "course-ajedrez",
+    "title": "Ajedrez desde Cero",
+    "description": "Aprende a jugar ajedrez paso a paso: piezas, aperturas, tácticas y finales. Con retos prácticos en el tablero del campus.",
+    "icon": "♟️",
+    "color": "#a78bfa",
+    "category": "Estrategia",
+    "locked": false
+  },
+  {
     "id": "course-claude-mayores",
     "title": "Claude para Todos",
     "description": "Aprende a usar Claude, un asistente de inteligencia artificial, paso a paso y sin prisa — para cualquier persona, sin experiencia previa necesaria. Sin mundos virtuales, con videos y un chat sencillo.",

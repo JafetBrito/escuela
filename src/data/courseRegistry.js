@@ -2,6 +2,7 @@ import course001 from './course.json'
 import courseDemo from './courseDemo.json'
 import courseFilosofia from './courseFilosofia.json'
 import courseClaudeMayores from './courseClaudeMayores.json'
+import courseAjedrez from './courseAjedrez.json'
 
 // Maps a courseId (from courses.json / license / route param) to its full
 // content (modules, quizzes, resources). Add new courses here as they ship.
@@ -10,6 +11,7 @@ export const COURSES_DATA = {
   [courseDemo.courseId]: courseDemo,
   [courseFilosofia.courseId]: courseFilosofia,
   [courseClaudeMayores.courseId]: courseClaudeMayores,
+  [courseAjedrez.courseId]: courseAjedrez,
 }
 
 export function getCourseData(courseId) {
