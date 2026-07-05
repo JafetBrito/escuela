@@ -35,6 +35,8 @@ import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
+import { useHolidayStore } from './stores/useHolidayStore'
+import { useEffect } from 'react'
 
 /**
  * 📦 CODE SPLITTING (CARGA DIFERIDA)
@@ -63,6 +65,10 @@ const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
 const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
 const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
+const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
+const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
+const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
+const AnnouncementsPage = lazy(() => import('./components/announcements/AnnouncementsPage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -91,8 +97,9 @@ function SyncErrorBanner() {
 }
 
 export default function App() {
-  // Estado global para saber si el usuario abrió un libro desde cualquier parte de la app.
   const openBookId = useLibraryStore((s) => s.openBookId)
+  // Load holiday theme from Supabase so the CSS body class is applied everywhere.
+  useEffect(() => { useHolidayStore.getState().load() }, [])
 
   return (
     <BrowserRouter>
@@ -250,6 +257,46 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <NotesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/herramientas"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <ToolsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mis-tareas"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TasksPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tareas"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminTasksPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/anuncios"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AnnouncementsPage />
               </Suspense>
             </ProtectedRoute>
           }

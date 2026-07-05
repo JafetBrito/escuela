@@ -11,6 +11,7 @@ import { useTutorialStore } from '../../stores/useTutorialStore'
 import { TUTORIAL_MISSIONS } from '../../data/tutorialMissions'
 import { setVoicePermission } from '../../services/admin/gmCommands'
 import { pushSnapshotToCloud } from '../../services/persistence/autoSave'
+import { useHolidayStore, HOLIDAYS } from '../../stores/useHolidayStore'
 import GmConsole from './GmConsole'
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -31,17 +32,20 @@ const NAV_GROUPS = [
   {
     label: 'Plataforma',
     links: [
-      { to: '/dashboard',  label: 'Dashboard' },
-      { to: '/tienda',     label: 'Tienda' },
-      { to: '/ajustes',    label: 'Ajustes' },
-      { to: '/logros',     label: 'Logros' },
-      { to: '/misiones',   label: 'Misiones' },
-      { to: '/notas',      label: 'Notas' },
-      { to: '/amigos',     label: 'Amigos' },
-      { to: '/chats',      label: 'Chats' },
-      { to: '/biblioteca', label: 'Biblioteca' },
-      { to: '/arbol',      label: 'Árbol de Habilidades' },
-      { to: '/arena',      label: 'Arena' },
+      { to: '/dashboard',    label: 'Dashboard' },
+      { to: '/tienda',       label: 'Tienda' },
+      { to: '/ajustes',      label: 'Ajustes' },
+      { to: '/logros',       label: 'Logros' },
+      { to: '/misiones',     label: 'Misiones' },
+      { to: '/notas',        label: 'Notas' },
+      { to: '/amigos',       label: 'Amigos' },
+      { to: '/chats',        label: 'Chats' },
+      { to: '/biblioteca',   label: 'Biblioteca' },
+      { to: '/herramientas', label: 'Herramientas' },
+      { to: '/arbol',        label: 'Árbol de Habilidades' },
+      { to: '/arena',        label: 'Arena' },
+      { to: '/anuncios',     label: '📋 Anuncios' },
+      { to: '/mis-tareas',   label: '📋 Mis Tareas' },
     ],
   },
   {
@@ -60,6 +64,7 @@ const NAV_GROUPS = [
     links: [
       { to: '/admin-setup',         label: '⚙️ Admin Setup' },
       { to: '/admin/flipbook-test', label: '📖 Flipbook (test)' },
+      { to: '/admin/tareas',        label: '📋 Gestión de Tareas' },
     ],
   },
 ]
@@ -96,6 +101,8 @@ export default function DevToolsPanel() {
   const xp = useLevelStore((s) => s.xp)
   const { level, isMaxLevel } = levelProgress(xp)
   const avatarOverride = useDevCalibrationStore((s) => s.avatarRotationOverride)
+  const activeHoliday = useHolidayStore((s) => s.activeHoliday)
+  const setHoliday = useHolidayStore((s) => s.set)
 
   if (!isAdmin?.()) return null
 
@@ -240,6 +247,29 @@ export default function DevToolsPanel() {
                 className="flex-1 rounded-lg border border-border bg-background px-1 py-1 text-xs text-text outline-none focus:border-primary">
                 {WEATHERS.map((w) => <option key={w} value={w}>{w}</option>)}
               </select>
+            </div>
+          </Section>
+
+          {/* ── Tema festivo ─────────────────────────────────────── */}
+          <Section title="🎉 Tema Festivo">
+            <p className="text-[10px] text-text-muted">
+              Activo: <span className="font-bold text-text">{HOLIDAYS[activeHoliday]?.icon} {HOLIDAYS[activeHoliday]?.label}</span>
+            </p>
+            <div className="mt-1 grid grid-cols-2 gap-1">
+              {Object.entries(HOLIDAYS).map(([key, meta]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setHoliday(key)}
+                  className={`rounded-lg px-2 py-1 text-xs font-semibold transition ${
+                    activeHoliday === key
+                      ? 'bg-primary text-background'
+                      : 'border border-border text-text-muted hover:text-text'
+                  }`}
+                >
+                  {meta.icon} {meta.label}
+                </button>
+              ))}
             </div>
           </Section>
 

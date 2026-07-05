@@ -124,5 +124,41 @@
     "color": "#fb923c",
     "category": "Claude para Todos",
     "locked": false
+  },
+  {
+    "id": "course-biologia",
+    "title": "Biología desde Cero",
+    "description": "Células, ADN, ecosistemas y evolución explicados de forma visual y accesible. Desde los organismos más simples hasta los seres vivos más complejos. Próximamente.",
+    "icon": "🧬",
+    "color": "#4ade80",
+    "category": "Ciencias",
+    "locked": true
+  },
+  {
+    "id": "course-psicologia",
+    "title": "Introducción a la Psicología",
+    "description": "Entiende cómo funciona la mente humana: emociones, comportamiento, memoria y aprendizaje. Con casos reales y aplicaciones cotidianas. Próximamente.",
+    "icon": "🧠",
+    "color": "#e879f9",
+    "category": "Ciencias Sociales",
+    "locked": true
+  },
+  {
+    "id": "course-historia",
+    "title": "Historia del Mundo",
+    "description": "Un viaje desde las primeras civilizaciones hasta el mundo moderno. Guerras, imperios, revoluciones y los personajes que cambiaron la historia. Próximamente.",
+    "icon": "🏛️",
+    "color": "#f59e0b",
+    "category": "Historia",
+    "locked": true
+  },
+  {
+    "id": "course-matematicas",
+    "title": "Matemáticas Esenciales",
+    "description": "Aritmética, álgebra, geometría y estadística. Todo lo que necesitas para entender el mundo en números, con ejercicios interactivos y sin miedo a las fórmulas. Próximamente.",
+    "icon": "📐",
+    "color": "#60a5fa",
+    "category": "Matemáticas",
+    "locked": true
   }
 ]

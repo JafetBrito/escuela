@@ -11,8 +11,10 @@ const GROUPS = [
     label: 'Academia',
     icon: '🎓',
     items: [
-      { to: '/notas',      label: 'Notas',    icon: '📝' },
-      { to: '/biblioteca', label: 'Librería', icon: '📚' },
+      { to: '/notas',        label: 'Notas',        icon: '📝' },
+      { to: '/biblioteca',   label: 'Librería',     icon: '📚' },
+      { to: '/herramientas', label: 'Herramientas', icon: '🔧' },
+      { to: '/anuncios',     label: 'Anuncios',     icon: '📋' },
     ],
   },
   {
@@ -20,10 +22,11 @@ const GROUPS = [
     label: 'Progreso',
     icon: '🛡️',
     items: [
-      { to: '/mascota',  label: 'Mi Equipo', icon: '⚔️' },
-      { to: '/arbol',    label: 'Árbol',     icon: '🌳' },
-      { to: '/misiones', label: 'Misiones',  icon: '📜' },
-      { to: '/logros',   label: 'Logros',    icon: '🏅' },
+      { to: '/mascota',   label: 'Mi Equipo', icon: '⚔️' },
+      { to: '/arbol',     label: 'Árbol',     icon: '🌳' },
+      { to: '/misiones',  label: 'Misiones',  icon: '📜' },
+      { to: '/logros',    label: 'Logros',    icon: '🏅' },
+      { to: '/mis-tareas', label: 'Mis Tareas', icon: '📋' },
     ],
   },
   {

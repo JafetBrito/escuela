@@ -251,6 +251,17 @@ export const SHOP_ITEMS = [
     kind: 'camera',
   },
   {
+    id: 'calculadora',
+    name: 'Calculadora Científica',
+    icon: '🔢',
+    rarity: 'rare',
+    category: 'objetos',
+    price: 4500,
+    description: 'Una calculadora científica flotante. Actívala para tenerla disponible en cualquier pantalla de la plataforma.',
+    interactive: true,
+    kind: 'calculator',
+  },
+  {
     id: 'linterna',
     name: 'Linterna',
     icon: '🔦',

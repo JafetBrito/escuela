@@ -233,3 +233,124 @@ body {
 .tech-input {
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* ── Temas Festivos ──────────────────────────────────────────────────────────
+   Cada clase se aplica a <html> via useHolidayStore cuando el admin activa
+   un tema. Diseño visual expandible — por ahora solo colores + patterns.   */
+
+/* 🎃 Halloween */
+:root.holiday-halloween {
+  --color-primary: #f97316;
+  --color-primary-hover: #ea6e0e;
+  --color-background: #130a1a;
+  --color-surface: #1f0f2e;
+  --color-surface-hover: #2e1542;
+  --color-border: #4c1d6b;
+  --color-text: #f3e8ff;
+  --color-text-muted: #c084fc;
+}
+:root.holiday-halloween body {
+  background-image:
+    radial-gradient(circle at 80% 10%, rgba(249, 115, 22, 0.12), transparent 45%),
+    radial-gradient(circle at 15% 90%, rgba(168, 85, 247, 0.10), transparent 40%);
+}
+
+/* 💀 Día de Muertos */
+:root.holiday-dia_muertos {
+  --color-primary: #ec4899;
+  --color-primary-hover: #db2777;
+  --color-background: #0d0a14;
+  --color-surface: #1a1124;
+  --color-surface-hover: #251730;
+  --color-border: #6d28a0;
+  --color-text: #fdf4ff;
+  --color-text-muted: #d8b4fe;
+}
+:root.holiday-dia_muertos body {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.10), transparent 40%);
+}
+
+/* 🎄 Navidad */
+:root.holiday-navidad {
+  --color-primary: #22c55e;
+  --color-primary-hover: #16a34a;
+  --color-background: #030d08;
+  --color-surface: #0a1f10;
+  --color-surface-hover: #112b17;
+  --color-border: #166534;
+  --color-text: #f0fdf4;
+  --color-text-muted: #86efac;
+}
+:root.holiday-navidad body {
+  background-image:
+    radial-gradient(circle at 70% 5%, rgba(220, 38, 38, 0.12), transparent 35%),
+    radial-gradient(circle at 30% 95%, rgba(34, 197, 94, 0.08), transparent 40%);
+}
+
+/* 🎆 Año Nuevo */
+:root.holiday-ano_nuevo {
+  --color-primary: #eab308;
+  --color-primary-hover: #ca8a04;
+  --color-background: #0a0a0a;
+  --color-surface: #111111;
+  --color-surface-hover: #1c1c1c;
+  --color-border: #5c4a00;
+  --color-text: #fefce8;
+  --color-text-muted: #fde047;
+}
+:root.holiday-ano_nuevo body {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(234, 179, 8, 0.18), transparent 50%);
+}
+
+/* 👑 Reyes Magos */
+:root.holiday-reyes {
+  --color-primary: #a855f7;
+  --color-primary-hover: #9333ea;
+  --color-background: #08060f;
+  --color-surface: #12102a;
+  --color-surface-hover: #1c1a38;
+  --color-border: #4c1d95;
+  --color-text: #faf5ff;
+  --color-text-muted: #c084fc;
+}
+:root.holiday-reyes body {
+  background-image:
+    radial-gradient(circle at 30% 10%, rgba(234, 179, 8, 0.10), transparent 35%),
+    radial-gradient(circle at 70% 90%, rgba(168, 85, 247, 0.10), transparent 40%);
+}
+
+/* 💝 San Valentín */
+:root.holiday-san_valentin {
+  --color-primary: #f43f5e;
+  --color-primary-hover: #e11d48;
+  --color-background: #100610;
+  --color-surface: #1e0d1a;
+  --color-surface-hover: #2a1424;
+  --color-border: #881337;
+  --color-text: #fff1f2;
+  --color-text-muted: #fda4af;
+}
+:root.holiday-san_valentin body {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.14), transparent 50%);
+}
+
+/* 🌸 Fiesta de Primavera */
+:root.holiday-primavera {
+  --color-primary: #10b981;
+  --color-primary-hover: #059669;
+  --color-background: #040d09;
+  --color-surface: #0c1f14;
+  --color-surface-hover: #142c1c;
+  --color-border: #065f46;
+  --color-text: #ecfdf5;
+  --color-text-muted: #6ee7b7;
+}
+:root.holiday-primavera body {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.10), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(251, 191, 36, 0.08), transparent 35%);
+}

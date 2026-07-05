@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
@@ -10,6 +10,8 @@ import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
+import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
+import { useTasksStore } from '../../stores/useTasksStore'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -17,8 +19,17 @@ export default function DashboardPage() {
   const license = useAuthStore((s) => s.license)
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
+  const announcements = useAnnouncementsStore((s) => s.announcements)
+  const fetchAnnouncements = useAnnouncementsStore((s) => s.fetch)
+  const tasks = useTasksStore((s) => s.tasks)
+  const fetchTasks = useTasksStore((s) => s.fetchMyTasks)
 
   const latest = PATCH_NOTES[0]
+
+  useEffect(() => {
+    fetchAnnouncements()
+    fetchTasks()
+  }, [fetchAnnouncements, fetchTasks])
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -128,6 +139,58 @@ export default function DashboardPage() {
 
           {patchNotesOpen && (
             <PatchNotesModal open={patchNotesOpen} onClose={() => setPatchNotesOpen(false)} />
+          )}
+
+          {/* ── Anuncios escolares + Mis Tareas ── */}
+          {(announcements.length > 0 || tasks.some((t) => t.status === 'pendiente')) && (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {/* Anuncios */}
+              {announcements.length > 0 && (
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-extrabold text-text">📋 Anuncios</h2>
+                    <Link to="/anuncios" className="text-xs text-primary hover:underline">Ver todos →</Link>
+                  </div>
+                  <div className="space-y-2">
+                    {announcements.slice(0, 3).map((a) => (
+                      <div key={a.id} className="flex items-start gap-2">
+                        <span className="shrink-0">{a.icon}</span>
+                        <div>
+                          <p className="text-xs font-semibold text-text leading-snug">{a.title}</p>
+                          {a.body && <p className="text-[11px] text-text-muted leading-snug mt-0.5 line-clamp-1">{a.body}</p>}
+                        </div>
+                        {a.pinned && <span className="ml-auto shrink-0 text-[10px] text-primary">📌</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tareas pendientes */}
+              {tasks.some((t) => t.status === 'pendiente') && (
+                <div className="rounded-2xl border border-amber-500/30 bg-surface p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-extrabold text-text">📋 Mis Tareas</h2>
+                    <Link to="/mis-tareas" className="text-xs text-primary hover:underline">Ver todas →</Link>
+                  </div>
+                  <div className="space-y-2">
+                    {tasks.filter((t) => t.status === 'pendiente').slice(0, 3).map((t) => (
+                      <div key={t.id} className="flex items-start gap-2">
+                        <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                        <div>
+                          <p className="text-xs font-semibold text-text leading-snug">{t.title}</p>
+                          {t.due_date && (
+                            <p className="text-[11px] text-text-muted">
+                              📅 {new Date(t.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {categories.map(([category, categoryCourses]) => {
