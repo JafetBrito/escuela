@@ -10,6 +10,8 @@ const COMPONENT_MAP = {
   janulus: lazy(() => import('./janulus/JanulingoMain')),
   memes: lazy(() => import('./memes/MemesGame')),
   'hacker-terminal': lazy(() => import('./hacker/HackerTerminalGame')),
+  'math': lazy(() => import('./math/MathGame')),
+  'bash-terminal': lazy(() => import('./bash/BashTerminalGame')),
 }
 
 export default function GamePlayerPage() {

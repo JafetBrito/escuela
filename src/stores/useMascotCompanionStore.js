@@ -6,7 +6,7 @@ import { create } from 'zustand'
 // (e.g. the VR world's P/B keyboard shortcuts) can open it on a specific tab.
 export const useMascotCompanionStore = create((set) => ({
   open: false,
-  panel: 'avatar-personaje',
+  panel: 'mascota-chat',
   // Set by the VR world's two separate entry points (mascot paw button vs.
   // "tu clase" portrait) so the menu shows ONLY that entity with no way to
   // switch to the other — outside VR (the learning app's companion) this

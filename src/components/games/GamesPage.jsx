@@ -43,6 +43,46 @@ export default function GamesPage() {
             </div>
           </div>
 
+          {/* ── Cyber Range Alpha ────────────────────────────────────────── */}
+          <div className="relative overflow-hidden rounded-2xl border border-green-500/30 bg-black p-6">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(34,197,94,0.12),_transparent_60%)]" />
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-green-500/10 text-4xl border border-green-500/20">
+                🕵️
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-xl font-black text-white">Oliver Cyber Range</span>
+                  <span className="rounded-full border border-green-500/50 bg-green-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-green-400">
+                    ⚡ Alpha
+                  </span>
+                  <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400 uppercase tracking-wide">
+                    Solo Hackers
+                  </span>
+                </div>
+                <p className="text-sm text-white/60 leading-relaxed mb-3">
+                  Un mundo VR exclusivo inspirado en los escenarios reales que usa el FBI para entrenar
+                  ciberseguridad. Trabaja en equipo para defender hospitales, estaciones de energía e
+                  infraestructura crítica contra ataques simulados por IA. Red team vs Blue team.
+                  Los NPCs adaptan sus tácticas. Los escenarios cambian con cada partida.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {['Defensa activa', 'Red team / Blue team', 'IA adaptativa', 'Escenarios reales', 'Por equipos'].map((tag) => (
+                    <span key={tag} className="rounded-full bg-white/5 border border-white/10 px-2.5 py-1 text-[11px] text-white/50">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <button
+                  disabled
+                  className="rounded-xl border border-green-500/30 bg-green-500/5 px-5 py-2 text-sm font-semibold text-green-400/60 cursor-not-allowed"
+                >
+                  🔒 En desarrollo — Clase Hacker requerida
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {GAMES.map((game) => {
               const available = isAvailable(game)

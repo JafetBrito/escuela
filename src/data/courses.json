@@ -90,6 +90,15 @@
     "locked": true
   },
   {
+    "id": "course-bash",
+    "title": "Bash desde Cero",
+    "description": "Domina la terminal de Linux/Mac: navegación, archivos, pipes, grep, permisos y scripts. Con terminal interactiva para practicar en cada lección.",
+    "icon": "🐚",
+    "color": "#22c55e",
+    "category": "Programación",
+    "locked": false
+  },
+  {
     "id": "course-filo-001",
     "title": "Introducción a la Filosofía",
     "description": "Explora las grandes preguntas de la humanidad con Jafet Brito. Desde Platón hasta el mundo digital, cada lección combina teoría con experiencias VR únicas.",
@@ -160,5 +169,23 @@
     "color": "#60a5fa",
     "category": "Matemáticas",
     "locked": true
+  },
+  {
+    "id": "course-historia-matematicas",
+    "title": "Historia de las Matemáticas: Del Origen al Infinito",
+    "description": "Las matemáticas no son abstractas — son herramientas inventadas por humanos reales. 30,000 años de historia cronológica: desde el hueso de Lebombo hasta los algoritmos de IA.",
+    "icon": "∞",
+    "color": "#818cf8",
+    "category": "Matemáticas",
+    "locked": false
+  },
+  {
+    "id": "course-medicina",
+    "title": "Medicina: El Conocimiento que nos Libera",
+    "description": "El conocimiento médico fue durante siglos propiedad de la élite. Aquí es de todos. Historia cronológica de la medicina + primeros auxilios que cualquier persona puede y debe saber.",
+    "icon": "🩺",
+    "color": "#34d399",
+    "category": "Ciencias",
+    "locked": false
   }
 ]

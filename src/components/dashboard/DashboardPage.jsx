@@ -14,12 +14,16 @@ import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
 import { useTasksStore } from '../../stores/useTasksStore'
+import { useAchievementsStore } from '../../stores/useAchievementsStore'
+import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
+import { useQuestsStore } from '../../stores/useQuestsStore'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 const CAMPUS_LINKS = [
   { to: '/vr',    label: 'Campus VR',  icon: '🕶️' },
   { to: '/mundo', label: 'Mundo 2D',   icon: '📱' },
   { to: '/rol',   label: 'Mundo ROL',  icon: '🎲' },
+  { to: '/games', label: 'Games',      icon: '🎮' },
 ]
 const COMMUNITY_LINKS = [
   { to: '/amigos',   label: 'Amigos',    icon: '👥' },
@@ -31,13 +35,15 @@ const COMMUNITY_LINKS = [
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar({ tab, setTab, onClose }) {
-  const navigate   = useNavigate()
-  const session    = useAuthStore((s) => s.session)
-  const profile    = useAuthStore((s) => s.profile)
-  const signOut    = useAuthStore((s) => s.signOut)
-  const xp         = useLevelStore((s) => s.xp)
-  const { level }  = levelProgress(xp)
-  const displayName = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
+  const navigate      = useNavigate()
+  const session       = useAuthStore((s) => s.session)
+  const profile       = useAuthStore((s) => s.profile)
+  const signOut       = useAuthStore((s) => s.signOut)
+  const xp            = useLevelStore((s) => s.xp)
+  const { level }     = levelProgress(xp)
+  const announcements = useAnnouncementsStore((s) => s.announcements)
+  const displayName   = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
+  const [notifsOpen, setNotifsOpen] = useState(false)
 
   const navTab = (t) => { setTab(t); onClose?.() }
   const go     = (to) => { navigate(to); onClose?.() }
@@ -103,6 +109,45 @@ function Sidebar({ tab, setTab, onClose }) {
           </button>
         ))}
       </div>
+
+      {/* Notificaciones */}
+      {announcements.length > 0 && (
+        <div className="px-2 pt-3">
+          <button
+            type="button"
+            onClick={() => setNotifsOpen((o) => !o)}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text"
+          >
+            <span className="flex items-center gap-2.5">
+              <span>🔔</span>
+              <span>Notificaciones</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                {announcements.length}
+              </span>
+              <span className="text-[10px]">{notifsOpen ? '▴' : '▾'}</span>
+            </span>
+          </button>
+          {notifsOpen && (
+            <div className="mx-1 mb-1 rounded-xl border border-border bg-surface-hover p-2 space-y-1.5">
+              {announcements.slice(0, 3).map((a) => (
+                <div key={a.id} className="flex items-start gap-2 px-1">
+                  <span className="shrink-0 text-sm">{a.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-text line-clamp-1">{a.title}</p>
+                    {a.body && <p className="text-[11px] text-text-muted line-clamp-1">{a.body}</p>}
+                  </div>
+                </div>
+              ))}
+              <button type="button" onClick={() => go('/anuncios')}
+                className="w-full pt-0.5 text-center text-[11px] text-primary hover:underline">
+                Ver todos →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Bottom: settings + logout */}
       <div className="mt-auto px-2 py-3 border-t border-border space-y-0.5">
@@ -179,6 +224,11 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
     return p !== null && p > 0 && p < 100
   }), [progressByCourse])
 
+  const recommended = useMemo(() =>
+    courses.filter((c) => !c.locked && (progressByCourse(c.id) === null || progressByCourse(c.id) === 0))
+      .slice(0, 3),
+  [progressByCourse])
+
   const displayName = profile?.display_name ?? 'Estudiante'
 
   return (
@@ -245,6 +295,51 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
           </Link>
         </div>
       </div>
+
+      {/* Recomendadas para ti */}
+      {recommended.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-extrabold text-text">🎯 Recomendadas para ti</h2>
+            <Link to="/anuncios" className="text-xs text-primary hover:underline">Ver anuncios →</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {recommended.map((c) => {
+              const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleSelect(c)}
+                  className="group rounded-2xl border border-border bg-surface text-left overflow-hidden transition-all hover:border-primary hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  {/* Video thumbnail */}
+                  <div className={`relative flex items-center justify-center h-24 bg-gradient-to-br ${meta.gradient}`}>
+                    <span className="text-5xl drop-shadow-lg">{c.icon}</span>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                      <div className="rounded-full bg-black/40 p-2 opacity-0 group-hover:opacity-100 transition-opacity scale-90 group-hover:scale-100">
+                        <span className="text-white text-base leading-none">▶</span>
+                      </div>
+                    </div>
+                    <span className="absolute top-2 right-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold text-white/80 backdrop-blur-sm">
+                      NUEVO
+                    </span>
+                  </div>
+                  {/* Info */}
+                  <div className="p-3">
+                    <p className="text-[10px] text-text-muted mb-0.5">{meta.icon} {c.category}</p>
+                    <p className="text-sm font-bold text-text leading-tight line-clamp-2">{c.title}</p>
+                    <p className="mt-1 text-xs text-text-muted line-clamp-2">{c.description}</p>
+                    <span className="mt-2 inline-block text-xs font-semibold text-primary">
+                      Ver curso →
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Continúa aprendiendo */}
       {inProgress.length > 0 && (
@@ -400,73 +495,187 @@ function EscuelasTab({ categories, progressByCourse, hasAccessToCourse, handleSe
 
 // ── Tab: Mi Progreso ──────────────────────────────────────────────────────────
 function ProgresoTab({ progressByCourse }) {
-  const xp     = useLevelStore((s) => s.xp)
-  const coins  = useCurrencyStore((s) => s.coins)
+  const xp              = useLevelStore((s) => s.xp)
+  const coins           = useCurrencyStore((s) => s.coins)
+  const tasks           = useTasksStore((s) => s.tasks)
+  const unlocked        = useAchievementsStore((s) => s.unlocked)
+  const missionsClaimed = useGlobalMissionsStore((s) => s.claimed)
+  const questsCompleted = useQuestsStore((s) => s.completed)
   const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
 
-  const started   = courses.filter((c) => progressByCourse(c.id) !== null && progressByCourse(c.id) > 0).length
-  const completed = courses.filter((c) => progressByCourse(c.id) === 100).length
+  const completed    = courses.filter((c) => progressByCourse(c.id) === 100).length
+  const inProgress   = courses.filter((c) => { const p = progressByCourse(c.id); return p !== null && p > 0 && p < 100 })
+
+  const pending      = tasks.filter((t) => t.status === 'pendiente').length
+  const submitted    = tasks.filter((t) => t.status === 'entregada').length
+  const graded       = tasks.filter((t) => t.status === 'revisada')
+  const avgGrade     = graded.length > 0
+    ? Math.round(graded.reduce((acc, t) => acc + (t.grade / t.grade_max) * 100, 0) / graded.length)
+    : null
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-10">
       <h1 className="text-2xl font-black text-text">Mi Progreso</h1>
 
-      {/* Level card */}
-      <div className="rounded-2xl border border-border bg-surface p-6">
-        <div className="flex items-end gap-4 mb-4">
-          <div className="text-center">
-            <p className="text-xs text-text-muted uppercase tracking-widest mb-1">Nivel</p>
-            <p className="text-6xl font-black text-primary leading-none">{level}</p>
+      {/* ══ SECCIÓN ACADÉMICA ══════════════════════════════════ */}
+      <section className="space-y-4">
+        <h2 className="border-b border-border pb-2 text-sm font-bold uppercase tracking-widest text-text-muted">
+          📋 Progreso Académico
+        </h2>
+
+        {/* Cursos en curso */}
+        {inProgress.length > 0 && (
+          <div className="rounded-2xl border border-border bg-surface p-4 space-y-3">
+            <p className="text-sm font-extrabold text-text">Cursos en progreso</p>
+            {inProgress.map((c) => {
+              const pct  = progressByCourse(c.id)
+              const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
+              return (
+                <div key={c.id} className="flex items-center gap-3">
+                  <span className="text-lg shrink-0">{c.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-text truncate">{c.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="h-1.5 flex-1 rounded-full bg-surface-hover">
+                        <div className="h-1.5 rounded-full transition-all"
+                          style={{ width: `${pct}%`, background: meta.accent }} />
+                      </div>
+                      <span className="shrink-0 text-[10px] text-text-muted">{pct}%</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between text-xs text-text-muted mb-1.5">
-              <span>{xpIntoLevel} XP</span>
-              <span>{isMaxLevel ? 'MAX' : `${xpForNextLevel} XP`}</span>
+        )}
+
+        {/* Resumen de tareas */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Pendientes',  value: pending,        icon: '⏳', color: '#f59e0b' },
+            { label: 'Entregadas',  value: submitted,      icon: '📤', color: '#3b82f6' },
+            { label: 'Calificadas', value: graded.length,  icon: '✅', color: '#22c55e' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
+              <p className="text-2xl mb-1">{s.icon}</p>
+              <p className="text-xl font-black text-text">{s.value}</p>
+              <p className="text-[11px] text-text-muted mt-0.5">{s.label}</p>
             </div>
-            <div className="h-3 rounded-full bg-surface-hover">
-              <div className="h-3 rounded-full bg-primary transition-all"
-                style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
+          ))}
+        </div>
+
+        {/* Tabla de calificaciones */}
+        {graded.length > 0 && (
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-extrabold text-text">Calificaciones</p>
+              {avgGrade !== null && (
+                <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                  Promedio: {avgGrade}%
+                </span>
+              )}
             </div>
-            <p className="mt-1.5 text-xs text-text-muted">{xp} XP totales</p>
+            <div className="space-y-2.5">
+              {graded.map((t) => {
+                const pct   = Math.round((t.grade / t.grade_max) * 100)
+                const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444'
+                return (
+                  <div key={t.id} className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-text truncate">{t.title}</p>
+                      {t.feedback && (
+                        <p className="mt-0.5 text-[11px] text-text-muted line-clamp-1">
+                          💬 {t.feedback}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="rounded-lg px-2 py-0.5 text-xs font-black"
+                        style={{ background: `${color}22`, color }}>
+                        {t.grade}/{t.grade_max}
+                      </span>
+                      <p className="mt-0.5 text-[10px] text-text-muted">{pct}%</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {tasks.length === 0 && (
+          <p className="py-4 text-center text-sm text-text-muted">No tienes tareas asignadas aún.</p>
+        )}
+
+        <Link to="/mis-tareas"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
+          📋 Ver todas mis tareas →
+        </Link>
+      </section>
+
+      {/* ══ SECCIÓN DEL JUEGO ═════════════════════════════════ */}
+      <section className="space-y-4">
+        <h2 className="border-b border-border pb-2 text-sm font-bold uppercase tracking-widest text-text-muted">
+          🎮 Progreso en el Juego
+        </h2>
+
+        {/* Level card */}
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <div className="flex items-end gap-4">
+            <div className="text-center">
+              <p className="mb-1 text-xs uppercase tracking-widest text-text-muted">Nivel</p>
+              <p className="text-6xl font-black leading-none text-primary">{level}</p>
+            </div>
+            <div className="flex-1">
+              <div className="mb-1.5 flex justify-between text-xs text-text-muted">
+                <span>{xpIntoLevel} XP</span>
+                <span>{isMaxLevel ? 'MAX' : `${xpForNextLevel} XP`}</span>
+              </div>
+              <div className="h-3 rounded-full bg-surface-hover">
+                <div className="h-3 rounded-full bg-primary transition-all"
+                  style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
+              </div>
+              <p className="mt-1.5 text-xs text-text-muted">{xp} XP totales</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Monedas', value: coins.toLocaleString(), icon: '💰' },
-          { label: 'Cursos iniciados', value: started, icon: '📖' },
-          { label: 'Completados', value: completed, icon: '🏅' },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
-            <p className="text-2xl mb-1">{s.icon}</p>
-            <p className="text-xl font-black text-text">{s.value}</p>
-            <p className="text-[11px] text-text-muted mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Quick links */}
-      <div className="space-y-2">
-        <h2 className="text-sm font-bold text-text-muted uppercase tracking-widest">Explorar</h2>
-        {[
-          { to: '/arbol',     icon: '🌳', label: 'Árbol de habilidades', desc: 'Elige tu clase y desbloquea poderes' },
-          { to: '/logros',    icon: '🏅', label: 'Logros',               desc: 'Tus medallas y secretos desbloqueados' },
-          { to: '/misiones',  icon: '📜', label: 'Misiones',             desc: 'Objetivos activos y completados' },
-          { to: '/mascota',   icon: '⚔️', label: 'Mi Equipo',            desc: 'Avatar, mascota, equipamiento' },
-        ].map((item) => (
-          <Link key={item.to} to={item.to}
-            className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-3 transition-colors hover:border-primary hover:bg-surface-hover">
-            <span className="text-2xl">{item.icon}</span>
-            <div>
-              <p className="text-sm font-semibold text-text">{item.label}</p>
-              <p className="text-xs text-text-muted">{item.desc}</p>
+        {/* Game stats */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Monedas',     value: coins.toLocaleString(),                           icon: '💰' },
+            { label: 'Logros',      value: unlocked.length,                                  icon: '🏅' },
+            { label: 'Misiones',    value: missionsClaimed.length + questsCompleted.length,  icon: '📜' },
+            { label: 'Completados', value: completed,                                         icon: '✅' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
+              <p className="mb-1 text-2xl">{s.icon}</p>
+              <p className="text-xl font-black text-text">{s.value}</p>
+              <p className="mt-0.5 text-[11px] text-text-muted">{s.label}</p>
             </div>
-            <span className="ml-auto text-text-muted">›</span>
-          </Link>
-        ))}
-      </div>
+          ))}
+        </div>
+
+        {/* Quick links */}
+        <div className="space-y-2">
+          {[
+            { to: '/arbol',    icon: '🌳', label: 'Árbol de habilidades', desc: 'Elige tu clase y desbloquea poderes' },
+            { to: '/logros',   icon: '🏅', label: 'Logros',               desc: 'Tus medallas y secretos desbloqueados' },
+            { to: '/misiones', icon: '📜', label: 'Misiones',             desc: 'Objetivos activos y completados' },
+            { to: '/mascota',  icon: '⚔️', label: 'Mi Equipo',            desc: 'Avatar, mascota, equipamiento' },
+          ].map((item) => (
+            <Link key={item.to} to={item.to}
+              className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-3 transition-colors hover:border-primary hover:bg-surface-hover">
+              <span className="text-2xl">{item.icon}</span>
+              <div>
+                <p className="text-sm font-semibold text-text">{item.label}</p>
+                <p className="text-xs text-text-muted">{item.desc}</p>
+              </div>
+              <span className="ml-auto text-text-muted">›</span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

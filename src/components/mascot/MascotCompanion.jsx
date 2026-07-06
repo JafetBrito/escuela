@@ -10,6 +10,7 @@ import { EquipmentBagGrid } from '../vr/BagsPanel'
 import Inventory from '../inventory/Inventory'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
+import MissionsTab from './MissionsTab'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -17,55 +18,71 @@ import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { getMascotById } from '../../data/mascotRegistry'
 
-// ─── N48 ─────────────────────────────────────────────────────────────────────
-// Two top-level tabs — Avatar (your player character) and Mascota (Oliver) —
-// each with the same WoW-style character-pane sub-tabs: Personaje (3D model
-// + equipped gear), Árbol (skills), Bolsas (equip grid), Apariencia, Libros,
-// Notas, Estadísticas. Mascota gets an extra Chat sub-tab. In VR (`vrMode`
-// prop) the Avatar/Mascota switcher is hidden and the entity is locked to
-// whichever button opened the menu (paw button = mascota, portrait = avatar)
-// — see `lockedEntity` in useMascotCompanionStore. `panel` in the store is
-// `"${entityId}-${subTabId}"`.
 const ENTITY_TABS = [
-  { id: 'avatar', label: 'Avatar', icon: '⚔️', owner: 'player' },
+  { id: 'avatar',  label: 'Avatar',  icon: '⚔️', owner: 'player' },
   { id: 'mascota', label: 'Mascota', icon: '🐾', owner: 'oliver' },
 ]
 
-const SUB_TABS_AVATAR = [
-  { id: 'personaje', label: 'Personaje', icon: '🧑' },
-  { id: 'arbol', label: 'Árbol', icon: '🌳' },
-  { id: 'bolsas', label: 'Bolsas', icon: '🎒' },
-  { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
-  { id: 'libros', label: 'Libros', icon: '📚' },
-  { id: 'notas', label: 'Notas', icon: '📝' },
-  { id: 'estadisticas', label: 'Estadísticas', icon: '📊' },
+// Tabs shown when the companion is inside a course — mascota-only, learning-focused
+const SUB_TABS_COURSE = [
+  { id: 'chat',       label: 'Chat',      icon: '💬' },
+  { id: 'misiones',   label: 'Misiones',  icon: '🎯' },
+  { id: 'bolsas',     label: 'Objetos',   icon: '🎒' },
+  { id: 'libros',     label: 'Libros',    icon: '📚' },
+  { id: 'notas',      label: 'Notas',     icon: '📝' },
+  { id: 'apariencia', label: 'Apariencia',icon: '🎨' },
 ]
-const SUB_TABS_MASCOTA = [...SUB_TABS_AVATAR, { id: 'chat', label: 'Chat', icon: '💬' }]
 
-// Courses for an audience the RPG layer (avatar/clases/equipo/XP) would only
-// confuse — these get a "modo serio" with just Chat + Libros, no Avatar tab,
-// no missions (the class resources + video are enough).
+const SUB_TABS_AVATAR = [
+  { id: 'personaje',  label: 'Personaje', icon: '🧑' },
+  { id: 'arbol',      label: 'Árbol',     icon: '🌳' },
+  { id: 'bolsas',     label: 'Bolsas',    icon: '🎒' },
+  { id: 'apariencia', label: 'Apariencia',icon: '🎨' },
+  { id: 'libros',     label: 'Libros',    icon: '📚' },
+  { id: 'notas',      label: 'Notas',     icon: '📝' },
+  { id: 'estadisticas',label:'Estadísticas',icon:'📊'},
+]
+const SUB_TABS_MASCOTA = [
+  ...SUB_TABS_AVATAR,
+  { id: 'misiones',  label: 'Misiones',  icon: '🎯' },
+  { id: 'chat',      label: 'Chat',      icon: '💬' },
+]
+
+// Simple mode for non-RPG audiences (e.g. claude-mayores)
 const SIMPLE_MODE_COURSES = new Set(['course-claude-mayores'])
 const SUB_TABS_SIMPLE = [
-  { id: 'chat', label: 'Chat', icon: '💬' },
+  { id: 'chat',   label: 'Chat',   icon: '💬' },
   { id: 'libros', label: 'Libros', icon: '📚' },
 ]
 
 export default function MascotCompanion({ courseId, module, hideViewport = false, vrMode = false }) {
-  const open = useMascotCompanionStore((s) => s.open)
-  const setOpen = useMascotCompanionStore((s) => s.setOpen)
-  const openLocked = useMascotCompanionStore((s) => s.openLocked)
-  const panel = useMascotCompanionStore((s) => s.panel)
-  const setPanel = useMascotCompanionStore((s) => s.setPanel)
+  const open         = useMascotCompanionStore((s) => s.open)
+  const setOpen      = useMascotCompanionStore((s) => s.setOpen)
+  const openLocked   = useMascotCompanionStore((s) => s.openLocked)
+  const panel        = useMascotCompanionStore((s) => s.panel)
+  const setPanel     = useMascotCompanionStore((s) => s.setPanel)
   const lockedEntity = useMascotCompanionStore((s) => s.lockedEntity)
 
-  const simpleMode = SIMPLE_MODE_COURSES.has(courseId)
+  const simpleMode  = SIMPLE_MODE_COURSES.has(courseId)
+  // In course context: always show mascota, hide the Avatar/Mascota switcher
+  const isCourseMode = Boolean(courseId) && !vrMode && !simpleMode
+
   const [entityId, rawSubTab] = panel.split('-')
+
   const entity = simpleMode
     ? ENTITY_TABS[1]
-    : (ENTITY_TABS.find((e) => e.id === (lockedEntity ?? entityId)) ?? ENTITY_TABS[0])
+    : isCourseMode
+      ? ENTITY_TABS[1]   // mascota locked in courses
+      : (ENTITY_TABS.find((e) => e.id === (lockedEntity ?? entityId)) ?? ENTITY_TABS[1])
+
   const isAvatarEntity = entity.id === 'avatar'
-  const subTabs = simpleMode ? SUB_TABS_SIMPLE : (isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA)
+
+  const subTabs = simpleMode
+    ? SUB_TABS_SIMPLE
+    : isCourseMode
+      ? SUB_TABS_COURSE
+      : (isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA)
+
   const subTab = subTabs.some((t) => t.id === rawSubTab) ? rawSubTab : subTabs[0].id
 
   const setEntity = (id) => {
@@ -73,9 +90,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
     setPanel(`${id}-${fallback}`)
   }
   const setSubTab = (id) => setPanel(`${entity.id}-${id}`)
-  // In VR, the paw button always opens mascota-only and the portrait click
-  // (see VrHud/VRPage) calls openLocked('avatar-personaje', 'avatar') —
-  // toggling the SAME open button here just closes it again.
+
   const handlePawClick = () => {
     if (vrMode) {
       if (open) setOpen(false)
@@ -85,19 +100,19 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
     }
   }
 
-  const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
-  const mascot = getMascotById(selectedMascotId)
-  const settingsMascotName = useSettingsStore((s) => s.mascotName)
-  const coins = useCurrencyStore((s) => s.coins)
-  const displayName = settingsMascotName || mascot.name
+  const selectedMascotId  = useMascotStore((s) => s.selectedMascotId)
+  const mascot            = getMascotById(selectedMascotId)
+  const settingsMascotName= useSettingsStore((s) => s.mascotName)
+  const coins             = useCurrencyStore((s) => s.coins)
+  const displayName       = settingsMascotName || mascot.name
 
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
-  const avatarId = useGameStore((s) => s.player.avatarId)
-  const setAvatar = useGameStore((s) => s.setPlayerAvatar)
-  const cls = playerClass ? PLAYER_CLASSES[playerClass] : null
-  const oCls = oliverClass ? OLIVER_CLASSES[oliverClass] : null
-  const avatar = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
+  const avatarId    = useGameStore((s) => s.player.avatarId)
+  const setAvatar   = useGameStore((s) => s.setPlayerAvatar)
+  const cls         = playerClass ? PLAYER_CLASSES[playerClass] : null
+  const oCls        = oliverClass ? OLIVER_CLASSES[oliverClass] : null
+  const avatar      = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
 
   return (
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
@@ -107,10 +122,13 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
           <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {!simpleMode && (
+                {!simpleMode && !isCourseMode && (
                   <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-mono font-black text-primary" title="Sistema N48">
                     N48
                   </span>
+                )}
+                {isCourseMode && (
+                  <span className="text-lg">🐾</span>
                 )}
                 <p className="text-base font-bold text-text">{displayName}</p>
               </div>
@@ -126,13 +144,13 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             )}
           </div>
 
-          {/* Entity tabs: Avatar | Mascota — hidden when locked to one entity (VR) */}
-          {!simpleMode && !lockedEntity && (
+          {/* Entity tabs — only shown outside course mode and not locked */}
+          {!simpleMode && !lockedEntity && !isCourseMode && (
             <div className="flex gap-1 px-3 pt-2.5">
               {ENTITY_TABS.map((t) => {
                 const isActive = t.id === entity.id
-                const eCls = t.id === 'avatar' ? cls : oCls
-                const eColor = t.id === 'avatar' ? (cls?.color ?? avatar.color) : (oCls?.color ?? '#a855f7')
+                const eCls    = t.id === 'avatar' ? cls : oCls
+                const eColor  = t.id === 'avatar' ? (cls?.color ?? avatar.color) : (oCls?.color ?? '#a855f7')
                 return (
                   <button
                     key={t.id}
@@ -172,9 +190,11 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
           </div>
 
           <div className="flex-1 overflow-y-auto border-t border-border p-4">
-            {subTab === 'personaje' && <CharacterPaperdoll owner={entity.owner} />}
-
-            {subTab === 'arbol' && <CharacterTree owner={entity.owner} hideEquipment />}
+            {subTab === 'personaje'    && <CharacterPaperdoll owner={entity.owner} />}
+            {subTab === 'arbol'        && <CharacterTree owner={entity.owner} hideEquipment />}
+            {subTab === 'estadisticas' && <CharacterStats owner={entity.owner} />}
+            {subTab === 'libros'       && <BooksPanel />}
+            {subTab === 'notas'        && <Inventory className="h-full" />}
 
             {subTab === 'apariencia' && (
               isAvatarEntity ? (
@@ -204,13 +224,9 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
               </div>
             )}
 
-            {subTab === 'notas' && <Inventory className="h-full" />}
-
-            {subTab === 'estadisticas' && <CharacterStats owner={entity.owner} />}
-
-            {subTab === 'libros' && <BooksPanel />}
-
-            {subTab === 'chat' && <ChatTab courseId={courseId} module={module} className="h-full" />}
+            {subTab === 'chat' && (
+              <ChatTab courseId={courseId} module={module} className="h-full" />
+            )}
           </div>
         </div>
       )}

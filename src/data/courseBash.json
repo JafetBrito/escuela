@@ -1,0 +1,361 @@
+{
+  "courseId": "course-bash",
+  "title": "Bash desde Cero",
+  "description": "Aprende a dominar la terminal de Linux/Mac paso a paso, con práctica real en cada lección. Desde los comandos básicos hasta scripts automatizados.",
+  "aiInstructions": "Eres Oliver, el tutor de Bash de la plataforma. Tu rol es enseñar comandos de terminal de forma clara y práctica. Cuando el alumno escriba un comando, explica qué hace cada parte (flags, argumentos). Si hay un error, ayuda a diagnosticarlo. Usa bloques de código con backticks para mostrar comandos. Anima al alumno a practicar en el Terminal interactivo del curso. Puedes usar analogías del mundo real para explicar conceptos (p. ej. 'ls es como ver los archivos en tu escritorio').",
+
+  "modules": [
+    {
+      "id": 1,
+      "title": "¿Qué es la terminal y por qué usarla?",
+      "order": 1,
+      "videoId": "oxuRxtrO2Ag",
+      "description": "La terminal (también llamada consola, shell o línea de comandos) es una ventana de texto donde puedes dar instrucciones directas a tu computadora escribiendo comandos. Es mucho más poderosa que los menús gráficos: puedes hacer en segundos tareas que en la interfaz gráfica tomarían minutos. El shell más común en Linux y Mac es **Bash** (Bourne Again Shell). Cuando abres una terminal, ves el **prompt** — generalmente termina en `$` — que indica que el sistema está listo para recibir un comando. El primer comando que debes conocer es `pwd` (print working directory): te dice en qué carpeta estás ahora mismo.",
+      "exercises": [
+        {
+          "id": "bash-1-1",
+          "type": "challenge",
+          "prompt": "Abre el Terminal de práctica del curso. Escribe `pwd` y presiona Enter. ¿Qué directorio te muestra? Copia el resultado aquí.",
+          "solution": ""
+        },
+        {
+          "id": "bash-1-2",
+          "type": "challenge",
+          "prompt": "Escribe el comando `echo '¡Hola Bash!'` en el terminal. ¿Qué imprime en pantalla? ¿Para qué sirve `echo`?",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "Bash — Manual oficial (en inglés)",
+          "url": "https://www.gnu.org/software/bash/manual/bash.html",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué hace el comando `pwd`?",
+        "options": [
+          "Borra el contenido de la pantalla",
+          "Muestra el directorio de trabajo actual",
+          "Lista los archivos del sistema",
+          "Crea una nueva carpeta"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 2,
+      "title": "Navegando el sistema de archivos: ls y cd",
+      "order": 2,
+      "videoId": "s3ii48qYBxA",
+      "description": "El sistema de archivos en Linux tiene forma de árbol. Todo parte de la raíz `/`. Tu carpeta personal está en `/home/tu-usuario/`. Los dos comandos más usados son:\n\n**`ls`** (list): lista archivos y carpetas del directorio actual.\n- `ls -l` muestra detalles (permisos, tamaño, fecha)\n- `ls -a` muestra archivos ocultos (empiezan con `.`)\n- `ls -la` combina ambas opciones\n\n**`cd`** (change directory): cambia de carpeta.\n- `cd documentos` entra a la carpeta 'documentos'\n- `cd ..` sube un nivel\n- `cd ~` va directamente a tu carpeta personal\n- `cd /` va a la raíz del sistema\n- `cd -` vuelve al directorio anterior\n\nCombinando `pwd`, `ls` y `cd` puedes navegar por todo el sistema de archivos.",
+      "exercises": [
+        {
+          "id": "bash-2-1",
+          "type": "challenge",
+          "prompt": "En el terminal, ejecuta `ls -la` en tu directorio actual. ¿Cuántos archivos y carpetas ves? ¿Qué significan los puntos `.` y `..` que aparecen?",
+          "solution": ""
+        },
+        {
+          "id": "bash-2-2",
+          "type": "challenge",
+          "prompt": "Navega a la carpeta `ejercicios` usando `cd ejercicios`. Luego ejecuta `ls`. ¿Qué archivos contiene? Después vuelve al directorio anterior con `cd ..`.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "Cheat sheet de comandos Linux",
+          "url": "https://cheatography.com/davechild/cheat-sheets/linux-command-line/",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Cómo subes un nivel en la jerarquía de directorios?",
+        "options": [
+          "cd up",
+          "cd ..",
+          "cd /",
+          "back"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 3,
+      "title": "Crear y eliminar archivos y carpetas",
+      "order": 3,
+      "videoId": "s3ii48qYBxA",
+      "description": "Para gestionar archivos desde la terminal usamos estos comandos:\n\n**Crear:**\n- `mkdir mi-carpeta` — crea una carpeta\n- `mkdir -p a/b/c` — crea carpetas anidadas de golpe\n- `touch archivo.txt` — crea un archivo vacío (o actualiza su fecha)\n\n**Eliminar (¡cuidado, no hay papelera!):**\n- `rm archivo.txt` — elimina un archivo\n- `rm -r carpeta/` — elimina una carpeta y todo su contenido\n- `rm -rf carpeta/` — igual pero sin pedir confirmación (¡muy peligroso!)\n- `rmdir carpeta/` — elimina carpeta solo si está vacía\n\n**Copiar y mover:**\n- `cp origen.txt destino.txt` — copia un archivo\n- `cp -r carpeta/ nueva-carpeta/` — copia una carpeta completa\n- `mv origen.txt destino.txt` — mueve o renombra un archivo\n\n⚠️ **Regla de oro**: nunca uses `rm -rf` en directorios que no conoces. No hay deshacer en la terminal.",
+      "exercises": [
+        {
+          "id": "bash-3-1",
+          "type": "challenge",
+          "prompt": "Crea una carpeta llamada `mi-proyecto` con `mkdir mi-proyecto`. Entra a ella con `cd mi-proyecto`. Crea tres archivos: `index.html`, `style.css` y `script.js` usando `touch`. Verifica con `ls`.",
+          "solution": ""
+        },
+        {
+          "id": "bash-3-2",
+          "type": "challenge",
+          "prompt": "Copia el archivo `notas.txt` de tu home a la carpeta `mi-proyecto` usando `cp ~/notas.txt .` (el punto significa 'aquí'). Luego renombra la copia a `mis-notas.txt` con `mv notas.txt mis-notas.txt`.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué hace `mkdir -p a/b/c`?",
+        "options": [
+          "Crea solo la carpeta 'a'",
+          "Mueve la carpeta 'a' a 'b/c'",
+          "Crea todas las carpetas anidadas a/b/c aunque no existan",
+          "Lista las carpetas a, b y c"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    },
+    {
+      "id": 4,
+      "title": "Leer y escribir archivos: cat, echo y redirección",
+      "order": 4,
+      "videoId": "s3ii48qYBxA",
+      "description": "Estos comandos te permiten leer y escribir contenido en archivos:\n\n**Ver contenido:**\n- `cat archivo.txt` — muestra todo el contenido\n- `head -5 archivo.txt` — muestra las primeras 5 líneas\n- `tail -5 archivo.txt` — muestra las últimas 5 líneas\n- `less archivo.txt` — paginador interactivo (q para salir)\n\n**Escribir con echo y redirección:**\n- `echo 'Hola'` — imprime texto en pantalla\n- `echo 'Hola' > salida.txt` — escribe en un archivo (**sobreescribe** si existe)\n- `echo 'Otra línea' >> salida.txt` — **agrega** al final del archivo\n- `>` y `>>` son operadores de **redirección de salida**\n\n**Redirigir entrada:**\n- `cat < archivo.txt` — lee el archivo como entrada\n\n**Pipes `|`:**\n- `cat archivo.txt | head -3` — encadena comandos: la salida de uno es la entrada del siguiente\n- Son una de las características más poderosas de Bash",
+      "exercises": [
+        {
+          "id": "bash-4-1",
+          "type": "challenge",
+          "prompt": "Usa `echo 'Línea 1' > prueba.txt` para crear un archivo. Luego agrega dos líneas más con `>>`. Finalmente lee el archivo con `cat prueba.txt`. ¿Cuántas líneas tiene?",
+          "solution": ""
+        },
+        {
+          "id": "bash-4-2",
+          "type": "challenge",
+          "prompt": "Muestra las primeras 2 líneas de `datos.txt` usando un pipe: `cat datos.txt | head -2`. Luego cuenta cuántas líneas tiene el archivo con `cat datos.txt | wc -l`.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "Redirección en Bash — explainer",
+          "url": "https://www.gnu.org/software/bash/manual/bash.html#Redirections",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Cuál es la diferencia entre `>` y `>>`?",
+        "options": [
+          "No hay diferencia",
+          "`>` sobreescribe el archivo; `>>` agrega al final",
+          "`>` agrega al final; `>>` sobreescribe",
+          "`>` crea carpetas; `>>` crea archivos"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 5,
+      "title": "Buscar con grep y find",
+      "order": 5,
+      "videoId": "VGgTmxXp7xQ",
+      "description": "Dos de los comandos más útiles para encontrar cosas:\n\n**`grep`** — busca texto dentro de archivos:\n- `grep 'manzana' frutas.txt` — busca la palabra 'manzana'\n- `grep -i 'manzana' frutas.txt` — búsqueda sin distinguir mayúsculas\n- `grep -r 'TODO' ./proyecto/` — busca en todos los archivos de una carpeta\n- `grep -n 'error' app.log` — muestra el número de línea\n- `grep -c 'ok' archivo.txt` — cuenta cuántas coincidencias hay\n- `grep -v 'banana' frutas.txt` — muestra líneas que NO contienen la palabra\n\n**`find`** — busca archivos por nombre, tipo, fecha o tamaño:\n- `find . -name '*.txt'` — todos los .txt en el directorio actual\n- `find /home -name 'notas.txt'` — busca el archivo en todo /home\n- `find . -type d` — solo directorios\n- `find . -type f -size +1M` — archivos mayores de 1MB\n- `find . -newer archivo.txt` — archivos más recientes que archivo.txt\n\nCombinado con pipes: `find . -name '*.log' | xargs grep 'error'`",
+      "exercises": [
+        {
+          "id": "bash-5-1",
+          "type": "challenge",
+          "prompt": "En el terminal, usa `grep 'manzana' datos.txt` para buscar cuántas veces aparece 'manzana'. Luego usa `grep -c 'manzana' datos.txt` para que grep te dé el conteo directamente.",
+          "solution": ""
+        },
+        {
+          "id": "bash-5-2",
+          "type": "challenge",
+          "prompt": "Usa `find . -name '*.txt'` para listar todos los archivos .txt en tu directorio actual y subcarpetas. ¿Cuántos encuentra? ¿En qué rutas están?",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "grep — man page",
+          "url": "https://man7.org/linux/man-pages/man1/grep.1.html",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué hace `grep -v 'error' app.log`?",
+        "options": [
+          "Muestra solo las líneas que contienen 'error'",
+          "Cuenta cuántas líneas tienen 'error'",
+          "Muestra las líneas que NO contienen 'error'",
+          "Elimina las líneas con 'error' del archivo"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    },
+    {
+      "id": 6,
+      "title": "Permisos de archivos: chmod y chown",
+      "order": 6,
+      "videoId": "NV0jGWT9k3E",
+      "description": "Cada archivo en Linux tiene un propietario y permisos para tres grupos: **usuario** (u), **grupo** (g) y **otros** (o). Los permisos son: **r** (read=4), **w** (write=2), **x** (execute=1).\n\nCuando haces `ls -l` ves algo como: `-rwxr-xr--`\n- Primer carácter: tipo (`-` archivo, `d` directorio)\n- Siguientes 3: permisos del propietario (rwx)\n- Siguientes 3: permisos del grupo (r-x)\n- Últimos 3: permisos de otros (r--)\n\n**`chmod`** — cambia permisos:\n- `chmod 755 script.sh` — modo numérico: propietario=7(rwx), grupo=5(r-x), otros=5(r-x)\n- `chmod +x script.sh` — agrega permiso de ejecución a todos\n- `chmod u+w archivo.txt` — agrega escritura solo al propietario\n- `chmod go-w archivo.txt` — quita escritura a grupo y otros\n\n**`chown`** — cambia propietario:\n- `chown usuario archivo.txt`\n- `chown usuario:grupo archivo.txt`\n\n**Para ejecutar un script:**\n```bash\nchmod +x hola.sh\n./hola.sh\n```",
+      "exercises": [
+        {
+          "id": "bash-6-1",
+          "type": "challenge",
+          "prompt": "Haz ejecutable el script `hola.sh` con `chmod +x hola.sh`. Luego verifica los permisos con `ls -la hola.sh`. ¿Qué cambió en los permisos?",
+          "solution": ""
+        },
+        {
+          "id": "bash-6-2",
+          "type": "challenge",
+          "prompt": "Ejecuta el script con `./hola.sh`. ¿Qué imprime? Luego abre el archivo con `cat hola.sh` para entender qué hace.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "Permisos en Linux — guía visual",
+          "url": "https://chmod-calculator.com/",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué significa el permiso `755` en chmod?",
+        "options": [
+          "Solo el propietario puede leer el archivo",
+          "Propietario: todo; grupo y otros: leer y ejecutar",
+          "Nadie puede modificar el archivo",
+          "El archivo está oculto"
+        ],
+        "correctIndex": 1
+      },
+      "comments": []
+    },
+    {
+      "id": 7,
+      "title": "Tu primer script de Bash",
+      "order": 7,
+      "videoId": "v7tc7Q5KQJY",
+      "description": "Un script de Bash es un archivo de texto con una serie de comandos que se ejecutan en orden. Empieza siempre con el **shebang**: `#!/bin/bash`\n\n**Variables:**\n```bash\nnombre='Oliver'\necho \"Hola, $nombre\"\n```\n\n**Condicionales:**\n```bash\nif [ $edad -ge 18 ]; then\n  echo 'Mayor de edad'\nelse\n  echo 'Menor de edad'\nfi\n```\n\n**Bucles:**\n```bash\nfor fruta in manzana banana pera; do\n  echo \"Fruta: $fruta\"\ndone\n\nwhile [ $contador -lt 5 ]; do\n  echo $contador\n  contador=$((contador + 1))\ndone\n```\n\n**Argumentos del script:**\n```bash\n# ./mi-script.sh Hola Mundo\necho \"Primer argumento: $1\"\necho \"Segundo argumento: $2\"\necho \"Todos los args: $@\"\n```\n\n**Funciones:**\n```bash\nfunction saludar() {\n  echo \"¡Hola, $1!\"\n}\nsaludar 'Oliver'\n```",
+      "exercises": [
+        {
+          "id": "bash-7-1",
+          "type": "challenge",
+          "prompt": "Usa el terminal para ver el contenido de `hola.sh` con `cat hola.sh`. Luego usa `echo` y redirección para crear un nuevo script `contador.sh` que imprima los números del 1 al 5 en un bucle for. Hazlo ejecutable y pruébalo.",
+          "solution": ""
+        },
+        {
+          "id": "bash-7-2",
+          "type": "challenge",
+          "prompt": "Lee el script `proyecto/main.sh` con `cat proyecto/main.sh`. Modifica su contenido para que también imprima la fecha actual usando el comando `date`. ¿Cómo lo ejecutarías?",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "Bash Scripting Tutorial — ryan's tutorials",
+          "url": "https://ryanstutorials.net/bash-scripting-tutorial/",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué hace la línea `#!/bin/bash` al inicio de un script?",
+        "options": [
+          "Es un comentario decorativo",
+          "Indica que el archivo es ejecutable",
+          "Le dice al sistema qué intérprete usar para ejecutar el script",
+          "Importa las librerías de Bash"
+        ],
+        "correctIndex": 2
+      },
+      "comments": []
+    },
+    {
+      "id": 8,
+      "title": "Comandos útiles y trucos de productividad",
+      "order": 8,
+      "videoId": "v7tc7Q5KQJY",
+      "description": "Con estos comandos y atajos serás mucho más productivo en la terminal:\n\n**Historial y autocompletado:**\n- `↑` / `↓` — navega por comandos anteriores\n- `Tab` — autocompleta nombres de archivos y comandos\n- `history` — muestra el historial de comandos\n- `Ctrl+R` — busca en el historial\n- `!!` — repite el último comando\n- `!grep` — repite el último comando que empieza con 'grep'\n\n**Atajos de teclado:**\n- `Ctrl+C` — cancela el comando actual\n- `Ctrl+Z` — pausa el proceso (reanuda con `fg`)\n- `Ctrl+D` — cierra la terminal / EOF\n- `Ctrl+L` — limpia la pantalla (igual que `clear`)\n- `Ctrl+A` / `Ctrl+E` — va al inicio / fin de la línea\n\n**Comandos varios útiles:**\n- `wc -l archivo.txt` — cuenta líneas\n- `sort archivo.txt` — ordena líneas alfabéticamente\n- `uniq` — elimina líneas duplicadas (usarlo después de sort)\n- `cut -d',' -f1 datos.csv` — extrae columnas\n- `sed 's/old/new/g' archivo.txt` — buscar y reemplazar\n- `date` — muestra la fecha y hora\n- `whoami` — muestra tu usuario actual\n- `which comando` — muestra dónde está instalado un comando",
+      "exercises": [
+        {
+          "id": "bash-8-1",
+          "type": "challenge",
+          "prompt": "Prueba el pipe más útil de procesamiento: `cat datos.txt | sort | uniq`. ¿Qué hace cada parte? ¿Cuántas líneas únicas hay en datos.txt?",
+          "solution": ""
+        },
+        {
+          "id": "bash-8-2",
+          "type": "challenge",
+          "prompt": "Crea un pipeline que: liste todos los .txt, cuente cuántos hay, y guarde el resultado en un archivo. Ejemplo: `find . -name '*.txt' | wc -l > conteo.txt`. Verifica con `cat conteo.txt`.",
+          "solution": ""
+        }
+      ],
+      "resources": [
+        {
+          "label": "🖥️ Terminal de práctica — abre aquí",
+          "url": "/games/bash-terminal",
+          "type": "link"
+        },
+        {
+          "label": "Explainshell — entiende cualquier comando",
+          "url": "https://explainshell.com/",
+          "type": "link"
+        },
+        {
+          "label": "tldr — man pages simplificadas",
+          "url": "https://tldr.sh/",
+          "type": "link"
+        }
+      ],
+      "quiz": {
+        "question": "¿Qué hace `sort archivo.txt | uniq`?",
+        "options": [
+          "Ordena y luego elimina líneas duplicadas",
+          "Busca líneas únicas sin ordenar",
+          "Cuenta las líneas del archivo",
+          "Elimina el archivo y lo recrea ordenado"
+        ],
+        "correctIndex": 0
+      },
+      "comments": []
+    }
+  ]
+}
