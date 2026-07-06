@@ -152,6 +152,16 @@ export const GAMES = [
     reward: 0,
   },
   {
+    id: 'duelo-de-mentes',
+    title: 'Duelo de Mentes',
+    icon: '⚔️',
+    category: 'Estrategia',
+    description: 'Juego de cartas por turnos: Científicos, Hackers y Matemáticos históricos se enfrentan en batalla. Sus habilidades son sus contribuciones reales al conocimiento.',
+    type: 'component',
+    component: 'duelo-mentes',
+    reward: 300,
+  },
+  {
     id: 'linea-tiempo',
     title: 'Línea del Tiempo',
     icon: '🏺',

@@ -83,6 +83,46 @@ export default function GamesPage() {
             </div>
           </div>
 
+          {/* ── Duelo de Mentes Alpha ────────────────────────────────────── */}
+          <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-black p-6">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(139,92,246,0.15),_transparent_60%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(236,72,153,0.08),_transparent_60%)]" />
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-violet-500/10 text-4xl border border-violet-500/20">
+                ⚔️
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-xl font-black text-white">Duelo de Mentes</span>
+                  <span className="rounded-full border border-violet-500/50 bg-violet-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-violet-400">
+                    ⚡ Alpha
+                  </span>
+                  <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400 uppercase tracking-wide">
+                    Dev Alpha
+                  </span>
+                </div>
+                <p className="text-sm text-white/60 leading-relaxed mb-3">
+                  Juego de cartas por turnos donde Científicos, Hackers y Matemáticos se enfrentan en batalla.
+                  Elige tu deck — Marie Curie vs Aristóteles, Ada Lovelace vs Pitágoras — y cuando juegas una carta,
+                  tu personaje aparece en el campo como modelo 3D. Las habilidades son sus contribuciones reales al conocimiento.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {['Cartas por turnos', 'Modelos 3D en campo', 'Científicos vs Filósofos', 'Sacrificios y niveles', 'Educativo'].map((tag) => (
+                    <span key={tag} className="rounded-full bg-white/5 border border-white/10 px-2.5 py-1 text-[11px] text-white/50">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <Link
+                  to="/games/duelo-de-mentes"
+                  className="inline-block rounded-xl border border-violet-500/50 bg-violet-500/15 px-5 py-2 text-sm font-semibold text-violet-300 transition-colors hover:bg-violet-500/25"
+                >
+                  ⚔️ Probar Alpha
+                </Link>
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {GAMES.map((game) => {
               const available = isAvailable(game)

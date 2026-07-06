@@ -10,7 +10,6 @@ export default function MissionsTab({ courseId, module, onGoToChat }) {
     courseId && module ? s.progress[courseId]?.moduleMissions[module.id] ?? {} : {},
   )
   const accepted     = useGlobalMissionsStore((s) => s.accepted)
-  const completed    = useGlobalMissionsStore((s) => s.completed)
   const claimed      = useGlobalMissionsStore((s) => s.claimed)
   const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
 
@@ -77,7 +76,7 @@ export default function MissionsTab({ courseId, module, onGoToChat }) {
         ) : (
           visibleGlobal.map((m) => {
             const isAccepted  = accepted.includes(m.id)
-            const isDone      = completed.includes(m.id)
+            const isDone      = claimed.includes(m.id)
             return (
               <div key={m.id} className="mb-2 rounded-xl border border-border bg-background p-3">
                 <div className="flex items-start gap-2">

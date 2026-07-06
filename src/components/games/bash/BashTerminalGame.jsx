@@ -507,7 +507,7 @@ export default function BashTerminalGame() {
 
     const outLines = (result.lines ?? []).map((l) => ({ type: 'output', ...l }))
     setOutput((o) => [...o, promptLine, ...outLines])
-  }, [input, cmd, cwd, fs, cmdHistory, prompt])
+  }, [input, cwd, fs, cmdHistory, prompt])
 
   const handleKey = (e) => {
     if (e.key === 'Enter') { submit(); return }
