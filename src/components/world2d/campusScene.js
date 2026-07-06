@@ -37,11 +37,11 @@ const TREES = [
 // ── Module-level bridge (React ↔ Phaser) ──────────────────────────────────────
 // React writes to these fields; Phaser reads them every frame.
 export const bridge = {
-  dir:      { current: { x: 0, y: 0 } }, // { x, y } normalized direction
-  meta:     { name: 'Jugador', color: '#98ca3f', level: 1 },
-  onNpcNear: null,   // (npc | null) => void
-  onPosition: null,  // (x, y) => void
-  scene: null,       // set to the live scene instance
+  dir:          { current: { x: 0, y: 0 } },
+  meta:         { name: 'Jugador', color: '#98ca3f', level: 1, mascotEmoji: '🐱' },
+  onNpcNear:    null,
+  onPosition:   null,
+  scene:        null,
 }
 
 // ── Scene ─────────────────────────────────────────────────────────────────────
@@ -167,6 +167,17 @@ export default class CampusScene extends Phaser.Scene {
       fontFamily: 'system-ui, sans-serif', fontSize: '10px',
       color: '#000', backgroundColor: '#98ca3f', padding: { x: 3, y: 1 },
     }).setOrigin(0.5).setDepth(12)
+
+    // Mascot emoji sprite — floats just below-right of the player
+    this._mascot = this.add.text(1220, 940, bridge.meta.mascotEmoji, {
+      fontFamily: '"Segoe UI Emoji", system-ui, sans-serif',
+      fontSize: '20px',
+    }).setOrigin(0.5).setDepth(11)
+
+    this.tweens.add({
+      targets: this._mascot, y: '+=6',
+      duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    })
   }
 
   // ── NPCs ───────────────────────────────────────────────────────────────────
@@ -245,6 +256,8 @@ export default class CampusScene extends Phaser.Scene {
     const px = this._player.x, py = this._player.y
     this._pName.setPosition(px, py - 28)
     this._pLv.setPosition(px, py + 22)
+    // Mascot trails slightly to the right of the player
+    this._mascot.setPosition(px + 22, py + 8)
 
     // NPC proximity
     let found = null

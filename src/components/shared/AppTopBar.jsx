@@ -36,6 +36,7 @@ const GROUPS = [
     items: [
       { to: '/vr',     label: 'VR',         icon: '🕶️' },
       { to: '/mundo',  label: 'Mundo 2D',   icon: '📱' },
+      { to: '/rol',    label: 'Mundo ROL',  icon: '🎲' },
       { to: '/vr/graffiti', label: 'Calle Graffiti', icon: '🎨' },
       { to: '/games',  label: 'Games',      icon: '🎮' },
       { to: '/arena',  label: 'Arena',      icon: '⚔️' },

@@ -38,6 +38,11 @@ export const CATEGORY_META = {
   Filosofía: { icon: '🏛️', gradient: 'from-[#eab308] to-[#f97316]', accent: '#eab308' },
   Pruebas: { icon: '🧪', gradient: 'from-[#2dd4bf] to-[#60a5fa]', accent: '#2dd4bf' },
   'Claude para Todos': { icon: '🤝', gradient: 'from-[#fb923c] to-[#fbbf24]', accent: '#fb923c' },
+  Estrategia:          { icon: '♟️', gradient: 'from-[#94a3b8] to-[#475569]',  accent: '#94a3b8' },
+  Ciencias:            { icon: '🔬', gradient: 'from-[#34d399] to-[#059669]',  accent: '#34d399' },
+  'Ciencias Sociales': { icon: '🧠', gradient: 'from-[#a78bfa] to-[#7c3aed]',  accent: '#a78bfa' },
+  Historia:            { icon: '🏛️', gradient: 'from-[#fbbf24] to-[#d97706]',  accent: '#fbbf24' },
+  Matemáticas:         { icon: '📐', gradient: 'from-[#38bdf8] to-[#0284c7]',  accent: '#38bdf8' },
   Otros: { icon: '📚', gradient: 'from-[#94a3b8] to-[#64748b]', accent: '#94a3b8' },
 }
 

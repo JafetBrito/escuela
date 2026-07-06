@@ -1,306 +1,586 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import PatchNotesModal from '../shared/PatchNotesModal'
+import Logo from '../shared/Logo'
 import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
+import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
 import { useTasksStore } from '../../stores/useTasksStore'
 
+// ── Sidebar nav data ──────────────────────────────────────────────────────────
+const CAMPUS_LINKS = [
+  { to: '/vr',    label: 'Campus VR',  icon: '🕶️' },
+  { to: '/mundo', label: 'Mundo 2D',   icon: '📱' },
+  { to: '/rol',   label: 'Mundo ROL',  icon: '🎲' },
+]
+const COMMUNITY_LINKS = [
+  { to: '/amigos',   label: 'Amigos',    icon: '👥' },
+  { to: '/chats',    label: 'Chats',     icon: '💬' },
+  { to: '/misiones', label: 'Misiones',  icon: '📜' },
+  { to: '/logros',   label: 'Logros',    icon: '🏅' },
+  { to: '/tienda',   label: 'Tienda',    icon: '🛒' },
+]
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function Sidebar({ tab, setTab, onClose }) {
+  const navigate   = useNavigate()
+  const session    = useAuthStore((s) => s.session)
+  const profile    = useAuthStore((s) => s.profile)
+  const signOut    = useAuthStore((s) => s.signOut)
+  const xp         = useLevelStore((s) => s.xp)
+  const { level }  = levelProgress(xp)
+  const displayName = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
+
+  const navTab = (t) => { setTab(t); onClose?.() }
+  const go     = (to) => { navigate(to); onClose?.() }
+
+  return (
+    <div className="flex h-full flex-col bg-surface border-r border-border overflow-y-auto">
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-4 py-4 border-b border-border">
+        <Logo />
+        <div className="leading-tight">
+          <p className="text-xs font-black tracking-tight text-text">OLIVER</p>
+          <p className="text-xs font-black tracking-tight text-primary">ACADEMY</p>
+        </div>
+      </div>
+
+      {/* User mini-card */}
+      <div className="mx-3 mt-3 mb-1 rounded-xl bg-surface-hover px-3 py-2.5">
+        <p className="text-xs font-bold text-text truncate">{displayName}</p>
+        <p className="text-[11px] text-text-muted">Nivel {level} · {xp} XP</p>
+      </div>
+
+      {/* Main tabs */}
+      <div className="px-2 pt-2 space-y-0.5">
+        {[
+          { id: 'inicio',    icon: '🏠', label: 'Inicio' },
+          { id: 'escuelas',  icon: '📚', label: 'Escuelas' },
+          { id: 'progreso',  icon: '📊', label: 'Mi Progreso' },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => navTab(item.id)}
+            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              tab === item.id
+                ? 'bg-primary/10 text-primary'
+                : 'text-text-muted hover:bg-surface-hover hover:text-text'
+            }`}
+          >
+            <span>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Campus */}
+      <div className="px-2 pt-4">
+        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">Campus</p>
+        {CAMPUS_LINKS.map((l) => (
+          <button key={l.to} type="button" onClick={() => go(l.to)}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
+            <span>{l.icon}</span>{l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Community */}
+      <div className="px-2 pt-3">
+        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">Comunidad</p>
+        {COMMUNITY_LINKS.map((l) => (
+          <button key={l.to} type="button" onClick={() => go(l.to)}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
+            <span>{l.icon}</span>{l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Bottom: settings + logout */}
+      <div className="mt-auto px-2 py-3 border-t border-border space-y-0.5">
+        <button type="button" onClick={() => go('/ajustes')}
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
+          <span>⚙️</span>Ajustes
+        </button>
+        <button type="button"
+          onClick={async () => { await signOut(); navigate('/') }}
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10">
+          <span>🚪</span>Cerrar sesión
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Course card (compact) ─────────────────────────────────────────────────────
+function CourseCard({ course, pct, owned, accent, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={course.locked}
+      className={`group flex flex-col rounded-2xl border bg-surface text-left transition-all ${
+        course.locked
+          ? 'cursor-default border-border opacity-50'
+          : 'border-border hover:-translate-y-0.5 hover:border-primary hover:shadow-lg'
+      }`}
+    >
+      {/* Color bar */}
+      <div className="h-1.5 w-full rounded-t-2xl" style={{ background: accent }} />
+      <div className="flex flex-col gap-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl text-2xl flex-shrink-0"
+            style={{ background: `${course.color}22`, border: `1px solid ${course.color}44` }}>
+            {course.icon}
+          </div>
+          {course.locked && <span className="text-[10px] text-text-muted mt-0.5">🔒</span>}
+          {!course.locked && !owned && <span className="text-[10px] text-primary mt-0.5 font-semibold">2 gratis</span>}
+          {!course.locked && owned && pct === 100 && <span className="text-[10px] text-primary mt-0.5">🏅</span>}
+        </div>
+        <div>
+          <p className="text-sm font-bold text-text leading-tight line-clamp-2">{course.title}</p>
+          <p className="mt-0.5 text-xs text-text-muted line-clamp-2">{course.description}</p>
+        </div>
+        {pct !== null && owned && (
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 flex-1 rounded-full bg-surface-hover">
+              <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, background: accent }} />
+            </div>
+            <span className="text-[10px] text-text-muted">{pct}%</span>
+          </div>
+        )}
+        {!course.locked && (
+          <span className="self-start rounded-lg px-3 py-1 text-xs font-semibold text-background transition-colors"
+            style={{ background: accent }}>
+            {owned ? (pct ? 'Continuar' : 'Empezar') : 'Probar gratis'}
+          </span>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// ── Tab: Inicio ───────────────────────────────────────────────────────────────
+function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, announcements, tasks, patchNotesOpen, setPatchNotesOpen }) {
+  const latest   = PATCH_NOTES[0]
+  const xp       = useLevelStore((s) => s.xp)
+  const { level, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
+
+  const inProgress = useMemo(() => courses.filter((c) => {
+    const p = progressByCourse(c.id)
+    return p !== null && p > 0 && p < 100
+  }), [progressByCourse])
+
+  const displayName = profile?.display_name ?? 'Estudiante'
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+
+      {/* Greeting */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-text">
+            Hola, {displayName}{license?.role === 'admin' ? ' 🛡️' : ' 👋'}
+          </h1>
+          <p className="text-sm text-text-muted mt-0.5">¿Listo para aprender algo nuevo hoy?</p>
+        </div>
+        {/* XP bar */}
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-2">
+          <div className="text-center">
+            <p className="text-xs text-text-muted">Nivel</p>
+            <p className="text-xl font-black text-primary">{level}</p>
+          </div>
+          <div className="w-28">
+            <div className="flex justify-between text-[10px] text-text-muted mb-1">
+              <span>{xpIntoLevel} XP</span><span>{xpForNextLevel} XP</span>
+            </div>
+            <div className="h-2 rounded-full bg-surface-hover">
+              <div className="h-2 rounded-full bg-primary transition-all"
+                style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Patch notes banner */}
+      <div className="rounded-2xl overflow-hidden border border-white/[0.07]"
+        style={{ background: 'linear-gradient(135deg,#0f0f1a,#1a1030)' }}>
+        <div className="flex items-center justify-between px-4 py-3"
+          style={{ background:'linear-gradient(90deg,rgba(124,58,237,0.22),rgba(59,130,246,0.12))', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{latest.emoji}</span>
+            <span
+              className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest mr-1"
+              style={{ background:`${latest.tagColor}22`, color:latest.tagColor, border:`1px solid ${latest.tagColor}33` }}>
+              {latest.tag}
+            </span>
+            <span className="text-sm font-bold text-white">{latest.title}</span>
+          </div>
+          <button type="button" onClick={() => setPatchNotesOpen(true)}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white">
+            📋 Historial
+          </button>
+        </div>
+        <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
+          {latest.changes.slice(0, 4).map((c, i) => (
+            <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
+              style={{ background:'rgba(255,255,255,0.03)' }}>
+              <span className="shrink-0">{c.icon}</span>
+              <span className="leading-snug">{c.text}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex items-center justify-between px-4 pb-3">
+          <span className="text-[10px] text-white/20">v{LATEST_VERSION}</span>
+          <Link to="/vr" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/30">
+            🌍 Ir al Campus VR →
+          </Link>
+        </div>
+      </div>
+
+      {/* Continúa aprendiendo */}
+      {inProgress.length > 0 && (
+        <section>
+          <h2 className="text-base font-extrabold text-text mb-3">▶ Continúa aprendiendo</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {inProgress.map((c) => {
+              const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
+              return (
+                <CourseCard key={c.id} course={c} pct={progressByCourse(c.id)}
+                  owned={hasAccessToCourse(c.id)} accent={meta.accent}
+                  onClick={() => handleSelect(c)} />
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {inProgress.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+          <p className="text-3xl mb-2">📚</p>
+          <p className="text-sm font-semibold text-text mb-1">Aún no has comenzado ningún curso</p>
+          <p className="text-xs text-text-muted mb-4">Explora las Escuelas y empieza tu primera clase.</p>
+          <button type="button" className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-background">
+            Explorar Escuelas
+          </button>
+        </div>
+      )}
+
+      {/* Anuncios + Tareas */}
+      {(announcements.length > 0 || tasks.some((t) => t.status === 'pendiente')) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {announcements.length > 0 && (
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-extrabold text-text">📋 Anuncios</h3>
+                <Link to="/anuncios" className="text-xs text-primary hover:underline">Ver todos →</Link>
+              </div>
+              <div className="space-y-2">
+                {announcements.slice(0, 3).map((a) => (
+                  <div key={a.id} className="flex items-start gap-2">
+                    <span className="shrink-0">{a.icon}</span>
+                    <div>
+                      <p className="text-xs font-semibold text-text">{a.title}</p>
+                      {a.body && <p className="text-[11px] text-text-muted line-clamp-1">{a.body}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {tasks.some((t) => t.status === 'pendiente') && (
+            <div className="rounded-2xl border border-amber-500/30 bg-surface p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-extrabold text-text">📋 Mis Tareas</h3>
+                <Link to="/mis-tareas" className="text-xs text-primary hover:underline">Ver todas →</Link>
+              </div>
+              <div className="space-y-2">
+                {tasks.filter((t) => t.status === 'pendiente').slice(0, 3).map((t) => (
+                  <div key={t.id} className="flex items-start gap-2">
+                    <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                    <div>
+                      <p className="text-xs font-semibold text-text">{t.title}</p>
+                      {t.due_date && (
+                        <p className="text-[11px] text-text-muted">
+                          📅 {new Date(t.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Campus quick access */}
+      <section>
+        <h2 className="text-base font-extrabold text-text mb-3">🌍 Campus</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {CAMPUS_LINKS.map((l) => (
+            <Link key={l.to} to={l.to}
+              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary hover:bg-surface-hover">
+              <span className="text-3xl">{l.icon}</span>
+              <span className="text-xs font-semibold text-text">{l.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// ── Tab: Escuelas ─────────────────────────────────────────────────────────────
+function EscuelasTab({ categories, progressByCourse, hasAccessToCourse, handleSelect }) {
+  const [expanded, setExpanded] = useState(null)
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-black text-text mb-1">Escuelas</h1>
+      <p className="text-sm text-text-muted mb-6">Todos los cursos, organizados por área de conocimiento.</p>
+
+      <div className="space-y-4">
+        {categories.map(([category, cats]) => {
+          const meta   = CATEGORY_META[category] ?? CATEGORY_META.Otros
+          const isOpen = expanded === category
+          return (
+            <div key={category} className="rounded-2xl overflow-hidden border border-border">
+              {/* School header */}
+              <button
+                type="button"
+                onClick={() => setExpanded(isOpen ? null : category)}
+                className={`w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r ${meta.gradient} transition-opacity hover:opacity-95`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl drop-shadow-sm">{meta.icon}</span>
+                  <div className="text-left">
+                    <p className="text-base font-extrabold text-background drop-shadow-sm">{category}</p>
+                    <p className="text-xs font-medium text-background/70">
+                      {cats.length} {cats.length === 1 ? 'curso' : 'cursos'}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-background/70 text-lg transition-transform duration-200"
+                  style={{ display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+                  ▾
+                </span>
+              </button>
+
+              {/* Courses grid */}
+              {isOpen && (
+                <div className="p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-background">
+                  {cats.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      pct={progressByCourse(course.id)}
+                      owned={hasAccessToCourse(course.id)}
+                      accent={meta.accent}
+                      onClick={() => handleSelect(course)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: Mi Progreso ──────────────────────────────────────────────────────────
+function ProgresoTab({ progressByCourse }) {
+  const xp     = useLevelStore((s) => s.xp)
+  const coins  = useCurrencyStore((s) => s.coins)
+  const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
+
+  const started   = courses.filter((c) => progressByCourse(c.id) !== null && progressByCourse(c.id) > 0).length
+  const completed = courses.filter((c) => progressByCourse(c.id) === 100).length
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <h1 className="text-2xl font-black text-text">Mi Progreso</h1>
+
+      {/* Level card */}
+      <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="flex items-end gap-4 mb-4">
+          <div className="text-center">
+            <p className="text-xs text-text-muted uppercase tracking-widest mb-1">Nivel</p>
+            <p className="text-6xl font-black text-primary leading-none">{level}</p>
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between text-xs text-text-muted mb-1.5">
+              <span>{xpIntoLevel} XP</span>
+              <span>{isMaxLevel ? 'MAX' : `${xpForNextLevel} XP`}</span>
+            </div>
+            <div className="h-3 rounded-full bg-surface-hover">
+              <div className="h-3 rounded-full bg-primary transition-all"
+                style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
+            </div>
+            <p className="mt-1.5 text-xs text-text-muted">{xp} XP totales</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Monedas', value: coins.toLocaleString(), icon: '💰' },
+          { label: 'Cursos iniciados', value: started, icon: '📖' },
+          { label: 'Completados', value: completed, icon: '🏅' },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
+            <p className="text-2xl mb-1">{s.icon}</p>
+            <p className="text-xl font-black text-text">{s.value}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick links */}
+      <div className="space-y-2">
+        <h2 className="text-sm font-bold text-text-muted uppercase tracking-widest">Explorar</h2>
+        {[
+          { to: '/arbol',     icon: '🌳', label: 'Árbol de habilidades', desc: 'Elige tu clase y desbloquea poderes' },
+          { to: '/logros',    icon: '🏅', label: 'Logros',               desc: 'Tus medallas y secretos desbloqueados' },
+          { to: '/misiones',  icon: '📜', label: 'Misiones',             desc: 'Objetivos activos y completados' },
+          { to: '/mascota',   icon: '⚔️', label: 'Mi Equipo',            desc: 'Avatar, mascota, equipamiento' },
+        ].map((item) => (
+          <Link key={item.to} to={item.to}
+            className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-3 transition-colors hover:border-primary hover:bg-surface-hover">
+            <span className="text-2xl">{item.icon}</span>
+            <div>
+              <p className="text-sm font-semibold text-text">{item.label}</p>
+              <p className="text-xs text-text-muted">{item.desc}</p>
+            </div>
+            <span className="ml-auto text-text-muted">›</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const navigate = useNavigate()
-  const progress = useProgressStore((s) => s.progress)
-  const license = useAuthStore((s) => s.license)
+  const navigate          = useNavigate()
+  const progress          = useProgressStore((s) => s.progress)
+  const license           = useAuthStore((s) => s.license)
+  const profile           = useAuthStore((s) => s.profile)
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
-  const [patchNotesOpen, setPatchNotesOpen] = useState(false)
-  const announcements = useAnnouncementsStore((s) => s.announcements)
+  const announcements     = useAnnouncementsStore((s) => s.announcements)
   const fetchAnnouncements = useAnnouncementsStore((s) => s.fetch)
-  const tasks = useTasksStore((s) => s.tasks)
-  const fetchTasks = useTasksStore((s) => s.fetchMyTasks)
+  const tasks             = useTasksStore((s) => s.tasks)
+  const fetchTasks        = useTasksStore((s) => s.fetchMyTasks)
 
-  const latest = PATCH_NOTES[0]
+  const [tab, setTab]               = useState('inicio')
+  const [patchNotesOpen, setPatchNotesOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    fetchAnnouncements()
-    fetchTasks()
-  }, [fetchAnnouncements, fetchTasks])
+  useEffect(() => { fetchAnnouncements(); fetchTasks() }, [fetchAnnouncements, fetchTasks])
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
-    const courseData = COURSES_DATA[courseId]
-    const total = courseData.modules.length
-    const moduleProgress = progress[courseId]?.moduleProgress ?? []
-    const done = moduleProgress.filter((p) => p.completed).length
+    const total = COURSES_DATA[courseId].modules.length
+    const done  = (progress[courseId]?.moduleProgress ?? []).filter((p) => p.completed).length
     return Math.round((done / total) * 100)
   }
 
   const categories = useMemo(() => {
     const groups = new Map()
-    for (const course of courses) {
-      const key = course.category ?? 'Otros'
+    for (const c of courses) {
+      const key = c.category ?? 'Otros'
       if (!groups.has(key)) groups.set(key, [])
-      groups.get(key).push(course)
+      groups.get(key).push(c)
     }
     return Array.from(groups.entries())
   }, [])
 
-  const handleSelect = (course) => {
-    if (course.locked) return
-    navigate(`/learn/${course.id}`)
-  }
+  const handleSelect = (course) => { if (!course.locked) navigate(`/learn/${course.id}`) }
+
+  const tabProps = { categories, progressByCourse, hasAccessToCourse, handleSelect }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-text">
-      <AppTopBar />
+    <div className="flex h-screen overflow-hidden bg-background text-text">
       <PageVideoModal pageKey="dashboard" />
+      {patchNotesOpen && <PatchNotesModal open onClose={() => setPatchNotesOpen(false)} />}
 
-      <main className="flex-1 px-4 py-8 md:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold">Hola{license?.role === 'admin' ? ', admin' : ''} 👋</h1>
-              <p className="mt-1 text-sm text-text-muted">
-                Continúa donde lo dejaste o explora los próximos cursos de oliver.escuela.
-              </p>
-            </div>
-            {license?.type === 'full' && (
-              <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                🔑 Llave completa · acceso a todos los cursos
-              </span>
-            )}
+      {/* ── Desktop sidebar (always visible ≥ md) ──────────────────── */}
+      <aside className="hidden md:flex md:w-56 md:flex-col flex-shrink-0 h-full">
+        <Sidebar tab={tab} setTab={setTab} />
+      </aside>
+
+      {/* ── Mobile sidebar drawer ──────────────────────────────────── */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div className="w-56 h-full shadow-2xl">
+            <Sidebar tab={tab} setTab={setTab} onClose={() => setSidebarOpen(false)} />
           </div>
-
-          {/* ── Tablón de anuncios (última versión) ── */}
-          <div
-            className="mt-6 rounded-2xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1030 100%)',
-              border: '1px solid rgba(255,255,255,0.07)',
-            }}
-          >
-            {/* Header del tablón */}
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ background: 'linear-gradient(90deg, rgba(124,58,237,0.25), rgba(59,130,246,0.15))', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{latest.emoji}</span>
-                <div>
-                  <span
-                    className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest mr-2"
-                    style={{ background: `${latest.tagColor}22`, color: latest.tagColor, border: `1px solid ${latest.tagColor}33` }}
-                  >
-                    {latest.tag}
-                  </span>
-                  <span className="text-sm font-bold text-white">{latest.title}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-white/30">{latest.date}</span>
-                <button
-                  type="button"
-                  onClick={() => setPatchNotesOpen(true)}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  📋 Ver historial
-                </button>
-              </div>
-            </div>
-
-            {/* Cambios de la última versión */}
-            <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
-              {latest.changes.slice(0, 6).map((c, i) => (
-                <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
-                  style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  <span className="shrink-0">{c.icon}</span>
-                  <span className="leading-snug">{c.text}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Footer */}
-            <div className="px-4 pb-3 flex items-center justify-between">
-              <span className="text-[10px] text-white/20">v{LATEST_VERSION}</span>
-              <button
-                type="button"
-                onClick={() => navigate('/vr')}
-                className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/30"
-              >
-                🌍 Ir al Campus VR →
-              </button>
-            </div>
-          </div>
-
-          {patchNotesOpen && (
-            <PatchNotesModal open={patchNotesOpen} onClose={() => setPatchNotesOpen(false)} />
-          )}
-
-          {/* ── Anuncios escolares + Mis Tareas ── */}
-          {(announcements.length > 0 || tasks.some((t) => t.status === 'pendiente')) && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {/* Anuncios */}
-              {announcements.length > 0 && (
-                <div className="rounded-2xl border border-border bg-surface p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-sm font-extrabold text-text">📋 Anuncios</h2>
-                    <Link to="/anuncios" className="text-xs text-primary hover:underline">Ver todos →</Link>
-                  </div>
-                  <div className="space-y-2">
-                    {announcements.slice(0, 3).map((a) => (
-                      <div key={a.id} className="flex items-start gap-2">
-                        <span className="shrink-0">{a.icon}</span>
-                        <div>
-                          <p className="text-xs font-semibold text-text leading-snug">{a.title}</p>
-                          {a.body && <p className="text-[11px] text-text-muted leading-snug mt-0.5 line-clamp-1">{a.body}</p>}
-                        </div>
-                        {a.pinned && <span className="ml-auto shrink-0 text-[10px] text-primary">📌</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Tareas pendientes */}
-              {tasks.some((t) => t.status === 'pendiente') && (
-                <div className="rounded-2xl border border-amber-500/30 bg-surface p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-sm font-extrabold text-text">📋 Mis Tareas</h2>
-                    <Link to="/mis-tareas" className="text-xs text-primary hover:underline">Ver todas →</Link>
-                  </div>
-                  <div className="space-y-2">
-                    {tasks.filter((t) => t.status === 'pendiente').slice(0, 3).map((t) => (
-                      <div key={t.id} className="flex items-start gap-2">
-                        <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
-                        <div>
-                          <p className="text-xs font-semibold text-text leading-snug">{t.title}</p>
-                          {t.due_date && (
-                            <p className="text-[11px] text-text-muted">
-                              📅 {new Date(t.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {categories.map(([category, categoryCourses]) => {
-            const meta = CATEGORY_META[category] ?? CATEGORY_META.Otros
-            return (
-              <section key={category} className="mt-10">
-                <div
-                  className={`flex items-center gap-4 rounded-2xl bg-gradient-to-r ${meta.gradient} px-5 py-4 shadow-lg`}
-                >
-                  <span className="text-4xl drop-shadow-sm">{meta.icon}</span>
-                  <div>
-                    <h2 className="text-xl font-extrabold tracking-tight text-background drop-shadow-sm">
-                      {category}
-                    </h2>
-                    <p className="text-sm font-medium text-background/80">
-                      {categoryCourses.length}{' '}
-                      {categoryCourses.length === 1 ? 'curso' : 'cursos'} en esta ruta
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative mt-6 flex flex-col gap-6 pl-10 sm:pl-14">
-                  <div
-                    className="absolute bottom-4 left-[19px] top-4 w-0.5 sm:left-[27px]"
-                    style={{ backgroundColor: `${meta.accent}40` }}
-                    aria-hidden="true"
-                  />
-                  {categoryCourses.map((course, index) => {
-                    const pct = progressByCourse(course.id)
-                    const owned = hasAccessToCourse(course.id)
-                    return (
-                      <div key={course.id} className="relative">
-                        <div
-                          className="absolute -left-10 top-5 flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-extrabold sm:-left-14 sm:h-11 sm:w-11"
-                          style={{
-                            borderColor: meta.accent,
-                            backgroundColor: 'var(--color-background)',
-                            color: meta.accent,
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                        <button
-                          onClick={() => handleSelect(course)}
-                          disabled={course.locked}
-                          className={`flex w-full flex-col gap-3 rounded-2xl border p-5 text-left transition-all ${
-                            course.locked
-                              ? 'cursor-default border-border bg-surface opacity-60'
-                              : 'border-border bg-surface hover:-translate-y-0.5 hover:border-primary hover:shadow-xl'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div
-                              className="flex h-14 w-14 items-center justify-center rounded-xl text-3xl"
-                              style={{ backgroundColor: `${course.color}22`, border: `1px solid ${course.color}` }}
-                            >
-                              {course.icon}
-                            </div>
-                            {course.locked && (
-                              <span className="rounded-full border border-border px-2.5 py-1 text-xs text-text-muted">
-                                🔒 Próximamente
-                              </span>
-                            )}
-                            {!course.locked && !owned && (
-                              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
-                                🔑 2 clases gratis
-                              </span>
-                            )}
-                            {!course.locked && owned && pct === 100 && (
-                              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                                🏅 Completado
-                              </span>
-                            )}
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg font-bold text-text">{course.title}</h3>
-                            <p className="mt-1 text-sm text-text-muted">{course.description}</p>
-                          </div>
-
-                          {pct !== null && owned && (
-                            <div className="mt-2 flex items-center gap-3">
-                              <div className="h-2 flex-1 rounded-full bg-surface-hover">
-                                <div
-                                  className="h-2 rounded-full"
-                                  style={{ width: `${pct}%`, backgroundColor: meta.accent }}
-                                />
-                              </div>
-                              <span className="text-xs text-text-muted">{pct}%</span>
-                            </div>
-                          )}
-
-                          {!course.locked && (
-                            <span
-                              className="self-start rounded-lg px-4 py-2 text-sm font-semibold text-background"
-                              style={{ backgroundColor: meta.accent }}
-                            >
-                              {owned ? (pct ? 'Continuar curso' : 'Empezar curso') : 'Probar gratis'}
-                            </span>
-                          )}
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </section>
-            )
-          })}
+          <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
         </div>
-      </main>
+      )}
+
+      {/* ── Main area ─────────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
+        {/* Mobile top bar */}
+        <header className="flex items-center gap-3 border-b border-border bg-surface px-4 py-3 md:hidden flex-shrink-0">
+          <button type="button" onClick={() => setSidebarOpen(true)}
+            className="text-xl text-text-muted">☰</button>
+          <div className="flex items-center gap-1.5">
+            <Logo />
+            <span className="text-sm font-black text-primary">OLIVER ACADEMY</span>
+          </div>
+        </header>
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+          {tab === 'inicio' && (
+            <InicioTab
+              profile={profile}
+              license={license}
+              announcements={announcements}
+              tasks={tasks}
+              patchNotesOpen={patchNotesOpen}
+              setPatchNotesOpen={setPatchNotesOpen}
+              {...tabProps}
+            />
+          )}
+          {tab === 'escuelas' && <EscuelasTab {...tabProps} />}
+          {tab === 'progreso' && <ProgresoTab progressByCourse={progressByCourse} />}
+        </main>
+
+        {/* ── Mobile bottom tab bar ──────────────────────────────── */}
+        <nav className="flex md:hidden items-center justify-around border-t border-border bg-surface px-2 py-2 flex-shrink-0">
+          {[
+            { id: 'inicio',   icon: '🏠', label: 'Inicio' },
+            { id: 'escuelas', icon: '📚', label: 'Escuelas' },
+            { id: 'progreso', icon: '📊', label: 'Progreso' },
+          ].map((item) => (
+            <button key={item.id} type="button" onClick={() => setTab(item.id)}
+              className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-colors ${
+                tab === item.id ? 'text-primary' : 'text-text-muted'
+              }`}>
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-[10px] font-semibold">{item.label}</span>
+            </button>
+          ))}
+          <button type="button" onClick={() => setSidebarOpen(true)}
+            className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl text-text-muted">
+            <span className="text-xl">☰</span>
+            <span className="text-[10px] font-semibold">Más</span>
+          </button>
+        </nav>
+      </div>
 
       <MascotCompanion />
     </div>

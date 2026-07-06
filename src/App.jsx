@@ -69,7 +69,9 @@ const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
 const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
 const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
 const AnnouncementsPage = lazy(() => import('./components/announcements/AnnouncementsPage'))
-const World2dPage = lazy(() => import('./components/world2d/World2dPage'))
+const World2dPage  = lazy(() => import('./components/world2d/World2dPage'))
+const RolLobbyPage = lazy(() => import('./components/rol/RolLobbyPage'))
+const RolGamePage  = lazy(() => import('./components/rol/RolGamePage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -320,6 +322,27 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <World2dPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/rol"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <RolLobbyPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rol/:roomId"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <RolGamePage />
               </Suspense>
             </ProtectedRoute>
           }

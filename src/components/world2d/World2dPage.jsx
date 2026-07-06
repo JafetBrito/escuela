@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Phaser from 'phaser'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import VrHud from '../vr/VrHud'
+import WorldChat from '../vr/WorldChat'
 import CampusScene, { bridge } from './campusScene'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useLevelStore } from '../../stores/useLevelStore'
+import { useMascotStore } from '../../stores/useMascotStore'
+import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { supabase } from '../../services/supabase/client'
+
+const MASCOT_EMOJI = { 8: '🐱', 1: '🟩', 2: '⚪', 3: '💙', 4: '❤️', 5: '💜', 6: '🔵', 7: '🔴' }
 
 // ── Virtual Joystick ──────────────────────────────────────────────────────────
 function VirtualJoystick({ dirRef }) {
@@ -90,24 +97,31 @@ function NpcBubble({ npc }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function World2dPage() {
-  const containerRef = useRef(null)
-  const gameRef      = useRef(null)
-  const dirRef       = useRef({ x: 0, y: 0 })
-  const channelRef   = useRef(null)
+  const navigate      = useNavigate()
+  const containerRef  = useRef(null)
+  const gameRef       = useRef(null)
+  const dirRef        = useRef({ x: 0, y: 0 })
+  const channelRef    = useRef(null)
 
-  const [nearNpc, setNearNpc]       = useState(null)
+  const [nearNpc, setNearNpc]         = useState(null)
   const [onlineCount, setOnlineCount] = useState(1)
-  const [zone, setZone]             = useState(null)
+  const [zone, setZone]               = useState(null)
+  const [chatOpen, setChatOpen]       = useState(false)
+  const [hudVisible, setHudVisible]   = useState(true)
 
-  const profile = useAuthStore((s) => s.profile)
-  const session = useAuthStore((s) => s.session)
-  const level   = useLevelStore((s) => s.level ?? 1)
+  const profile     = useAuthStore((s) => s.profile)
+  const session     = useAuthStore((s) => s.session)
+  const level       = useLevelStore((s) => s.level ?? 1)
+  const mascotId    = useMascotStore((s) => s.selectedMascotId)
+  const mascotEmoji = MASCOT_EMOJI[mascotId] ?? '🐾'
+  const openLocked  = useMascotCompanionStore((s) => s.openLocked)
 
-  const playerName  = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
+  const playerName = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
+  const playerId   = session?.user?.id ?? 'anon'
 
-  // Sync bridge meta (called once on mount, values won't change mid-session)
+  // Sync bridge every render so Phaser always reads fresh values
   bridge.dir  = dirRef
-  bridge.meta = { name: playerName, color: '#98ca3f', level }
+  bridge.meta = { name: playerName, color: '#98ca3f', level, mascotEmoji }
 
   // ── Phaser init ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -165,7 +179,6 @@ export default function World2dPage() {
         scene.addOther(p.key, p.x ?? 1200, p.y ?? 920, p.name, '#60a5fa')
         scene.moveOther(p.key, p.x ?? 1200, p.y ?? 920)
       }
-      // Remove disconnected
       for (const id of Object.keys(bridge.scene?._others ?? {})) {
         if (!seen.has(id)) scene.removeOther(id)
       }
@@ -185,8 +198,8 @@ export default function World2dPage() {
     <div className="flex h-screen flex-col bg-background">
       <AppTopBar />
 
-      {/* Canvas */}
-      <div className="relative flex-1 overflow-hidden">
+      {/* Canvas — z-index:0 explícito para que MascotCompanion (fixed z-40) quede encima */}
+      <div className="relative flex-1 overflow-hidden" style={{ zIndex: 0 }}>
         <div ref={containerRef} className="h-full w-full" />
 
         {/* Online badge */}
@@ -195,7 +208,6 @@ export default function World2dPage() {
           {onlineCount} en línea · Mundo 2D
         </div>
 
-        {/* Zone label placeholder — wired to zone state if added later */}
         {zone && (
           <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-white/20 bg-black/60 px-4 py-1 text-xs font-bold text-white backdrop-blur">
             {zone}
@@ -205,18 +217,43 @@ export default function World2dPage() {
         {/* NPC bubble */}
         <NpcBubble npc={nearNpc} />
 
-        {/* Joystick (touch only) */}
-        <div className="absolute bottom-6 left-6 touch-none select-none sm:hidden">
+        {/* HUD — portrait + skill bar + XP bar + utility bubbles */}
+        <VrHud
+          hudVisible={hudVisible}
+          setHudVisible={setHudVisible}
+          playerPosRef={null}
+          onOpenChat={() => setChatOpen(true)}
+          onOpenCharacterPanel={() => openLocked('avatar-personaje', 'avatar')}
+          onOpenSettings={() => navigate('/ajustes')}
+          onOpenFriends={() => navigate('/amigos')}
+          onOpenMap={() => {}}
+          onOpenDailyRewards={() => {}}
+          onOpenBags={() => {}}
+          onOpenArenaConfirm={() => {}}
+          isPrivateWorld
+        />
+
+        {/* World chat */}
+        <WorldChat
+          open={chatOpen}
+          onOpen={() => setChatOpen(true)}
+          onClose={() => setChatOpen(false)}
+          authorName={playerName}
+          playerId={playerId}
+        />
+
+        {/* Joystick — siempre visible */}
+        <div className="absolute bottom-6 left-6 touch-none select-none">
           <VirtualJoystick dirRef={dirRef} />
         </div>
 
         {/* Controls hint (desktop) */}
-        <div className="absolute bottom-3 right-3 hidden rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-[11px] text-white/50 backdrop-blur sm:block">
+        <div className="absolute bottom-6 right-3 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-[11px] text-white/50 backdrop-blur">
           WASD / ↑↓←→ para mover
         </div>
       </div>
 
-      <MascotCompanion />
+      <MascotCompanion hideViewport vrMode />
     </div>
   )
 }
