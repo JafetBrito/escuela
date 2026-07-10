@@ -8,6 +8,7 @@ const CATEGORY_GRADIENTS = {
   Otros: 'from-cyan-500 to-blue-600',
   Pruebas: 'from-purple-500 to-pink-600',
   Estrategia: 'from-emerald-500 to-teal-600',
+  Simuladores: 'from-blue-600 to-indigo-700',
 }
 const DEFAULT_GRADIENT = 'from-primary to-emerald-500'
 
@@ -73,12 +74,12 @@ export default function GamesPage() {
                     </span>
                   ))}
                 </div>
-                <button
-                  disabled
-                  className="rounded-xl border border-green-500/30 bg-green-500/5 px-5 py-2 text-sm font-semibold text-green-400/60 cursor-not-allowed"
+                <Link
+                  to="/games/hacker-terminal"
+                  className="inline-block rounded-xl border border-green-500/50 bg-green-500/15 px-5 py-2 text-sm font-semibold text-green-300 transition-colors hover:bg-green-500/25"
                 >
-                  🔒 En desarrollo — Clase Hacker requerida
-                </button>
+                  🕵️ Entrar al Cyber Range
+                </Link>
               </div>
             </div>
           </div>

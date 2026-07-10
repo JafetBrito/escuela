@@ -13,6 +13,8 @@ const GROUPS = [
     items: [
       { to: '/notas',        label: 'Notas',        icon: '📝' },
       { to: '/biblioteca',   label: 'Librería',     icon: '📚' },
+      { to: '/guias',        label: 'Guías',        icon: '📖' },
+      { to: '/ia',           label: 'IA Tools',     icon: '🤖' },
       { to: '/herramientas', label: 'Herramientas', icon: '🔧' },
       { to: '/anuncios',     label: 'Anuncios',     icon: '📋' },
     ],

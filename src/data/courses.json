@@ -20,11 +20,11 @@
   {
     "id": "course-003",
     "title": "Prompt Engineering desde cero",
-    "description": "Domina el arte de escribir prompts efectivos para sacarle el máximo provecho a cualquier IA. Próximamente.",
+    "description": "El manual completo de prompt engineering. Zero-shot, Few-shot, CoT, ReAct, ToT, meta-prompting y más. Teoría + práctica con Oliver como tutor.",
     "icon": "✨",
     "color": "#a78bfa",
     "category": "Inteligencia Artificial",
-    "locked": true
+    "locked": false
   },
   {
     "id": "course-004",

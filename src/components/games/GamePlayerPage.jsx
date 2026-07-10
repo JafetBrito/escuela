@@ -13,6 +13,7 @@ const COMPONENT_MAP = {
   'math': lazy(() => import('./math/MathGame')),
   'bash-terminal': lazy(() => import('./bash/BashTerminalGame')),
   'duelo-mentes': lazy(() => import('./duelo/DueloDeMentesGame')),
+  'python-terminal': lazy(() => import('./python/PythonTerminalGame')),
 }
 
 export default function GamePlayerPage() {

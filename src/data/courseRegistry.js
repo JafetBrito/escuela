@@ -1,4 +1,5 @@
 import course001 from './course.json'
+import coursePromptEngineering from './coursePromptEngineering.js'
 import courseDemo from './courseDemo.json'
 import courseFilosofia from './courseFilosofia.json'
 import courseClaudeMayores from './courseClaudeMayores.json'
@@ -18,6 +19,7 @@ export const COURSES_DATA = {
   [courseBash.courseId]: courseBash,
   [courseHistoriaMatematicas.courseId]: courseHistoriaMatematicas,
   [courseMedicina.courseId]: courseMedicina,
+  [coursePromptEngineering.courseId]: coursePromptEngineering,
 }
 
 export function getCourseData(courseId) {

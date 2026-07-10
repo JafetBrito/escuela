@@ -72,6 +72,8 @@ const AnnouncementsPage = lazy(() => import('./components/announcements/Announce
 const World2dPage  = lazy(() => import('./components/world2d/World2dPage'))
 const RolLobbyPage = lazy(() => import('./components/rol/RolLobbyPage'))
 const RolGamePage  = lazy(() => import('./components/rol/RolGamePage'))
+const GuiasPage    = lazy(() => import('./components/guides/GuiasPage'))
+const IaToolsPage  = lazy(() => import('./components/ai/IaToolsPage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -343,6 +345,27 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <RolGamePage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/guias"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <GuiasPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ia"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <IaToolsPage />
               </Suspense>
             </ProtectedRoute>
           }

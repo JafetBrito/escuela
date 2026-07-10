@@ -43,6 +43,7 @@ import VerticalVideo from '../video/VerticalVideo'
 import ModuleSlideshow from './ModuleSlideshow'
 import ModuleAudioPlayer from './ModuleAudioPlayer'
 import ModuleEmbed from './ModuleEmbed'
+import TextLesson from './TextLesson'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -184,6 +185,8 @@ export default function LearningInterface() {
               <ModuleAudioPlayer src={currentModule.audioSrc} title={currentModule.title} className="w-full" />
             ) : currentModule.type === 'embed' ? (
               <ModuleEmbed html={currentModule.embedHtml} className="w-full" />
+            ) : currentModule.type === 'text' ? (
+              <TextLesson content={currentModule.content} className="w-full" />
             ) : (
               <>
                 {/* Escritorio: Oculto en móviles (hidden), visible en pantallas medianas o mayores (md:block) */}
