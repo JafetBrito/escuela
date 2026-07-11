@@ -9,6 +9,9 @@ export const BUILD_INFO = {
   hash: typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : '',
 }
 
+// Últimos commits [{ date, message }] — alimenta el tablón del dashboard.
+export const RECENT_COMMITS = typeof __RECENT_COMMITS__ !== 'undefined' ? __RECENT_COMMITS__ : []
+
 // Synthetic announcement built from the current commit. Shaped exactly like a
 // row from `school_announcements` so it drops straight into the existing
 // tablón UI (AnnouncementsPage + dashboard card) with no special-casing beyond

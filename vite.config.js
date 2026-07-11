@@ -17,12 +17,25 @@ function git(cmd, fallback) {
   }
 }
 
+// Last N commits as [{ date, message }] — feeds the dashboard tablón so it shows
+// the real changelog from git, no manual patch-notes editing. 0x1f (unit
+// separator) splits date↔message; it can't appear in a commit subject.
+function recentCommits(n) {
+  const raw = git(`git log -${n} --pretty=format:%cs%x1f%s`, '')
+  if (!raw) return []
+  return raw.split('\n').map((line) => {
+    const [date, ...rest] = line.split('\x1f')
+    return { date, message: rest.join('\x1f') }
+  })
+}
+
 export default defineConfig({
   define: {
     __BUILD_NUMBER__: JSON.stringify(git('git rev-list --count HEAD', '0')),
     __COMMIT_MESSAGE__: JSON.stringify(git('git log -1 --pretty=%s', '')),
     __COMMIT_DATE__: JSON.stringify(git('git log -1 --pretty=%cI', '')),
     __COMMIT_HASH__: JSON.stringify(git('git rev-parse --short HEAD', '')),
+    __RECENT_COMMITS__: JSON.stringify(recentCommits(8)),
   },
   plugins: [
     react(),
