@@ -4,53 +4,61 @@ import Logo from './Logo'
 import VersionBadge from './VersionBadge'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 
+// `key` maps each group/item to its translation key in src/i18n/locales
+// (nav.groups.<key> / nav.items.<key>). `label` stays as the Spanish fallback
+// used if a key is ever missing.
 const GROUPS = [
   {
     id: 'academia',
+    key: 'academia',
     label: 'Academia',
     icon: '🎓',
     items: [
-      { to: '/notas',        label: 'Notas',        icon: '📝' },
-      { to: '/biblioteca',   label: 'Librería',     icon: '📚' },
-      { to: '/guias',        label: 'Guías',        icon: '📖' },
-      { to: '/ia',           label: 'IA Tools',     icon: '🤖' },
-      { to: '/herramientas', label: 'Herramientas', icon: '🔧' },
-      { to: '/anuncios',     label: 'Anuncios',     icon: '📋' },
+      { to: '/notas',        key: 'notas',        label: 'Notas',        icon: '📝' },
+      { to: '/biblioteca',   key: 'biblioteca',   label: 'Librería',     icon: '📚' },
+      { to: '/guias',        key: 'guias',        label: 'Guías',        icon: '📖' },
+      { to: '/ia',           key: 'ia',           label: 'IA Tools',     icon: '🤖' },
+      { to: '/herramientas', key: 'herramientas', label: 'Herramientas', icon: '🔧' },
+      { to: '/anuncios',     key: 'anuncios',     label: 'Anuncios',     icon: '📋' },
     ],
   },
   {
     id: 'progreso',
+    key: 'progreso',
     label: 'Progreso',
     icon: '🛡️',
     items: [
-      { to: '/mascota',   label: 'Mi Equipo', icon: '⚔️' },
-      { to: '/arbol',     label: 'Árbol',     icon: '🌳' },
-      { to: '/misiones',  label: 'Misiones',  icon: '📜' },
-      { to: '/logros',    label: 'Logros',    icon: '🏅' },
-      { to: '/mis-tareas', label: 'Mis Tareas', icon: '📋' },
+      { to: '/mascota',   key: 'mascota',   label: 'Mi Equipo', icon: '⚔️' },
+      { to: '/arbol',     key: 'arbol',     label: 'Árbol',     icon: '🌳' },
+      { to: '/misiones',  key: 'misiones',  label: 'Misiones',  icon: '📜' },
+      { to: '/logros',    key: 'logros',    label: 'Logros',    icon: '🏅' },
+      { to: '/mis-tareas', key: 'misTareas', label: 'Mis Tareas', icon: '📋' },
     ],
   },
   {
     id: 'campus',
+    key: 'campus',
     label: 'Campus',
     icon: '🌍',
     items: [
-      { to: '/vr',     label: 'VR',         icon: '🕶️' },
-      { to: '/mundo',  label: 'Mundo 2D',   icon: '📱' },
-      { to: '/rol',    label: 'Mundo ROL',  icon: '🎲' },
-      { to: '/vr/graffiti', label: 'Calle Graffiti', icon: '🎨' },
-      { to: '/games',  label: 'Games',      icon: '🎮' },
-      { to: '/arena',  label: 'Arena',      icon: '⚔️' },
+      { to: '/vr',     key: 'vr',       label: 'VR',         icon: '🕶️' },
+      { to: '/mundo',  key: 'mundo',    label: 'Mundo 2D',   icon: '📱' },
+      { to: '/rol',    key: 'rol',      label: 'Mundo ROL',  icon: '🎲' },
+      { to: '/vr/graffiti', key: 'graffiti', label: 'Calle Graffiti', icon: '🎨' },
+      { to: '/games',  key: 'games',    label: 'Games',      icon: '🎮' },
+      { to: '/arena',  key: 'arena',    label: 'Arena',      icon: '⚔️' },
     ],
   },
   {
     id: 'comunidad',
+    key: 'comunidad',
     label: 'Comunidad',
     icon: '💬',
     items: [
-      { to: '/amigos', label: 'Amigos', icon: '👥' },
-      { to: '/chats',  label: 'Chats',  icon: '💬' },
+      { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥' },
+      { to: '/chats',  key: 'chats',  label: 'Chats',  icon: '💬' },
     ],
   },
 ]
@@ -67,6 +75,7 @@ export default function AppTopBar({ variant = 'full' }) {
   const profile = useAuthStore((s) => s.profile)
   const signOut = useAuthStore((s) => s.signOut)
   const mascotId = useMascotStore((s) => s.mascot)
+  const { t, lang, setLang } = useI18n()
 
   const [openMenu, setOpenMenu] = useState(null) // null | group.id | 'profile'
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -121,7 +130,7 @@ export default function AppTopBar({ variant = 'full' }) {
           to="/dashboard"
           className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:text-text"
         >
-          ← Volver al Dashboard
+          {t('nav.backToDashboard')}
         </Link>
       </header>
     )
@@ -176,7 +185,7 @@ export default function AppTopBar({ variant = 'full' }) {
                     : 'text-text-muted hover:text-text'
                 }`}
               >
-                {group.icon} {group.label}
+                {group.icon} {t(`nav.groups.${group.key}`)}
                 <span
                   className="ml-0.5 text-[10px] transition-transform duration-150"
                   style={{ display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}
@@ -205,7 +214,7 @@ export default function AppTopBar({ variant = 'full' }) {
                         }`}
                       >
                         <span>{item.icon}</span>
-                        {item.label}
+                        {t(`nav.items.${item.key}`)}
                       </Link>
                     )
                   })}
@@ -225,7 +234,7 @@ export default function AppTopBar({ variant = 'full' }) {
               : 'text-text-muted hover:text-text'
           }`}
         >
-          🛒 Tienda
+          🛒 {t('nav.items.tienda')}
         </Link>
       </nav>
 
@@ -265,15 +274,27 @@ export default function AppTopBar({ variant = 'full' }) {
                   : 'text-text-muted hover:bg-primary/5 hover:text-text'
               }`}
             >
-              ⚙️ Ajustes
+              ⚙️ {t('nav.profile.settings')}
             </Link>
+            <div className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted">
+              <span>🌐 {t('nav.profile.language')}</span>
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+                className="ml-auto rounded-md border border-border/60 bg-surface px-1.5 py-0.5 text-xs text-text outline-none focus:border-primary"
+              >
+                {SUPPORTED_LANGUAGES.map((code) => (
+                  <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
+                ))}
+              </select>
+            </div>
             <hr className="my-1 border-border/40" />
             <button
               type="button"
               onClick={handleSignOut}
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
             >
-              🚪 Cerrar sesión
+              🚪 {t('nav.profile.signOut')}
             </button>
           </div>
         )}
@@ -306,7 +327,7 @@ export default function AppTopBar({ variant = 'full' }) {
           {GROUPS.map((group) => (
             <div key={group.id} className="mt-1">
               <div className="px-3 pb-0.5 pt-1 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
-                {group.icon} {group.label}
+                {group.icon} {t(`nav.groups.${group.key}`)}
               </div>
               {group.items.map((item) => {
                 const active = location.pathname === item.to
@@ -320,7 +341,7 @@ export default function AppTopBar({ variant = 'full' }) {
                     }`}
                   >
                     <span>{item.icon}</span>
-                    {item.label}
+                    {t(`nav.items.${item.key}`)}
                   </Link>
                 )
               })}
@@ -334,7 +355,7 @@ export default function AppTopBar({ variant = 'full' }) {
               location.pathname === '/tienda' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
             }`}
           >
-            🛒 Tienda
+            🛒 {t('nav.items.tienda')}
           </Link>
 
           <hr className="my-1.5 border-border/30" />
@@ -346,14 +367,26 @@ export default function AppTopBar({ variant = 'full' }) {
               location.pathname === '/ajustes' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
             }`}
           >
-            ⚙️ Ajustes
+            ⚙️ {t('nav.profile.settings')}
           </Link>
+          <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-text-muted">
+            <span>🌐 {t('nav.profile.language')}</span>
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="ml-auto rounded-md border border-border/60 bg-surface px-2 py-1 text-xs text-text outline-none focus:border-primary"
+            >
+              {SUPPORTED_LANGUAGES.map((code) => (
+                <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
+              ))}
+            </select>
+          </div>
           <button
             type="button"
             onClick={handleSignOut}
             className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
           >
-            🚪 Cerrar sesión
+            🚪 {t('nav.profile.signOut')}
           </button>
         </nav>
       )}
