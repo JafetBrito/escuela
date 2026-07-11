@@ -2,10 +2,12 @@ import { create } from 'zustand'
 import { useCurrencyStore } from './useCurrencyStore'
 import { useLevelStore } from './useLevelStore'
 import { getGlobalMissionById } from '../data/globalMissionsRegistry'
+import { getCourseMissionById } from '../data/courseMissionsRegistry'
 
-// Tracks which "misiones generales" (catálogo fijo, ver
-// globalMissionsRegistry.js) the player has accepted from the NPC in
-// /misiones, and which rewards have already been claimed.
+function lookupMission(id) {
+  return getGlobalMissionById(id) ?? getCourseMissionById(id)
+}
+
 export const useGlobalMissionsStore = create((set, get) => ({
   accepted: [],
   claimed: [],
@@ -17,7 +19,7 @@ export const useGlobalMissionsStore = create((set, get) => ({
 
   claimReward: (id) => {
     if (get().claimed.includes(id)) return
-    const mission = getGlobalMissionById(id)
+    const mission = lookupMission(id)
     if (!mission) return
 
     if (mission.reward) useCurrencyStore.getState().earnCoins(mission.reward)

@@ -12,7 +12,7 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
 import { getVrNpcById, VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
-import { getGlobalMissionById } from '../../data/globalMissionsRegistry'
+import { getGlobalMissionById, evaluateMission } from '../../data/globalMissionsRegistry'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
 import { getStartableQuestForNpc, getActiveQuestStepForNpc } from '../../data/questsRegistry'
@@ -1923,7 +1923,7 @@ function NpcMissionCard({
 
   const isAccepted  = mission ? accepted.includes(mission.id) : false
   const isClaimed   = mission ? claimed.includes(mission.id)  : false
-  const isCompleted = mission ? mission.check(missionState)   : false
+  const isCompleted = mission ? evaluateMission(mission, missionState) : false
 
   // Quest encadenada (ver questsRegistry.js): a diferencia de `mission`
   // (una sola condición), aquí el NPC correcto cambia según el paso actual.

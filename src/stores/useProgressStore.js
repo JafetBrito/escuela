@@ -52,10 +52,10 @@ export const useProgressStore = create((set, get) => ({
     })),
 
   isMissionDone: (courseId, moduleId, missionId) =>
-    !!get().progress[courseId]?.moduleMissions[moduleId]?.[missionId],
+    !!get().progress[courseId]?.moduleMissions?.[moduleId]?.[missionId],
 
   areMissionsComplete: (courseId, module) => {
-    const done = get().progress[courseId]?.moduleMissions[module.id] ?? {}
+    const done = get().progress[courseId]?.moduleMissions?.[module.id] ?? {}
     return getModuleMissions(module).every((m) => done[m.id])
   },
 

@@ -41,5 +41,6 @@ export function useMissionState() {
     selectedSkinId,
     level,
     friendsCount,
+    courseProgress: progress,
   }
 }

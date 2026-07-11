@@ -7,7 +7,7 @@ import ModuleQuiz from '../learning/ModuleQuiz'
 
 export default function MissionsTab({ courseId, module, onGoToChat }) {
   const moduleMissions = useProgressStore((s) =>
-    courseId && module ? s.progress[courseId]?.moduleMissions[module.id] ?? {} : {},
+    courseId && module ? s.progress[courseId]?.moduleMissions?.[module.id] ?? {} : {},
   )
   const accepted     = useGlobalMissionsStore((s) => s.accepted)
   const claimed      = useGlobalMissionsStore((s) => s.claimed)
