@@ -24,7 +24,7 @@ export function buildAnnouncement() {
     synthetic: true,
     pinned: true,
     icon: '🚀',
-    category: 'general',
+    category: 'actualizacion',
     title: `Versión #${BUILD_INFO.number} — ${BUILD_INFO.message}`,
     body: `Última actualización publicada.${BUILD_INFO.hash ? ` (${BUILD_INFO.hash})` : ''}`,
     created_at: BUILD_INFO.date || new Date().toISOString(),

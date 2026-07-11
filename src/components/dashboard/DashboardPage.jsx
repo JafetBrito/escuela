@@ -13,6 +13,7 @@ import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
+import { useI18n } from '../../i18n'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
@@ -20,23 +21,37 @@ import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useQuestsStore } from '../../stores/useQuestsStore'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
+// `key` → nav.items.<key> en los locales (mismos ítems que el AppTopBar).
 const CAMPUS_LINKS = [
-  { to: '/vr',    label: 'Campus VR',  icon: '🕶️' },
-  { to: '/mundo', label: 'Mundo 2D',   icon: '📱' },
-  { to: '/rol',   label: 'Mundo ROL',  icon: '🎲' },
-  { to: '/games', label: 'Games',      icon: '🎮' },
+  { to: '/vr',    key: 'vr',    label: 'Campus VR',  icon: '🕶️' },
+  { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱' },
+  { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲' },
+  { to: '/games', key: 'games', label: 'Games',      icon: '🎮' },
 ]
 const COMMUNITY_LINKS = [
-  { to: '/amigos',   label: 'Amigos',    icon: '👥' },
-  { to: '/chats',    label: 'Chats',     icon: '💬' },
-  { to: '/misiones', label: 'Misiones',  icon: '📜' },
-  { to: '/logros',   label: 'Logros',    icon: '🏅' },
-  { to: '/tienda',   label: 'Tienda',    icon: '🛒' },
+  { to: '/amigos',   key: 'amigos',   label: 'Amigos',    icon: '👥' },
+  { to: '/chats',    key: 'chats',    label: 'Chats',     icon: '💬' },
+  { to: '/misiones', key: 'misiones', label: 'Misiones',  icon: '📜' },
+  { to: '/logros',   key: 'logros',   label: 'Logros',    icon: '🏅' },
+  { to: '/tienda',   key: 'tienda',   label: 'Tienda',    icon: '🛒' },
 ]
+
+// Colores por categoría de notificación/anuncio — distingue de un vistazo una
+// actualización del servidor de un anuncio de clase, tarea o mensaje.
+const NOTIF_CATEGORY_STYLE = {
+  actualizacion: 'bg-emerald-500/15 text-emerald-400',
+  general:       'bg-blue-500/15 text-blue-400',
+  actividad:     'bg-violet-500/15 text-violet-400',
+  recordatorio:  'bg-amber-500/15 text-amber-400',
+  evento:        'bg-rose-500/15 text-rose-400',
+  tarea:         'bg-amber-500/15 text-amber-400',
+  mensaje:       'bg-sky-500/15 text-sky-400',
+}
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar({ tab, setTab, onClose }) {
   const navigate      = useNavigate()
+  const { t }         = useI18n()
   const session       = useAuthStore((s) => s.session)
   const profile       = useAuthStore((s) => s.profile)
   const signOut       = useAuthStore((s) => s.signOut)
@@ -60,15 +75,15 @@ function Sidebar({ tab, setTab, onClose }) {
       {/* User mini-card */}
       <div className="mx-3 mt-2 mb-1 rounded-xl bg-surface-hover px-3 py-2">
         <p className="text-xs font-bold text-text truncate">{displayName}</p>
-        <p className="text-[11px] text-text-muted">Nivel {level} · {xp} XP</p>
+        <p className="text-[11px] text-text-muted">{t('dashboard.level')} {level} · {xp} XP</p>
       </div>
 
       {/* Main tabs */}
       <div className="px-2 pt-2 space-y-0.5">
         {[
-          { id: 'inicio',    icon: '🏠', label: 'Inicio' },
-          { id: 'escuelas',  icon: '📚', label: 'Escuelas' },
-          { id: 'progreso',  icon: '📊', label: 'Mi Progreso' },
+          { id: 'inicio',    icon: '🏠' },
+          { id: 'escuelas',  icon: '📚' },
+          { id: 'progreso',  icon: '📊' },
         ].map((item) => (
           <button
             key={item.id}
@@ -81,29 +96,29 @@ function Sidebar({ tab, setTab, onClose }) {
             }`}
           >
             <span>{item.icon}</span>
-            {item.label}
+            {t(`dashboard.tabs.${item.id}`)}
           </button>
         ))}
       </div>
 
       {/* Campus */}
       <div className="px-2 pt-2.5">
-        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">Campus</p>
+        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t('dashboard.sections.campus')}</p>
         {CAMPUS_LINKS.map((l) => (
           <button key={l.to} type="button" onClick={() => go(l.to)}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-            <span>{l.icon}</span>{l.label}
+            <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
           </button>
         ))}
       </div>
 
       {/* Community */}
       <div className="px-2 pt-3">
-        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">Comunidad</p>
+        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t('dashboard.sections.comunidad')}</p>
         {COMMUNITY_LINKS.map((l) => (
           <button key={l.to} type="button" onClick={() => go(l.to)}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-            <span>{l.icon}</span>{l.label}
+            <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
           </button>
         ))}
       </div>
@@ -118,7 +133,7 @@ function Sidebar({ tab, setTab, onClose }) {
           >
             <span className="flex items-center gap-2.5">
               <span>🔔</span>
-              <span>Notificaciones</span>
+              <span>{t('dashboard.notifications')}</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary">
@@ -129,10 +144,13 @@ function Sidebar({ tab, setTab, onClose }) {
           </button>
           {notifsOpen && (
             <div className="mx-1 mb-1 rounded-xl border border-border bg-surface-hover p-2 space-y-1.5">
-              {announcements.slice(0, 3).map((a) => (
+              {announcements.slice(0, 4).map((a) => (
                 <div key={a.id} className="flex items-start gap-2 px-1">
                   <span className="shrink-0 text-sm">{a.icon}</span>
                   <div className="min-w-0">
+                    <span className={`mb-0.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${NOTIF_CATEGORY_STYLE[a.category] ?? NOTIF_CATEGORY_STYLE.general}`}>
+                      {t(`announcements.categories.${a.category}`)}
+                    </span>
                     <p className="text-xs font-semibold text-text line-clamp-1">{a.title}</p>
                     {a.body && <p className="text-[11px] text-text-muted line-clamp-1">{a.body}</p>}
                   </div>
@@ -140,7 +158,7 @@ function Sidebar({ tab, setTab, onClose }) {
               ))}
               <button type="button" onClick={() => go('/anuncios')}
                 className="w-full pt-0.5 text-center text-[11px] text-primary hover:underline">
-                Ver todos →
+                {t('dashboard.seeAll')}
               </button>
             </div>
           )}
@@ -151,12 +169,12 @@ function Sidebar({ tab, setTab, onClose }) {
       <div className="mt-auto px-2 py-2 border-t border-border space-y-0.5">
         <button type="button" onClick={() => go('/ajustes')}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-          <span>⚙️</span>Ajustes
+          <span>⚙️</span>{t('nav.profile.settings')}
         </button>
         <button type="button"
           onClick={async () => { await signOut(); navigate('/') }}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-red-400 transition-colors hover:bg-red-500/10">
-          <span>🚪</span>Cerrar sesión
+          <span>🚪</span>{t('nav.profile.signOut')}
         </button>
       </div>
     </div>
@@ -165,6 +183,7 @@ function Sidebar({ tab, setTab, onClose }) {
 
 // ── Course card (compact) ─────────────────────────────────────────────────────
 function CourseCard({ course, pct, owned, accent, onClick }) {
+  const { t } = useI18n()
   return (
     <button
       type="button"
@@ -185,7 +204,7 @@ function CourseCard({ course, pct, owned, accent, onClick }) {
             {course.icon}
           </div>
           {course.locked && <span className="text-[10px] text-text-muted mt-0.5">🔒</span>}
-          {!course.locked && !owned && <span className="text-[10px] text-primary mt-0.5 font-semibold">2 gratis</span>}
+          {!course.locked && !owned && <span className="text-[10px] text-primary mt-0.5 font-semibold">{t('dashboard.freeLabel')}</span>}
           {!course.locked && owned && pct === 100 && <span className="text-[10px] text-primary mt-0.5">🏅</span>}
         </div>
         <div>
@@ -203,7 +222,7 @@ function CourseCard({ course, pct, owned, accent, onClick }) {
         {!course.locked && (
           <span className="self-start rounded-lg px-3 py-1 text-xs font-semibold text-background transition-colors"
             style={{ background: accent }}>
-            {owned ? (pct ? 'Continuar' : 'Empezar') : 'Probar gratis'}
+            {owned ? (pct ? t('dashboard.continuar') : t('dashboard.empezar')) : t('dashboard.probarGratis')}
           </span>
         )}
       </div>
@@ -213,9 +232,14 @@ function CourseCard({ course, pct, owned, accent, onClick }) {
 
 // ── Tab: Inicio ───────────────────────────────────────────────────────────────
 function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, announcements, tasks, patchNotesOpen, setPatchNotesOpen }) {
+  const { t }    = useI18n()
   const latest   = PATCH_NOTES[0]
   const xp       = useLevelStore((s) => s.xp)
   const { level, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
+
+  // Solo anuncios de clase en la tarjeta del dashboard — las actualizaciones
+  // del servidor (versión/git) tienen su propio tablón arriba.
+  const classAnnouncements = announcements.filter((a) => a.category !== 'actualizacion' && !a.synthetic)
 
   const inProgress = useMemo(() => courses.filter((c) => {
     const p = progressByCourse(c.id)
@@ -236,14 +260,14 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-text">
-            Hola, {displayName}{license?.role === 'admin' ? ' 🛡️' : ' 👋'}
+            {t('dashboard.greeting', { name: displayName })}{license?.role === 'admin' ? ' 🛡️' : ' 👋'}
           </h1>
-          <p className="text-sm text-text-muted mt-0.5">¿Listo para aprender algo nuevo hoy?</p>
+          <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
         </div>
         {/* XP bar */}
         <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-2">
           <div className="text-center">
-            <p className="text-xs text-text-muted">Nivel</p>
+            <p className="text-xs text-text-muted">{t('dashboard.level')}</p>
             <p className="text-xl font-black text-primary">{level}</p>
           </div>
           <div className="w-28">
@@ -268,7 +292,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
             <span className="text-lg">🚀</span>
             <span className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest mr-1"
               style={{ background:'#22c55e22', color:'#22c55e', border:'1px solid #22c55e33' }}>
-              Cambios
+              {t('dashboard.changesTag')}
             </span>
             <span className="truncate text-sm font-bold text-white">
               {RECENT_COMMITS.length > 0
@@ -278,7 +302,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
           </div>
           <button type="button" onClick={() => setPatchNotesOpen(true)}
             className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white">
-            📋 Historial
+            📋 {t('dashboard.history')}
           </button>
         </div>
         <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
@@ -314,8 +338,8 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       {recommended.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-text">🎯 Recomendadas para ti</h2>
-            <Link to="/anuncios" className="text-xs text-primary hover:underline">Ver anuncios →</Link>
+            <h2 className="text-base font-extrabold text-text">{t('dashboard.recommended')}</h2>
+            <Link to="/anuncios" className="text-xs text-primary hover:underline">{t('dashboard.seeAnnouncements')}</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {recommended.map((c) => {
@@ -336,7 +360,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
                       </div>
                     </div>
                     <span className="absolute top-2 right-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold text-white/80 backdrop-blur-sm">
-                      NUEVO
+                      {t('dashboard.new')}
                     </span>
                   </div>
                   {/* Info */}
@@ -345,7 +369,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
                     <p className="text-sm font-bold text-text leading-tight line-clamp-2">{c.title}</p>
                     <p className="mt-1 text-xs text-text-muted line-clamp-2">{c.description}</p>
                     <span className="mt-2 inline-block text-xs font-semibold text-primary">
-                      Ver curso →
+                      {t('dashboard.seeCourse')}
                     </span>
                   </div>
                 </button>
@@ -358,7 +382,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       {/* Continúa aprendiendo */}
       {inProgress.length > 0 && (
         <section>
-          <h2 className="text-base font-extrabold text-text mb-3">▶ Continúa aprendiendo</h2>
+          <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.continueLearning')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {inProgress.map((c) => {
               const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
@@ -375,29 +399,34 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       {inProgress.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <p className="text-3xl mb-2">📚</p>
-          <p className="text-sm font-semibold text-text mb-1">Aún no has comenzado ningún curso</p>
-          <p className="text-xs text-text-muted mb-4">Explora las Escuelas y empieza tu primera clase.</p>
+          <p className="text-sm font-semibold text-text mb-1">{t('dashboard.noCoursesTitle')}</p>
+          <p className="text-xs text-text-muted mb-4">{t('dashboard.noCoursesSub')}</p>
           <button type="button" className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-background">
-            Explorar Escuelas
+            {t('dashboard.exploreSchools')}
           </button>
         </div>
       )}
 
-      {/* Anuncios + Tareas */}
-      {(announcements.length > 0 || tasks.some((t) => t.status === 'pendiente')) && (
+      {/* Anuncios de clase + Tareas (las actualizaciones del servidor van arriba) */}
+      {(classAnnouncements.length > 0 || tasks.some((task) => task.status === 'pendiente')) && (
         <div className="grid gap-4 sm:grid-cols-2">
-          {announcements.length > 0 && (
-            <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-extrabold text-text">📋 Anuncios</h3>
-                <Link to="/anuncios" className="text-xs text-primary hover:underline">Ver todos →</Link>
+          {classAnnouncements.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+              <div className="flex items-center justify-between border-b border-border bg-blue-500/5 px-4 py-3">
+                <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
+                  <span>📢</span>{t('dashboard.announcements')}
+                </h3>
+                <Link to="/anuncios" className="text-xs text-primary hover:underline">{t('dashboard.seeAll')}</Link>
               </div>
-              <div className="space-y-2">
-                {announcements.slice(0, 3).map((a) => (
-                  <div key={a.id} className="flex items-start gap-2">
-                    <span className="shrink-0">{a.icon}</span>
-                    <div>
-                      <p className="text-xs font-semibold text-text">{a.title}</p>
+              <div className="divide-y divide-border/60">
+                {classAnnouncements.slice(0, 3).map((a) => (
+                  <div key={a.id} className="flex items-start gap-3 px-4 py-2.5">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-base">{a.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className={`mb-0.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${NOTIF_CATEGORY_STYLE[a.category] ?? NOTIF_CATEGORY_STYLE.general}`}>
+                        {t(`announcements.categories.${a.category}`)}
+                      </span>
+                      <p className="text-xs font-semibold text-text line-clamp-1">{a.title}</p>
                       {a.body && <p className="text-[11px] text-text-muted line-clamp-1">{a.body}</p>}
                     </div>
                   </div>
@@ -405,21 +434,23 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
               </div>
             </div>
           )}
-          {tasks.some((t) => t.status === 'pendiente') && (
-            <div className="rounded-2xl border border-amber-500/30 bg-surface p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-extrabold text-text">📋 Mis Tareas</h3>
-                <Link to="/mis-tareas" className="text-xs text-primary hover:underline">Ver todas →</Link>
+          {tasks.some((task) => task.status === 'pendiente') && (
+            <div className="overflow-hidden rounded-2xl border border-amber-500/30 bg-surface">
+              <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
+                  <span>📋</span>{t('dashboard.myTasks')}
+                </h3>
+                <Link to="/mis-tareas" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
               </div>
-              <div className="space-y-2">
-                {tasks.filter((t) => t.status === 'pendiente').slice(0, 3).map((t) => (
-                  <div key={t.id} className="flex items-start gap-2">
-                    <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
-                    <div>
-                      <p className="text-xs font-semibold text-text">{t.title}</p>
-                      {t.due_date && (
+              <div className="divide-y divide-border/60">
+                {tasks.filter((task) => task.status === 'pendiente').slice(0, 3).map((task) => (
+                  <div key={task.id} className="flex items-start gap-3 px-4 py-2.5">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-text line-clamp-1">{task.title}</p>
+                      {task.due_date && (
                         <p className="text-[11px] text-text-muted">
-                          📅 {new Date(t.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
+                          📅 {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
                         </p>
                       )}
                     </div>
@@ -433,13 +464,13 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
 
       {/* Campus quick access */}
       <section>
-        <h2 className="text-base font-extrabold text-text mb-3">🌍 Campus</h2>
+        <h2 className="text-base font-extrabold text-text mb-3">🌍 {t('dashboard.sections.campus')}</h2>
         <div className="grid grid-cols-3 gap-3">
           {CAMPUS_LINKS.map((l) => (
             <Link key={l.to} to={l.to}
               className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary hover:bg-surface-hover">
               <span className="text-3xl">{l.icon}</span>
-              <span className="text-xs font-semibold text-text">{l.label}</span>
+              <span className="text-xs font-semibold text-text">{t(`nav.items.${l.key}`)}</span>
             </Link>
           ))}
         </div>
@@ -450,12 +481,13 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
 
 // ── Tab: Escuelas ─────────────────────────────────────────────────────────────
 function EscuelasTab({ categories, progressByCourse, hasAccessToCourse, handleSelect }) {
+  const { t } = useI18n()
   const [expanded, setExpanded] = useState(null)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-black text-text mb-1">Escuelas</h1>
-      <p className="text-sm text-text-muted mb-6">Todos los cursos, organizados por área de conocimiento.</p>
+      <h1 className="text-2xl font-black text-text mb-1">{t('dashboard.schoolsTitle')}</h1>
+      <p className="text-sm text-text-muted mb-6">{t('dashboard.schoolsSubtitle')}</p>
 
       <div className="space-y-4">
         {categories.map(([category, cats]) => {
@@ -474,7 +506,7 @@ function EscuelasTab({ categories, progressByCourse, hasAccessToCourse, handleSe
                   <div className="text-left">
                     <p className="text-base font-extrabold text-background drop-shadow-sm">{category}</p>
                     <p className="text-xs font-medium text-background/70">
-                      {cats.length} {cats.length === 1 ? 'curso' : 'cursos'}
+                      {cats.length} {cats.length === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')}
                     </p>
                   </div>
                 </div>

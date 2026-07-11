@@ -3,17 +3,27 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useI18n } from '../../i18n'
 
+// color + icon por categoría; la etiqueta viene de i18n (announcements.categories.<key>).
+// `actualizacion` es la del servidor (versión/git, auto-generada); el resto son
+// anuncios de clase, tareas y mensajes.
 const CATEGORY_META = {
-  general:       { label: 'General',       color: 'from-blue-600 to-blue-400',    icon: '📢' },
-  actividad:     { label: 'Actividad',     color: 'from-purple-600 to-violet-400', icon: '🎭' },
-  recordatorio:  { label: 'Recordatorio', color: 'from-amber-600 to-amber-400',   icon: '🔔' },
-  evento:        { label: 'Evento',        color: 'from-rose-600 to-pink-400',     icon: '📅' },
+  actualizacion: { color: 'from-emerald-600 to-green-400', icon: '🚀' },
+  general:       { color: 'from-blue-600 to-blue-400',     icon: '📢' },
+  actividad:     { color: 'from-purple-600 to-violet-400', icon: '🎭' },
+  recordatorio:  { color: 'from-amber-600 to-amber-400',   icon: '🔔' },
+  evento:        { color: 'from-rose-600 to-pink-400',     icon: '📅' },
+  tarea:         { color: 'from-amber-600 to-orange-400',  icon: '📋' },
+  mensaje:       { color: 'from-sky-600 to-cyan-400',      icon: '💬' },
 }
+// Categorías que un admin puede publicar manualmente (actualizacion es automática).
+const ADMIN_CATEGORIES = ['general', 'actividad', 'recordatorio', 'evento', 'tarea', 'mensaje']
 
 const ICONS = ['📢', '📌', '🎉', '🔔', '📅', '🏆', '🧪', '🎭', '📚', '⚠️', '✨', '🌟']
 
 function AdminCreatePanel({ onDone }) {
+  const { t } = useI18n()
   const create = useAnnouncementsStore((s) => s.create)
   const session = useAuthStore((s) => s.session)
   const [form, setForm] = useState({ title: '', body: '', icon: '📢', category: 'general', pinned: false })
@@ -78,7 +88,7 @@ function AdminCreatePanel({ onDone }) {
             onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
             className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
           >
-            {Object.entries(CATEGORY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            {ADMIN_CATEGORIES.map((k) => <option key={k} value={k}>{t(`announcements.categories.${k}`)}</option>)}
           </select>
         </div>
         <div className="flex items-end pb-0.5">
@@ -108,8 +118,9 @@ function AdminCreatePanel({ onDone }) {
 }
 
 function AnnouncementCard({ a, isAdmin, onDelete, onTogglePin }) {
+  const { t, lang } = useI18n()
   const cat = CATEGORY_META[a.category] ?? CATEGORY_META.general
-  const date = new Date(a.created_at).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' })
+  const date = new Date(a.created_at).toLocaleDateString(lang, { day:'numeric', month:'short', year:'numeric' })
 
   return (
     <div className={`relative overflow-hidden rounded-2xl border bg-surface p-4 ${a.pinned ? 'border-primary/40' : 'border-border'}`}>
@@ -122,7 +133,7 @@ function AnnouncementCard({ a, isAdmin, onDelete, onTogglePin }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase text-text-muted/60">{cat.label}</span>
+            <span className="text-[10px] font-bold uppercase text-text-muted/60">{t(`announcements.categories.${a.category}`)}</span>
             <span className="text-[10px] text-text-muted/40">•</span>
             <span className="text-[10px] text-text-muted/40">{date}</span>
           </div>
@@ -153,6 +164,7 @@ function AnnouncementCard({ a, isAdmin, onDelete, onTogglePin }) {
 }
 
 export default function AnnouncementsPage() {
+  const { t } = useI18n()
   const announcements = useAnnouncementsStore((s) => s.announcements)
   const loading = useAnnouncementsStore((s) => s.loading)
   const fetch = useAnnouncementsStore((s) => s.fetch)
@@ -176,9 +188,9 @@ export default function AnnouncementsPage() {
 
           {/* Header */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-sky-600 to-blue-500 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📋 Tablón de Anuncios</h1>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📋 {t('announcements.title')}</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Noticias, actividades y recordatorios importantes de Oliver Academy.
+              {t('announcements.subtitle')}
             </p>
           </div>
 
@@ -193,7 +205,7 @@ export default function AnnouncementsPage() {
                   onClick={() => setCreating(true)}
                   className="w-full rounded-2xl border border-dashed border-primary/40 px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/5 transition"
                 >
-                  + Publicar nuevo anuncio
+                  {t('announcements.newAnnouncement')}
                 </button>
               )}
             </div>
@@ -201,14 +213,14 @@ export default function AnnouncementsPage() {
 
           {/* Category filter */}
           <div className="mt-6 flex flex-wrap gap-1.5">
-            {[['all', 'Todos'], ...Object.entries(CATEGORY_META).map(([k, v]) => [k, v.label])].map(([key, label]) => (
+            {['all', ...Object.keys(CATEGORY_META)].map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setFilter(key)}
                 className={`rounded-lg px-3 py-1 text-xs font-bold transition ${filter === key ? 'bg-primary text-background' : 'bg-surface text-text-muted hover:bg-surface-hover border border-border'}`}
               >
-                {label}
+                {key === 'all' ? t('announcements.all') : t(`announcements.categories.${key}`)}
               </button>
             ))}
           </div>
@@ -216,11 +228,11 @@ export default function AnnouncementsPage() {
           {/* List */}
           <div className="mt-4 space-y-3">
             {loading ? (
-              <p className="py-12 text-center text-sm text-text-muted">Cargando anuncios…</p>
+              <p className="py-12 text-center text-sm text-text-muted">{t('announcements.loading')}</p>
             ) : filtered.length === 0 ? (
               <div className="rounded-2xl border border-border bg-surface py-12 text-center">
                 <p className="text-3xl">📭</p>
-                <p className="mt-2 text-sm text-text-muted">No hay anuncios en esta categoría.</p>
+                <p className="mt-2 text-sm text-text-muted">{t('announcements.empty')}</p>
               </div>
             ) : (
               filtered.map((a) => (
