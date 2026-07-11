@@ -3,21 +3,26 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
 
-// Commit count as a build number — increments by 1 on every commit with zero
-// manual bumping, so the nav badge (see VersionBadge.jsx) always shows which
-// build is actually deployed. Falls back to '0' wherever there's no git repo
+// Git-derived build metadata, injected at build time so the app can show
+// exactly which commit is running with zero manual bumping. The commit
+// message becomes the top "announcement" on the dashboard tablón (see
+// buildInfo.js + useAnnouncementsStore.js), so every deploy auto-documents
+// itself. All helpers fall back to safe defaults where there's no git repo
 // (e.g. some CI checkouts).
-function getBuildNumber() {
+function git(cmd, fallback) {
   try {
-    return execSync('git rev-list --count HEAD').toString().trim()
+    return execSync(cmd).toString().trim()
   } catch {
-    return '0'
+    return fallback
   }
 }
 
 export default defineConfig({
   define: {
-    __BUILD_NUMBER__: JSON.stringify(getBuildNumber()),
+    __BUILD_NUMBER__: JSON.stringify(git('git rev-list --count HEAD', '0')),
+    __COMMIT_MESSAGE__: JSON.stringify(git('git log -1 --pretty=%s', '')),
+    __COMMIT_DATE__: JSON.stringify(git('git log -1 --pretty=%cI', '')),
+    __COMMIT_HASH__: JSON.stringify(git('git rev-parse --short HEAD', '')),
   },
   plugins: [
     react(),

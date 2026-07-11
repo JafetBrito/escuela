@@ -747,7 +747,7 @@ export default function DashboardPage() {
             className="text-xl text-text-muted">☰</button>
           <div className="flex items-center gap-1.5">
             <Logo />
-            <span className="text-sm font-black text-primary">OLIVER ACADEMY</span>
+            <span aria-hidden="true">🐱</span>
           </div>
         </header>
 

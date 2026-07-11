@@ -130,7 +130,7 @@ function AnnouncementCard({ a, isAdmin, onDelete, onTogglePin }) {
           {a.body && <p className="mt-1 text-sm text-text-muted">{a.body}</p>}
         </div>
       </div>
-      {isAdmin && (
+      {isAdmin && !a.synthetic && (
         <div className="mt-3 flex justify-end gap-2">
           <button
             type="button"

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
+import { buildAnnouncement } from '../data/buildInfo'
 
 export const useAnnouncementsStore = create((set) => ({
   announcements: [],
@@ -12,7 +13,10 @@ export const useAnnouncementsStore = create((set) => ({
       .select('*')
       .order('pinned', { ascending: false })
       .order('created_at', { ascending: false })
-    set({ announcements: data ?? [], loading: false })
+    // The current build (from the latest git commit) is always the top entry,
+    // auto-generated — no manual publishing needed. See buildInfo.js.
+    const build = buildAnnouncement()
+    set({ announcements: build ? [build, ...(data ?? [])] : (data ?? []), loading: false })
   },
 
   create: async (payload) => {
