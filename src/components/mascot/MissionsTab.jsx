@@ -22,8 +22,8 @@ export default function MissionsTab({ courseId, module, onGoToChat, courseOnly =
   return (
     <div className="flex flex-col gap-5">
 
-      {/* ── Misiones del módulo actual ──────────────────────────────── */}
-      {module ? (
+      {/* ── Misiones del módulo actual (solo dentro de un curso) ──────── */}
+      {module && (
         <section>
           <p className="mb-2 text-xs font-black uppercase tracking-widest text-text-muted">
             🎯 Misiones de "{module.title}"
@@ -63,14 +63,12 @@ export default function MissionsTab({ courseId, module, onGoToChat, courseOnly =
             })
           })()}
         </section>
-      ) : (
-        <p className="text-sm text-text-muted">Selecciona una clase para ver sus misiones del módulo.</p>
       )}
 
       {/* En modo curso solo se muestran las misiones del módulo, no las del mundo. */}
       {!courseOnly && (
       <>
-      <div className="border-t border-border" />
+      {module && <div className="border-t border-border" />}
 
       {/* ── Misiones del mundo (globales) ───────────────────────────── */}
       <section>
