@@ -50,10 +50,12 @@ import AppTopBar from '../shared/AppTopBar'
 import { useProgressStore, EMPTY_ARRAY } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useChatStore } from '../../stores/useChatStore'
+import { useI18n } from '../../i18n'
 
 // ── VR module launcher card ───────────────────────────────────────────────────
 function VrModuleLauncher({ module: mod }) {
   const navigate = useNavigate()
+  const { t } = useI18n()
   return (
     <div
       className="flex flex-col items-center justify-center gap-5 rounded-2xl p-8 text-center"
@@ -74,10 +76,10 @@ function VrModuleLauncher({ module: mod }) {
         className="rounded-2xl px-8 py-3 text-base font-black transition-all hover:scale-105 active:scale-95"
         style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}
       >
-        🌍 Entrar al Mundo VR
+        {t('learning.enterVrWorld')}
       </button>
       <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-        Se abrirá la experiencia VR de esta clase
+        {t('learning.vrWillOpen')}
       </p>
     </div>
   )
@@ -86,7 +88,8 @@ function VrModuleLauncher({ module: mod }) {
 export default function LearningInterface() {
   // --- 1. LECTURA DE URL Y RUTAS ---
   const { courseId } = useParams()
-  
+  const { t, lang }  = useI18n()
+
   // --- 2. ESTADOS GLOBALES (Zustand) ---
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
   const selectedModuleId = useProgressStore((s) => s.getSelectedModuleId(courseId))
@@ -99,7 +102,7 @@ export default function LearningInterface() {
   const prevModuleIdRef = useRef(null)
 
   // --- 4. DERIVACIÓN DE DATOS (Obteniendo el curso actual) ---
-  const courseData = hasCourseData(courseId) ? getCourseData(courseId) : null
+  const courseData = hasCourseData(courseId) ? getCourseData(courseId, lang) : null
   
   // Determinamos qué clase (módulo) está viendo el alumno ahora mismo.
   // Fallback: Si no hay un ID seleccionado guardado en su progreso, le mostramos la primera clase [0].
@@ -165,8 +168,7 @@ export default function LearningInterface() {
             to="/unlock"
             className="mx-4 mt-4 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
           >
-            🔑 Estás viendo las primeras 2 clases gratis. Consigue tu llave para desbloquear el
-            resto de este curso →
+            {t('learning.paywallBanner')}
           </Link>
         )}
 

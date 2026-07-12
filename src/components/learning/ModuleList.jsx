@@ -1,8 +1,10 @@
 import { getCourseData } from '../../data/courseRegistry'
 import { useProgressStore, EMPTY_ARRAY } from '../../stores/useProgressStore'
+import { useI18n } from '../../i18n'
 
 export default function ModuleList({ courseId, className = '' }) {
-  const courseData = getCourseData(courseId)
+  const { t, lang } = useI18n()
+  const courseData = getCourseData(courseId, lang)
   const selectedModuleId = useProgressStore((s) => s.getSelectedModuleId(courseId))
   const setSelectedModule = useProgressStore((s) => s.setSelectedModule)
   const moduleProgress = useProgressStore((s) => s.progress[courseId]?.moduleProgress ?? EMPTY_ARRAY)
@@ -11,7 +13,7 @@ export default function ModuleList({ courseId, className = '' }) {
   return (
     <nav className={`rounded-xl border border-border bg-surface p-3 ${className}`}>
       <p className="mb-2 px-2 text-xs font-semibold uppercase text-text-muted">
-        Módulos
+        {t('learning.modules')}
       </p>
       <ul className="flex max-h-[420px] flex-col gap-1 overflow-y-auto">
         {courseData.modules.map((mod) => {

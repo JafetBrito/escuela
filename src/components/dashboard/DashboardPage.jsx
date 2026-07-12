@@ -13,7 +13,7 @@ import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
-import { useI18n } from '../../i18n'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
@@ -80,7 +80,7 @@ const NOTIF_CATEGORY_STYLE = {
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar({ tab, setTab, onClose }) {
   const navigate      = useNavigate()
-  const { t }         = useI18n()
+  const { t, lang, setLang } = useI18n()
   const session       = useAuthStore((s) => s.session)
   const profile       = useAuthStore((s) => s.profile)
   const signOut       = useAuthStore((s) => s.signOut)
@@ -91,6 +91,9 @@ function Sidebar({ tab, setTab, onClose }) {
   const [notifsOpen, setNotifsOpen] = useState(false)
   // Acordeón: solo una subcategoría abierta a la vez, para que no se amontone.
   const [openSection, setOpenSection] = useState(null)
+  // El selector de idioma vive escondido bajo la mini-card del jugador, igual
+  // que en el AppTopBar (dropdown al abrir el botón con el nombre).
+  const [profileOpen, setProfileOpen] = useState(false)
 
   const navTab = (t) => { setTab(t); onClose?.() }
   const go     = (to) => { navigate(to); onClose?.() }
@@ -103,11 +106,34 @@ function Sidebar({ tab, setTab, onClose }) {
         <span aria-hidden="true">🐱</span>
       </div>
 
-      {/* User mini-card */}
-      <div className="mx-3 mt-2 mb-1 rounded-xl bg-surface-hover px-3 py-2">
-        <p className="text-xs font-bold text-text truncate">{displayName}</p>
-        <p className="text-[11px] text-text-muted">{t('dashboard.level')} {level} · {xp} XP</p>
-      </div>
+      {/* User mini-card — abre el selector de idioma */}
+      <button
+        type="button"
+        onClick={() => setProfileOpen((o) => !o)}
+        className="mx-3 mt-2 mb-1 rounded-xl bg-surface-hover px-3 py-2 text-left transition-colors hover:bg-primary/10"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-text truncate">{displayName}</p>
+            <p className="text-[11px] text-text-muted">{t('dashboard.level')} {level} · {xp} XP</p>
+          </div>
+          <span className="shrink-0 text-[10px] text-text-muted">{profileOpen ? '▴' : '▾'}</span>
+        </div>
+      </button>
+      {profileOpen && (
+        <div className="mx-3 mb-1 flex items-center gap-2 rounded-xl border border-border bg-surface-hover px-3 py-2 text-sm text-text-muted">
+          <span>🌐 {t('nav.profile.language')}</span>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            className="ml-auto rounded-md border border-border/60 bg-surface px-1.5 py-0.5 text-xs text-text outline-none focus:border-primary"
+          >
+            {SUPPORTED_LANGUAGES.map((code) => (
+              <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Main tabs */}
       <div className="px-2 pt-2 space-y-0.5">
@@ -295,7 +321,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       .slice(0, 3),
   [progressByCourse])
 
-  const displayName = profile?.display_name ?? 'Estudiante'
+  const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
@@ -373,7 +399,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
               : `v${LATEST_VERSION}`}
           </span>
           <Link to="/vr" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/30">
-            🌍 Ir al Campus VR →
+            {t('dashboard.goVR')}
           </Link>
         </div>
       </div>
@@ -585,6 +611,7 @@ function EscuelasTab({ categories, progressByCourse, hasAccessToCourse, handleSe
 
 // ── Tab: Mi Progreso ──────────────────────────────────────────────────────────
 function ProgresoTab({ progressByCourse }) {
+  const { t }            = useI18n()
   const xp              = useLevelStore((s) => s.xp)
   const coins           = useCurrencyStore((s) => s.coins)
   const tasks           = useTasksStore((s) => s.tasks)
@@ -605,18 +632,18 @@ function ProgresoTab({ progressByCourse }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-10">
-      <h1 className="text-2xl font-black text-text">Mi Progreso</h1>
+      <h1 className="text-2xl font-black text-text">{t('dashboard.progressTitle')}</h1>
 
       {/* ══ SECCIÓN ACADÉMICA ══════════════════════════════════ */}
       <section className="space-y-4">
         <h2 className="border-b border-border pb-2 text-sm font-bold uppercase tracking-widest text-text-muted">
-          📋 Progreso Académico
+          {t('dashboard.progress.academicHeader')}
         </h2>
 
         {/* Cursos en curso */}
         {inProgress.length > 0 && (
           <div className="rounded-2xl border border-border bg-surface p-4 space-y-3">
-            <p className="text-sm font-extrabold text-text">Cursos en progreso</p>
+            <p className="text-sm font-extrabold text-text">{t('dashboard.progress.coursesInProgress')}</p>
             {inProgress.map((c) => {
               const pct  = progressByCourse(c.id)
               const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
@@ -642,9 +669,9 @@ function ProgresoTab({ progressByCourse }) {
         {/* Resumen de tareas */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Pendientes',  value: pending,        icon: '⏳', color: '#f59e0b' },
-            { label: 'Entregadas',  value: submitted,      icon: '📤', color: '#3b82f6' },
-            { label: 'Calificadas', value: graded.length,  icon: '✅', color: '#22c55e' },
+            { label: t('dashboard.progress.pending'),  value: pending,        icon: '⏳', color: '#f59e0b' },
+            { label: t('dashboard.progress.submitted'),  value: submitted,      icon: '📤', color: '#3b82f6' },
+            { label: t('dashboard.progress.graded'), value: graded.length,  icon: '✅', color: '#22c55e' },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
               <p className="text-2xl mb-1">{s.icon}</p>
@@ -658,31 +685,31 @@ function ProgresoTab({ progressByCourse }) {
         {graded.length > 0 && (
           <div className="rounded-2xl border border-border bg-surface p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-extrabold text-text">Calificaciones</p>
+              <p className="text-sm font-extrabold text-text">{t('dashboard.progress.gradesTitle')}</p>
               {avgGrade !== null && (
                 <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                  Promedio: {avgGrade}%
+                  {t('dashboard.progress.average', { pct: avgGrade })}
                 </span>
               )}
             </div>
             <div className="space-y-2.5">
-              {graded.map((t) => {
-                const pct   = Math.round((t.grade / t.grade_max) * 100)
+              {graded.map((task) => {
+                const pct   = Math.round((task.grade / task.grade_max) * 100)
                 const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444'
                 return (
-                  <div key={t.id} className="flex items-start gap-3">
+                  <div key={task.id} className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-text truncate">{t.title}</p>
-                      {t.feedback && (
+                      <p className="text-xs font-semibold text-text truncate">{task.title}</p>
+                      {task.feedback && (
                         <p className="mt-0.5 text-[11px] text-text-muted line-clamp-1">
-                          💬 {t.feedback}
+                          💬 {task.feedback}
                         </p>
                       )}
                     </div>
                     <div className="shrink-0 text-right">
                       <span className="rounded-lg px-2 py-0.5 text-xs font-black"
                         style={{ background: `${color}22`, color }}>
-                        {t.grade}/{t.grade_max}
+                        {task.grade}/{task.grade_max}
                       </span>
                       <p className="mt-0.5 text-[10px] text-text-muted">{pct}%</p>
                     </div>
@@ -694,26 +721,26 @@ function ProgresoTab({ progressByCourse }) {
         )}
 
         {tasks.length === 0 && (
-          <p className="py-4 text-center text-sm text-text-muted">No tienes tareas asignadas aún.</p>
+          <p className="py-4 text-center text-sm text-text-muted">{t('dashboard.progress.noTasks')}</p>
         )}
 
         <Link to="/mis-tareas"
           className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
-          📋 Ver todas mis tareas →
+          {t('dashboard.progress.seeAllTasks')}
         </Link>
       </section>
 
       {/* ══ SECCIÓN DEL JUEGO ═════════════════════════════════ */}
       <section className="space-y-4">
         <h2 className="border-b border-border pb-2 text-sm font-bold uppercase tracking-widest text-text-muted">
-          🎮 Progreso en el Juego
+          {t('dashboard.progress.gameHeader')}
         </h2>
 
         {/* Level card */}
         <div className="rounded-2xl border border-border bg-surface p-6">
           <div className="flex items-end gap-4">
             <div className="text-center">
-              <p className="mb-1 text-xs uppercase tracking-widest text-text-muted">Nivel</p>
+              <p className="mb-1 text-xs uppercase tracking-widest text-text-muted">{t('dashboard.level')}</p>
               <p className="text-6xl font-black leading-none text-primary">{level}</p>
             </div>
             <div className="flex-1">
@@ -725,7 +752,7 @@ function ProgresoTab({ progressByCourse }) {
                 <div className="h-3 rounded-full bg-primary transition-all"
                   style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
               </div>
-              <p className="mt-1.5 text-xs text-text-muted">{xp} XP totales</p>
+              <p className="mt-1.5 text-xs text-text-muted">{t('dashboard.progress.totalXp', { xp })}</p>
             </div>
           </div>
         </div>
@@ -733,10 +760,10 @@ function ProgresoTab({ progressByCourse }) {
         {/* Game stats */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Monedas',     value: coins.toLocaleString(),                           icon: '💰' },
-            { label: 'Logros',      value: unlocked.length,                                  icon: '🏅' },
-            { label: 'Misiones',    value: missionsClaimed.length + questsCompleted.length,  icon: '📜' },
-            { label: 'Completados', value: completed,                                         icon: '✅' },
+            { label: t('dashboard.progress.coins'),     value: coins.toLocaleString(),                           icon: '💰' },
+            { label: t('nav.items.logros'),      value: unlocked.length,                                  icon: '🏅' },
+            { label: t('nav.items.misiones'),    value: missionsClaimed.length + questsCompleted.length,  icon: '📜' },
+            { label: t('dashboard.progress.completed'), value: completed,                                         icon: '✅' },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
               <p className="mb-1 text-2xl">{s.icon}</p>
@@ -749,10 +776,10 @@ function ProgresoTab({ progressByCourse }) {
         {/* Quick links */}
         <div className="space-y-2">
           {[
-            { to: '/arbol',    icon: '🌳', label: 'Árbol de habilidades', desc: 'Elige tu clase y desbloquea poderes' },
-            { to: '/logros',   icon: '🏅', label: 'Logros',               desc: 'Tus medallas y secretos desbloqueados' },
-            { to: '/misiones', icon: '📜', label: 'Misiones',             desc: 'Objetivos activos y completados' },
-            { to: '/mascota',  icon: '⚔️', label: 'Mi Equipo',            desc: 'Avatar, mascota, equipamiento' },
+            { to: '/arbol',    icon: '🌳', label: t('nav.items.arbol'),   desc: t('dashboard.progress.skillTreeDesc') },
+            { to: '/logros',   icon: '🏅', label: t('nav.items.logros'), desc: t('dashboard.progress.achievementsDesc') },
+            { to: '/misiones', icon: '📜', label: t('nav.items.misiones'), desc: t('dashboard.progress.missionsDesc') },
+            { to: '/mascota',  icon: '⚔️', label: t('nav.items.mascota'), desc: t('dashboard.progress.teamDesc') },
           ].map((item) => (
             <Link key={item.to} to={item.to}
               className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-3 transition-colors hover:border-primary hover:bg-surface-hover">
@@ -772,6 +799,7 @@ function ProgresoTab({ progressByCourse }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { t }             = useI18n()
   const navigate          = useNavigate()
   const progress          = useProgressStore((s) => s.progress)
   const license           = useAuthStore((s) => s.license)
@@ -861,22 +889,22 @@ export default function DashboardPage() {
         {/* ── Mobile bottom tab bar ──────────────────────────────── */}
         <nav className="flex md:hidden items-center justify-around border-t border-border bg-surface px-2 py-2 flex-shrink-0">
           {[
-            { id: 'inicio',   icon: '🏠', label: 'Inicio' },
-            { id: 'escuelas', icon: '📚', label: 'Escuelas' },
-            { id: 'progreso', icon: '📊', label: 'Progreso' },
+            { id: 'inicio',   icon: '🏠' },
+            { id: 'escuelas', icon: '📚' },
+            { id: 'progreso', icon: '📊' },
           ].map((item) => (
             <button key={item.id} type="button" onClick={() => setTab(item.id)}
               className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-colors ${
                 tab === item.id ? 'text-primary' : 'text-text-muted'
               }`}>
               <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px] font-semibold">{item.label}</span>
+              <span className="text-[10px] font-semibold">{t(`dashboard.tabs.${item.id}`)}</span>
             </button>
           ))}
           <button type="button" onClick={() => setSidebarOpen(true)}
             className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl text-text-muted">
             <span className="text-xl">☰</span>
-            <span className="text-[10px] font-semibold">Más</span>
+            <span className="text-[10px] font-semibold">{t('dashboard.more')}</span>
           </button>
         </nav>
       </div>

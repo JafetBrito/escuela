@@ -40,6 +40,18 @@ const SUB_TABS_COURSE = [
   { id: 'tools',     label: 'Tools',     icon: '🔧' },
 ]
 
+// Tabs shown fuera de VR (curso o página normal como el Dashboard) — mascota
+// bloqueada, sin mezclar con el avatar. Como SUB_TABS_COURSE pero sin Ficha /
+// Registros (contenido de curso) y con Apariencia + misiones globales.
+const SUB_TABS_MASCOT_ONLY = [
+  { id: 'chat',       label: 'Chat',       icon: '💬' },
+  { id: 'misiones',   label: 'Misiones',   icon: '🎯' },
+  { id: 'bolsas',     label: 'Objetos',    icon: '🎒' },
+  { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
+  { id: 'libros',     label: 'Libros',     icon: '📚' },
+  { id: 'notas',      label: 'Notas',      icon: '📝' },
+]
+
 const SUB_TABS_AVATAR = [
   { id: 'personaje',  label: 'Personaje', icon: '🧑' },
   { id: 'arbol',      label: 'Árbol',     icon: '🌳' },
@@ -73,13 +85,17 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
   const simpleMode  = SIMPLE_MODE_COURSES.has(courseId)
   // In course context: always show mascota, hide the Avatar/Mascota switcher
   const isCourseMode = Boolean(courseId) && !vrMode && !simpleMode
+  // Fuera de VR (curso o página normal como el Dashboard): siempre mascota,
+  // nunca se mezcla con el avatar. Solo en VR tiene sentido el switcher
+  // Avatar/Mascota (controlas a uno u otro en el mundo).
+  const isMascotOnly = !vrMode && !simpleMode
 
   const [entityId, rawSubTab] = panel.split('-')
 
   const entity = simpleMode
     ? ENTITY_TABS[1]
-    : isCourseMode
-      ? ENTITY_TABS[1]   // mascota locked in courses
+    : isMascotOnly
+      ? ENTITY_TABS[1]   // mascota locked fuera de VR
       : (ENTITY_TABS.find((e) => e.id === (lockedEntity ?? entityId)) ?? ENTITY_TABS[1])
 
   const isAvatarEntity = entity.id === 'avatar'
@@ -88,7 +104,9 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
     ? SUB_TABS_SIMPLE
     : isCourseMode
       ? SUB_TABS_COURSE
-      : (isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA)
+      : isMascotOnly
+        ? SUB_TABS_MASCOT_ONLY
+        : (isAvatarEntity ? SUB_TABS_AVATAR : SUB_TABS_MASCOTA)
 
   const subTab = subTabs.some((t) => t.id === rawSubTab) ? rawSubTab : subTabs[0].id
 
@@ -151,8 +169,8 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             )}
           </div>
 
-          {/* Entity tabs — only shown outside course mode and not locked */}
-          {!simpleMode && !lockedEntity && !isCourseMode && (
+          {/* Entity tabs — solo en VR (fuera de VR la mascota queda fija) */}
+          {!simpleMode && !lockedEntity && !isMascotOnly && (
             <div className="flex gap-1 px-3 pt-2.5">
               {ENTITY_TABS.map((t) => {
                 const isActive = t.id === entity.id
@@ -229,8 +247,8 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             {subTab === 'tools'     && <ToolsPanel courseId={courseId} />}
 
             {subTab === 'bolsas' && (
-              isCourseMode ? (
-                // En cursos, "Objetos" muestra lo comprado en la Tienda + recompensas.
+              isMascotOnly ? (
+                // Fuera de VR, "Objetos" muestra lo comprado en la Tienda + recompensas.
                 <ObjetosBagPanel onActivate={() => setOpen(false)} />
               ) : (
                 <div className="flex flex-col gap-2">

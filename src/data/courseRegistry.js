@@ -1,3 +1,4 @@
+import { localizeCourse } from './courseTranslations'
 import course001 from './course.json'
 import coursePromptEngineering from './coursePromptEngineering.js'
 import courseDemo from './courseDemo.json'
@@ -22,8 +23,12 @@ export const COURSES_DATA = {
   [coursePromptEngineering.courseId]: coursePromptEngineering,
 }
 
-export function getCourseData(courseId) {
-  return COURSES_DATA[courseId] ?? course001
+// `lang` defaults to 'es' (the base, authored language) so every existing
+// caller keeps working unchanged. Pass the current UI language to get a
+// translated course where available — see courseTranslations.js.
+export function getCourseData(courseId, lang = 'es') {
+  const course = COURSES_DATA[courseId] ?? course001
+  return lang === 'es' ? course : localizeCourse(course, lang)
 }
 
 export function hasCourseData(courseId) {
