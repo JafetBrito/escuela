@@ -80,7 +80,7 @@ export default function RadioMiniPlayer() {
         }
       `}</style>
 
-      <div ref={elRef} className="fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6" style={style}>
+      <div ref={elRef} className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6" style={style}>
         <audio 
           ref={audioRef} 
           src={item.playlist[currentTrackIndex]} 

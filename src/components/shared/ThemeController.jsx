@@ -14,12 +14,15 @@ export default function ThemeController() {
   const adminActive = isAdmin?.() ?? false
 
   useEffect(() => {
-    if (adminActive) {
-      document.documentElement.dataset.theme = 'hacker'
-    } else if (nefertitiActive) {
+    // Un tema activado explícitamente por el jugador (objeto) gana sobre el
+    // tema 'hacker' pasivo de admin — si no, un admin nunca vería cambiar el
+    // color al activar Tema Claro / Reina Nefertiti.
+    if (nefertitiActive) {
       document.documentElement.dataset.theme = 'desert'
     } else if (lightThemeActive) {
       document.documentElement.dataset.theme = 'light'
+    } else if (adminActive) {
+      document.documentElement.dataset.theme = 'hacker'
     } else {
       document.documentElement.dataset.theme = ''
     }

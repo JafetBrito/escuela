@@ -231,7 +231,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             {subTab === 'bolsas' && (
               isCourseMode ? (
                 // En cursos, "Objetos" muestra lo comprado en la Tienda + recompensas.
-                <ObjetosBagPanel />
+                <ObjetosBagPanel onActivate={() => setOpen(false)} />
               ) : (
                 <div className="flex flex-col gap-2">
                   <EquipmentBagGrid owner={entity.owner} />
