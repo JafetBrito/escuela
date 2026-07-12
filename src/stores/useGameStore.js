@@ -398,6 +398,9 @@ export const useGameStore = create((set, get) => ({
         },
       },
     }))
+    // Elegir clase es un hito de creación de personaje — guárdalo en la nube ya,
+    // no en 3 s ni en beforeunload, para que sobreviva a un borrado de cache.
+    get().forceSyncToCloud().catch(() => {})
   },
 
   selectOliverClass: (classId) => {
@@ -414,6 +417,7 @@ export const useGameStore = create((set, get) => ({
       },
       worldTreeCompleted: !!s.player.class,
     }))
+    get().forceSyncToCloud().catch(() => {})
   },
 
   setWorldTreeCompleted: (val) => set({ worldTreeCompleted: val }),

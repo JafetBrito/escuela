@@ -6,7 +6,7 @@ import Logo from '../shared/Logo'
 import MascotMesh from '../mascot/MascotMesh'
 import { getMascotById } from '../../data/mascotRegistry'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useGameStore, PLAYER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
+import { useGameStore } from '../../stores/useGameStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/googleAuth'
 
@@ -17,44 +17,12 @@ const WELCOME_VIDEO_URL = ''
 
 const OLIVER = getMascotById(8)
 
-// Rich class detail shown during registration — presentation only, not in the store
-const CLASS_DETAIL = {
-  programmer: {
-    lore: 'Maestro del código y la lógica computacional. Velocidad de pensamiento superior y precisión milimétrica en cada solución. Cuando el tiempo apremia, el Programador ejecuta mientras otros aún leen el enunciado.',
-    specialty: 'Velocidad y precisión',
-    topStats: ['speed', 'intellect'],
-  },
-  cyber_strategist: {
-    lore: 'Táctico nato de las redes digitales. Analiza amenazas, construye defensas y maneja el flujo de información con maestría. Donde otros ven caos, el Ciber-Estratega ve patrones y oportunidades.',
-    specialty: 'Control táctico',
-    topStats: ['intellect', 'creativity'],
-  },
-  ai_engineer: {
-    lore: 'Arquitecto de sistemas que aprenden solos. Convierte datos en predicciones, automatiza lo imposible y anticipa resultados con modelos de alta precisión. El futuro del aprendizaje está en sus manos.',
-    specialty: 'Predicción y automatización',
-    topStats: ['intellect', 'wisdom'],
-  },
-  designer: {
-    lore: 'Creador de experiencias que trascienden lo visual. Fusiona arte con funcionalidad para generar soluciones que las personas entienden antes de leerlas. La creatividad no es adorno — es su arma principal.',
-    specialty: 'Arte y funcionalidad',
-    topStats: ['creativity', 'intellect'],
-  },
-  philosopher: {
-    lore: 'Pensador crítico que cuestiona todo. La sabiduría y la ética son sus herramientas para desmontar argumentos falsos y construir verdades sólidas. En un mundo de ruido, el Filósofo encuentra la señal.',
-    specialty: 'Sabiduría y ética',
-    topStats: ['wisdom', 'intellect'],
-  },
-}
-
-const STAT_LABEL = { power: 'Poder', speed: 'Velocidad', intellect: 'Intelecto', creativity: 'Creatividad', wisdom: 'Sabiduría' }
-
-const STEPS = [
-  { label: 'Bienvenida', icon: '🌟' },
-  { label: 'Cuenta',     icon: '👤' },
-  { label: 'Avatar',     icon: '🎭' },
-  { label: 'Clase',      icon: '⚔️' },
-]
-
+// Character creation (avatar + class + mascot) happens ONCE in the VR tutorial
+// (Árbol del Mundo, /vr-templo), like WoW's account→character split. This page
+// only creates the ACCOUNT: nickname + email + password. That removes the old
+// duplication where class was picked here AND again in the VR world, and means
+// the class is only ever chosen while the user is already logged in — so it
+// actually reaches the cloud (see useGameStore.selectPlayerClass force-sync).
 export default function CreateAccountPage() {
   const navigate = useNavigate()
 
@@ -63,36 +31,33 @@ export default function CreateAccountPage() {
   const registerWithGoogle = useAuthStore((s) => s.registerWithGoogle)
   const session            = useAuthStore((s) => s.session)
 
-  const setPlayerAvatar     = useGameStore((s) => s.setPlayerAvatar)
-  const setPlayerNickname   = useGameStore((s) => s.setPlayerNickname)
-  const selectPlayerClass   = useGameStore((s) => s.selectPlayerClass)
-  const forceSyncToCloud    = useGameStore((s) => s.forceSyncToCloud)
+  const setPlayerNickname  = useGameStore((s) => s.setPlayerNickname)
 
-  const [step, setStep]     = useState(0)
+  const [step, setStep]     = useState(0) // 0 = bienvenida, 1 = cuenta
   const [status, setStatus] = useState('idle')
   const [error, setError]   = useState('')
 
-  // Step 1 – account
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
 
-  // Step 2 – avatar (hombre/mujer, see PLAYER_AVATARS)
-  const [avatarId, setAvatarId] = useState(PLAYER_AVATARS[0]?.id ?? 'hombre')
-
-  // Step 3 – player class
-  const [playerClassId, setPlayerClassId] = useState(null)
-
   const supabaseReady   = isSupabaseConfigured()
   const googleButtonRef = useRef(null)
+
+  // Character creation continues in the VR tutorial world.
+  const goToCharacterCreation = (name) => {
+    setPlayerNickname((name || '').trim() || email.split('@')[0] || 'Aventurero')
+    navigate('/vr-templo')
+  }
 
   useEffect(() => {
     if (supabaseReady || !googleButtonRef.current) return
     renderGoogleButton(
       googleButtonRef.current,
-      (googleUser) => { registerWithGoogle(googleUser); setStep(2) },
+      (googleUser) => { registerWithGoogle(googleUser); goToCharacterCreation(googleUser?.name) },
       (err) => setError(err.message),
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabaseReady, registerWithGoogle])
 
   const handleSignUp = async (e) => {
@@ -100,17 +65,15 @@ export default function CreateAccountPage() {
     setError(''); setStatus('processing')
     try {
       const data = await signUpWithEmail(email, password, nickname || email.split('@')[0])
-      // ponytail: Supabase's default "Confirm email" setting returns no
-      // session until the link is clicked — without this check the wizard
-      // silently continues with user=null and nothing ever reaches the
-      // cloud (forceSyncToCloud no-ops). Disable "Confirm email" in the
-      // Supabase dashboard (Authentication > Providers > Email) to skip
-      // this step entirely.
+      // Supabase's default "Confirm email" returns no session until the link
+      // is clicked. Without a session nothing can reach the cloud, so we stop
+      // here and tell the user. Disable "Confirm email" in the Supabase
+      // dashboard (Authentication > Providers > Email) to skip this.
       if (!data.session) {
-        setError('Te enviamos un correo de confirmación. Ábrelo y confirma tu cuenta, luego inicia sesión para continuar — si no confirmas, tu progreso no se guardará en la nube.')
+        setError('Te enviamos un correo de confirmación. Ábrelo, confirma tu cuenta e inicia sesión para crear tu personaje — si no confirmas, tu progreso no se guardará en la nube.')
         return
       }
-      setStep(2)
+      goToCharacterCreation(nickname)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -123,19 +86,6 @@ export default function CreateAccountPage() {
     try { await signInWithOAuth(provider) }
     catch (err) { setError(err.message) }
   }
-
-  const handleFinish = async () => {
-    setStatus('processing')
-    setPlayerAvatar(avatarId)
-    setPlayerNickname(nickname.trim() || email.split('@')[0])
-    if (playerClassId) selectPlayerClass(playerClassId)
-    try { await forceSyncToCloud() } catch { /* best effort */ }
-    setStatus('idle')
-    navigate('/vr-templo')   // ← goes to tutorial world, NOT campus
-  }
-
-  const selectedAvatar = PLAYER_AVATARS.find((a) => a.id === avatarId) ?? PLAYER_AVATARS[0]
-  const selectedClass  = playerClassId ? PLAYER_CLASSES[playerClassId] : null
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-text">
@@ -151,31 +101,6 @@ export default function CreateAccountPage() {
       <main className="flex flex-1 items-center justify-center px-4 pb-16 pt-4">
         <div className="w-full max-w-2xl">
 
-          {/* ── Step indicator ── */}
-          {step > 0 && (
-            <div className="mb-6 flex items-center justify-center gap-1 overflow-x-auto pb-1">
-              {STEPS.map((s, i) => (
-                <div key={s.label} className="flex items-center gap-1">
-                  <div className="flex flex-col items-center gap-0.5">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-bold transition-all ${
-                      i < step  ? 'border-primary bg-primary text-background'
-                      : i === step ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border text-text-muted'
-                    }`}>
-                      {i < step ? '✓' : s.icon}
-                    </div>
-                    <span className={`hidden text-[9px] font-semibold sm:block ${i === step ? 'text-primary' : 'text-text-muted'}`}>
-                      {s.label}
-                    </span>
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div className={`mb-3 h-0.5 w-6 md:w-10 ${i < step ? 'bg-primary' : 'bg-border'}`} />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* ═══════ STEP 0 — BIENVENIDA ═══════ */}
           {step === 0 && (
             <div className="flex flex-col items-center gap-8">
@@ -183,7 +108,7 @@ export default function CreateAccountPage() {
                 <div className="mb-3 text-7xl">🌍</div>
                 <h1 className="text-4xl font-black leading-tight md:text-5xl">
                   Bienvenido a{' '}
-                  <span className="text-primary">Oliver School</span>
+                  <span className="text-primary">Oliver Academy</span>
                 </h1>
                 <p className="mt-3 max-w-md text-base text-text-muted">
                   El campus virtual donde aprendes, exploras y creces junto a tu compañero mágico.
@@ -197,7 +122,7 @@ export default function CreateAccountPage() {
                     className="aspect-video w-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    title="Bienvenida a Oliver School"
+                    title="Bienvenida a Oliver Academy"
                   />
                 ) : (
                   <div className="relative flex aspect-video w-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-surface to-background">
@@ -219,8 +144,8 @@ export default function CreateAccountPage() {
 
               <div className="grid w-full grid-cols-3 gap-3">
                 {[
-                  { icon: '🎓', title: 'Aprende', desc: 'Clases interactivas con tu propio ritmo' },
-                  { icon: '⚔️', title: 'Combate', desc: 'Sistema RPG con habilidades y clases' },
+                  { icon: '🎓', title: 'Aprende', desc: 'Clases interactivas a tu propio ritmo' },
+                  { icon: '⚔️', title: 'Personaje', desc: 'Elige tu clase y mascota en el mundo VR' },
                   { icon: '🌍', title: 'Explora', desc: 'Campus virtual 3D con otros jugadores' },
                 ].map(({ icon, title, desc }) => (
                   <div key={title} className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface/60 p-4 text-center">
@@ -244,17 +169,18 @@ export default function CreateAccountPage() {
 
           {/* ═══════ STEP 1 — CUENTA ═══════ */}
           {step === 1 && (
-            <div className="rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
+            <div className="mx-auto max-w-md rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
               <h2 className="mb-1 text-2xl font-black">Crea tu cuenta</h2>
               <p className="mb-6 text-sm text-text-muted">
-                Elige un nickname único y crea tu acceso. Las APIs se configuran después.
+                Elige tu nombre y crea tu acceso. Después, en el mundo VR, elegirás tu
+                clase y tu mascota. Las APIs se configuran luego en Ajustes.
               </p>
 
               {supabaseReady ? (
                 <>
                   <form onSubmit={handleSignUp} className="flex flex-col gap-4">
                     <label className="flex flex-col gap-1.5 text-sm font-semibold">
-                      Nickname
+                      Nombre
                       <input type="text" required value={nickname}
                         onChange={(e) => setNickname(e.target.value)}
                         placeholder="¿Cómo te llamarán en el campus?"
@@ -276,17 +202,13 @@ export default function CreateAccountPage() {
                         className="rounded-xl border border-border bg-background px-4 py-3 text-text outline-none transition focus:border-primary" />
                     </label>
 
-                    <div className="rounded-xl border border-border/60 bg-background/50 px-4 py-3 text-xs text-text-muted">
-                      💡 Las APIs (DeepSeek, Notion, etc.) se configuran después en <strong>Ajustes</strong>.
-                    </div>
-
                     {session ? (
-                      <Button type="button" onClick={() => setStep(2)}>
-                        Ya tienes sesión — continuar →
+                      <Button type="button" onClick={() => goToCharacterCreation(nickname)}>
+                        Ya tienes sesión — crear personaje →
                       </Button>
                     ) : (
                       <Button type="submit" disabled={status === 'processing'} className="py-3 text-base">
-                        {status === 'processing' ? 'Creando cuenta…' : 'Continuar →'}
+                        {status === 'processing' ? 'Creando cuenta…' : 'Crear cuenta y continuar →'}
                       </Button>
                     )}
                   </form>
@@ -313,7 +235,7 @@ export default function CreateAccountPage() {
                   {!isGoogleAuthConfigured() && (
                     <p className="text-xs text-text-muted">Google Auth tampoco está configurado aún.</p>
                   )}
-                  <Button onClick={() => setStep(2)} className="mt-1">Continuar sin cuenta →</Button>
+                  <Button onClick={() => goToCharacterCreation(nickname)} className="mt-1">Continuar sin cuenta →</Button>
                 </div>
               )}
 
@@ -325,190 +247,6 @@ export default function CreateAccountPage() {
 
               <div className="mt-4 flex justify-start">
                 <Button variant="ghost" onClick={() => setStep(0)}>← Atrás</Button>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════ STEP 2 — AVATAR 3D ═══════ */}
-          {step === 2 && (
-            <div className="rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
-              <h2 className="mb-1 text-2xl font-black">Elige tu avatar</h2>
-              <p className="mb-5 text-sm text-text-muted">
-                ¿Hombre o mujer? Este modelo 3D te representará en el campus virtual. Puedes cambiarlo después en Apariencia. Pronto agregaremos más opciones.
-              </p>
-
-              {/* 3D preview */}
-              <div className="mb-5 overflow-hidden rounded-2xl border"
-                style={{ borderColor: `${selectedAvatar.color}44`, background: `${selectedAvatar.color}0a` }}>
-                <div className="h-44 w-full">
-                  <Canvas camera={{ position: [0, 0, 3.5], fov: 45 }}>
-                    <ambientLight intensity={0.7} />
-                    <directionalLight position={[3, 4, 3]} intensity={1.3} />
-                    <Suspense fallback={null}>
-                      <MascotMesh mascot={selectedAvatar} />
-                    </Suspense>
-                  </Canvas>
-                </div>
-                <div className="flex items-center gap-3 border-t border-border px-4 py-2.5">
-                  <span className="text-2xl">{selectedAvatar.icon || '✨'}</span>
-                  <p className="font-black text-text">{selectedAvatar.label}</p>
-                </div>
-              </div>
-
-              {/* Model grid */}
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                {PLAYER_AVATARS.map((m) => {
-                  const active = m.id === avatarId
-                  return (
-                    <button key={m.id} type="button" onClick={() => setAvatarId(m.id)}
-                      className="flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-all hover:scale-105"
-                      style={{
-                        borderColor: active ? m.color : 'var(--color-border)',
-                        background:  active ? `${m.color}20` : 'var(--color-background)',
-                        boxShadow:   active ? `0 0 16px ${m.color}44` : 'none',
-                      }}>
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full text-3xl"
-                        style={{ background: `${m.color}22`, border: `2px solid ${m.color}55` }}>
-                        {m.icon || '✨'}
-                      </div>
-                      <span className="text-xs font-bold leading-tight text-center"
-                        style={{ color: active ? m.color : 'var(--color-text-muted)' }}>
-                        {m.label}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              <div className="mt-6 flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(1)}>← Atrás</Button>
-                <Button onClick={() => setStep(3)}>Continuar →</Button>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════ STEP 3 — CLASE ═══════ */}
-          {step === 3 && (
-            <div className="rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
-              <h2 className="mb-1 text-2xl font-black">Elige tu clase</h2>
-              <p className="mb-5 text-sm text-text-muted">
-                Tu clase define tu camino en Oliver School. Cada una tiene habilidades únicas,
-                stats propios y un compañero mágico especializado.
-              </p>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {Object.values(PLAYER_CLASSES).map((cls) => {
-                  const active  = playerClassId === cls.id
-                  const detail  = CLASS_DETAIL[cls.id]
-                  const topS    = detail?.topStats ?? []
-                  return (
-                    <button key={cls.id} type="button" onClick={() => setPlayerClassId(cls.id)}
-                      className="flex flex-col gap-3 rounded-2xl border-2 p-4 text-left transition-all hover:scale-[1.01]"
-                      style={{
-                        borderColor: active ? cls.color : 'var(--color-border)',
-                        background:  active ? `${cls.color}12` : 'var(--color-background)',
-                        boxShadow:   active ? `0 0 24px ${cls.color}33` : 'none',
-                      }}>
-
-                      {/* Header row */}
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl"
-                          style={{ background: `${cls.color}22`, border: `2px solid ${cls.color}44` }}>
-                          {cls.icon}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-black text-text text-base">{cls.name}</p>
-                            {detail && (
-                              <span className="rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide"
-                                style={{ background: `${cls.color}22`, color: cls.color }}>
-                                {detail.specialty}
-                              </span>
-                            )}
-                            {active && (
-                              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-green-400">
-                                ✓ Seleccionada
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">
-                            {detail?.lore ?? cls.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Stat bars */}
-                      <div className="grid grid-cols-5 gap-1.5">
-                        {Object.entries(cls.stats).map(([stat, val]) => {
-                          const isTop = topS.includes(stat)
-                          return (
-                            <div key={stat} className="flex flex-col items-center gap-1">
-                              <div className="flex flex-col gap-0.5 w-full">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <div key={i} className="h-1.5 w-full rounded-sm transition-all"
-                                    style={{
-                                      background: i < val
-                                        ? (isTop ? cls.color : `${cls.color}88`)
-                                        : 'rgba(128,128,128,0.18)',
-                                      boxShadow:  i < val && isTop ? `0 0 4px ${cls.color}88` : 'none',
-                                    }} />
-                                ))}
-                              </div>
-                              <span className="text-[8px] font-bold uppercase tracking-wide"
-                                style={{ color: isTop ? cls.color : 'var(--color-text-muted)' }}>
-                                {(STAT_LABEL[stat] ?? stat).slice(0, 3)}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Starting skills + passive */}
-                      <div className="flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
-                        <span className="text-[9px] uppercase tracking-wide text-text-muted">Inicio:</span>
-                        {cls.startSkills?.map((sk) => (
-                          <span key={sk} className="rounded-lg border px-1.5 py-0.5 text-[10px] font-bold"
-                            style={{ borderColor: `${cls.color}44`, color: cls.color }}>
-                            {sk.replace(/_/g, ' ')}
-                          </span>
-                        ))}
-                        {cls.passiveAura && (
-                          <span className="ml-auto rounded-lg bg-white/5 px-1.5 py-0.5 text-[9px] text-text-muted">
-                            ✦ {cls.passiveAura.replace(/_/g, ' ')}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {selectedClass && (
-                <div className="mt-4 flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm"
-                  style={{ borderColor: `${selectedClass.color}44`, background: `${selectedClass.color}0c` }}>
-                  <span className="text-2xl">{selectedClass.icon}</span>
-                  <div>
-                    <p className="font-bold text-text">{selectedClass.name} seleccionada</p>
-                    <p className="text-xs text-text-muted">
-                      Habilidades iniciales: {selectedClass.startSkills?.join(', ')}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(2)}>← Atrás</Button>
-                <Button
-                  onClick={handleFinish}
-                  disabled={!playerClassId || status === 'processing'}
-                  className="py-3 text-base"
-                  style={selectedClass ? {
-                    background: `linear-gradient(135deg, ${selectedClass.color}, ${selectedClass.color}cc)`,
-                  } : {}}>
-                  {status === 'processing' ? 'Guardando…'
-                    : playerClassId ? '¡Ir al Árbol VR! 🌳'
-                    : 'Elige una clase primero'}
-                </Button>
               </div>
             </div>
           )}
