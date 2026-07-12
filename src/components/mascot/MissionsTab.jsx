@@ -5,7 +5,7 @@ import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
 import { formatCurrency } from '../../utils/currency'
 import ModuleQuiz from '../learning/ModuleQuiz'
 
-export default function MissionsTab({ courseId, module, onGoToChat }) {
+export default function MissionsTab({ courseId, module, onGoToChat, courseOnly = false }) {
   // EMPTY_OBJECT (referencia estable) en vez de `{}` — un objeto nuevo cada
   // render hace que useSyncExternalStore reviente en bucle ("getSnapshot should
   // be cached"), que era el crash al abrir Misiones de la mascota en el VR.
@@ -67,6 +67,9 @@ export default function MissionsTab({ courseId, module, onGoToChat }) {
         <p className="text-sm text-text-muted">Selecciona una clase para ver sus misiones del módulo.</p>
       )}
 
+      {/* En modo curso solo se muestran las misiones del módulo, no las del mundo. */}
+      {!courseOnly && (
+      <>
       <div className="border-t border-border" />
 
       {/* ── Misiones del mundo (globales) ───────────────────────────── */}
@@ -111,6 +114,8 @@ export default function MissionsTab({ courseId, module, onGoToChat }) {
           })
         )}
       </section>
+      </>
+      )}
     </div>
   )
 }

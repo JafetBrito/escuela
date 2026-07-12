@@ -140,6 +140,7 @@ import { sendNpcMessage } from '../../services/chat/npcTransport'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import ClassPicker from './ClassPicker'
 import VrHud from './VrHud'
+import CharSwitcherHud from './CharSwitcherHud'
 import WorldChat from './WorldChat'
 import BagsPanel from './BagsPanel'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
@@ -1205,6 +1206,12 @@ export default function VrArbol() {
 
       {/* ── Bolsas ── */}
       {bagsOpen && <BagsPanel onClose={() => setBagsOpen(false)} />}
+
+      {/* ── Cambio Avatar ↔ Mascota (mismo sistema del MUNDO VR) — solo cuando
+          ya existe la mascota ── */}
+      {phase === 'play' && oliverClass && (
+        <CharSwitcherHud playerPositionRef={playerPositionRef} hudVisible={hudVisible} />
+      )}
 
       {/* ── Top title ── */}
       {phase === 'play' && (

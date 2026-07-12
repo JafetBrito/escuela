@@ -11,6 +11,10 @@ import Inventory from '../inventory/Inventory'
 import LevelBadge from '../shared/LevelBadge'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import MissionsTab from './MissionsTab'
+import TechDexPanel from './TechDexPanel'
+import CodicePanel from './CodicePanel'
+import ToolsPanel from './ToolsPanel'
+import ObjetosBagPanel from './ObjetosBagPanel'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -23,14 +27,17 @@ const ENTITY_TABS = [
   { id: 'mascota', label: 'Mascota', icon: '🐾', owner: 'oliver' },
 ]
 
-// Tabs shown when the companion is inside a course — mascota-only, learning-focused
+// Tabs shown when the companion is inside a course — mascota-only, learning-focused.
+// Sin 'apariencia' (eso vive en el menú global de mascota, no en cursos).
 const SUB_TABS_COURSE = [
-  { id: 'chat',       label: 'Chat',      icon: '💬' },
-  { id: 'misiones',   label: 'Misiones',  icon: '🎯' },
-  { id: 'bolsas',     label: 'Objetos',   icon: '🎒' },
-  { id: 'libros',     label: 'Libros',    icon: '📚' },
-  { id: 'notas',      label: 'Notas',     icon: '📝' },
-  { id: 'apariencia', label: 'Apariencia',icon: '🎨' },
+  { id: 'chat',      label: 'Chat',      icon: '💬' },
+  { id: 'misiones',  label: 'Misiones',  icon: '🎯' },
+  { id: 'ficha',     label: 'Ficha',     icon: '📟' },  // Tech-Dex / Bestiario de Código
+  { id: 'registros', label: 'Registros', icon: '📜' },  // Audio-Logs / Códice
+  { id: 'bolsas',    label: 'Objetos',   icon: '🎒' },
+  { id: 'libros',    label: 'Libros',    icon: '📚' },
+  { id: 'notas',     label: 'Notas',     icon: '📝' },
+  { id: 'tools',     label: 'Tools',     icon: '🔧' },
 ]
 
 const SUB_TABS_AVATAR = [
@@ -214,14 +221,23 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             )}
 
             {subTab === 'misiones' && (
-              <MissionsTab courseId={courseId} module={module} onGoToChat={() => setSubTab('chat')} />
+              <MissionsTab courseId={courseId} module={module} courseOnly={isCourseMode} onGoToChat={() => setSubTab('chat')} />
             )}
 
+            {subTab === 'ficha'     && <TechDexPanel courseId={courseId} module={module} />}
+            {subTab === 'registros' && <CodicePanel module={module} />}
+            {subTab === 'tools'     && <ToolsPanel courseId={courseId} />}
+
             {subTab === 'bolsas' && (
-              <div className="flex flex-col gap-2">
-                <EquipmentBagGrid owner={entity.owner} />
-                <p className="text-center text-[10px] text-text-muted">Toca un objeto para equiparlo o quitarlo.</p>
-              </div>
+              isCourseMode ? (
+                // En cursos, "Objetos" muestra lo comprado en la Tienda + recompensas.
+                <ObjetosBagPanel />
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <EquipmentBagGrid owner={entity.owner} />
+                  <p className="text-center text-[10px] text-text-muted">Toca un objeto para equiparlo o quitarlo.</p>
+                </div>
+              )
             )}
 
             {subTab === 'chat' && (

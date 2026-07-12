@@ -45,6 +45,7 @@ import VrMascotOnboarding from './VrMascotOnboarding'
 import BattleScreen from '../battle/BattleScreen'
 import { useCombatStore } from '../../stores/useCombatStore'
 import VrHud from './VrHud'
+import CharSwitcherHud from './CharSwitcherHud'
 import WorldChat from './WorldChat'
 import DailyRewardsBoard from './DailyRewardsBoard'
 import BagsPanel from './BagsPanel'
@@ -2711,66 +2712,8 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
   )
 }
 
-// Character switcher overlay: toggles avatar ↔ mascot and follow/stay mode.
-// Needs playerPositionRef to snapshot the position when switching to "stay".
-function CharSwitcherHud({ playerPositionRef, hudVisible }) {
-  const activeChar = useVrCharacterStore((s) => s.activeChar)
-  const companionFollows = useVrCharacterStore((s) => s.companionFollows)
-  const toggleChar = useVrCharacterStore((s) => s.toggleChar)
-  const setCompanionFollows = useVrCharacterStore((s) => s.setCompanionFollows)
-  const setParkedPosition = useVrCharacterStore((s) => s.setParkedPosition)
-
-  if (!hudVisible) return null
-
-  const handleSwitch = () => {
-    // While parked, this also swaps which character is left behind and
-    // teleports onto whichever one you're switching to — see toggleChar.
-    toggleChar(playerPositionRef?.current)
-  }
-
-  const inactiveChar = activeChar === 'avatar' ? 'mascot' : 'avatar'
-
-  const handleFollowToggle = () => {
-    if (companionFollows) {
-      // Switching to Stay — record current player position as the
-      // companion's parked spot.
-      setParkedPosition(inactiveChar, playerPositionRef?.current ?? null)
-    } else {
-      // Switching to Follow — clear its parked spot, it teleports back to your side.
-      setParkedPosition(inactiveChar, null)
-    }
-    setCompanionFollows(!companionFollows)
-  }
-
-  const charLabel = activeChar === 'avatar' ? '🧑 Avatar' : '🐾 Mascota'
-  const companionLabel = activeChar === 'avatar' ? 'Mascota' : 'Avatar'
-
-  return (
-    <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-black/65 px-3 py-1.5 shadow-lg backdrop-blur">
-        <span className="text-xs font-bold text-white/80">{charLabel}</span>
-        <button
-          type="button"
-          onClick={handleSwitch}
-          title="Cambiar personaje (⇄)"
-          className="rounded-full bg-white/15 px-2.5 py-0.5 text-sm text-white transition-colors hover:bg-white/30 active:scale-95"
-        >
-          ⇄
-        </button>
-        <button
-          type="button"
-          onClick={handleFollowToggle}
-          title={companionFollows ? `${companionLabel} te sigue — clic para dejar quieto` : `${companionLabel} quieto — clic para seguir`}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold text-white transition-colors active:scale-95 ${
-            companionFollows ? 'bg-emerald-600/50 hover:bg-emerald-600/70' : 'bg-amber-600/50 hover:bg-amber-600/70'
-          }`}
-        >
-          {companionFollows ? `${companionLabel} sigue 🐾` : `${companionLabel} quieto 📌`}
-        </button>
-      </div>
-    </div>
-  )
-}
+// CharSwitcherHud (cambio Avatar ↔ Mascota) se movió a ./CharSwitcherHud.jsx
+// para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode / graffitiMode come from the route.
 export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, graffitiMode = false }) {
