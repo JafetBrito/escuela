@@ -1,13 +1,16 @@
 import { getModuleMissions } from '../../data/missionsRegistry'
-import { useProgressStore } from '../../stores/useProgressStore'
+import { useProgressStore, EMPTY_OBJECT } from '../../stores/useProgressStore'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
 import { formatCurrency } from '../../utils/currency'
 import ModuleQuiz from '../learning/ModuleQuiz'
 
 export default function MissionsTab({ courseId, module, onGoToChat }) {
+  // EMPTY_OBJECT (referencia estable) en vez de `{}` — un objeto nuevo cada
+  // render hace que useSyncExternalStore reviente en bucle ("getSnapshot should
+  // be cached"), que era el crash al abrir Misiones de la mascota en el VR.
   const moduleMissions = useProgressStore((s) =>
-    courseId && module ? s.progress[courseId]?.moduleMissions?.[module.id] ?? {} : {},
+    courseId && module ? s.progress[courseId]?.moduleMissions?.[module.id] ?? EMPTY_OBJECT : EMPTY_OBJECT,
   )
   const accepted     = useGlobalMissionsStore((s) => s.accepted)
   const claimed      = useGlobalMissionsStore((s) => s.claimed)

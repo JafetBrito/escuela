@@ -1328,8 +1328,9 @@ export default function VrArbol() {
         <VrMascotOnboarding onDone={handlePreTutorialMascot} />
       )}
 
-      {/* ── Floating mascot companion — only once a mascot actually exists ── */}
-      {oliverClass && <MascotCompanion />}
+      {/* ── Menú flotante de mascota/avatar — mismas props que el MUNDO VR
+          (vrMode + hideViewport) para que se comporte igual que el estándar. ── */}
+      {oliverClass && <MascotCompanion hideViewport vrMode />}
     </div>
   )
 }

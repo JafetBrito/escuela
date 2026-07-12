@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import TypedText from './TypedText'
 import { useChatStore } from '../../stores/useChatStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -31,7 +31,12 @@ export default function ChatPanel({ className = '', module, courseId, prefill = 
   const temperature = useSettingsStore((s) => s.temperature)
   const maxTokens = useSettingsStore((s) => s.maxTokens)
   const customInstructions = useSettingsStore((s) => s.customInstructions)
-  const longTermMemories = useMascotMemoryStore((s) => s.memories.map((m) => m.content))
+  // Selecciona el array crudo (referencia estable) y deriva con useMemo. Antes
+  // el selector hacía `.map(...)` devolviendo un array NUEVO en cada render, lo
+  // que con zustand/useSyncExternalStore puede reventar el render en bucle
+  // ("getSnapshot should be cached") — el crash al abrir el chat de la mascota.
+  const memories = useMascotMemoryStore((s) => s.memories)
+  const longTermMemories = useMemo(() => (memories ?? []).map((m) => m.content), [memories])
   const mascotName = settingsMascotName || getMascotById(selectedMascotId).name
   const courseData = courseId ? getCourseData(courseId) : null
 
