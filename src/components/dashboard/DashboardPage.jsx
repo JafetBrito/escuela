@@ -21,19 +21,48 @@ import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useQuestsStore } from '../../stores/useQuestsStore'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
-// `key` → nav.items.<key> en los locales (mismos ítems que el AppTopBar).
+// Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
 const CAMPUS_LINKS = [
   { to: '/vr',    key: 'vr',    label: 'Campus VR',  icon: '🕶️' },
   { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱' },
   { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲' },
   { to: '/games', key: 'games', label: 'Games',      icon: '🎮' },
 ]
-const COMMUNITY_LINKS = [
-  { to: '/amigos',   key: 'amigos',   label: 'Amigos',    icon: '👥' },
-  { to: '/chats',    key: 'chats',    label: 'Chats',     icon: '💬' },
-  { to: '/misiones', key: 'misiones', label: 'Misiones',  icon: '📜' },
-  { to: '/logros',   key: 'logros',   label: 'Logros',    icon: '🏅' },
-  { to: '/tienda',   key: 'tienda',   label: 'Tienda',    icon: '🛒' },
+
+// Navegación COMPLETA del sidebar, por subcategoría (mismos grupos que el
+// AppTopBar). `key` → nav.items.<key> / el header de sección → nav.groups.<key>.
+// Ninguna página existente queda fuera.
+const NAV_SECTIONS = [
+  { key: 'academia', links: [
+    { to: '/notas',        key: 'notas',        icon: '📝' },
+    { to: '/biblioteca',   key: 'biblioteca',   icon: '📚' },
+    { to: '/guias',        key: 'guias',        icon: '📖' },
+    { to: '/ia',           key: 'ia',           icon: '🤖' },
+    { to: '/herramientas', key: 'herramientas', icon: '🔧' },
+    { to: '/anuncios',     key: 'anuncios',     icon: '📋' },
+  ]},
+  { key: 'progreso', links: [
+    { to: '/mascota',   key: 'mascota',  icon: '⚔️' },
+    { to: '/arbol',     key: 'arbol',    icon: '🌳' },
+    { to: '/misiones',  key: 'misiones', icon: '📜' },
+    { to: '/logros',    key: 'logros',   icon: '🏅' },
+    { to: '/mis-tareas', key: 'misTareas', icon: '📋' },
+  ]},
+  { key: 'campus', links: [
+    { to: '/vr',            key: 'vr',         icon: '🕶️' },
+    { to: '/vr-templo',     key: 'templo',     icon: '🏛️' },
+    { to: '/vr/anfiteatro', key: 'anfiteatro', icon: '🎭' },
+    { to: '/vr/cueva-platon', key: 'cueva',    icon: '🕯️' },
+    { to: '/vr/graffiti',   key: 'graffiti',   icon: '🎨' },
+    { to: '/mundo',         key: 'mundo',      icon: '📱' },
+    { to: '/rol',           key: 'rol',        icon: '🎲' },
+    { to: '/games',         key: 'games',      icon: '🎮' },
+    { to: '/arena',         key: 'arena',      icon: '⚔️' },
+  ]},
+  { key: 'comunidad', links: [
+    { to: '/amigos', key: 'amigos', icon: '👥' },
+    { to: '/chats',  key: 'chats',  icon: '💬' },
+  ]},
 ]
 
 // Colores por categoría de notificación/anuncio — distingue de un vistazo una
@@ -101,26 +130,25 @@ function Sidebar({ tab, setTab, onClose }) {
         ))}
       </div>
 
-      {/* Campus */}
-      <div className="px-2 pt-2.5">
-        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t('dashboard.sections.campus')}</p>
-        {CAMPUS_LINKS.map((l) => (
-          <button key={l.to} type="button" onClick={() => go(l.to)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-            <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
-          </button>
-        ))}
-      </div>
+      {/* Todas las secciones de navegación, por subcategoría */}
+      {NAV_SECTIONS.map((section) => (
+        <div key={section.key} className="px-2 pt-2.5">
+          <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t(`nav.groups.${section.key}`)}</p>
+          {section.links.map((l) => (
+            <button key={l.to} type="button" onClick={() => go(l.to)}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
+              <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
+            </button>
+          ))}
+        </div>
+      ))}
 
-      {/* Community */}
-      <div className="px-2 pt-3">
-        <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t('dashboard.sections.comunidad')}</p>
-        {COMMUNITY_LINKS.map((l) => (
-          <button key={l.to} type="button" onClick={() => go(l.to)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-            <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
-          </button>
-        ))}
+      {/* Tienda (standalone, como en el AppTopBar) */}
+      <div className="px-2 pt-2.5">
+        <button type="button" onClick={() => go('/tienda')}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
+          <span>🛒</span>{t('nav.items.tienda')}
+        </button>
       </div>
 
       {/* Notificaciones */}

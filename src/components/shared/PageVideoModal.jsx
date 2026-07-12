@@ -1,31 +1,25 @@
 import { useEffect, useState } from 'react'
 import VideoPlayer from '../video/VideoPlayer'
+import { useSeenStore } from '../../stores/useSeenStore'
 
 export const EXPLAINER_VIDEO_ID = '4sHQ3_Pr-wQ'
 
-// Generic first-visit video popup. Shown once per page (tracked separately
-// per `pageKey` in localStorage) the first time that page is opened.
-export default function PageVideoModal({ pageKey, title = '👋 ¡Bienvenido!' }) {
-  const storageKey = `oliver-video-seen-${pageKey}`
+// Welcome video popup. Shown ONCE per ACCOUNT (gated by useSeenStore.welcomeVideo,
+// which syncs to the DB via progressSnapshot) — NOT localStorage, which was
+// per-browser, never reached the database, and made the video reappear on every
+// device / cache clear. `pageKey` is kept only for the optional title.
+export default function PageVideoModal({ pageKey: _pageKey, title = '👋 ¡Bienvenido!' }) {
+  const seen = useSeenStore((s) => s.welcomeVideo)
+  const setSeen = useSeenStore((s) => s.setWelcomeVideo)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    try {
-      if (!localStorage.getItem(storageKey)) {
-        setOpen(true)
-      }
-    } catch {
-      // localStorage unavailable — just skip the popup.
-    }
-  }, [storageKey])
+    if (!seen) setOpen(true)
+  }, [seen])
 
   const close = () => {
     setOpen(false)
-    try {
-      localStorage.setItem(storageKey, '1')
-    } catch {
-      // ignore
-    }
+    setSeen()
   }
 
   if (!open) return null
