@@ -576,24 +576,38 @@ function AbilityRevealCard({ playerClass, oliverClass, onDone }) {
 // scene), so test_ability is an actual trial, not just a reveal. Only the
 // player's own startSkills, not the mascot's — Oliver's class is chosen in a
 // separate modal (VrMascotOnboarding) outside this file's flow. ───────────
-function SkillTrialPanel({ skills, tried, onTry }) {
+function SkillTrialPanel({ skills, tried, onTry, onSkip }) {
   return (
     <div className="absolute bottom-20 left-1/2 z-30 w-80 -translate-x-1/2 rounded-2xl border border-primary/30 bg-surface/95 p-4 shadow-2xl backdrop-blur-sm">
       <p className="mb-3 text-center text-xs font-black uppercase tracking-widest text-primary">Prueba tus habilidades</p>
-      <div className="flex flex-col gap-2">
-        {skills.map((skill, i) => (
-          <button key={skill.id} type="button" onClick={() => onTry(i, skill)} disabled={tried[i]}
-            className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all disabled:opacity-50"
-            style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}11` }}>
-            <span className="text-2xl">{skill.icon}</span>
-            <div className="flex-1">
-              <p className="text-xs font-black text-text">{skill.name}</p>
-              <p className="text-[10px] leading-snug text-text-muted">{skill.description}</p>
-            </div>
-            <span className="text-base">{tried[i] ? '✅' : '👆'}</span>
+      {skills.length === 0 ? (
+        // Red de seguridad: una clase sin habilidades iniciales (p. ej. las de
+        // WoW, startSkills: []) no debe dejar atorado el tutorial.
+        <div className="flex flex-col gap-2">
+          <p className="text-center text-[11px] leading-snug text-text-muted">
+            Esta clase aún no tiene habilidades iniciales para probar. Podrás desbloquearlas al subir de nivel.
+          </p>
+          <button type="button" onClick={onSkip}
+            className="rounded-xl bg-primary py-2.5 text-xs font-black text-background transition-colors hover:bg-primary/80">
+            Continuar →
           </button>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {skills.map((skill, i) => (
+            <button key={skill.id} type="button" onClick={() => onTry(i, skill)} disabled={tried[i]}
+              className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all disabled:opacity-50"
+              style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}11` }}>
+              <span className="text-2xl">{skill.icon}</span>
+              <div className="flex-1">
+                <p className="text-xs font-black text-text">{skill.name}</p>
+                <p className="text-[10px] leading-snug text-text-muted">{skill.description}</p>
+              </div>
+              <span className="text-base">{tried[i] ? '✅' : '👆'}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -1005,6 +1019,15 @@ export default function VrArbol() {
     })
   }
 
+  // Red de seguridad: si la clase no tiene habilidades iniciales (startSkills
+  // vacío, p. ej. las de WoW), completa el paso sin dejar atorado el tutorial.
+  function handleSkipSkillTrial() {
+    setShowSkillTrial(false)
+    completeStep('test_ability')
+    setShowDialogue(true)
+    announce('setup_ai')
+  }
+
   // Reads what to do straight off the mission's `cta` (tutorialMissions.js)
   // instead of a hardcoded if-chain per missionId — a new CTA-driven mission
   // just needs the right `cta` shape in the data, not a new branch here.
@@ -1233,13 +1256,13 @@ export default function VrArbol() {
         <AbilityRevealCard
           playerClass={playerClassId}
           oliverClass={oliverClass}
-          onDone={() => { setOpenOverlayId(null); setSkillsTried([false, false]); setShowSkillTrial(true) }}
+          onDone={() => { setOpenOverlayId(null); setSkillsTried(playerStartSkills.map(() => false)); setShowSkillTrial(true) }}
         />
       )}
 
       {/* ── Skill trial (mission 6, cont.) — try each starting skill once ── */}
       {showSkillTrial && (
-        <SkillTrialPanel skills={playerStartSkills} tried={skillsTried} onTry={handleTrySkill} />
+        <SkillTrialPanel skills={playerStartSkills} tried={skillsTried} onTry={handleTrySkill} onSkip={handleSkipSkillTrial} />
       )}
 
       {/* ── Class reveal flash (avatar or mascot) ── */}
