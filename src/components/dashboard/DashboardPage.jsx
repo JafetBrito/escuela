@@ -89,6 +89,8 @@ function Sidebar({ tab, setTab, onClose }) {
   const announcements = useAnnouncementsStore((s) => s.announcements)
   const displayName   = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
   const [notifsOpen, setNotifsOpen] = useState(false)
+  // Acordeón: solo una subcategoría abierta a la vez, para que no se amontone.
+  const [openSection, setOpenSection] = useState(null)
 
   const navTab = (t) => { setTab(t); onClose?.() }
   const go     = (to) => { navigate(to); onClose?.() }
@@ -130,21 +132,35 @@ function Sidebar({ tab, setTab, onClose }) {
         ))}
       </div>
 
-      {/* Todas las secciones de navegación, por subcategoría */}
-      {NAV_SECTIONS.map((section) => (
-        <div key={section.key} className="px-2 pt-2.5">
-          <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t(`nav.groups.${section.key}`)}</p>
-          {section.links.map((l) => (
-            <button key={l.to} type="button" onClick={() => go(l.to)}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-              <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
-            </button>
-          ))}
-        </div>
-      ))}
+      {/* Secciones colapsables por subcategoría (acordeón) */}
+      <div className="px-2 pt-2 space-y-0.5">
+        {NAV_SECTIONS.map((section) => {
+          const isOpen = openSection === section.key
+          return (
+            <div key={section.key}>
+              <button
+                type="button"
+                onClick={() => setOpenSection(isOpen ? null : section.key)}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-text-muted/60 transition-colors hover:bg-surface-hover hover:text-text"
+              >
+                <span>{t(`nav.groups.${section.key}`)}</span>
+                <span className="text-[9px] transition-transform" style={{ transform: isOpen ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▸</span>
+              </button>
+              {isOpen && (
+                <div className="mb-1 space-y-0.5">
+                  {section.links.map((l) => (
+                    <button key={l.to} type="button" onClick={() => go(l.to)}
+                      className="flex w-full items-center gap-2 rounded-lg py-1.5 pl-6 pr-3 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
+                      <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
 
-      {/* Tienda (standalone, como en el AppTopBar) */}
-      <div className="px-2 pt-2.5">
+        {/* Tienda (standalone, como en el AppTopBar) */}
         <button type="button" onClick={() => go('/tienda')}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
           <span>🛒</span>{t('nav.items.tienda')}
