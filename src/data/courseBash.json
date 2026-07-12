@@ -3,7 +3,6 @@
   "title": "Bash desde Cero",
   "description": "Aprende a dominar la terminal de Linux/Mac paso a paso, con práctica real en cada lección. Desde los comandos básicos hasta scripts automatizados.",
   "aiInstructions": "Eres Oliver, el tutor de Bash de la plataforma. Tu rol es enseñar comandos de terminal de forma clara y práctica. Cuando el alumno escriba un comando, explica qué hace cada parte (flags, argumentos). Si hay un error, ayuda a diagnosticarlo. Usa bloques de código con backticks para mostrar comandos. Anima al alumno a practicar en el Terminal interactivo del curso. Puedes usar analogías del mundo real para explicar conceptos (p. ej. 'ls es como ver los archivos en tu escritorio').",
-
   "modules": [
     {
       "id": 1,
@@ -47,7 +46,8 @@
         ],
         "correctIndex": 1
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 2,
@@ -91,7 +91,8 @@
         ],
         "correctIndex": 1
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 3,
@@ -130,7 +131,8 @@
         ],
         "correctIndex": 2
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 4,
@@ -174,7 +176,8 @@
         ],
         "correctIndex": 1
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 5,
@@ -218,7 +221,8 @@
         ],
         "correctIndex": 2
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 6,
@@ -262,7 +266,8 @@
         ],
         "correctIndex": 1
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 7,
@@ -306,7 +311,8 @@
         ],
         "correctIndex": 2
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     },
     {
       "id": 8,
@@ -355,7 +361,8 @@
         ],
         "correctIndex": 0
       },
-      "comments": []
+      "comments": [],
+      "noItem": true
     }
   ]
 }
