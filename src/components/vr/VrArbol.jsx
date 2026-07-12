@@ -139,6 +139,11 @@ import { TUTORIAL_MISSIONS, TUTORIAL_DONE_STEP, getTutorialMission } from '../..
 import { sendNpcMessage } from '../../services/chat/npcTransport'
 import VrMascotOnboarding from './VrMascotOnboarding'
 import ClassPicker from './ClassPicker'
+import VrHud from './VrHud'
+import WorldChat from './WorldChat'
+import BagsPanel from './BagsPanel'
+import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
+import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import MascotMesh from '../mascot/MascotMesh'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { Player, useCameraControls, useMovementKeys, VirtualJoystick, MobileButtons, BubbleStack, MODEL_HALF_HEIGHT } from './engine'
@@ -871,6 +876,20 @@ export default function VrArbol() {
   // by SkillBurstVfx inside the Canvas.
   const skillBurstRef = useRef(null)
 
+  // ── HUD estándar del MUNDO VR (mismo VrHud): barra de poderes, retrato,
+  // chat, menú avatar/mascota. El tutorial ahora usa la misma interfaz. ──
+  const [hudVisible, setHudVisible] = useState(true)
+  const [chatOpen, setChatOpen]     = useState(false)
+  const [bagsOpen, setBagsOpen]     = useState(false)
+  const openLocked = useMascotCompanionStore((s) => s.openLocked)
+  const noop = () => {}
+  const chatProfile  = useAuthStore((s) => s.profile)
+  const chatNickname = useGameStore((s) => s.player.nickname)
+  const chatAuthor   = chatProfile?.display_name || chatNickname || 'Aventurero'
+  const chatPlayerId = useRef(crypto.randomUUID()).current
+  const sendChatMessage = (text) =>
+    useWorldChatStore.getState().sendMessage(chatAuthor, text, { authorId: chatPlayerId })
+
   // Detect which mission is currently active (first not done)
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
   const tutorialDone = activeMission === null
@@ -1150,10 +1169,37 @@ export default function VrArbol() {
       {/* ── Touch controls ── */}
       {phase === 'play' && !showDialogue && !openOverlayId && !showSkillTrial && (
         <>
-          <VirtualJoystick keysRef={keysRef} />
-          <MobileButtons keysRef={keysRef} />
+          <VirtualJoystick keysRef={keysRef} hidden={chatOpen || !hudVisible} />
+          <MobileButtons keysRef={keysRef} hidden={chatOpen || !hudVisible} onOpenChat={() => setChatOpen(true)} />
         </>
       )}
+
+      {/* ── HUD estándar del MUNDO VR (barra de poderes, retrato, chat, menús) ── */}
+      {phase === 'play' && (
+        <VrHud
+          hudVisible={hudVisible}
+          setHudVisible={setHudVisible}
+          onOpenChat={() => setChatOpen(true)}
+          onOpenBags={() => setBagsOpen(true)}
+          onOpenCharacterPanel={() => openLocked('avatar-personaje', 'avatar')}
+          onOpenSettings={noop}
+          onOpenMap={noop}
+          onOpenDailyRewards={noop}
+          onOpenFriends={noop}
+          onOpenArenaConfirm={noop}
+          isPrivateWorld
+          playerPosRef={playerPositionRef}
+        />
+      )}
+
+      {/* ── Chat del mundo (mismo componente que el MUNDO VR) ── */}
+      {phase === 'play' && (
+        <WorldChat open={chatOpen} onClose={() => setChatOpen(false)} onOpen={() => setChatOpen(true)}
+          authorName={chatAuthor} playerId={chatPlayerId} onSend={sendChatMessage} />
+      )}
+
+      {/* ── Bolsas ── */}
+      {bagsOpen && <BagsPanel onClose={() => setBagsOpen(false)} />}
 
       {/* ── Top title ── */}
       {phase === 'play' && (
@@ -1165,11 +1211,12 @@ export default function VrArbol() {
         </div>
       )}
 
-      {/* ── Left panel: Tutorial missions ── */}
-      {phase === 'play' && (
-        <div className="absolute left-3 top-16 z-20 w-60 sm:w-64">
-          <div className="rounded-2xl border border-border bg-black/70 p-3 backdrop-blur-sm">
-            <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-primary">Tutorial de Oliver Academy</p>
+      {/* ── Panel de misiones del tutorial (derecha, bajo el minimapa; no
+          choca con el retrato del HUD ni tapa la pantalla en móvil) ── */}
+      {phase === 'play' && hudVisible && (
+        <div className="absolute right-2 top-28 z-20 w-52 max-w-[46vw] md:top-36">
+          <div className="max-h-[55vh] overflow-y-auto rounded-2xl border border-border bg-black/70 p-2.5 backdrop-blur-sm">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-primary">Tutorial</p>
             <div className="flex flex-col gap-1.5">
               {TUTORIAL_MISSIONS.map((m) => (
                 <MissionRow
