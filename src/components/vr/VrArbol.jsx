@@ -230,7 +230,8 @@ const NPCS = {
     color: '#98ca3f',
     role: 'Guardián del Templo',
     position: ARBOL_JAFET_POS,
-    mascotId: 10,   // mage_elder.glb
+    mascotId: 10,   // (histórico) mage_elder.glb — el modelo real es hombre.glb, ver JAFET_MASCOT
+    scale: 1.1,     // humano, comparable al jugador (antes 0.18 = diminuto)
     aiPrompt: `Eres Jafet, el guardián del Templo de Oliver Academy. Eres sabio, cercano y con buen humor.
 Guías a los nuevos estudiantes a través del tutorial de bienvenida.
 Hablas en español, eres entusiasta del aprendizaje y del mundo mágico de Oliver Academy.
@@ -244,6 +245,7 @@ Nunca salgas del personaje. Usa emojis ocasionalmente para ser expresivo.`,
     role: 'Guía de misiones',
     position: ARBOL_OLIVER_POS,
     mascotId: 8,   // orange_cat.glb — same Oliver as the Campus's idle NPC
+    scale: 0.6,    // gato, mucho más grande que antes (0.18)
     aiPrompt: `Eres Oliver, el gato naranja guía de Oliver Academy. Eres juguetón y bromista
 (chistes de gatos y de programación), pero siempre claro sobre qué misión sigue.
 Hablas en español. Usa emojis de gato ocasionalmente. Nunca salgas del personaje.`,
@@ -295,19 +297,20 @@ function TempleNpc({ npc, mascot, near, hasQuest, onSayLine }) {
     setTimeout(() => setBubbles((cur) => cur.filter((b) => b.id !== id)), 4500)
   }
 
+  const s = npc.scale ?? NPC_SCALE
   return (
     <group
       ref={groupRef}
       position={npc.position}
       onClick={(e) => { e.stopPropagation(); sayLine() }}
     >
-      <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
+      <group scale={s} position={[0, s * MODEL_HALF_HEIGHT, 0]}>
         <Suspense fallback={null}>
           <MascotMesh mascot={mascot} />
         </Suspense>
       </group>
       {near && (
-        <Html position={[0, NPC_SCALE * MODEL_HALF_HEIGHT * 2 + 0.6, 0]} center distanceFactor={10}>
+        <Html position={[0, s * MODEL_HALF_HEIGHT * 2 + 0.6, 0]} center distanceFactor={10}>
           <div className="pointer-events-none flex flex-col items-center gap-0.5">
             {hasQuest && (
               <span className="animate-bounce text-xl leading-none drop-shadow-lg" style={{ color: '#facc15', textShadow: '0 0 8px #f59e0b' }}>❗</span>
@@ -318,7 +321,7 @@ function TempleNpc({ npc, mascot, near, hasQuest, onSayLine }) {
           </div>
         </Html>
       )}
-      <BubbleStack bubbles={bubbles} baseY={NPC_SCALE * MODEL_HALF_HEIGHT * 2 + 1.0} color={npc.color} />
+      <BubbleStack bubbles={bubbles} baseY={s * MODEL_HALF_HEIGHT * 2 + 1.0} color={npc.color} />
     </group>
   )
 }
@@ -863,7 +866,9 @@ export default function VrArbol() {
   const cinematicLockRef = useRef(false)
   if (phase !== 'play') cinematicLockRef.current = true
 
-  const jafetMascot = getMascotById(NPCS.jafet.mascotId)
+  // Jafet usa el modelo humano correcto (hombre.glb, el mismo del avatar) en vez
+  // de mage_elder.glb. modelRotationY: Math.PI para que mire al frente como el avatar.
+  const jafetMascot = { id: 'jafet-hombre', name: 'Jafet', modelPath: '/MODELOS 3D/AVATARES/hombre.glb', modelRotationY: Math.PI }
   const oliverMascot = getMascotById(NPCS.oliver.mascotId)
 
   // Shared VR movement engine — same WASD/drag-look/touch/gamepad system as

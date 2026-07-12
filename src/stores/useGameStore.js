@@ -421,8 +421,11 @@ export const OLIVER_CLASSES = {
 // it walks — same kind of fix already applied to mascots in mascotRegistry.js.
 // If a model still looks off after this, flip the sign (Math.PI/2 <-> -Math.PI/2).
 export const PLAYER_AVATARS = [
-  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb', modelRotationY: Math.PI / 2 },
-  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb', modelRotationY: Math.PI / 2 },
+  // modelRotationY: los .glb se exportan mirando hacia -Z (dan la espalda), igual
+  // que el gato (mascotRegistry usa Math.PI). Math.PI/2 los dejaba de perfil
+  // ("caminaba de lado"); Math.PI los alinea con la dirección de avance (+Z).
+  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb', modelRotationY: Math.PI },
+  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb', modelRotationY: Math.PI },
 ]
 
 const DEFAULT_PLAYER = {
