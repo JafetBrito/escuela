@@ -34,6 +34,8 @@ import { useVoiceStore } from '../../stores/useVoiceStore'
 import GmConsole from '../shared/GmConsole'
 import BashTerminalModal from './BashTerminalModal'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
+import MobField from './MobField'
+import { useMobStore } from '../../stores/useMobStore'
 import { formatCurrency } from '../../utils/currency'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
@@ -1898,6 +1900,7 @@ function World({
       <IdleNpc config={EINSTEIN_NPC} playerPositionRef={playerPositionRef} />
       <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
       {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />)}
+      <MobField />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
       <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} />
@@ -2957,6 +2960,25 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     onAttack: () => {
       attackFiredAtRef.current = Date.now()
       sendAction(playerClass)
+
+      // Combate v1: el "golpe" ahora hace daño real a los Bug de Código
+      // instanciados (ver MobField/useMobStore) — cada clase pega distinto
+      // según su stat de 'power'.
+      const pos = playerPositionRef.current
+      if (!pos) return
+      const damage = 8 + (PLAYER_CLASSES[playerClass]?.stats?.power ?? 3) * 3
+      const result = useMobStore.getState().attackNearest(pos, damage)
+      if (!result) return
+      if (result.killed) {
+        const itemMsg = result.item ? ` + ${result.item.icon} ${result.item.name}` : ''
+        useWorldChatStore.getState().addSystemMessage(
+          `💀 ${result.mobName} derrotado — +${formatCurrency(result.coins)}${itemMsg}`,
+        )
+      } else {
+        useWorldChatStore.getState().addSystemMessage(
+          `⚔️ Golpeaste a ${result.mobName} por ${result.damage} (${result.hp}/${result.maxHp} HP)`,
+        )
+      }
     },
     onUseWeapon: () => {
       if (playerClass === 'hacker') {
