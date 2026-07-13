@@ -22,6 +22,7 @@ import { buildProgressSnapshot } from '../../services/persistence/progressSnapsh
 import { saveLocalSnapshot } from '../../services/persistence/localStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import { providerSupportsTools } from '../../data/aiProviderRegistry'
+import { useI18n } from '../../i18n'
 
 const ROLE_LABELS = {
   admin: 'Administrador',
@@ -44,6 +45,7 @@ const CATEGORIES = [
 ]
 
 export default function SettingsPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [category, setCategory] = useState('cuenta')
   const [saved, setSaved] = useState(false)
@@ -170,7 +172,7 @@ export default function SettingsPage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-600 to-slate-800 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">⚙️ Ajustes</h1>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.settings.title')}</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
               Configura tu cuenta, tu mascota y la IA que la conecta.
             </p>

@@ -3,6 +3,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import { GAMES } from '../../data/gamesRegistry'
+import { useI18n } from '../../i18n'
 
 const CATEGORY_GRADIENTS = {
   Otros: 'from-cyan-500 to-blue-600',
@@ -13,6 +14,7 @@ const CATEGORY_GRADIENTS = {
 const DEFAULT_GRADIENT = 'from-primary to-emerald-500'
 
 export default function GamesPage() {
+  const { t } = useI18n()
   const categories = [...new Set(GAMES.map((g) => g.category ?? 'Otros'))]
   const isAvailable = (g) => Boolean(g.file) || g.type === 'component'
   const availableCount = GAMES.filter(isAvailable).length
@@ -25,9 +27,9 @@ export default function GamesPage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">🎮 Games</h1>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.games.title')}</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Juegos para repasar y ganar monedas mientras te diviertes. ¡Pronto se suman más!
+              {t('pages.games.subtitle')}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">

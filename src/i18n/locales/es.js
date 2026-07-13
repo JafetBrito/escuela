@@ -20,6 +20,8 @@ export const es = {
       ia: 'IA Tools',
       herramientas: 'Herramientas',
       anuncios: 'Anuncios',
+      cerebro: 'Segundo Cerebro',
+      buscar: 'Buscar',
       mascota: 'Mi Equipo',
       arbol: 'Árbol',
       misiones: 'Misiones',
@@ -44,6 +46,7 @@ export const es = {
       language: 'Idioma',
     },
     backToDashboard: '← Volver al Dashboard',
+    openMenu: 'Abrir menú',
   },
   dashboard: {
     tabs: { inicio: 'Inicio', escuelas: 'Escuelas', progreso: 'Mi Progreso' },
@@ -141,6 +144,46 @@ export const es = {
       ctaKey: 'Ya tengo mi llave',
     },
     footer: '© {year} Oliver Academy — Una escuela, muchos cursos por explorar.',
+  },
+  pages: {
+    achievements: {
+      title: '🏅 Logros',
+      subtitle: 'Medallas, hitos y proezas secretas que tu mascota va desbloqueando contigo. Cada logro suena y aparece como notificación al desbloquearse.',
+    },
+    notes: {
+      title: '📝 Notas',
+      subtitle: 'Tu cuaderno digital: guarda ideas, enlaces y resúmenes de cada clase.',
+    },
+    games: {
+      title: '🎮 Games',
+      subtitle: 'Juegos para repasar y ganar monedas mientras te diviertes. ¡Pronto se suman más!',
+    },
+    library: {
+      title: '📚 Librería',
+      subtitle: 'Libros organizados por categoría. Pasa el cursor sobre cada libro para ver su descripción. Algunos están sellados hasta que los compras con tus monedas — los demás se abren en una ventana emergente, sin salir de esta página.',
+    },
+    shop: {
+      title: '🛒 Tienda',
+      subtitle: 'Gasta las monedas que ganas completando misiones en objetos para tu mascota.',
+    },
+    missions: {
+      title: '📜 Misiones',
+      subtitle: 'Acepta misiones de los NPCs del campus, completa objetivos y gana monedas y experiencia. Cada curso desbloquea sus propias misiones automáticamente.',
+      chainSection: 'Misiones de cadena',
+      courseSection: 'Misiones de curso',
+      worldSection: 'Misiones del mundo',
+      chainsDone: 'Cadenas completadas',
+    },
+    friends: {
+      title: '👥 Amigos',
+      subtitle: 'Tus compañeros del campus y tu buzón de mensajes.',
+    },
+    settings: {
+      title: '⚙️ Ajustes',
+    },
+    mascotHome: {
+      subtitle: 'Tu avatar y tu compañera de aventuras',
+    },
   },
   announcements: {
     title: 'Tablón de Anuncios',

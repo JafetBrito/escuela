@@ -8,10 +8,12 @@ import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { formatCurrency } from '../../utils/currency'
+import { useI18n } from '../../i18n'
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_META)
 
 export default function LibraryPage() {
+  const { t } = useI18n()
   const purchased = useShopStore((s) => s.purchased)
   const buyGeneric = useShopStore((s) => s.buyGeneric)
   const coins = useCurrencyStore((s) => s.coins)
@@ -37,11 +39,9 @@ export default function LibraryPage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-rose-500 to-orange-500 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📚 Librería</h1>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.library.title')}</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Libros organizados por categoría. Pasa el cursor sobre cada libro para ver su
-              descripción. Algunos están sellados hasta que los compras con tus monedas — los
-              demás se abren en una ventana emergente, sin salir de esta página.
+              {t('pages.library.subtitle')}
             </p>
           </div>
 

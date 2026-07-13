@@ -76,6 +76,8 @@ const RolLobbyPage = lazy(() => import('./components/rol/RolLobbyPage'))
 const RolGamePage  = lazy(() => import('./components/rol/RolGamePage'))
 const GuiasPage    = lazy(() => import('./components/guides/GuiasPage'))
 const IaToolsPage  = lazy(() => import('./components/ai/IaToolsPage'))
+const GlossaryPage = lazy(() => import('./components/glossary/GlossaryPage'))
+const SearchPage   = lazy(() => import('./components/search/SearchPage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -501,6 +503,36 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <LearningInterface />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cerebro"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <GlossaryPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cerebro/:slug"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <GlossaryPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/buscar"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <SearchPage />
               </Suspense>
             </ProtectedRoute>
           }

@@ -146,13 +146,12 @@
   },
   {
     "id": "course-biologia",
-    "title": "Biología desde Cero",
-    "description": "Células, ADN, ecosistemas y evolución explicados de forma visual y accesible. Desde los organismos más simples hasta los seres vivos más complejos. Próximamente.",
+    "title": "Introducción a la Biología",
+    "description": "Cómo funciona la vida: la célula, el ADN, la evolución y los ecosistemas. Un curso mayormente de lectura, con ejemplos del mundo natural que ves todos los días.",
     "icon": "🧬",
     "color": "#4ade80",
-    "category": "Ciencias",
-    "subcategory": "Ciencias de la Vida",
-    "locked": true
+    "category": "Biología",
+    "locked": false
   },
   {
     "id": "course-psicologia",
@@ -171,6 +170,15 @@
     "color": "#f59e0b",
     "category": "Historia",
     "locked": true
+  },
+  {
+    "id": "course-sumerios",
+    "title": "Los Sumerios: La Primera Civilización",
+    "description": "Escritura, la rueda, el primer código de leyes, las primeras ciudades. Casi todo lo que das por hecho lo inventaron ellos hace 5000 años. Un curso de lectura sobre la civilización que lo hizo primero.",
+    "icon": "📜",
+    "color": "#fbbf24",
+    "category": "Historia",
+    "locked": false
   },
   {
     "id": "course-matematicas",
@@ -194,12 +202,11 @@
   },
   {
     "id": "course-medicina",
-    "title": "Medicina: El Conocimiento que nos Libera",
+    "title": "Introducción a la Medicina",
     "description": "El conocimiento médico fue durante siglos propiedad de la élite. Aquí es de todos. Historia cronológica de la medicina + primeros auxilios que cualquier persona puede y debe saber.",
     "icon": "🩺",
     "color": "#34d399",
-    "category": "Ciencias",
-    "subcategory": "Ciencias de la Vida",
+    "category": "Medicina",
     "locked": false
   }
 ]

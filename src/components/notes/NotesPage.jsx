@@ -25,6 +25,7 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { fetchNotionPages } from '../../services/notion/notionClient'
 import PageVideoModal from '../shared/PageVideoModal'
+import { useI18n } from '../../i18n'
 
 /**
  * ----------------------------------------------------------------------------
@@ -162,6 +163,7 @@ function NotionSection() {
  * notas y links tiene guardados el usuario internamente para el contador superior.
  */
 export default function NotesPage() {
+  const { t } = useI18n()
   // Leemos el inventario completo desde el estado global de Zustand
   const items = useInventoryStore((s) => s.items)
   
@@ -179,9 +181,9 @@ export default function NotesPage() {
           
           {/* HEADER HERO DE LA PÁGINA */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-primary/80 to-primary px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-background drop-shadow-sm">📝 Notas</h1>
+            <h1 className="text-3xl font-extrabold text-background drop-shadow-sm">{t('pages.notes.title')}</h1>
             <p className="mt-1 text-sm font-medium text-background/80">
-              Tu cuaderno digital: guarda ideas, enlaces y resúmenes de cada clase.
+              {t('pages.notes.subtitle')}
             </p>
             
             {/* Badges de estadísticas locales */}

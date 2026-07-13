@@ -14,6 +14,7 @@ import Inventory from '../inventory/Inventory'
 import ChatTab from './ChatTab'
 import CurrencyBadge from '../shared/CurrencyBadge'
 import CharacterTree, { StatBar5 } from '../skills/CharacterTree'
+import { useI18n } from '../../i18n'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, DEFAULT_CUSTOM_INSTRUCTIONS } from '../../stores/useSettingsStore'
@@ -622,6 +623,7 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MascotHomePage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
 
   const selectedMascotId   = useMascotStore((s) => s.selectedMascotId)
@@ -665,8 +667,8 @@ export default function MascotHomePage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black text-text">Mi Equipo</h1>
-              <p className="text-xs text-text-muted">Tu avatar y tu compañera de aventuras</p>
+              <h1 className="text-2xl font-black text-text">{t('nav.items.mascota')}</h1>
+              <p className="text-xs text-text-muted">{t('pages.mascotHome.subtitle')}</p>
             </div>
             <CurrencyBadge amount={coins} />
           </div>

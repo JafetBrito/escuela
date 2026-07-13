@@ -7,8 +7,10 @@ import courseClaudeMayores from './courseClaudeMayores.json'
 import courseAjedrez from './courseAjedrez.json'
 import courseBash from './courseBash.json'
 import courseHistoriaMatematicas from './courseHistoriaMatematicas.json'
-import courseMedicina from './courseMedicina.json'
+import courseMedicina from './courseMedicina.js'
 import coursePsicologia from './coursePsicologia.js'
+import courseBiologia from './courseBiologia.js'
+import courseSumerios from './courseSumerios.js'
 
 // Maps a courseId (from courses.json / license / route param) to its full
 // content (modules, quizzes, resources). Add new courses here as they ship.
@@ -23,6 +25,8 @@ export const COURSES_DATA = {
   [courseMedicina.courseId]: courseMedicina,
   [coursePromptEngineering.courseId]: coursePromptEngineering,
   [coursePsicologia.courseId]: coursePsicologia,
+  [courseBiologia.courseId]: courseBiologia,
+  [courseSumerios.courseId]: courseSumerios,
 }
 
 // `lang` defaults to 'es' (the base, authored language) so every existing

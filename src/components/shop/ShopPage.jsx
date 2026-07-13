@@ -28,6 +28,7 @@ import { SHOP_ITEMS, SHOP_CATEGORIES, ITEM_RARITY } from '../../data/shopRegistr
 import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { formatCurrency } from '../../utils/currency'
+import { useI18n } from '../../i18n'
 
 // Define el orden estricto en el que se renderizan las categorías en la pantalla.
 const CATEGORY_ORDER = Object.keys(SHOP_CATEGORIES)
@@ -49,6 +50,7 @@ const MAGE_PROMPT = `Eres el Maestro de Misiones, un sabio mago anciano que entr
 
 
 export default function ShopPage() {
+  const { t } = useI18n()
   // 💰 Conexión con los Stores Globales
   const coins = useCurrencyStore((s) => s.coins)
   const purchased = useShopStore((s) => s.purchased)
@@ -86,9 +88,9 @@ export default function ShopPage() {
           
           {/* HEADER DE LA PÁGINA */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-emerald-600 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">🛒 Tienda</h1>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.shop.title')}</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Gasta las monedas que ganas completando misiones en objetos para tu mascota.
+              {t('pages.shop.subtitle')}
             </p>
           </div>
 

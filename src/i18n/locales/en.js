@@ -16,6 +16,8 @@ export const en = {
       ia: 'AI Tools',
       herramientas: 'Tools',
       anuncios: 'Announcements',
+      cerebro: 'Second Brain',
+      buscar: 'Search',
       mascota: 'My Team',
       arbol: 'Skill Tree',
       misiones: 'Missions',
@@ -40,6 +42,7 @@ export const en = {
       language: 'Language',
     },
     backToDashboard: '← Back to Dashboard',
+    openMenu: 'Open menu',
   },
   dashboard: {
     tabs: { inicio: 'Home', escuelas: 'Schools', progreso: 'My Progress' },
@@ -101,6 +104,82 @@ export const en = {
     enterVrWorld: '🌍 Enter the VR World',
     vrWillOpen: "This class's VR experience will open",
     paywallBanner: '🔑 You are viewing the first 2 free classes. Get your key to unlock the rest of this course →',
+  },
+  landing: {
+    header: { dashboard: 'My Dashboard', signOut: 'Sign out', signIn: 'Sign in', signUp: 'Create account' },
+    hero: {
+      badge: '✨ We are a school · Many courses · One single key',
+      titlePrefix: 'Learn at your own pace with',
+      subtitle: "Every course has its own 3D AI mascot that goes with you class by class, answers your questions, and helps you keep up the pace. Get the master key for every course, or a key for just the one course you're most interested in.",
+      ctaLoggedIn: 'Go to my Dashboard',
+      ctaGuest: 'Sign up for free',
+      ctaKey: 'I already have my key',
+      guestNote: "Create your free account and get into every course — try the first 2 classes of each one, no card required.",
+      statCourses: 'Courses',
+      statAvailable: 'Available now',
+      statMascots: 'AI Mascots',
+      statCategories: 'Categories',
+    },
+    howItWorks: {
+      title: 'How does it work?',
+      subtitle: 'Three steps to start learning today.',
+    },
+    categories: {
+      title: 'Course categories',
+      subtitle: "Explore what's already available and what's coming soon.",
+    },
+    features: {
+      title: 'Everything your account includes',
+      subtitle: 'A single account saves your progress, your mascot, and everything you unlock.',
+    },
+    finalCta: {
+      title: "Your AI mascot is already waiting for you 🐾",
+      subtitle: "Create your free account and get into every course — the first 2 classes of each one are free. Get your key whenever you want to unlock the rest.",
+      ctaLoggedIn: 'Go to my Dashboard',
+      ctaGuest: 'Create my account',
+      ctaKey: 'I already have my key',
+    },
+    footer: '© {year} Oliver Academy — One school, many courses to explore.',
+  },
+  pages: {
+    achievements: {
+      title: '🏅 Achievements',
+      subtitle: 'Medals, milestones, and secret feats your mascot unlocks together with you. Every achievement plays a sound and shows a notification when unlocked.',
+    },
+    notes: {
+      title: '📝 Notes',
+      subtitle: 'Your digital notebook: save ideas, links, and summaries from each class.',
+    },
+    games: {
+      title: '🎮 Games',
+      subtitle: 'Games to review what you learned and earn coins while having fun. More coming soon!',
+    },
+    library: {
+      title: '📚 Library',
+      subtitle: 'Books organized by category. Hover over a book to see its description. Some are locked until you buy them with your coins — the rest open in a popup window, without leaving this page.',
+    },
+    shop: {
+      title: '🛒 Shop',
+      subtitle: 'Spend the coins you earn completing missions on items for your mascot.',
+    },
+    missions: {
+      title: '📜 Missions',
+      subtitle: 'Accept missions from campus NPCs, complete objectives, and earn coins and experience. Each course automatically unlocks its own missions.',
+      chainSection: 'Chain missions',
+      courseSection: 'Course missions',
+      worldSection: 'World missions',
+      chainsDone: 'Completed chains',
+    },
+    friends: {
+      title: '👥 Friends',
+      subtitle: 'Your campus buddies and your message inbox.',
+    },
+    settings: {
+      title: '⚙️ Settings',
+    },
+    mascotHome: {
+      subtitle: 'Your avatar and your adventure companion',
+    },
   },
   announcements: {
     title: 'Announcements Board',

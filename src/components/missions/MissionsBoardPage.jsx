@@ -14,6 +14,7 @@ import { useProgressStore } from '../../stores/useProgressStore'
 import { useMissionState } from '../../stores/useMissionState'
 import { formatCurrency } from '../../utils/currency'
 import { COURSES_DATA } from '../../data/courseRegistry'
+import { useI18n } from '../../i18n'
 
 const MAX_ACTIVE = 25
 
@@ -156,6 +157,7 @@ function SectionHeader({ icon, title, count, total }) {
 }
 
 export default function MissionsBoardPage() {
+  const { t } = useI18n()
   const [activeTab, setActiveTab] = useState('disponibles')
 
   const accepted      = useGlobalMissionsStore((s) => s.accepted)
@@ -223,10 +225,9 @@ export default function MissionsBoardPage() {
           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 px-6 py-8 shadow-xl">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
               <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">📜 Misiones</h1>
+                <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.missions.title')}</h1>
                 <p className="max-w-md text-sm font-medium leading-relaxed text-white/85">
-                  Acepta misiones de los NPCs del campus, completa objetivos y gana monedas y
-                  experiencia. Cada curso desbloquea sus propias misiones automáticamente.
+                  {t('pages.missions.subtitle')}
                 </p>
               </div>
             </div>
@@ -298,7 +299,7 @@ export default function MissionsBoardPage() {
               {/* Misiones de cadena */}
               {questsAvail.length > 0 && (
                 <section className="flex flex-col gap-3">
-                  <SectionHeader icon="🗺️" title="Misiones de cadena" count={questsDone.length} total={QUESTS.length} />
+                  <SectionHeader icon="🗺️" title={t('pages.missions.chainSection')} count={questsDone.length} total={QUESTS.length} />
                   {questsAvail.map((quest) => (
                     <QuestCard
                       key={quest.id}
@@ -317,7 +318,7 @@ export default function MissionsBoardPage() {
               {/* Misiones de curso */}
               {courseAvail.length > 0 && (
                 <section className="flex flex-col gap-3">
-                  <SectionHeader icon="🎓" title="Misiones de curso" count={courseDone.length} total={courseMissionEntries.length} />
+                  <SectionHeader icon="🎓" title={t('pages.missions.courseSection')} count={courseDone.length} total={courseMissionEntries.length} />
                   <p className="text-xs text-text-muted">
                     Estas misiones se activan automáticamente según los cursos que estás tomando.
                   </p>
@@ -352,7 +353,7 @@ export default function MissionsBoardPage() {
 
               {/* Misiones globales */}
               <section className="flex flex-col gap-3">
-                <SectionHeader icon="🌍" title="Misiones del mundo" count={globalDone.length} total={globalEvaluated.length} />
+                <SectionHeader icon="🌍" title={t('pages.missions.worldSection')} count={globalDone.length} total={globalEvaluated.length} />
                 {globalAvail.length === 0 ? (
                   <p className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-text-muted">
                     ¡Completaste todas las misiones del mundo disponibles! 🏆
@@ -385,7 +386,7 @@ export default function MissionsBoardPage() {
                 <>
                   {questsDone.length > 0 && (
                     <section className="flex flex-col gap-3">
-                      <SectionHeader icon="🗺️" title="Cadenas completadas" />
+                      <SectionHeader icon="🗺️" title={t('pages.missions.chainsDone')} />
                       {questsDone.map((quest) => (
                         <QuestCard key={quest.id} quest={quest} stepIndex={0} completed claimed />
                       ))}

@@ -5,6 +5,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useI18n } from '../../i18n'
 
 // ─── Local mailbox helpers (localStorage) ─────────────────────────────────
 const INBOX_KEY = 'oliver_mailbox_inbox'
@@ -269,6 +270,7 @@ function OnlineDot({ online }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function FriendsPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const friends      = useFriendsStore(s => s.friends)
   const removeFriend = useFriendsStore(s => s.removeFriend)
@@ -302,9 +304,9 @@ export default function FriendsPage() {
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 md:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">👥 Amigos</h1>
+          <h1 className="text-2xl font-bold">{t('pages.friends.title')}</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Tus compañeros del campus y tu buzón de mensajes.
+            {t('pages.friends.subtitle')}
           </p>
         </div>
 

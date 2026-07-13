@@ -12,6 +12,7 @@ const COMPONENT_MAP = {
   'hacker-terminal': lazy(() => import('./hacker/HackerTerminalGame')),
   'math': lazy(() => import('./math/MathGame')),
   'math-history': lazy(() => import('./math-history/MathHistoryGame')),
+  'body-explorer': lazy(() => import('./body-explorer/BodyExplorerGame')),
   'bash-terminal': lazy(() => import('./bash/BashTerminalGame')),
   'duelo-mentes': lazy(() => import('./duelo/DueloDeMentesGame')),
   'python-terminal': lazy(() => import('./python/PythonTerminalGame')),

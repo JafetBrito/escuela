@@ -22,6 +22,7 @@ const GROUPS = [
       { to: '/ia',           key: 'ia',           label: 'IA Tools',     icon: '🤖' },
       { to: '/herramientas', key: 'herramientas', label: 'Herramientas', icon: '🔧' },
       { to: '/anuncios',     key: 'anuncios',     label: 'Anuncios',     icon: '📋' },
+      { to: '/cerebro',      key: 'cerebro',      label: 'Segundo Cerebro', icon: '🧠' },
     ],
   },
   {
@@ -236,6 +237,20 @@ export default function AppTopBar({ variant = 'full' }) {
         >
           🛒 {t('nav.items.tienda')}
         </Link>
+
+        {/* Buscar — direct link */}
+        <Link
+          to="/buscar"
+          onClick={closeAll}
+          title={t('nav.items.buscar')}
+          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+            location.pathname === '/buscar'
+              ? 'bg-primary/10 text-primary'
+              : 'text-text-muted hover:text-text'
+          }`}
+        >
+          🔍
+        </Link>
       </nav>
 
       {/* ── Profile dropdown (desktop, right side) ──────────── */}
@@ -304,7 +319,7 @@ export default function AppTopBar({ variant = 'full' }) {
       <button
         type="button"
         onClick={() => setMobileOpen((o) => !o)}
-        aria-label="Abrir menú"
+        aria-label={t('nav.openMenu')}
         aria-expanded={mobileOpen}
         className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-lg text-text-muted transition-colors hover:text-text md:hidden"
       >
@@ -356,6 +371,15 @@ export default function AppTopBar({ variant = 'full' }) {
             }`}
           >
             🛒 {t('nav.items.tienda')}
+          </Link>
+          <Link
+            to="/buscar"
+            onClick={closeAll}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              location.pathname === '/buscar' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            🔍 {t('nav.items.buscar')}
           </Link>
 
           <hr className="my-1.5 border-border/30" />
