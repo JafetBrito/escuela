@@ -19,15 +19,44 @@ import { de } from './locales/de'
 import { ja } from './locales/ja'
 import { hi } from './locales/hi'
 import { pirata } from './locales/pirata'
+// Lenguas indígenas de México (las 5 más habladas según el censo INEGI 2020)
+import { nah } from './locales/nah'
+import { yua } from './locales/yua'
+import { tzh } from './locales/tzh'
+import { tzo } from './locales/tzo'
+import { mix } from './locales/mix'
+// Lenguas indígenas de EE.UU. (las 5 más habladas según datos del ACS/Census)
+import { nv } from './locales/nv'
+import { yup } from './locales/yup'
+import { dak } from './locales/dak'
+import { apa } from './locales/apa'
+import { kee } from './locales/kee'
+// Lenguas indígenas de Canadá (las 5 más habladas según Statistics Canada)
+import { cr } from './locales/cr'
+import { iu } from './locales/iu'
+import { oj } from './locales/oj'
+import { ojc } from './locales/ojc'
+import { den } from './locales/den'
+import { antiguo } from './locales/antiguo'
 
-const LOCALES = { es, en, fr, it, zh, ca, de, ja, hi, pirata }
+const LOCALES = {
+  es, en, fr, it, zh, ca, de, ja, hi, pirata,
+  nah, yua, tzh, tzo, mix,
+  nv, yup, dak, apa, kee,
+  cr, iu, oj, ojc, den,
+  antiguo,
+}
 const BASE = 'es'
 
-export const SUPPORTED_LANGUAGES = Object.keys(LOCALES) // ['es', 'en', 'fr', 'it', 'zh', 'ca', 'de', 'ja', 'hi', 'pirata']
+export const SUPPORTED_LANGUAGES = Object.keys(LOCALES)
 
 export const LANGUAGE_NAMES = {
   es: 'Español', en: 'English', fr: 'Français', it: 'Italiano', zh: '中文', ca: 'Català',
   de: 'Deutsch', ja: '日本語', hi: 'हिन्दी', pirata: '🏴‍☠️ Pirata',
+  nah: 'Náhuatl', yua: 'Maayaʼ tʼaan', tzh: 'Bats\'il K\'op (Tseltal)', tzo: 'Bats\'i K\'op (Tsotsil)', mix: 'Tu\'un Savi (Mixteco)',
+  nv: 'Diné Bizaad (Navajo)', yup: 'Yugtun (Yup\'ik)', dak: 'Dakȟótiyapi (Dakota)', apa: 'Apache', kee: 'Keres',
+  cr: 'Nēhiyawēwin (Cree)', iu: 'Inuktitut', oj: 'Anishinaabemowin (Ojibwe)', ojc: 'Oji-Cree', den: 'Dené',
+  antiguo: '📜 Castellano Antiguo',
 }
 
 function isSupported(lang) {
