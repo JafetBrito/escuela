@@ -212,6 +212,16 @@ export const GAMES = [
     reward: 0,
   },
   {
+    id: 'mecanografia-codigo',
+    title: 'Mecanografía de Código',
+    icon: '⌨️',
+    category: 'Programación',
+    description: 'Practica escribir código real rápido y sin errores. Empieza con JavaScript básico — más lenguajes y niveles próximamente.',
+    type: 'component',
+    component: 'typing-code',
+    reward: 180,
+  },
+  {
     id: 'quien-es-quien',
     title: '¿Quién es Quién?',
     icon: '🗿',
