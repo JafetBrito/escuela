@@ -64,17 +64,23 @@ export const useMobStore = create((set, get) => ({
     }))
   },
 
-  // Golpea al monstruo vivo más cercano dentro de rango. Devuelve null si no
-  // había ninguno a distancia o si el ataque está en cooldown. `vfx` (opcional)
-  // dispara un efecto visual: { color, ranged } — si `ranged` es true, se ve
-  // un proyectil viajar desde el jugador hasta el monstruo (ver MobField.jsx).
-  attackNearest: (playerPos, damage, vfx) => {
+  // Golpea al monstruo vivo más cercano dentro de rango. Devuelve
+  // { ok:false, reason:'cooldown'|'no-target' } si no golpeó a nada — el
+  // llamador (VRPage's handleUseSkill/onAttack) usa `reason` para avisarle al
+  // jugador por qué no pasó nada, en vez de fallar en silencio (era el bug:
+  // fuera de rango no hacía NADA, ni un mensaje, y parecía que la habilidad
+  // simplemente no funcionaba). `range` por defecto es el de golpe cuerpo a
+  // cuerpo — los hechizos a distancia pasan uno mayor (ver VRPage.jsx).
+  // `vfx` (opcional) dispara un efecto visual: { color, ranged } — si
+  // `ranged` es true, se ve un proyectil viajar desde el jugador hasta el
+  // monstruo (ver MobField.jsx).
+  attackNearest: (playerPos, damage, vfx, range = ATTACK_RANGE) => {
     const now = Date.now()
-    if (now - get().lastAttackAt < ATTACK_COOLDOWN_MS) return null
+    if (now - get().lastAttackAt < ATTACK_COOLDOWN_MS) return { ok: false, reason: 'cooldown' }
 
     const { mobs } = get()
     let closest = null
-    let closestDist = ATTACK_RANGE
+    let closestDist = range
     for (const m of mobs) {
       if (!m.alive) continue
       const dx = m.position[0] - playerPos.x
@@ -82,7 +88,7 @@ export const useMobStore = create((set, get) => ({
       const dist = Math.hypot(dx, dz)
       if (dist <= closestDist) { closest = m; closestDist = dist }
     }
-    if (!closest) return null
+    if (!closest) return { ok: false, reason: 'no-target' }
 
     set({ lastAttackAt: now })
 
@@ -107,7 +113,7 @@ export const useMobStore = create((set, get) => ({
       ),
     }))
 
-    if (!killed) return { killed: false, mobName: type.name, damage, hp: newHp, maxHp: type.maxHp }
+    if (!killed) return { ok: true, killed: false, mobName: type.name, damage, hp: newHp, maxHp: type.maxHp }
 
     const coins = type.lootCoinsMin + Math.floor(Math.random() * (type.lootCoinsMax - type.lootCoinsMin + 1))
     useCurrencyStore.getState().earnCoins(coins)
@@ -116,6 +122,6 @@ export const useMobStore = create((set, get) => ({
       item = type.lootItem
       useCollectionStore.getState().addItem(item)
     }
-    return { killed: true, mobName: type.name, damage, coins, item }
+    return { ok: true, killed: true, mobName: type.name, damage, coins, item }
   },
 }))

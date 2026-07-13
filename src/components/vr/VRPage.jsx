@@ -2954,8 +2954,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
   // Muestra en el chat del mundo el resultado de un golpe/habilidad — mismo
   // formato para el "golpe" universal y para cualquier habilidad de la barra.
+  // Antes, si no había ningún monstruo en rango, attackNearest devolvía null
+  // y esta función no hacía NADA — ni un mensaje — por eso una habilidad
+  // usada lejos de un monstruo parecía completamente rota. Ahora siempre
+  // avisa por qué no pasó nada.
   const reportAttackResult = useCallback((result, label) => {
-    if (!result) return
+    if (!result.ok) {
+      if (result.reason === 'no-target') {
+        useWorldChatStore.getState().addSystemMessage(`❌ ${label}: no hay ningún monstruo cerca. Acércate a un Bug de Código.`)
+      }
+      return
+    }
     if (result.killed) {
       const itemMsg = result.item ? ` + ${result.item.icon} ${result.item.name}` : ''
       useWorldChatStore.getState().addSystemMessage(
@@ -2987,7 +2996,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       return
     }
     const damage = Math.round((8 + (PLAYER_CLASSES[playerClass]?.stats?.power ?? 3) * 3) * power)
-    const result = useMobStore.getState().attackNearest(pos, damage, { color: skill.vfxColor, ranged: kind === 'ranged' })
+    // Los hechizos a distancia alcanzan mucho más lejos que el golpe cuerpo a
+    // cuerpo — si no, "a distancia" no significaba nada en la práctica.
+    const range = kind === 'ranged' ? 16 : undefined
+    const result = useMobStore.getState().attackNearest(pos, damage, { color: skill.vfxColor, ranged: kind === 'ranged' }, range)
     reportAttackResult(result, `${skill.icon} ${skill.name}`)
   }, [playerClass, reportAttackResult])
 
