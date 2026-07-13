@@ -133,7 +133,7 @@ export const PLAYER_CLASSES = {
       { id: 'heroic_strike', name: 'Golpe Heroico', description: 'Ataque que se activa en el próximo golpe para maximizar el daño.' },
       { id: 'rend', name: 'Desgarrar', description: 'Hiere al objetivo haciéndolo sangrar durante 9 segundos.' },
     ],
-    startSkills: [],
+    startSkills: ['charge', 'heroic_strike'],
     passiveAura: 'battle_stance',
   },
   paladin: {
@@ -154,7 +154,7 @@ export const PLAYER_CLASSES = {
       { id: 'judgement', name: 'Juicio', description: 'Juzga al objetivo con el poder de la Luz sagrada.' },
       { id: 'seal_of_righteousness', name: 'Sello de Justicia', description: 'Sello que añade daño sagrado a cada golpe.' },
     ],
-    startSkills: [],
+    startSkills: ['holy_light', 'judgement'],
     passiveAura: 'devotion_aura',
   },
   hunter: {
@@ -175,7 +175,7 @@ export const PLAYER_CLASSES = {
       { id: 'aimed_shot', name: 'Disparo Apuntado', description: 'Disparo cargado de muy alto daño con tiempo de lanzamiento.' },
       { id: 'arcane_shot', name: 'Disparo Arcano', description: 'Proyectil de energía arcana instantáneo a larga distancia.' },
     ],
-    startSkills: [],
+    startSkills: ['serpent_sting', 'aimed_shot'],
     passiveAura: 'track_beasts',
   },
   rogue: {
@@ -196,7 +196,7 @@ export const PLAYER_CLASSES = {
       { id: 'eviscerate', name: 'Evisceración', description: 'Ataque poderoso que consume puntos de combo para daño masivo.' },
       { id: 'evasion', name: 'Evasión', description: 'Esquiva todos los ataques durante 15 segundos.' },
     ],
-    startSkills: [],
+    startSkills: ['sinister_strike', 'eviscerate'],
     passiveAura: 'stealth',
   },
   priest: {
@@ -217,7 +217,7 @@ export const PLAYER_CLASSES = {
       { id: 'power_word_shield', name: 'Escudo de Fe', description: 'Escudo sagrado que absorbe daño durante 30 segundos.' },
       { id: 'shadow_word_pain', name: 'Palabra de Dolor', description: 'Inflige dolor oscuro sostenido durante 18 segundos.' },
     ],
-    startSkills: [],
+    startSkills: ['smite', 'power_word_shield'],
     passiveAura: 'spirit_tap',
   },
   shaman: {
@@ -238,7 +238,7 @@ export const PLAYER_CLASSES = {
       { id: 'rockbiter_weapon', name: 'Arma Rompepiedras', description: 'Encanta el arma para aumentar amenaza y daño.' },
       { id: 'ghost_wolf', name: 'Lobo Espectral', description: 'Se transforma en lobo para moverse más rápido.' },
     ],
-    startSkills: [],
+    startSkills: ['lightning_bolt', 'rockbiter_weapon'],
     passiveAura: 'totemic_focus',
   },
   mage: {
@@ -259,7 +259,7 @@ export const PLAYER_CLASSES = {
       { id: 'frostbolt', name: 'Flecha de Hielo', description: 'Congela al objetivo ralentizando sus movimientos.' },
       { id: 'polymorph', name: 'Polimorfia', description: 'Convierte al objetivo en oveja, incapacitándolo.' },
     ],
-    startSkills: [],
+    startSkills: ['fireball', 'frostbolt'],
     passiveAura: 'arcane_concentration',
   },
   warlock: {
@@ -280,7 +280,7 @@ export const PLAYER_CLASSES = {
       { id: 'corruption', name: 'Corrupción', description: 'Corrompe al objetivo con energía demoníaca, dañándolo.' },
       { id: 'life_tap', name: 'Toque de Vida', description: 'Sacrifica salud para convertirla en maná.' },
     ],
-    startSkills: [],
+    startSkills: ['shadow_bolt', 'corruption'],
     passiveAura: 'soul_link',
   },
   druid: {
@@ -301,7 +301,7 @@ export const PLAYER_CLASSES = {
       { id: 'bear_form', name: 'Forma de Oso', description: 'Se transforma en oso para resistir daño masivo.' },
       { id: 'rejuvenation', name: 'Rejuvenecimiento', description: 'Regenera la salud de un aliado durante 12 segundos.' },
     ],
-    startSkills: [],
+    startSkills: ['wrath', 'bear_form'],
     passiveAura: 'nature_focus',
   },
   // Admin-exclusive — not selectable by regular players (gated by isAdmin).

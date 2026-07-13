@@ -1,8 +1,33 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
+import * as THREE from 'three'
 import { useMobStore } from '../../stores/useMobStore'
 import { getMobType } from '../../data/mobRegistry'
+
+const PROJECTILE_MS = 350
+
+// Bola de energía que viaja del jugador al monstruo cuando usas una
+// habilidad a distancia (ver useMobStore.fireEffect / VRPage's handleUseSkill).
+// El daño ya se aplicó al instante — esto es puramente el "se ve volar".
+function Projectile({ effect }) {
+  const meshRef = useRef()
+  const startRef = useRef(performance.now())
+  const from = useRef(new THREE.Vector3(...effect.from))
+  const to = useRef(new THREE.Vector3(...effect.to))
+
+  useFrame(() => {
+    const t = Math.min(1, (performance.now() - startRef.current) / PROJECTILE_MS)
+    meshRef.current?.position.lerpVectors(from.current, to.current, t)
+  })
+
+  return (
+    <mesh ref={meshRef} position={effect.from}>
+      <sphereGeometry args={[0.18, 12, 12]} />
+      <meshStandardMaterial color={effect.color} emissive={effect.color} emissiveIntensity={1.4} />
+    </mesh>
+  )
+}
 
 // Un solo monstruo: geometría simple (sin modelo 3D dedicado, v1) + barra de
 // vida y nombre flotantes. Gira lentamente para que no se vea estático.
@@ -42,6 +67,7 @@ function MobMesh({ mob }) {
 // revisa periódicamente si alguno debe reaparecer tras su muerte.
 export default function MobField() {
   const mobs = useMobStore((s) => s.mobs)
+  const effects = useMobStore((s) => s.effects)
   const respawnCheck = useMobStore((s) => s.respawnCheck)
   const sinceCheckRef = useRef(0)
 
@@ -55,6 +81,7 @@ export default function MobField() {
   return (
     <>
       {mobs.map((mob) => <MobMesh key={mob.id} mob={mob} />)}
+      {effects.filter((e) => e.ranged).map((e) => <Projectile key={e.id} effect={e} />)}
     </>
   )
 }

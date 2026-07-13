@@ -10,13 +10,21 @@ import { useCollectionStore } from './useCollectionStore'
 // (monedas, objeto de colección) se persiste, vía los stores que ya existen.
 export const ATTACK_RANGE = 2.5
 const RESPAWN_MS = 8000
-const ATTACK_COOLDOWN_MS = 600
+const ATTACK_COOLDOWN_MS = 500
+const PROJECTILE_MS = 350
 
+// Cerca del spawn de la Gran Aula ([0,0,-53]) y dentro del campo abierto donde
+// ya viven los NPCs de misión (x entre -15/15, z entre -53/-34) — las
+// coordenadas anteriores (x≈22-26) quedaban fuera del área jugable/visible,
+// que era por lo que no se veían los monstruos.
 const SPAWN_POINTS = [
-  [22, 0, -32],
-  [26, 0, -26],
-  [20, 0, -22],
+  [6, 0, -48],
+  [10, 0, -44],
+  [4, 0, -40],
 ]
+
+let nextMobN = SPAWN_POINTS.length
+let nextEffectId = 0
 
 function spawnMob(id, typeId, position) {
   const type = getMobType(typeId)
@@ -25,7 +33,23 @@ function spawnMob(id, typeId, position) {
 
 export const useMobStore = create((set, get) => ({
   mobs: SPAWN_POINTS.map((position, i) => spawnMob(`mob-${i}`, 'bug-de-codigo', position)),
+  // Efectos visuales transitorios (proyectiles de habilidades a distancia).
+  // Cada uno se autoelimina pasado PROJECTILE_MS — ver Projectile en MobField.jsx.
+  effects: [],
   lastAttackAt: 0,
+
+  // Coloca un monstruo nuevo (usado por el comando /npcadd del admin).
+  spawnAt: (typeId, position) => {
+    const id = `mob-gm-${nextMobN++}`
+    set((state) => ({ mobs: [...state.mobs, spawnMob(id, typeId, position)] }))
+    return id
+  },
+
+  fireEffect: (effect) => {
+    const id = nextEffectId++
+    set((state) => ({ effects: [...state.effects, { ...effect, id }] }))
+    setTimeout(() => set((state) => ({ effects: state.effects.filter((e) => e.id !== id) })), PROJECTILE_MS)
+  },
 
   // Llamado cada frame (o con cierta frecuencia) para revivir monstruos
   // muertos tras RESPAWN_MS, así el mismo spot sirve para practicar de nuevo.
@@ -41,8 +65,10 @@ export const useMobStore = create((set, get) => ({
   },
 
   // Golpea al monstruo vivo más cercano dentro de rango. Devuelve null si no
-  // había ninguno a distancia o si el ataque está en cooldown.
-  attackNearest: (playerPos, damage) => {
+  // había ninguno a distancia o si el ataque está en cooldown. `vfx` (opcional)
+  // dispara un efecto visual: { color, ranged } — si `ranged` es true, se ve
+  // un proyectil viajar desde el jugador hasta el monstruo (ver MobField.jsx).
+  attackNearest: (playerPos, damage, vfx) => {
     const now = Date.now()
     if (now - get().lastAttackAt < ATTACK_COOLDOWN_MS) return null
 
@@ -59,6 +85,16 @@ export const useMobStore = create((set, get) => ({
     if (!closest) return null
 
     set({ lastAttackAt: now })
+
+    if (vfx) {
+      get().fireEffect({
+        color: vfx.color,
+        ranged: !!vfx.ranged,
+        from: [playerPos.x, 1, playerPos.z],
+        to: [closest.position[0], 1, closest.position[2]],
+      })
+    }
+
     const type = getMobType(closest.typeId)
     const newHp = Math.max(0, closest.hp - damage)
     const killed = newHp <= 0

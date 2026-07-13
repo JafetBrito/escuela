@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { findPlayers, runGmCommand, listShopItemIds, SELF_TARGET } from '../../services/admin/gmCommands'
+import { useMobStore } from '../../stores/useMobStore'
+import { MOB_TYPES } from '../../data/mobRegistry'
 
 const HELP_LINES = [
   'Comandos disponibles:',
@@ -10,6 +12,7 @@ const HELP_LINES = [
   '  /addxp <cantidad>      — da experiencia y muestra el aviso de subir de nivel',
   '  /unlockmascot <id>     — desbloquea una mascota por su id numérico',
   '  /items                 — lista los ids de objetos de la Tienda',
+  '  /npcadd <tipo>         — coloca un monstruo cerca de ti (ej. bug-de-codigo)',
   '  /who <texto>           — busca jugadores por correo o nombre',
   '  /target <correo|yo>    — cambia a quién afectan los comandos',
 ]
@@ -19,7 +22,7 @@ const HELP_LINES = [
 // account or on any other player's, by email/nombre. Targeting another
 // player writes straight to their profiles.snapshot in Supabase since
 // their stores aren't loaded in this browser.
-export default function GmConsole({ open, onClose }) {
+export default function GmConsole({ open, onClose, playerPositionRef }) {
   const [lines, setLines] = useState(['🖥️ Consola GM — escribe /help para ver los comandos.'])
   const [input, setInput] = useState('')
   const [target, setTarget] = useState({ id: SELF_TARGET, label: 'yo (tú)' })
@@ -54,6 +57,21 @@ export default function GmConsole({ open, onClose }) {
         const players = await findPlayers(args.join(' '))
         if (!players.length) log('Sin resultados.')
         else players.forEach((p) => log(`${p.display_name} <${p.email}> — ${p.role} — id:${p.id}`))
+      } else if (cmd === 'npcadd') {
+        const query = (args[0] ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+        const type = Object.values(MOB_TYPES).find((t) =>
+          t.id.replace(/[^a-z0-9]/g, '') === query || t.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(query),
+        )
+        if (!query) {
+          log(`Tipos disponibles: ${Object.values(MOB_TYPES).map((t) => t.id).join(', ')}`)
+        } else if (!type) {
+          log(`❌ Tipo de monstruo desconocido: "${args[0]}". Prueba /npcadd bug-de-codigo`)
+        } else {
+          const pos = playerPositionRef?.current
+          const spawnPos = pos ? [pos.x + 2, 0, pos.z] : [0, 0, -53]
+          useMobStore.getState().spawnAt(type.id, spawnPos)
+          log(`✅ ${type.icon} ${type.name} colocado cerca de ti.`)
+        }
       } else if (cmd === 'target') {
         const query = args.join(' ')
         if (!query || query === 'yo') {

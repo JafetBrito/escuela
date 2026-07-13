@@ -49,10 +49,15 @@ function useCooldown(cooldownMs) {
 // ─── Circular skill button (BDM-style) ─────────────────────────────────────
 const BTN = 54
 
-function SkillBtn({ skillId, hotkey, dim = false, size = BTN }) {
+function SkillBtn({ skillId, hotkey, dim = false, size = BTN, onUse }) {
   const skill = getSkillById(skillId)
   const { remaining, trigger, pct } = useCooldown(skill?.cooldownMs ?? 2000)
   const onCooldown = remaining > 0
+
+  const handleClick = () => {
+    trigger()
+    onUse?.(skillId)
+  }
   const r = (size / 2) - 3
   const circ = 2 * Math.PI * r
 
@@ -71,7 +76,7 @@ function SkillBtn({ skillId, hotkey, dim = false, size = BTN }) {
   return (
     <button
       type="button"
-      onClick={trigger}
+      onClick={handleClick}
       disabled={onCooldown || dim}
       title={`${skill.name} — ${skill.description}`}
       className="relative flex items-center justify-center rounded-full transition-all active:scale-90"
@@ -303,7 +308,7 @@ function PortraitHud({ onOpenCharacterPanel }) {
 }
 
 // ─── Skill bar (bottom-center, draggable) ─────────────────────────────────
-function SkillBar() {
+function SkillBar({ onUseSkill }) {
   const activeChar = useVrCharacterStore((s) => s.activeChar)
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
@@ -351,7 +356,7 @@ function SkillBar() {
       )}
       <div className="flex items-center gap-1.5">
         {Array.from({ length: 8 }, (_, i) => (
-          <SkillBtn key={i} skillId={equippedSkills[i] ?? null} hotkey={String(i + 1)} size={50} />
+          <SkillBtn key={i} skillId={equippedSkills[i] ?? null} hotkey={String(i + 1)} size={50} onUse={onUseSkill} />
         ))}
       </div>
     </div>
@@ -458,6 +463,7 @@ export default function VrHud({
   onOpenCharacterPanel,
   isPrivateWorld = false,
   playerPosRef = null,
+  onUseSkill,
 }) {
   return (
     <>
@@ -493,7 +499,7 @@ export default function VrHud({
 
           {/* Bottom-center: skill bar (draggable) — sits above the XpBar (22px) */}
           <div className="pointer-events-none absolute bottom-8 left-1/2 z-20 -translate-x-1/2">
-            <SkillBar />
+            <SkillBar onUseSkill={onUseSkill} />
           </div>
 
           {/* Bottom: XP bar strip */}

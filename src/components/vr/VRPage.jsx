@@ -969,14 +969,14 @@ const BUG_PUZZLES = [
 //   the class tree unlocks its Tier-3 ultimate at): a harder-paying version
 //   of the same puzzle, themed as breaking encryption.
 // - 'admin'  → the real GM console (way more power, admin-only).
-function TerminalModal({ tier, onClose }) {
+function TerminalModal({ tier, onClose, playerPositionRef }) {
   const [puzzleIdx] = useState(() => Math.floor(Math.random() * BUG_PUZZLES.length))
   const [selected, setSelected] = useState(null)
   const [result, setResult] = useState(null)
   const canClaim = useTerminalRewardsStore((s) => s.canClaim())
   const puzzle = BUG_PUZZLES[puzzleIdx]
 
-  if (tier === 'admin') return <GmConsole open onClose={onClose} />
+  if (tier === 'admin') return <GmConsole open onClose={onClose} playerPositionRef={playerPositionRef} />
 
   const reward = tier === 'hacker' ? { coins: 600, xp: 60 } : { coins: 250, xp: 25 }
 
@@ -2952,6 +2952,45 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     return () => window.removeEventListener('keydown', handleDown)
   }, [nearPortal, nearDailyReward, nearComputer, nearbyNpcId, isPrivateWorld, navigate, playerClass, isAdmin])
 
+  // Muestra en el chat del mundo el resultado de un golpe/habilidad — mismo
+  // formato para el "golpe" universal y para cualquier habilidad de la barra.
+  const reportAttackResult = useCallback((result, label) => {
+    if (!result) return
+    if (result.killed) {
+      const itemMsg = result.item ? ` + ${result.item.icon} ${result.item.name}` : ''
+      useWorldChatStore.getState().addSystemMessage(
+        `💀 ${result.mobName} derrotado — +${formatCurrency(result.coins)}${itemMsg}`,
+      )
+    } else {
+      useWorldChatStore.getState().addSystemMessage(
+        `${label} a ${result.mobName} por ${result.damage} (${result.hp}/${result.maxHp} HP)`,
+      )
+    }
+  }, [])
+
+  // Ejecuta lo que hace cada habilidad de la barra (1-8) al hacer clic — ver
+  // SKILL_REGISTRY[id].effect y VrHud's SkillBar/SkillBtn (onUseSkill).
+  // 'melee'/'ranged' dañan al monstruo más cercano (con proyectil visual para
+  // 'ranged'); 'utility' (sanación, escudos, transformaciones) todavía no
+  // tiene su propio sistema — el mundo VR aún no permite que un monstruo
+  // dañe al jugador, así que solo avisa en el chat por ahora.
+  const handleUseSkill = useCallback((skillId) => {
+    const skill = SKILL_REGISTRY[skillId]
+    const pos = playerPositionRef.current
+    if (!skill?.effect || !pos) {
+      useWorldChatStore.getState().addSystemMessage(`${skill?.icon ?? '✨'} Usaste ${skill?.name ?? skillId}.`)
+      return
+    }
+    const { kind, power = 1 } = skill.effect
+    if (kind === 'utility') {
+      useWorldChatStore.getState().addSystemMessage(`${skill.icon} ${skill.name} — efecto próximamente (necesita daño entrante al jugador).`)
+      return
+    }
+    const damage = Math.round((8 + (PLAYER_CLASSES[playerClass]?.stats?.power ?? 3) * 3) * power)
+    const result = useMobStore.getState().attackNearest(pos, damage, { color: skill.vfxColor, ranged: kind === 'ranged' })
+    reportAttackResult(result, `${skill.icon} ${skill.name}`)
+  }, [playerClass, reportAttackResult])
+
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
     onOpenCharacter: () => openLocked('mascota-chat', 'mascota'),
@@ -2968,17 +3007,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       if (!pos) return
       const damage = 8 + (PLAYER_CLASSES[playerClass]?.stats?.power ?? 3) * 3
       const result = useMobStore.getState().attackNearest(pos, damage)
-      if (!result) return
-      if (result.killed) {
-        const itemMsg = result.item ? ` + ${result.item.icon} ${result.item.name}` : ''
-        useWorldChatStore.getState().addSystemMessage(
-          `💀 ${result.mobName} derrotado — +${formatCurrency(result.coins)}${itemMsg}`,
-        )
-      } else {
-        useWorldChatStore.getState().addSystemMessage(
-          `⚔️ Golpeaste a ${result.mobName} por ${result.damage} (${result.hp}/${result.maxHp} HP)`,
-        )
-      }
+      reportAttackResult(result, '⚔️ Golpeaste')
     },
     onUseWeapon: () => {
       if (playerClass === 'hacker') {
@@ -3301,6 +3330,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onOpenCharacterPanel={() => openLocked('avatar-personaje', 'avatar')}
           isPrivateWorld={isPrivateWorld}
           playerPosRef={playerPositionRef}
+          onUseSkill={handleUseSkill}
         />
 
         {/* Daily rewards board overlay */}
@@ -3349,6 +3379,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <TerminalModal
             tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
             onClose={() => setTerminalOpen(false)}
+            playerPositionRef={playerPositionRef}
           />
         )}
 

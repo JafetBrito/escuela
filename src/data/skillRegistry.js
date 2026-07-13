@@ -181,6 +181,7 @@ export const SKILL_REGISTRY = {
     requiredClass: 'philosopher',
     description: 'Principio irrefutable: daño garantizado al jefe.',
     vfxColor: '#fbbf24',
+    effect: { kind: 'ranged', power: 1.4 },
   },
 
   // ─── Programador — Tier 2 (Nv.5) ────────────────────────────────────────────
@@ -685,6 +686,104 @@ export const SKILL_REGISTRY = {
     description: 'Usa la luz del conocimiento para liberar a un prisionero de la ilusión de la caverna.',
     vfxColor: '#f59e0b',
     courseId: 'course-filo-001',
+  },
+
+  // ─── Habilidades de clase WoW — combate v1 contra los monstruos del ─────
+  // MUNDO VR (ver useMobStore.js). `effect.kind` decide qué pasa al usarla
+  // (handleUseSkill en VRPage.jsx): 'melee'/'ranged' dañan al monstruo vivo
+  // más cercano (ranged además dispara el proyectil visual); 'utility' aún
+  // no tiene su propio sistema (sanación/escudo/transformación necesitan que
+  // los monstruos puedan dañar al jugador primero) — por ahora solo muestra
+  // un mensaje en el chat del mundo.
+  charge: {
+    id: 'charge', name: 'Carga', icon: '🏃', owner: 'player', cooldownMs: 6000, energyCost: 20,
+    requiredClass: 'warrior', description: 'Arrasa hacia el enemigo generando rabia e inmovilizándolo.',
+    vfxColor: '#c79c6e', effect: { kind: 'melee', power: 1.2 },
+  },
+  heroic_strike: {
+    id: 'heroic_strike', name: 'Golpe Heroico', icon: '⚔️', owner: 'player', cooldownMs: 2000, energyCost: 15,
+    requiredClass: 'warrior', description: 'Ataque que se activa en el próximo golpe para maximizar el daño.',
+    vfxColor: '#c79c6e', effect: { kind: 'melee', power: 1.6 },
+  },
+  holy_light: {
+    id: 'holy_light', name: 'Luz Sagrada', icon: '✨', owner: 'player', cooldownMs: 8000, energyCost: 30,
+    requiredClass: 'paladin', description: 'Llama a la Luz para curar a un aliado herido.',
+    vfxColor: '#f58cba', effect: { kind: 'utility' },
+  },
+  judgement: {
+    id: 'judgement', name: 'Juicio', icon: '⚖️', owner: 'player', cooldownMs: 3000, energyCost: 20,
+    requiredClass: 'paladin', description: 'Juzga al objetivo con el poder de la Luz sagrada.',
+    vfxColor: '#fef08a', effect: { kind: 'ranged', power: 1.3 },
+  },
+  serpent_sting: {
+    id: 'serpent_sting', name: 'Aguijón de Serpiente', icon: '🐍', owner: 'player', cooldownMs: 2500, energyCost: 18,
+    requiredClass: 'hunter', description: 'Envenena al objetivo con veneno que daña durante 15s.',
+    vfxColor: '#22c55e', effect: { kind: 'ranged', power: 1.1 },
+  },
+  aimed_shot: {
+    id: 'aimed_shot', name: 'Disparo Apuntado', icon: '🏹', owner: 'player', cooldownMs: 3500, energyCost: 25,
+    requiredClass: 'hunter', description: 'Disparo cargado de muy alto daño con tiempo de lanzamiento.',
+    vfxColor: '#abd473', effect: { kind: 'ranged', power: 1.8 },
+  },
+  sinister_strike: {
+    id: 'sinister_strike', name: 'Golpe Traicionero', icon: '🗡️', owner: 'player', cooldownMs: 1800, energyCost: 15,
+    requiredClass: 'rogue', description: 'Ataque lateral rápido que aplica un punto de combo.',
+    vfxColor: '#fff569', effect: { kind: 'melee', power: 1.2 },
+  },
+  eviscerate: {
+    id: 'eviscerate', name: 'Evisceración', icon: '🔪', owner: 'player', cooldownMs: 2800, energyCost: 25,
+    requiredClass: 'rogue', description: 'Ataque poderoso que consume puntos de combo para daño masivo.',
+    vfxColor: '#facc15', effect: { kind: 'melee', power: 1.7 },
+  },
+  smite: {
+    id: 'smite', name: 'Castigar', icon: '☀️', owner: 'player', cooldownMs: 2500, energyCost: 18,
+    requiredClass: 'priest', description: 'Castiga al objetivo con el poder de la Luz.',
+    vfxColor: '#fde68a', effect: { kind: 'ranged', power: 1.3 },
+  },
+  power_word_shield: {
+    id: 'power_word_shield', name: 'Escudo de Fe', icon: '🛡️', owner: 'player', cooldownMs: 9000, energyCost: 30,
+    requiredClass: 'priest', description: 'Escudo sagrado que absorbe daño durante 30 segundos.',
+    vfxColor: '#fffff0', effect: { kind: 'utility' },
+  },
+  lightning_bolt: {
+    id: 'lightning_bolt', name: 'Rayo', icon: '⚡', owner: 'player', cooldownMs: 2200, energyCost: 20,
+    requiredClass: 'shaman', description: 'Canaliza el poder de la tormenta en un potente rayo.',
+    vfxColor: '#38bdf8', effect: { kind: 'ranged', power: 1.4 },
+  },
+  rockbiter_weapon: {
+    id: 'rockbiter_weapon', name: 'Arma Rompepiedras', icon: '🪨', owner: 'player', cooldownMs: 7000, energyCost: 22,
+    requiredClass: 'shaman', description: 'Encanta el arma para aumentar amenaza y daño.',
+    vfxColor: '#0070de', effect: { kind: 'utility' },
+  },
+  fireball: {
+    id: 'fireball', name: 'Bola de Fuego', icon: '🔥', owner: 'player', cooldownMs: 2800, energyCost: 22,
+    requiredClass: 'mage', description: 'Lanza una bola de fuego explosiva de gran daño.',
+    vfxColor: '#f97316', effect: { kind: 'ranged', power: 1.6 },
+  },
+  frostbolt: {
+    id: 'frostbolt', name: 'Flecha de Hielo', icon: '❄️', owner: 'player', cooldownMs: 2200, energyCost: 18,
+    requiredClass: 'mage', description: 'Congela al objetivo ralentizando sus movimientos.',
+    vfxColor: '#7dd3fc', effect: { kind: 'ranged', power: 1.2 },
+  },
+  shadow_bolt: {
+    id: 'shadow_bolt', name: 'Proyectil Sombrío', icon: '🌑', owner: 'player', cooldownMs: 2500, energyCost: 20,
+    requiredClass: 'warlock', description: 'Dispara un proyectil de energía oscura al enemigo.',
+    vfxColor: '#9482c9', effect: { kind: 'ranged', power: 1.4 },
+  },
+  corruption: {
+    id: 'corruption', name: 'Corrupción', icon: '💀', owner: 'player', cooldownMs: 4000, energyCost: 18,
+    requiredClass: 'warlock', description: 'Corrompe al objetivo con energía demoníaca, dañándolo.',
+    vfxColor: '#7c3aed', effect: { kind: 'ranged', power: 1.0 },
+  },
+  wrath: {
+    id: 'wrath', name: 'Ira Natural', icon: '🌿', owner: 'player', cooldownMs: 2500, energyCost: 20,
+    requiredClass: 'druid', description: 'Invoca el poder de la naturaleza sobre el enemigo.',
+    vfxColor: '#ff7d0a', effect: { kind: 'ranged', power: 1.3 },
+  },
+  bear_form: {
+    id: 'bear_form', name: 'Forma de Oso', icon: '🐻', owner: 'player', cooldownMs: 9000, energyCost: 25,
+    requiredClass: 'druid', description: 'Se transforma en oso para resistir daño masivo.',
+    vfxColor: '#78350f', effect: { kind: 'utility' },
   },
 }
 
