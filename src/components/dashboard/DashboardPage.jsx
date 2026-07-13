@@ -19,6 +19,9 @@ import { useTasksStore } from '../../stores/useTasksStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useQuestsStore } from '../../stores/useQuestsStore'
+import { getAllAchievements, ACHIEVEMENT_CATEGORIES } from '../../data/achievementsRegistry'
+import { useMascotStore } from '../../stores/useMascotStore'
+import { formatCurrency } from '../../utils/currency'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 // Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
@@ -591,19 +594,85 @@ function EscuelasTab({ categories }) {
   )
 }
 
-// ── Tab: Mi Progreso ──────────────────────────────────────────────────────────
-function ProgresoTab({ progressByCourse }) {
-  const { t }            = useI18n()
-  const xp              = useLevelStore((s) => s.xp)
-  const coins           = useCurrencyStore((s) => s.coins)
-  const tasks           = useTasksStore((s) => s.tasks)
-  const unlocked        = useAchievementsStore((s) => s.unlocked)
-  const missionsClaimed = useGlobalMissionsStore((s) => s.claimed)
-  const questsCompleted = useQuestsStore((s) => s.completed)
-  const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
+const MASCOT_EMOJI_MAP = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
 
-  const completed    = courses.filter((c) => progressByCourse(c.id) === 100).length
-  const inProgress   = courses.filter((c) => { const p = progressByCourse(c.id); return p !== null && p > 0 && p < 100 })
+// Fila label:valor dentro de una tarjeta — como la tabla de datos del
+// perfil (Email, DOB, Clase...) de un sistema escolar real.
+function InfoRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between border-b border-border px-4 py-2.5 last:border-b-0">
+      <span className="text-xs font-medium text-text-muted">{label}</span>
+      <span className="text-sm font-semibold text-text">{value}</span>
+    </div>
+  )
+}
+
+// Botón de sección sólido y coloreado — igual que la barra de accesos
+// (Docs / Exam Reports / Attendance...) del sistema de referencia: color
+// plano, ícono + etiqueta, sin transparencias ni degradados.
+function SectionTab({ icon, label, color, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ background: color }}
+      className={`flex min-w-[92px] flex-1 flex-col items-center gap-1 rounded-lg px-2 py-2.5 text-white transition-transform ${active ? 'ring-2 ring-white/80' : 'opacity-70 hover:opacity-100'}`}
+    >
+      <span className="text-lg leading-none">{icon}</span>
+      <span className="text-[11px] font-bold leading-none">{label}</span>
+    </button>
+  )
+}
+
+// Tabla de datos simple con encabezado — para cursos, calificaciones y logros.
+function DataTable({ columns, children, empty }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border">
+      <table className="w-full border-collapse text-left text-sm">
+        <thead>
+          <tr className="border-b border-border bg-surface-hover/60">
+            {columns.map((col) => (
+              <th key={col} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">{col}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border bg-surface">
+          {children}
+        </tbody>
+      </table>
+      {empty && <p className="border-t border-border px-4 py-6 text-center text-sm text-text-muted">{empty}</p>}
+    </div>
+  )
+}
+
+const SECTIONS = [
+  { id: 'cursos',         label: 'Cursos',         icon: '📚', color: '#2563eb' },
+  { id: 'calificaciones', label: 'Calificaciones', icon: '📝', color: '#0d9488' },
+  { id: 'logros',         label: 'Logros',         icon: '🏅', color: '#7c3aed' },
+  { id: 'misiones',       label: 'Misiones',       icon: '📜', color: '#16a34a' },
+  { id: 'personaje',      label: 'Personaje',      icon: '⚔️', color: '#ea580c' },
+  { id: 'economia',       label: 'Economía',       icon: '💰', color: '#dc2626' },
+]
+
+// ── Tab: Mi Progreso ──────────────────────────────────────────────────────────
+function ProgresoTab({ progressByCourse, profile }) {
+  const { t }            = useI18n()
+  const session          = useAuthStore((s) => s.session)
+  const xp               = useLevelStore((s) => s.xp)
+  const coins            = useCurrencyStore((s) => s.coins)
+  const tasks            = useTasksStore((s) => s.tasks)
+  const unlocked         = useAchievementsStore((s) => s.unlocked)
+  const missionsClaimed  = useGlobalMissionsStore((s) => s.claimed)
+  const questsCompleted  = useQuestsStore((s) => s.completed)
+  const mascotId         = useMascotStore((s) => s.mascot)
+  const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
+  const [activeSection, setActiveSection] = useState('cursos')
+
+  const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Estudiante'
+  const avatarEmoji = MASCOT_EMOJI_MAP[mascotId] ?? '👤'
+
+  const completedCourses = courses.filter((c) => progressByCourse(c.id) === 100)
+  const inProgress       = courses.filter((c) => { const p = progressByCourse(c.id); return p !== null && p > 0 && p < 100 })
+  const enrolledCourses  = [...inProgress, ...completedCourses]
 
   const pending      = tasks.filter((t) => t.status === 'pendiente').length
   const submitted    = tasks.filter((t) => t.status === 'entregada').length
@@ -612,169 +681,184 @@ function ProgresoTab({ progressByCourse }) {
     ? Math.round(graded.reduce((acc, t) => acc + (t.grade / t.grade_max) * 100, 0) / graded.length)
     : null
 
+  const achievementCatalog = useMemo(() => getAllAchievements(courses), [])
+  const unlockedAchievements = useMemo(
+    () => unlocked.map((id) => achievementCatalog.find((a) => a.id === id)).filter(Boolean).reverse(),
+    [unlocked, achievementCatalog]
+  )
+  const categoryLabel = (id) => ACHIEVEMENT_CATEGORIES.find((c) => c.id === id)?.label ?? id
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-10">
-      <h1 className="text-2xl font-black text-text">{t('dashboard.progressTitle')}</h1>
+    <div className="mx-auto max-w-4xl px-4 py-6">
+      <h1 className="mb-5 text-2xl font-black text-text">{t('dashboard.progressTitle')}</h1>
 
-      {/* ══ SECCIÓN ACADÉMICA ══════════════════════════════════ */}
-      <section className="space-y-4">
-        <h2 className="border-b border-border pb-2 text-sm font-bold uppercase tracking-widest text-text-muted">
-          {t('dashboard.progress.academicHeader')}
-        </h2>
-
-        {/* Cursos en curso */}
-        {inProgress.length > 0 && (
-          <div className="rounded-2xl border border-border bg-surface p-4 space-y-3">
-            <p className="text-sm font-extrabold text-text">{t('dashboard.progress.coursesInProgress')}</p>
-            {inProgress.map((c) => {
-              const pct  = progressByCourse(c.id)
-              const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
-              return (
-                <div key={c.id} className="flex items-center gap-3">
-                  <span className="text-lg shrink-0">{c.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-text truncate">{c.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="h-1.5 flex-1 rounded-full bg-surface-hover">
-                        <div className="h-1.5 rounded-full transition-all"
-                          style={{ width: `${pct}%`, background: meta.accent }} />
-                      </div>
-                      <span className="shrink-0 text-[10px] text-text-muted">{pct}%</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Resumen de tareas */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: t('dashboard.progress.pending'),  value: pending,        icon: '⏳', color: '#f59e0b' },
-            { label: t('dashboard.progress.submitted'),  value: submitted,      icon: '📤', color: '#3b82f6' },
-            { label: t('dashboard.progress.graded'), value: graded.length,  icon: '✅', color: '#22c55e' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
-              <p className="text-2xl mb-1">{s.icon}</p>
-              <p className="text-xl font-black text-text">{s.value}</p>
-              <p className="text-[11px] text-text-muted mt-0.5">{s.label}</p>
+      <div className="grid gap-5 lg:grid-cols-[240px_1fr]">
+        {/* ══ TARJETA DE PERFIL ══════════════════════════════ */}
+        <div className="h-fit rounded-xl border border-border bg-surface">
+          <div className="flex flex-col items-center gap-2 border-b border-border p-5">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-primary bg-surface-hover text-4xl">
+              {avatarEmoji}
             </div>
-          ))}
+            <p className="text-center text-sm font-bold text-text">{displayName}</p>
+            <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary">Nivel {level}</span>
+          </div>
+          <div>
+            <InfoRow label="XP total" value={xp.toLocaleString()} />
+            <InfoRow label="Siguiente nivel" value={isMaxLevel ? 'MAX' : `${xpForNextLevel - xpIntoLevel} XP`} />
+            <InfoRow label="Cursos inscritos" value={enrolledCourses.length} />
+            <InfoRow label="Promedio" value={avgGrade !== null ? `${avgGrade}%` : '—'} />
+            <InfoRow label="Monedas" value={coins.toLocaleString()} />
+          </div>
         </div>
 
-        {/* Tabla de calificaciones */}
-        {graded.length > 0 && (
-          <div className="rounded-2xl border border-border bg-surface p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-extrabold text-text">{t('dashboard.progress.gradesTitle')}</p>
-              {avgGrade !== null && (
-                <span className="rounded-lg bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                  {t('dashboard.progress.average', { pct: avgGrade })}
-                </span>
-              )}
-            </div>
-            <div className="space-y-2.5">
-              {graded.map((task) => {
-                const pct   = Math.round((task.grade / task.grade_max) * 100)
-                const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444'
+        {/* ══ CONTENIDO ══════════════════════════════════════ */}
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {SECTIONS.map((s) => (
+              <SectionTab key={s.id} {...s} active={activeSection === s.id} onClick={() => setActiveSection(s.id)} />
+            ))}
+          </div>
+
+          {/* Cursos */}
+          {activeSection === 'cursos' && (
+            <DataTable columns={['Curso', 'Categoría', 'Progreso', 'Estado']} empty={enrolledCourses.length === 0 ? 'Aún no te has inscrito a ningún curso. Explora las escuelas para empezar.' : null}>
+              {enrolledCourses.map((c) => {
+                const pct  = progressByCourse(c.id)
+                const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
                 return (
-                  <div key={task.id} className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-text truncate">{task.title}</p>
-                      {task.feedback && (
-                        <p className="mt-0.5 text-[11px] text-text-muted line-clamp-1">
-                          💬 {task.feedback}
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <span className="rounded-lg px-2 py-0.5 text-xs font-black"
-                        style={{ background: `${color}22`, color }}>
-                        {task.grade}/{task.grade_max}
-                      </span>
-                      <p className="mt-0.5 text-[10px] text-text-muted">{pct}%</p>
-                    </div>
-                  </div>
+                  <tr key={c.id} className="cursor-default transition-colors hover:bg-surface-hover">
+                    <td className="px-4 py-3">
+                      <Link to={`/learn/${c.id}`} className="flex items-center gap-2 font-medium text-text hover:text-primary">
+                        <span>{c.icon}</span>{c.title}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-text-muted">{c.category}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 rounded-full bg-surface-hover">
+                          <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: meta.accent }} />
+                        </div>
+                        <span className="text-xs tabular-nums text-text-muted">{pct}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {pct === 100
+                        ? <span className="text-xs font-semibold text-emerald-400">Completado</span>
+                        : <span className="text-xs font-semibold text-amber-400">En curso</span>}
+                    </td>
+                  </tr>
                 )
               })}
-            </div>
-          </div>
-        )}
+            </DataTable>
+          )}
 
-        {tasks.length === 0 && (
-          <p className="py-4 text-center text-sm text-text-muted">{t('dashboard.progress.noTasks')}</p>
-        )}
-
-        <Link to="/mis-tareas"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
-          {t('dashboard.progress.seeAllTasks')}
-        </Link>
-      </section>
-
-      {/* ══ SECCIÓN DEL JUEGO ═════════════════════════════════ */}
-      <section className="space-y-4">
-        <h2 className="border-b border-border pb-2 text-sm font-bold uppercase tracking-widest text-text-muted">
-          {t('dashboard.progress.gameHeader')}
-        </h2>
-
-        {/* Level card */}
-        <div className="rounded-2xl border border-border bg-surface p-6">
-          <div className="flex items-end gap-4">
-            <div className="text-center">
-              <p className="mb-1 text-xs uppercase tracking-widest text-text-muted">{t('dashboard.level')}</p>
-              <p className="text-6xl font-black leading-none text-primary">{level}</p>
-            </div>
-            <div className="flex-1">
-              <div className="mb-1.5 flex justify-between text-xs text-text-muted">
-                <span>{xpIntoLevel} XP</span>
-                <span>{isMaxLevel ? 'MAX' : `${xpForNextLevel} XP`}</span>
+          {/* Calificaciones */}
+          {activeSection === 'calificaciones' && (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3">
+                <div className="flex gap-5 text-xs text-text-muted">
+                  <span>⏳ {pending} {t('dashboard.progress.pending').toLowerCase()}</span>
+                  <span>📤 {submitted} {t('dashboard.progress.submitted').toLowerCase()}</span>
+                  <span>✅ {graded.length} {t('dashboard.progress.graded').toLowerCase()}</span>
+                </div>
+                {avgGrade !== null && (
+                  <span className="text-xs font-bold text-primary">{t('dashboard.progress.average', { pct: avgGrade })}</span>
+                )}
               </div>
-              <div className="h-3 rounded-full bg-surface-hover">
-                <div className="h-3 rounded-full bg-primary transition-all"
-                  style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
-              </div>
-              <p className="mt-1.5 text-xs text-text-muted">{t('dashboard.progress.totalXp', { xp })}</p>
-            </div>
-          </div>
-        </div>
+              <DataTable columns={['Tarea', 'Calificación', '%', 'Comentario']} empty={graded.length === 0 ? t('dashboard.progress.noTasks') : null}>
+                {graded.map((task) => {
+                  const pct   = Math.round((task.grade / task.grade_max) * 100)
+                  const color = pct >= 80 ? 'text-emerald-400' : pct >= 60 ? 'text-amber-400' : 'text-red-400'
+                  return (
+                    <tr key={task.id}>
+                      <td className="px-4 py-3 font-medium text-text">{task.title}</td>
+                      <td className={`px-4 py-3 font-semibold tabular-nums ${color}`}>{task.grade}/{task.grade_max}</td>
+                      <td className={`px-4 py-3 tabular-nums ${color}`}>{pct}%</td>
+                      <td className="px-4 py-3 text-text-muted">{task.feedback || '—'}</td>
+                    </tr>
+                  )
+                })}
+              </DataTable>
+              <Link to="/mis-tareas"
+                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
+                {t('dashboard.progress.seeAllTasks')}
+              </Link>
+            </>
+          )}
 
-        {/* Game stats */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: t('dashboard.progress.coins'),     value: coins.toLocaleString(),                           icon: '💰' },
-            { label: t('nav.items.logros'),      value: unlocked.length,                                  icon: '🏅' },
-            { label: t('nav.items.misiones'),    value: missionsClaimed.length + questsCompleted.length,  icon: '📜' },
-            { label: t('dashboard.progress.completed'), value: completed,                                         icon: '✅' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl border border-border bg-surface p-4 text-center">
-              <p className="mb-1 text-2xl">{s.icon}</p>
-              <p className="text-xl font-black text-text">{s.value}</p>
-              <p className="mt-0.5 text-[11px] text-text-muted">{s.label}</p>
-            </div>
-          ))}
-        </div>
+          {/* Logros */}
+          {activeSection === 'logros' && (
+            <>
+              <DataTable columns={['Logro', 'Categoría']} empty={unlockedAchievements.length === 0 ? 'Aún no desbloqueas ningún logro.' : null}>
+                {unlockedAchievements.map((a) => (
+                  <tr key={a.id}>
+                    <td className="flex items-center gap-2 px-4 py-3 font-medium text-text"><span>{a.icon}</span>{a.name}</td>
+                    <td className="px-4 py-3 text-text-muted">{categoryLabel(a.category)}</td>
+                  </tr>
+                ))}
+              </DataTable>
+              <Link to="/logros" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
+                Ver panel completo de logros →
+              </Link>
+            </>
+          )}
 
-        {/* Quick links */}
-        <div className="space-y-2">
-          {[
-            { to: '/arbol',    icon: '🌳', label: t('nav.items.arbol'),   desc: t('dashboard.progress.skillTreeDesc') },
-            { to: '/logros',   icon: '🏅', label: t('nav.items.logros'), desc: t('dashboard.progress.achievementsDesc') },
-            { to: '/misiones', icon: '📜', label: t('nav.items.misiones'), desc: t('dashboard.progress.missionsDesc') },
-            { to: '/mascota',  icon: '⚔️', label: t('nav.items.mascota'), desc: t('dashboard.progress.teamDesc') },
-          ].map((item) => (
-            <Link key={item.to} to={item.to}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-3 transition-colors hover:border-primary hover:bg-surface-hover">
-              <span className="text-2xl">{item.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-text">{item.label}</p>
-                <p className="text-xs text-text-muted">{item.desc}</p>
+          {/* Misiones */}
+          {activeSection === 'misiones' && (
+            <div className="rounded-xl border border-border bg-surface">
+              <InfoRow label="Misiones globales reclamadas" value={missionsClaimed.length} />
+              <InfoRow label="Cadenas de misión completadas" value={questsCompleted.length} />
+              <InfoRow label="Total completado" value={missionsClaimed.length + questsCompleted.length} />
+              <div className="p-4">
+                <Link to="/misiones" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
+                  Ver tablón de misiones →
+                </Link>
               </div>
-              <span className="ml-auto text-text-muted">›</span>
-            </Link>
-          ))}
+            </div>
+          )}
+
+          {/* Personaje */}
+          {activeSection === 'personaje' && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-surface p-5">
+                <div className="mb-1.5 flex justify-between text-xs text-text-muted">
+                  <span>{xpIntoLevel} XP</span>
+                  <span>{isMaxLevel ? 'MAX' : `${xpForNextLevel} XP`}</span>
+                </div>
+                <div className="h-2 rounded-full bg-surface-hover">
+                  <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
+                </div>
+                <p className="mt-1.5 text-xs text-text-muted">{t('dashboard.progress.totalXp', { xp })}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-surface">
+                <Link to="/arbol" className="flex items-center gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-surface-hover">
+                  <span className="text-lg">🌳</span>
+                  <span className="flex-1 text-sm text-text">{t('nav.items.arbol')}</span>
+                  <span className="text-text-muted">›</span>
+                </Link>
+                <Link to="/mascota" className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-hover">
+                  <span className="text-lg">⚔️</span>
+                  <span className="flex-1 text-sm text-text">{t('nav.items.mascota')}</span>
+                  <span className="text-text-muted">›</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Economía */}
+          {activeSection === 'economia' && (
+            <div className="rounded-xl border border-border bg-surface">
+              <InfoRow label="Saldo total" value={formatCurrency(coins)} />
+              <InfoRow label="Cobre" value={coins.toLocaleString()} />
+              <div className="p-4">
+                <Link to="/tienda" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
+                  Ir a la Tienda →
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
-      </section>
+      </div>
     </div>
   )
 }
@@ -865,7 +949,7 @@ export default function DashboardPage() {
             />
           )}
           {tab === 'escuelas' && <EscuelasTab {...tabProps} />}
-          {tab === 'progreso' && <ProgresoTab progressByCourse={progressByCourse} />}
+          {tab === 'progreso' && <ProgresoTab progressByCourse={progressByCourse} profile={profile} />}
         </main>
 
         {/* ── Mobile bottom tab bar ──────────────────────────────── */}

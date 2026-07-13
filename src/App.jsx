@@ -32,6 +32,7 @@ import AchievementToast from './components/achievements/AchievementToast'
 import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import TextSelectionMenu from './components/shared/TextSelectionMenu'
 import PatchNotesModal from './components/shared/PatchNotesModal'
+import TaskDetailModal from './components/tasks/TaskDetailModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
@@ -128,6 +129,7 @@ export default function App() {
       <LevelUpAnnouncer />
       <TextSelectionMenu />
       <PatchNotesModal />
+      <TaskDetailModal />
       <DevToolsPanel />
       <AiCredentialsLoader />
       <SyncErrorBanner />
@@ -182,7 +184,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/escuela/:slug"
           element={

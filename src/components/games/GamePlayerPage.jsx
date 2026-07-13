@@ -14,6 +14,7 @@ const COMPONENT_MAP = {
   'math-history': lazy(() => import('./math-history/MathHistoryGame')),
   'body-explorer': lazy(() => import('./body-explorer/BodyExplorerGame')),
   'typing-code': lazy(() => import('./typing-code/TypingCodeGame')),
+  'prompt-duel': lazy(() => import('./prompt-duel/PromptDuelGame')),
   'bash-terminal': lazy(() => import('./bash/BashTerminalGame')),
   'duelo-mentes': lazy(() => import('./duelo/DueloDeMentesGame')),
   'python-terminal': lazy(() => import('./python/PythonTerminalGame')),

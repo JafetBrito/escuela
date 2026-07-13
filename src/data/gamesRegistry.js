@@ -212,6 +212,16 @@ export const GAMES = [
     reward: 0,
   },
   {
+    id: 'duelo-prompts',
+    title: 'Duelo de Prompts',
+    icon: '⚔️',
+    category: 'Inteligencia Artificial',
+    description: '10 escenarios reales, dos prompts cada uno. Elige el que de verdad funcionaría mejor con una IA. Práctica del curso de Ingeniería de Prompts.',
+    type: 'component',
+    component: 'prompt-duel',
+    reward: 200,
+  },
+  {
     id: 'mecanografia-codigo',
     title: 'Mecanografía de Código',
     icon: '⌨️',

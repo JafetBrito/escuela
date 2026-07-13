@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { TASK_TYPES, taskTypeOf } from '../../data/taskTypes'
 
 const SUBJECTS = ['Matemáticas', 'Física', 'Historia', 'Biología', 'Química', 'Filosofía',
   'Psicología', 'Programación', 'Inglés', 'Música', 'Arte', 'General']
 
-const STATUS_META = {
-  pendiente: { label: 'Pendiente',  cls: 'bg-amber-500/20 text-amber-400' },
-  entregada: { label: 'Entregada', cls: 'bg-blue-500/20 text-blue-400' },
-  revisada:  { label: 'Revisada',  cls: 'bg-emerald-500/20 text-emerald-400' },
-}
+const STATUS_SECTIONS = [
+  { key: 'entregada', label: '📤 Por revisar', cls: 'text-blue-400 border-blue-500/20' },
+  { key: 'pendiente', label: '⏳ Pendientes',   cls: 'text-amber-400 border-amber-500/20' },
+  { key: 'revisada',  label: '✅ Calificadas',  cls: 'text-emerald-400 border-emerald-500/20' },
+]
 
 function GradeModal({ task, onClose, onSave }) {
   const [grade, setGrade] = useState(task.grade ?? '')
@@ -95,11 +96,16 @@ export default function AdminTasksPage() {
   const createTask = useTasksStore((s) => s.createTask)
   const gradeTask = useTasksStore((s) => s.gradeTask)
   const deleteTask = useTasksStore((s) => s.deleteTask)
+  const openTask = useTasksStore((s) => s.openTask)
 
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [grading, setGrading] = useState(null)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ title: '', description: '', subject: '', due_date: '' })
+  const [form, setForm] = useState({
+    title: '', description: '', subject: '', due_date: '', type: 'tarea',
+    // Solo se usan los campos relevantes al tipo elegido (ver buildDetails).
+    time: '', duration_minutes: '', modality: 'Presencial', topics: '', deliverables: '',
+  })
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -127,6 +133,25 @@ export default function AdminTasksPage() {
     setMsg('')
   }
 
+  // Cada tipo guarda solo los campos que le corresponden en `details` — la
+  // tarea normal no lleva nada extra, el proyecto lleva sus entregables, el
+  // examen lleva hora/duración/modalidad/temario.
+  const buildDetails = () => {
+    if (form.type === 'proyecto') {
+      const deliverables = form.deliverables.split('\n').map((d) => d.trim()).filter(Boolean)
+      return deliverables.length ? { deliverables } : {}
+    }
+    if (form.type === 'examen') {
+      const details = {}
+      if (form.time) details.time = form.time
+      if (form.duration_minutes) details.duration_minutes = Number(form.duration_minutes)
+      if (form.modality) details.modality = form.modality
+      if (form.topics.trim()) details.topics = form.topics.trim()
+      return details
+    }
+    return {}
+  }
+
   const handleCreate = async (e) => {
     e.preventDefault()
     if (!selectedStudent || !form.title.trim()) return
@@ -137,14 +162,16 @@ export default function AdminTasksPage() {
       description: form.description.trim() || null,
       subject: form.subject || null,
       due_date: form.due_date || null,
+      type: form.type,
+      details: buildDetails(),
       assigned_by: session?.user?.id,
     })
     setBusy(false)
     if (error) {
       setMsg(`❌ ${error.message}`)
     } else {
-      setMsg('✅ Tarea creada.')
-      setForm({ title: '', description: '', subject: '', due_date: '' })
+      setMsg(`✅ ${taskTypeOf(form.type).label} creada.`)
+      setForm({ title: '', description: '', subject: '', due_date: '', type: 'tarea', time: '', duration_minutes: '', modality: 'Presencial', topics: '', deliverables: '' })
       setCreating(false)
       fetchAllTasks(selectedStudent.id)
     }
@@ -164,8 +191,17 @@ export default function AdminTasksPage() {
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-rose-600 to-orange-500 px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-white">📋 Gestión de Tareas</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Asigna tareas a tus alumnos, revisa entregas y pon calificaciones.
+              Asigna tareas y proyectos y exámenes a tus alumnos, revisa entregas y pon calificaciones.
             </p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {STATUS_SECTIONS.map((section) => (
+              <div key={section.key} className={`rounded-xl border bg-surface px-4 py-2.5 text-center ${section.cls}`}>
+                <p className="text-xl font-extrabold">{tasksForSelected.filter((t) => t.status === section.key).length}</p>
+                <p className="text-[11px] font-semibold opacity-70">{section.label}</p>
+              </div>
+            ))}
           </div>
 
           <div className="mt-6 grid gap-6 md:grid-cols-[220px_1fr]">
@@ -238,6 +274,24 @@ export default function AdminTasksPage() {
                       placeholder="Instrucciones, páginas del libro, etc."
                     />
                   </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-text-muted">Tipo</label>
+                    <div className="mt-1 flex gap-2">
+                      {Object.entries(TASK_TYPES).map(([key, cfg]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, type: key }))}
+                          className="flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition"
+                          style={form.type === key
+                            ? { background: `${cfg.color}20`, borderColor: cfg.color, color: cfg.color }
+                            : { borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                        >
+                          {cfg.icon} {cfg.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold uppercase text-text-muted">Materia</label>
@@ -260,6 +314,68 @@ export default function AdminTasksPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Campos propios de cada tipo */}
+                  {form.type === 'proyecto' && (
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-text-muted">Entregables (uno por línea)</label>
+                      <textarea
+                        rows={3}
+                        value={form.deliverables}
+                        onChange={(e) => setForm((f) => ({ ...f, deliverables: e.target.value }))}
+                        className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary resize-none"
+                        placeholder={'Ej:\nInvestigación preliminar\nBorrador\nEntrega final'}
+                      />
+                    </div>
+                  )}
+                  {form.type === 'examen' && (
+                    <div className="space-y-3 rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-text-muted">Hora</label>
+                          <input
+                            type="time"
+                            value={form.time}
+                            onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+                            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-text-muted">Duración (min)</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={form.duration_minutes}
+                            onChange={(e) => setForm((f) => ({ ...f, duration_minutes: e.target.value }))}
+                            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                            placeholder="60"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold uppercase text-text-muted">Modalidad</label>
+                          <select
+                            value={form.modality}
+                            onChange={(e) => setForm((f) => ({ ...f, modality: e.target.value }))}
+                            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                          >
+                            <option>Presencial</option>
+                            <option>Virtual</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-text-muted">Temario</label>
+                        <textarea
+                          rows={2}
+                          value={form.topics}
+                          onChange={(e) => setForm((f) => ({ ...f, topics: e.target.value }))}
+                          className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary resize-none"
+                          placeholder="Temas 1 a 4, ejercicios de la guía..."
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex gap-2 pt-1">
                     <button type="button" onClick={() => setCreating(false)} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm text-text-muted hover:text-text">
                       Cancelar
@@ -285,67 +401,101 @@ export default function AdminTasksPage() {
                   <p className="text-text-muted text-sm">Sin tareas asignadas.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {tasksForSelected.map((task) => {
-                    const meta = STATUS_META[task.status] ?? STATUS_META.pendiente
+                <div className="space-y-6">
+                  {STATUS_SECTIONS.map((section) => {
+                    const items = tasksForSelected.filter((t) => t.status === section.key)
+                    if (items.length === 0) return null
                     return (
-                      <div key={task.id} className="rounded-2xl border border-border bg-surface p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            {!selectedStudent && task.profiles && (
-                              <p className="text-xs font-bold text-primary mb-0.5">
-                                {task.profiles.display_name || task.profiles.email}
-                              </p>
-                            )}
-                            {task.subject && <p className="text-xs text-text-muted">{task.subject}</p>}
-                            <p className="font-bold text-text">{task.title}</p>
-                            {task.description && <p className="text-sm text-text-muted mt-0.5">{task.description}</p>}
-                            {task.due_date && (
-                              <p className="text-xs text-text-muted/60 mt-1">
-                                📅 {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' })}
-                              </p>
-                            )}
-                            {task.grade != null && (
-                              <p className="text-sm font-bold text-emerald-400 mt-1">
-                                Calificación: {task.grade}/{task.grade_max ?? 10}
-                              </p>
-                            )}
-                            {task.feedback && <p className="text-xs text-text-muted mt-0.5 italic">"{task.feedback}"</p>}
-                          </div>
-                          <div className="flex flex-col items-end gap-2 shrink-0">
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.cls}`}>
-                              {meta.label}
-                            </span>
-                            <div className="flex gap-1">
-                              {(task.status === 'entregada' || task.status === 'pendiente') && (
-                                <button
-                                  type="button"
-                                  onClick={() => setGrading(task)}
-                                  className="rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
-                                >
-                                  📝 Calificar
-                                </button>
-                              )}
-                              {task.status === 'revisada' && (
-                                <button
-                                  type="button"
-                                  onClick={() => setGrading(task)}
-                                  className="rounded-lg border border-border px-2 py-1 text-xs text-text-muted hover:text-text"
-                                >
-                                  ✏️
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => deleteTask(task.id)}
-                                className="rounded-lg border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
+                      <section key={section.key}>
+                        <div className={`mb-2 flex items-center gap-2 border-b pb-1.5 ${section.cls}`}>
+                          <h3 className="text-xs font-extrabold">{section.label}</h3>
+                          <span className="text-[11px] font-bold opacity-60">{items.length}</span>
                         </div>
-                      </div>
+                        <div className="space-y-3">
+                          {items.map((task) => {
+                            const type = taskTypeOf(task.type)
+                            return (
+                              <div
+                                key={task.id}
+                                onClick={() => openTask(task.id)}
+                                className="cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-border/80"
+                                style={{ borderLeft: `4px solid ${type.color}` }}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                                      <span
+                                        className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                        style={{ background: `${type.color}18`, color: type.color, border: `1px solid ${type.color}30` }}
+                                      >
+                                        {type.icon} {type.label}
+                                      </span>
+                                      {task.subject && <span className="text-xs text-text-muted">{task.subject}</span>}
+                                    </div>
+                                    {!selectedStudent && task.profiles && (
+                                      <p className="text-xs font-bold text-primary mb-0.5">
+                                        {task.profiles.display_name || task.profiles.email}
+                                      </p>
+                                    )}
+                                    <p className="font-bold text-text">{task.title}</p>
+                                    {task.description && <p className="text-sm text-text-muted mt-0.5 line-clamp-2">{task.description}</p>}
+                                    {task.due_date && (
+                                      <p className="text-xs text-text-muted/60 mt-1">
+                                        📅 {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' })}
+                                        {task.type === 'examen' && task.details?.time ? ` · 🕐 ${task.details.time}` : ''}
+                                      </p>
+                                    )}
+                                    {task.type === 'examen' && (task.details?.duration_minutes || task.details?.modality) && (
+                                      <p className="text-xs text-text-muted/60">
+                                        {task.details?.duration_minutes ? `⏱️ ${task.details.duration_minutes} min` : ''}
+                                        {task.details?.duration_minutes && task.details?.modality ? ' · ' : ''}
+                                        {task.details?.modality ? `📍 ${task.details.modality}` : ''}
+                                      </p>
+                                    )}
+                                    {task.type === 'proyecto' && task.details?.deliverables?.length > 0 && (
+                                      <p className="text-xs text-text-muted/60">📦 {task.details.deliverables.length} entregable{task.details.deliverables.length === 1 ? '' : 's'}</p>
+                                    )}
+                                    {task.grade != null && (
+                                      <p className="text-sm font-bold text-emerald-400 mt-1">
+                                        Calificación: {task.grade}/{task.grade_max ?? 10}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col items-end gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex gap-1">
+                                      {(task.status === 'entregada' || task.status === 'pendiente') && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setGrading(task)}
+                                          className="rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+                                        >
+                                          📝 Calificar
+                                        </button>
+                                      )}
+                                      {task.status === 'revisada' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setGrading(task)}
+                                          className="rounded-lg border border-border px-2 py-1 text-xs text-text-muted hover:text-text"
+                                        >
+                                          ✏️
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => deleteTask(task.id)}
+                                        className="rounded-lg border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10"
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </section>
                     )
                   })}
                 </div>

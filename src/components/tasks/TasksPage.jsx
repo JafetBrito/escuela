@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useTasksStore } from '../../stores/useTasksStore'
+import { taskTypeOf } from '../../data/taskTypes'
 
 // ── Subject config ─────────────────────────────────────────────────────────────
 const SUBJECTS = {
@@ -120,12 +121,13 @@ function GpaRing({ value, max = 10 }) {
 }
 
 // ── Task card ──────────────────────────────────────────────────────────────────
-function TaskCard({ task, onSubmit }) {
+function TaskCard({ task, onSubmit, onOpen }) {
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy]             = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const subj    = subjectOf(task.subject)
+  const type    = taskTypeOf(task.type)
   const due     = dueInfo(task.due_date, task.status)
   const hasGrade = task.grade != null
   const gradePct = hasGrade ? task.grade / (task.grade_max ?? 10) : null
@@ -139,14 +141,21 @@ function TaskCard({ task, onSubmit }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-border/80"
+      onClick={() => onOpen?.(task.id)}
+      className="relative overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:border-border/80 cursor-pointer"
       style={{ borderLeft: `4px solid ${subj.color}` }}
     >
       {/* ── Card body ─────────────────────────────────────── */}
       <div className="p-4">
 
-        {/* Top row: subject + status + grade */}
+        {/* Top row: type + subject + status + grade */}
         <div className="flex flex-wrap items-center gap-2">
+          <span
+            className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+            style={{ backgroundColor: `${type.color}18`, color: type.color, border: `1px solid ${type.color}30` }}
+          >
+            {type.icon} {type.label}
+          </span>
           <span
             className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
             style={{ backgroundColor: `${subj.color}18`, color: subj.color, border: `1px solid ${subj.color}30` }}
@@ -193,6 +202,18 @@ function TaskCard({ task, onSubmit }) {
           <p className="mt-1 text-sm leading-relaxed text-text-muted line-clamp-2">{task.description}</p>
         )}
 
+        {/* Detalle rápido por tipo */}
+        {task.type === 'examen' && (task.details?.time || task.details?.duration_minutes || task.details?.modality) && (
+          <p className="mt-1.5 flex flex-wrap gap-3 text-xs font-semibold text-red-400/90">
+            {task.details?.time && <span>🕐 {task.details.time}</span>}
+            {task.details?.duration_minutes && <span>⏱️ {task.details.duration_minutes} min</span>}
+            {task.details?.modality && <span>📍 {task.details.modality}</span>}
+          </p>
+        )}
+        {task.type === 'proyecto' && task.details?.deliverables?.length > 0 && (
+          <p className="mt-1.5 text-xs font-semibold text-purple-400/90">📦 {task.details.deliverables.length} entregable{task.details.deliverables.length === 1 ? '' : 's'}</p>
+        )}
+
         {/* Grade bar (when graded) */}
         {hasGrade && (
           <div className="mt-3 flex items-center gap-3">
@@ -215,7 +236,7 @@ function TaskCard({ task, onSubmit }) {
             </p>
           ) : <span />}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             {task.status === 'revisada' && task.feedback && (
               <button
                 type="button"
@@ -398,6 +419,7 @@ export default function TasksPage() {
   const loading      = useTasksStore((s) => s.loading)
   const fetchMyTasks = useTasksStore((s) => s.fetchMyTasks)
   const submitTask   = useTasksStore((s) => s.submitTask)
+  const openTask     = useTasksStore((s) => s.openTask)
 
   const [activeSubject, setActiveSubject] = useState('all')
   const [activeTab,     setActiveTab]     = useState('tasks')
@@ -421,17 +443,25 @@ export default function TasksPage() {
   // ── Filtered + grouped tasks ─────────────────────────────────────────────────
   const filtered = activeSubject === 'all' ? tasks : tasks.filter((t) => t.subject === activeSubject)
 
-  const grouped = GROUPS.map((g) => ({
-    ...g,
-    tasks: filtered
-      .filter((t) => classifyTask(t) === g.key)
-      .sort((a, b) => {
-        if (!a.due_date && !b.due_date) return 0
-        if (!a.due_date) return 1
-        if (!b.due_date) return -1
-        return new Date(a.due_date) - new Date(b.due_date)
-      }),
-  })).filter((g) => g.tasks.length > 0)
+  // "done" (entregada/revisada) vive en su propia pestaña "Completadas" —
+  // no se mezcla con las tareas activas para que quede claro qué falta hacer.
+  const grouped = GROUPS
+    .filter((g) => g.key !== 'done')
+    .map((g) => ({
+      ...g,
+      tasks: filtered
+        .filter((t) => classifyTask(t) === g.key)
+        .sort((a, b) => {
+          if (!a.due_date && !b.due_date) return 0
+          if (!a.due_date) return 1
+          if (!b.due_date) return -1
+          return new Date(a.due_date) - new Date(b.due_date)
+        }),
+    })).filter((g) => g.tasks.length > 0)
+
+  const completedTasks = filtered
+    .filter((t) => t.status !== 'pendiente')
+    .sort((a, b) => new Date(b.updated_at ?? b.created_at ?? 0) - new Date(a.updated_at ?? a.created_at ?? 0))
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -496,8 +526,9 @@ export default function TasksPage() {
           {/* ── Tabs ─────────────────────────────────────────────────── */}
           <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
             {[
-              { key: 'tasks',  label: '📋 Mis Tareas',      badge: pending > 0 ? pending : null },
-              { key: 'grades', label: '⭐ Calificaciones',   badge: graded.length > 0 ? graded.length : null },
+              { key: 'tasks',     label: '📋 Mis Tareas',      badge: pending > 0 ? pending : null },
+              { key: 'completed', label: '✅ Completadas',     badge: (delivered + reviewed) > 0 ? (delivered + reviewed) : null },
+              { key: 'grades',    label: '⭐ Calificaciones',   badge: graded.length > 0 ? graded.length : null },
             ].map(({ key, label, badge }) => (
               <button
                 key={key}
@@ -522,8 +553,8 @@ export default function TasksPage() {
           {/* ── Body: sidebar + content ───────────────────────────────── */}
           <div className="mt-4 flex gap-6">
 
-            {/* Sidebar: subject filter (tasks tab only) */}
-            {activeTab === 'tasks' && (
+            {/* Sidebar: subject filter (tasks/completed tabs) */}
+            {(activeTab === 'tasks' || activeTab === 'completed') && (
               <aside className="hidden w-52 shrink-0 md:block">
                 <div className="sticky top-4 rounded-2xl border border-border bg-surface p-3">
                   <p className="mb-2 px-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted/60">
@@ -579,12 +610,12 @@ export default function TasksPage() {
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                     <p className="text-sm text-text-muted">Cargando tareas…</p>
                   </div>
-                ) : filtered.length === 0 ? (
+                ) : grouped.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
                     <span className="text-5xl">🎉</span>
                     <div>
                       <p className="font-bold text-text">¡Todo al día!</p>
-                      <p className="mt-1 text-sm text-text-muted">No hay tareas en esta categoría.</p>
+                      <p className="mt-1 text-sm text-text-muted">No tienes tareas activas en esta categoría.</p>
                     </div>
                   </div>
                 ) : (
@@ -597,10 +628,34 @@ export default function TasksPage() {
                         </div>
                         <div className="space-y-3">
                           {group.tasks.map((task) => (
-                            <TaskCard key={task.id} task={task} onSubmit={submitTask} />
+                            <TaskCard key={task.id} task={task} onSubmit={submitTask} onOpen={openTask} />
                           ))}
                         </div>
                       </section>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* ── Completed tab ─────────────────────────── */}
+              {activeTab === 'completed' && (
+                loading ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                    <p className="text-sm text-text-muted">Cargando…</p>
+                  </div>
+                ) : completedTasks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
+                    <span className="text-5xl">📭</span>
+                    <div>
+                      <p className="font-bold text-text">Aún no completas ninguna tarea</p>
+                      <p className="mt-1 text-sm text-text-muted">Cuando marques una como entregada, aparecerá aquí.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {completedTasks.map((task) => (
+                      <TaskCard key={task.id} task={task} onSubmit={submitTask} onOpen={openTask} />
                     ))}
                   </div>
                 )

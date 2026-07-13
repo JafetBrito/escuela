@@ -1,11 +1,19 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
+import { useNotificationsStore } from './useNotificationsStore'
 
 export const useTasksStore = create((set, get) => ({
   // ── Student view ──────────────────────────────────────────────────────────
   tasks: [],
   loading: false,
   error: null,
+
+  // Id de la tarea abierta en TaskDetailModal (null = cerrado). Store global
+  // en vez de estado local para poder abrirla desde cualquier página (p. ej.
+  // desde una notificación).
+  openTaskId: null,
+  openTask: (id) => set({ openTaskId: id }),
+  closeTask: () => set({ openTaskId: null }),
 
   fetchMyTasks: async () => {
     set({ loading: true, error: null })
@@ -80,6 +88,8 @@ export const useTasksStore = create((set, get) => ({
           t.id === taskId ? { ...t, grade, grade_max, feedback, status: 'revisada' } : t
         ),
       }))
+      const task = get().allTasks.find((t) => t.id === taskId)
+      if (task) useNotificationsStore.getState().notifyTaskGraded(task, grade, grade_max)
     }
     return { error }
   },

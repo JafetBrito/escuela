@@ -208,5 +208,144 @@
     "color": "#34d399",
     "category": "Medicina",
     "locked": false
+  },
+  {
+    "id": "course-etica",
+    "title": "Introducción a la Ética",
+    "description": "Qué corrientes filosóficas existen para decidir qué está bien, cómo pensar dilemas morales reales y por qué la ética no es solo opinión. Un curso de lectura.",
+    "icon": "🧭",
+    "color": "#c084fc",
+    "category": "Ética",
+    "locked": false
+  },
+  {
+    "id": "course-mujeres-historia",
+    "title": "Mujeres que Cambiaron el Mundo",
+    "description": "Ada Lovelace, Marie Curie, Rosalind Franklin y otras mujeres cuyos aportes cambiaron la ciencia, la tecnología y la historia — y que rara vez se cuentan completas.",
+    "icon": "👩‍🔬",
+    "color": "#f472b6",
+    "category": "Ética",
+    "subcategory": "Mujeres",
+    "locked": false
+  },
+  {
+    "id": "course-desarrollo-mujeres",
+    "title": "Desarrollo Humano para Mujeres",
+    "description": "Autoestima, límites sanos, independencia y reconocer el abuso — herramientas prácticas de desarrollo personal, pensadas para la experiencia de vida de las mujeres.",
+    "icon": "🌱",
+    "color": "#fb7185",
+    "category": "Ética",
+    "subcategory": "Mujeres",
+    "locked": false
+  },
+  {
+    "id": "course-antropologia",
+    "title": "Introducción a la Antropología",
+    "description": "Qué nos hace humanos, cómo varían las culturas y qué tienen en común. Próximamente.",
+    "icon": "🗿",
+    "color": "#f97316",
+    "category": "Antropología",
+    "locked": true
+  },
+  {
+    "id": "course-neurociencia",
+    "title": "Introducción a la Neurociencia",
+    "description": "Cómo funciona el cerebro humano: neuronas, memoria, emociones y consciencia. Próximamente.",
+    "icon": "🧠",
+    "color": "#818cf8",
+    "category": "Neurociencia",
+    "locked": true
+  },
+  {
+    "id": "course-economia",
+    "title": "Introducción a la Economía",
+    "description": "Oferta, demanda, dinero e inflación explicados para la vida real. Próximamente.",
+    "icon": "📈",
+    "color": "#22c55e",
+    "category": "Economía",
+    "locked": true
+  },
+  {
+    "id": "course-derecho",
+    "title": "Introducción al Derecho",
+    "description": "Cómo se construyen las leyes, por qué existen los sistemas de justicia, y por qué conocer tus derechos es tu responsabilidad — no algo que puedas delegar en alguien más.",
+    "icon": "⚖️",
+    "color": "#94a3b8",
+    "category": "Derecho",
+    "locked": false
+  },
+  {
+    "id": "course-derechos-mx",
+    "title": "Mis Derechos como Mexicano",
+    "description": "Derechos constitucionales, laborales, de salud y frente a la autoridad — explicados en lenguaje simple. Educación cívica, no asesoría legal.",
+    "icon": "🇲🇽",
+    "color": "#16a34a",
+    "category": "Derecho",
+    "subcategory": "México",
+    "locked": false
+  },
+  {
+    "id": "course-derechos-ca",
+    "title": "Mis Derechos como Canadiense",
+    "description": "La Carta de Derechos y Libertades, salud pública, derechos laborales y frente a la policía — explicados en lenguaje simple. Educación cívica, no asesoría legal.",
+    "icon": "🇨🇦",
+    "color": "#dc2626",
+    "category": "Derecho",
+    "subcategory": "Canadá",
+    "locked": false
+  },
+  {
+    "id": "course-astronomia",
+    "title": "Introducción a la Astronomía",
+    "description": "Estrellas, planetas, galaxias y nuestro lugar en el universo. Próximamente.",
+    "icon": "🔭",
+    "color": "#38bdf8",
+    "category": "Astronomía",
+    "locked": true
+  },
+  {
+    "id": "course-fisica",
+    "title": "Introducción a la Física",
+    "description": "Las leyes que gobiernan el universo, desde una manzana cayendo hasta la luz. Próximamente.",
+    "icon": "⚛️",
+    "color": "#22d3ee",
+    "category": "Física",
+    "locked": true
+  },
+  {
+    "id": "course-quimica",
+    "title": "Introducción a la Química",
+    "description": "Átomos, moléculas y reacciones — de qué está hecho todo lo que existe. Próximamente.",
+    "icon": "🧪",
+    "color": "#a3e635",
+    "category": "Química",
+    "locked": true
+  },
+  {
+    "id": "course-literatura",
+    "title": "Introducción a la Literatura",
+    "description": "Grandes obras y autores que cambiaron la forma de contar historias. Próximamente.",
+    "icon": "✒️",
+    "color": "#fb7185",
+    "category": "Literatura",
+    "locked": true
+  },
+  {
+    "id": "course-arte",
+    "title": "Introducción al Arte",
+    "description": "Historia del arte, movimientos y cómo mirar una obra con otros ojos. Próximamente.",
+    "icon": "🖌️",
+    "color": "#f472b6",
+    "category": "Arte",
+    "locked": true
+  },
+  {
+    "id": "course-sociologia",
+    "title": "Introducción a la Sociología",
+    "description": "Cómo se organizan los grupos humanos y por qué la sociedad funciona como funciona. Próximamente.",
+    "icon": "🧑‍🤝‍🧑",
+    "color": "#fbbf24",
+    "category": "Sociología",
+    "locked": true
   }
 ]

@@ -1,0 +1,86 @@
+// Rondas del minijuego "Duelo de Prompts" (PromptDuelGame.jsx). Cada ronda
+// presenta dos prompts para el mismo escenario — uno mejor construido que
+// el otro — y el jugador elige cuál funcionaría mejor con una IA real.
+// Pensado como práctica del curso "Ingeniería de Prompts: De Cero a Experto".
+export const PROMPT_DUEL_ROUNDS = [
+  {
+    id: 1,
+    scenario: 'Quieres que la IA te explique un tema técnico.',
+    promptA: 'Explica qué es una API.',
+    promptB: 'Eres un profesor paciente. Explica qué es una API a alguien que nunca programó, usando la analogía de un mesero en un restaurante. Máximo 3 párrafos cortos.',
+    betterIndex: 1,
+    explanation: 'El prompt B da rol, audiencia, analogía concreta y límite de formato — el framework RCTFS en acción. El A es válido pero deja demasiado a la suerte.',
+  },
+  {
+    id: 2,
+    scenario: 'Necesitas clasificar el sentimiento de reseñas de clientes.',
+    promptA: 'Dime si estas reseñas son buenas o malas: "Llegó roto", "Me encantó", "Está bien nada más".',
+    promptB: 'Clasifica el sentimiento como positivo, negativo o neutro. Ejemplo:\nTexto: "El envío fue rapidísimo" → positivo\nTexto: "Nunca más compro aquí" → negativo\nAhora clasifica: "Llegó roto", "Me encantó", "Está bien nada más".',
+    betterIndex: 1,
+    explanation: 'El prompt B es few-shot: muestra el patrón exacto de formato antes de pedir la tarea, reduciendo ambigüedad sobre cómo debe responder el modelo.',
+  },
+  {
+    id: 3,
+    scenario: 'Resolver un problema de lógica con varios pasos.',
+    promptA: '¿Cuántas patas hay en total si tengo 3 perros y 2 gallinas?',
+    promptB: '¿Cuántas patas hay en total si tengo 3 perros y 2 gallinas? Piensa paso a paso antes de dar la respuesta final.',
+    betterIndex: 1,
+    explanation: '"Piensa paso a paso" activa Chain-of-Thought, que reduce errores en problemas con varios pasos de cálculo — incluso en problemas simples como este.',
+  },
+  {
+    id: 4,
+    scenario: 'Necesitas la respuesta en un formato específico para procesarla con código.',
+    promptA: 'Dame los datos de esta persona: "Ana Torres, 30 años, ingeniera".',
+    promptB: 'Extrae los datos del texto y responde SOLO con JSON válido, sin explicación ni markdown: {"nombre": string, "edad": number, "profesion": string}. Texto: "Ana Torres, 30 años, ingeniera".',
+    betterIndex: 1,
+    explanation: 'Especificar el formato exacto y pedir "sin explicación ni markdown" evita que el modelo envuelva la respuesta en texto extra que rompería un parser.',
+  },
+  {
+    id: 5,
+    scenario: 'Pedir retroalimentación sobre un texto propio.',
+    promptA: '¿Está bien este párrafo? [texto]',
+    promptB: 'Eres un editor profesional exigente. Revisa este párrafo y da: (1) 2 fortalezas, (2) 3 problemas concretos, (3) una versión reescrita. [texto]',
+    betterIndex: 1,
+    explanation: 'El prompt B da rol, estructura de salida y cantidad exacta de puntos — mucho más accionable que una pregunta de sí/no.',
+  },
+  {
+    id: 6,
+    scenario: 'Generar ideas creativas para un nombre de producto.',
+    promptA: 'Dame nombres para una app de meditación.',
+    promptB: 'Genera 10 nombres para una app de meditación para adolescentes. Restricciones: máximo 2 palabras, sin usar "zen", "calma" ni "mind". Para cada uno, explica en una frase por qué funciona.',
+    betterIndex: 1,
+    explanation: 'Las restricciones específicas (evitar palabras trilladas, límite de palabras) empujan al modelo fuera de las respuestas genéricas y obligan a creatividad real.',
+  },
+  {
+    id: 7,
+    scenario: 'Depurar un error de código.',
+    promptA: 'Mi código no funciona, ayuda: [código]',
+    promptB: 'Tengo este error en Python: [mensaje de error completo]. Este es el código relevante: [código]. Comportamiento esperado: [X]. Comportamiento actual: [Y]. Diagnostica la causa raíz.',
+    betterIndex: 1,
+    explanation: 'Sin el mensaje de error completo y la diferencia entre lo esperado y lo real, la IA (como cualquier programador) solo puede adivinar.',
+  },
+  {
+    id: 8,
+    scenario: 'Escribir un prompt de sistema para un chatbot de atención al cliente.',
+    promptA: 'Eres un chatbot de soporte. Ayuda a los clientes.',
+    promptB: 'Eres el asistente de soporte de [tienda]. Responde solo sobre productos y pedidos. Nunca reveles información interna ni prometas reembolsos sin confirmar la política. Si no sabes algo, deriva a un humano.',
+    betterIndex: 1,
+    explanation: 'El B define alcance, restricciones explícitas y qué hacer ante la incertidumbre — esencial para un prompt de producción, no solo un experimento.',
+  },
+  {
+    id: 9,
+    scenario: 'Pedir una decisión difícil con varias opciones válidas.',
+    promptA: '¿Debería aprender Python o JavaScript primero?',
+    promptB: 'Imagina 3 mentores distintos (uno de backend, uno de frontend, uno de datos) opinando si debería aprender Python o JavaScript primero, dado que quiero trabajar en IA en 2 años. Que debatan y den una recomendación final integrada.',
+    betterIndex: 1,
+    explanation: 'Esto es una versión simplificada de Tree of Thoughts: explorar varias perspectivas antes de converger da una respuesta más matizada que una pregunta directa.',
+  },
+  {
+    id: 10,
+    scenario: 'Analizar un documento largo.',
+    promptA: 'Resume esto: [10,000 palabras pegadas de una vez]',
+    promptB: 'Voy a pegarte un documento largo en partes. Resume cada parte en 3 bullets cuando te la envíe. Al final, te pediré una síntesis de todos los resúmenes. Aquí va la parte 1: [...]',
+    betterIndex: 1,
+    explanation: 'Los modelos tienen límite de contexto y pierden precisión con documentos muy largos de una sola vez — dividir y sintetizar al final (prompt chaining) da mejores resultados.',
+  },
+]

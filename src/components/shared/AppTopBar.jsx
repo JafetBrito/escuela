@@ -5,6 +5,7 @@ import VersionBadge from './VersionBadge'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
+import NotificationBell from './NotificationBell'
 
 // `key` maps each group/item to its translation key in src/i18n/locales
 // (nav.groups.<key> / nav.items.<key>). `label` stays as the Spanish fallback
@@ -252,6 +253,11 @@ export default function AppTopBar({ variant = 'full' }) {
           🔍
         </Link>
       </nav>
+
+      {/* ── Notificaciones (desktop) ─────────────────────────── */}
+      <div className="hidden md:block">
+        <NotificationBell />
+      </div>
 
       {/* ── Profile dropdown (desktop, right side) ──────────── */}
       <div
