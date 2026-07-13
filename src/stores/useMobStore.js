@@ -14,6 +14,7 @@ export const ATTACK_RANGE = 2.5
 const RESPAWN_MS = 8000
 const ATTACK_COOLDOWN_MS = 500
 const PROJECTILE_MS = 350
+const LOOT_TOAST_MS = 4000
 
 // Cerca del spawn de la Gran Aula ([0,0,-53]) y dentro del campo abierto donde
 // ya viven los NPCs de misión (x entre -15/15, z entre -53/-34) — las
@@ -27,6 +28,7 @@ const SPAWN_POINTS = [
 
 let nextMobN = SPAWN_POINTS.length
 let nextEffectId = 0
+let nextLootToastId = 0
 
 function spawnMob(id, typeId, position) {
   const type = getMobType(typeId)
@@ -38,7 +40,17 @@ export const useMobStore = create((set, get) => ({
   // Efectos visuales transitorios (proyectiles de habilidades a distancia).
   // Cada uno se autoelimina pasado PROJECTILE_MS — ver Projectile en MobField.jsx.
   effects: [],
+  // Botín destacado de la última muerte — un aviso grande en el centro de la
+  // pantalla (LootToast.jsx), no solo una línea perdida en el chat del mundo,
+  // que era muy fácil de no ver.
+  lootToasts: [],
   lastAttackAt: 0,
+
+  pushLootToast: (toast) => {
+    const id = nextLootToastId++
+    set((state) => ({ lootToasts: [...state.lootToasts, { ...toast, id }] }))
+    setTimeout(() => set((state) => ({ lootToasts: state.lootToasts.filter((t) => t.id !== id) })), LOOT_TOAST_MS)
+  },
 
   // Coloca un monstruo nuevo (usado por el comando /npcadd del admin).
   spawnAt: (typeId, position) => {
@@ -152,6 +164,7 @@ export const useMobStore = create((set, get) => ({
     }
     if (coins > 0) useCurrencyStore.getState().earnCoins(coins)
     if (item) useCollectionStore.getState().addItem(item)
+    get().pushLootToast({ mobName: type.name, mobIcon: type.icon, xp, coins, item })
 
     return { ok: true, killed: true, mobName: type.name, damage: dmg, crit, xp, coins, item }
   },

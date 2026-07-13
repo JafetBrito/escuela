@@ -4,6 +4,7 @@ import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { useMobStore } from '../../stores/useMobStore'
 import { getMobType } from '../../data/mobRegistry'
+import { useTargetStore } from '../../stores/useTargetStore'
 
 const PROJECTILE_MS = 350
 
@@ -44,7 +45,10 @@ function MobMesh({ mob }) {
   const pct = Math.max(0, mob.hp / mob.maxHp)
 
   return (
-    <group position={mob.position}>
+    <group
+      position={mob.position}
+      onClick={(e) => { e.stopPropagation(); useTargetStore.getState().setTarget('mob', mob.id) }}
+    >
       <mesh ref={meshRef} position={[0, 0.6, 0]} castShadow>
         <icosahedronGeometry args={[0.5, 0]} />
         <meshStandardMaterial color={type.color} emissive={type.color} emissiveIntensity={0.35} roughness={0.4} />

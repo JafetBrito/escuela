@@ -6,6 +6,7 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
+import TargetFrame from './TargetFrame'
 
 // ─── Minimap world bounds (campus VR coordinate space) ─────────────────────
 const MM = { x0: -18, x1: 18, z0: -60, z1: 15 }
@@ -489,6 +490,7 @@ export default function VrHud({
           <div className="pointer-events-none absolute left-3 top-3 z-20 sm:left-4 sm:top-4">
             <div className="pointer-events-auto">
               <PortraitHud onOpenCharacterPanel={onOpenCharacterPanel} />
+              <TargetFrame />
             </div>
           </div>
 

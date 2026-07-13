@@ -36,6 +36,8 @@ import BashTerminalModal from './BashTerminalModal'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import MobField from './MobField'
 import { useMobStore } from '../../stores/useMobStore'
+import { useTargetStore } from '../../stores/useTargetStore'
+import LootToast from './LootToast'
 import { formatCurrency } from '../../utils/currency'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
@@ -1111,7 +1113,7 @@ function VrNpc({ npc, playerPositionRef }) {
 
   return (
     <group position={npc.position} rotation={[0, facing, 0]}
-      onClick={(e) => { e.stopPropagation(); sayDialogue() }}>
+      onClick={(e) => { e.stopPropagation(); useTargetStore.getState().setTarget('npc', npc.id); sayDialogue() }}>
       {/* Transparent hitbox so click works even before model loads */}
       <mesh position={[0, 0.7, 0]}>
         <cylinderGeometry args={[0.35, 0.35, 1.6, 8]} />
@@ -1197,7 +1199,7 @@ function IdleNpc({ config, playerPositionRef }) {
 
   return (
     <group position={config.position}
-      onClick={(e) => { e.stopPropagation(); sayOneLine() }}>
+      onClick={(e) => { e.stopPropagation(); useTargetStore.getState().setTarget('npc', config.id); sayOneLine() }}>
       {/* Transparent hitbox so click works even before model loads */}
       <mesh position={[0, 0.7, 0]}>
         <cylinderGeometry args={[0.35, 0.35, 1.6, 8]} />
@@ -3367,6 +3369,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           playerPosRef={playerPositionRef}
           onUseSkill={handleUseSkill}
         />
+        <LootToast />
 
         {/* Daily rewards board overlay */}
         {dailyRewardsOpen && (
