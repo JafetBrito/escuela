@@ -18,7 +18,7 @@ const PATCH_NOTES_ALL = [
     tag: 'NOVEDAD',
     tagColor: '#22c55e',
     changes: [
-      { icon: '🍊', text: 'Nueva identidad visual: cambiamos el verde original (inspirado en otras plataformas) por el naranja de Oliver en todo el sitio, incluido el tema claro.' },
+      { icon: '🍊', text: 'Nueva identidad visual: cambiamos el verde original por el naranja de Oliver en todo el sitio, incluido el tema claro.' },
       { icon: '🗡️', text: 'Sistema de objetivo (target) estilo WoW en el mundo VR: haz clic en un monstruo, un NPC o incluso otro jugador para ver su marco con nombre y vida, y ejecuta de verdad las habilidades de tu clase.' },
       { icon: '🧪', text: 'Nuevo Mapa de Pruebas VR (/vr/pruebas): un terreno plano con todos los NPCs en línea, para probar combate y misiones sin cargar todo el campus.' },
       { icon: '🧮', text: 'Mazmorra Matemática rediseñada: ahora son 7 categorías (suma, resta, multiplicación, división, fracciones, porcentajes, mixto) con 2 niveles cada una, y un dato histórico real en cada piso.' },
