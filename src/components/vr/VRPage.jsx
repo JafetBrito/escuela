@@ -2965,24 +2965,44 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       }
       return
     }
+    if (result.missed) {
+      useWorldChatStore.getState().addSystemMessage(`${label} a ${result.mobName}... ¡y falló!`)
+      return
+    }
+    const critTag = result.crit ? ' ¡CRÍTICO!' : ''
     if (result.killed) {
       const itemMsg = result.item ? ` + ${result.item.icon} ${result.item.name}` : ''
+      const xpMsg = result.xp > 0 ? ` + ✨${result.xp} XP` : ''
       useWorldChatStore.getState().addSystemMessage(
-        `💀 ${result.mobName} derrotado — +${formatCurrency(result.coins)}${itemMsg}`,
+        `💀 ${result.mobName} derrotado${critTag} — +${formatCurrency(result.coins)}${xpMsg}${itemMsg}`,
       )
     } else {
       useWorldChatStore.getState().addSystemMessage(
-        `${label} a ${result.mobName} por ${result.damage} (${result.hp}/${result.maxHp} HP)`,
+        `${label} a ${result.mobName} por ${result.damage}${critTag} (${result.hp}/${result.maxHp} HP)`,
       )
     }
   }, [])
 
+  // Daño base + crítico base de la clase activa, para golpe y habilidades —
+  // seguimos sin un sistema real de stats de arma/poder de ataque como el de
+  // world-of-claudecraft, así que 'power'/'creativity' (ya en useGameStore)
+  // hacen de aproximación. Lo que SÍ es real es cómo se aplica: ver
+  // combatFormulas.js (armadura, fallo, crítico, XP portados de su motor).
+  const classDamageProfile = useCallback(() => {
+    const cls = PLAYER_CLASSES[playerClass]
+    return {
+      baseDamage: 8 + (cls?.stats?.power ?? 3) * 3,
+      baseCrit: 0.05 + (cls?.stats?.creativity ?? 2) * 0.01,
+    }
+  }, [playerClass])
+
   // Ejecuta lo que hace cada habilidad de la barra (1-8) al hacer clic — ver
   // SKILL_REGISTRY[id].effect y VrHud's SkillBar/SkillBtn (onUseSkill).
   // 'melee'/'ranged' dañan al monstruo más cercano (con proyectil visual para
-  // 'ranged'); 'utility' (sanación, escudos, transformaciones) todavía no
-  // tiene su propio sistema — el mundo VR aún no permite que un monstruo
-  // dañe al jugador, así que solo avisa en el chat por ahora.
+  // 'ranged', y con posibilidad real de fallar o de crítico); 'utility'
+  // (sanación, escudos, transformaciones) todavía no tiene su propio sistema
+  // — el mundo VR aún no permite que un monstruo dañe al jugador, así que
+  // solo avisa en el chat por ahora.
   const handleUseSkill = useCallback((skillId) => {
     const skill = SKILL_REGISTRY[skillId]
     const pos = playerPositionRef.current
@@ -2995,13 +3015,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       useWorldChatStore.getState().addSystemMessage(`${skill.icon} ${skill.name} — efecto próximamente (necesita daño entrante al jugador).`)
       return
     }
-    const damage = Math.round((8 + (PLAYER_CLASSES[playerClass]?.stats?.power ?? 3) * 3) * power)
+    const { baseDamage, baseCrit } = classDamageProfile()
     // Los hechizos a distancia alcanzan mucho más lejos que el golpe cuerpo a
     // cuerpo — si no, "a distancia" no significaba nada en la práctica.
     const range = kind === 'ranged' ? 16 : undefined
-    const result = useMobStore.getState().attackNearest(pos, damage, { color: skill.vfxColor, ranged: kind === 'ranged' }, range)
+    const result = useMobStore.getState().attackNearest(
+      pos, level, Math.round(baseDamage * power), baseCrit,
+      { color: skill.vfxColor, ranged: kind === 'ranged' }, range,
+    )
     reportAttackResult(result, `${skill.icon} ${skill.name}`)
-  }, [playerClass, reportAttackResult])
+  }, [level, classDamageProfile, reportAttackResult])
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
@@ -3013,12 +3036,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       sendAction(playerClass)
 
       // Combate v1: el "golpe" ahora hace daño real a los Bug de Código
-      // instanciados (ver MobField/useMobStore) — cada clase pega distinto
-      // según su stat de 'power'.
+      // instanciados (ver MobField/useMobStore), con fallo/crítico/armadura
+      // reales — cada clase pega distinto según su stat de 'power'.
       const pos = playerPositionRef.current
       if (!pos) return
-      const damage = 8 + (PLAYER_CLASSES[playerClass]?.stats?.power ?? 3) * 3
-      const result = useMobStore.getState().attackNearest(pos, damage)
+      const { baseDamage, baseCrit } = classDamageProfile()
+      const result = useMobStore.getState().attackNearest(pos, level, baseDamage, baseCrit)
       reportAttackResult(result, '⚔️ Golpeaste')
     },
     onUseWeapon: () => {

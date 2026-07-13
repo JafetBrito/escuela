@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { getMobType } from '../data/mobRegistry'
+import { armorReduction, meleeMissChance, critChance, mobXpValue } from '../data/combatFormulas'
 import { useCurrencyStore } from './useCurrencyStore'
 import { useCollectionStore } from './useCollectionStore'
+import { useLevelStore } from './useLevelStore'
 
 // Combat v1 — monstruos instanciados por jugador (cada quien ve/pelea los
 // suyos, sin sincronizar por Supabase: decisión tomada con el usuario para
@@ -64,17 +66,21 @@ export const useMobStore = create((set, get) => ({
     }))
   },
 
-  // Golpea al monstruo vivo más cercano dentro de rango. Devuelve
-  // { ok:false, reason:'cooldown'|'no-target' } si no golpeó a nada — el
-  // llamador (VRPage's handleUseSkill/onAttack) usa `reason` para avisarle al
-  // jugador por qué no pasó nada, en vez de fallar en silencio (era el bug:
-  // fuera de rango no hacía NADA, ni un mensaje, y parecía que la habilidad
-  // simplemente no funcionaba). `range` por defecto es el de golpe cuerpo a
-  // cuerpo — los hechizos a distancia pasan uno mayor (ver VRPage.jsx).
-  // `vfx` (opcional) dispara un efecto visual: { color, ranged } — si
-  // `ranged` es true, se ve un proyectil viajar desde el jugador hasta el
-  // monstruo (ver MobField.jsx).
-  attackNearest: (playerPos, damage, vfx, range = ATTACK_RANGE) => {
+  // Golpea al monstruo vivo más cercano dentro de rango — usando las fórmulas
+  // REALES portadas de world-of-claudecraft (combatFormulas.js): puede FALLAR
+  // (meleeMissChance), puede ser CRÍTICO (critChance, x2 daño), y el daño final
+  // se reduce por la armadura del monstruo con su fórmula real de mitigación
+  // (armorReduction). Al matar, la XP también sale de su fórmula real
+  // (mobXpValue) — antes esto solo daba monedas, nunca experiencia.
+  //
+  // Devuelve { ok:false, reason:'cooldown'|'no-target' } si no golpeó a nada —
+  // el llamador (VRPage's handleUseSkill/onAttack) usa `reason` para avisarle
+  // al jugador por qué no pasó nada, en vez de fallar en silencio (era el bug:
+  // fuera de rango no hacía NADA, ni un mensaje). `range` por defecto es el de
+  // golpe cuerpo a cuerpo — los hechizos a distancia pasan uno mayor (ver
+  // VRPage.jsx). `vfx` (opcional) dispara un efecto visual: { color, ranged } —
+  // si `ranged` es true, se ve un proyectil viajar del jugador al monstruo.
+  attackNearest: (playerPos, playerLevel, baseDamage, baseCrit, vfx, range = ATTACK_RANGE) => {
     const now = Date.now()
     if (now - get().lastAttackAt < ATTACK_COOLDOWN_MS) return { ok: false, reason: 'cooldown' }
 
@@ -91,6 +97,20 @@ export const useMobStore = create((set, get) => ({
     if (!closest) return { ok: false, reason: 'no-target' }
 
     set({ lastAttackAt: now })
+    const type = getMobType(closest.typeId)
+
+    // 1) ¿Falla el golpe? (meleeMissChance real: sube mucho contra algo de
+    // nivel más alto que tú, casi nunca falla contra algo muy por debajo).
+    if (Math.random() < meleeMissChance(playerLevel, type.level)) {
+      return { ok: true, killed: false, missed: true, mobName: type.name }
+    }
+
+    // 2) ¿Crítico? (critChance real: se reduce contra algo de nivel más alto).
+    const crit = Math.random() < critChance(baseCrit, playerLevel, type.level)
+    let dmg = crit ? baseDamage * 2 : baseDamage
+
+    // 3) Mitigación por armadura del monstruo (fórmula real de WoW clásico).
+    dmg = Math.max(1, Math.round(dmg * (1 - armorReduction(type.armor, playerLevel))))
 
     if (vfx) {
       get().fireEffect({
@@ -101,8 +121,7 @@ export const useMobStore = create((set, get) => ({
       })
     }
 
-    const type = getMobType(closest.typeId)
-    const newHp = Math.max(0, closest.hp - damage)
+    const newHp = Math.max(0, closest.hp - dmg)
     const killed = newHp <= 0
 
     set((state) => ({
@@ -113,15 +132,27 @@ export const useMobStore = create((set, get) => ({
       ),
     }))
 
-    if (!killed) return { ok: true, killed: false, mobName: type.name, damage, hp: newHp, maxHp: type.maxHp }
+    if (!killed) return { ok: true, killed: false, mobName: type.name, damage: dmg, crit, hp: newHp, maxHp: type.maxHp }
 
-    const coins = type.lootCoinsMin + Math.floor(Math.random() * (type.lootCoinsMax - type.lootCoinsMin + 1))
-    useCurrencyStore.getState().earnCoins(coins)
+    const xp = mobXpValue(type.level, playerLevel)
+    if (xp > 0) useLevelStore.getState().addXp(xp)
+
+    // Tabla de loot real: cada entrada se tira INDEPENDIENTE (no "una sola
+    // cosa al azar") — así una moneda garantizada y un objeto raro pueden caer
+    // los dos en la misma muerte, o ninguno de los dos si la suerte no ayuda.
+    let coins = 0
     let item = null
-    if (Math.random() < type.lootItemChance) {
-      item = type.lootItem
-      useCollectionStore.getState().addItem(item)
+    for (const entry of type.loot) {
+      if (Math.random() >= entry.chance) continue
+      if (entry.type === 'coins') {
+        coins += entry.min + Math.floor(Math.random() * (entry.max - entry.min + 1))
+      } else if (entry.type === 'item') {
+        item = entry.item
+      }
     }
-    return { ok: true, killed: true, mobName: type.name, damage, coins, item }
+    if (coins > 0) useCurrencyStore.getState().earnCoins(coins)
+    if (item) useCollectionStore.getState().addItem(item)
+
+    return { ok: true, killed: true, mobName: type.name, damage: dmg, crit, xp, coins, item }
   },
 }))
