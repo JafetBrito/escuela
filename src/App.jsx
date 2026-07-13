@@ -19,6 +19,7 @@ import CreateAccountPage from './components/checkout/CreateAccountPage'
 import LoginPage from './components/auth/LoginPage'
 import PortalPage from './components/portal/PortalPage'
 import DashboardPage from './components/dashboard/DashboardPage'
+import SchoolPage from './components/dashboard/SchoolPage'
 import ShopPage from './components/shop/ShopPage'
 import SettingsPage from './components/settings/SettingsPage'
 import GamesPage from './components/games/GamesPage'
@@ -36,6 +37,7 @@ import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
 import { useHolidayStore } from './stores/useHolidayStore'
+import { useDayNightStore } from './stores/useDayNightStore'
 import { useEffect } from 'react'
 
 /**
@@ -103,8 +105,13 @@ function SyncErrorBanner() {
 
 export default function App() {
   const openBookId = useLibraryStore((s) => s.openBookId)
-  // Load holiday theme from Supabase so the CSS body class is applied everywhere.
-  useEffect(() => { useHolidayStore.getState().load() }, [])
+  // Load holiday theme + world hour/season/weather from Supabase so both are
+  // applied everywhere and survive the admin's own reload, not just the live
+  // in-VR broadcast (see useDayNightStore.persistWorldState).
+  useEffect(() => {
+    useHolidayStore.getState().load()
+    useDayNightStore.getState().load()
+  }, [])
 
   return (
     <BrowserRouter>
@@ -173,7 +180,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
+        <Route
+          path="/escuela/:slug"
+          element={
+            <ProtectedRoute>
+              <SchoolPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/mascota"
           element={
@@ -418,6 +434,16 @@ export default function App() {
             <ProtectedRoute requireTutorial>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage graffitiMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vr/pruebas"
+          element={
+            <ProtectedRoute requireTutorial>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage testMode />
               </Suspense>
             </ProtectedRoute>
           }

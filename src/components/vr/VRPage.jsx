@@ -316,6 +316,42 @@ function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   )
 }
 
+// Mapa de Pruebas — terreno plano y simple (sin la malla real de campus.glb),
+// mismo Player/física/combate/NPCs/monstruos que el campus real. El bug de
+// "se traba cerca de los NPCs" viene del colisionador 'trimesh' de
+// CampusGlbWorld: calca la geometría EXACTA del modelo importado (escalones,
+// columnas de los NPCs, detalle arquitectónico), y eso es notoriamente
+// propenso a atascar un character controller de cápsula cuando roza bordes
+// finos. Un piso plano con un solo CuboidCollider no tiene ese problema —
+// además de ser justo lo pedido: un lugar liviano para probar sin cargar
+// toda la escuela.
+function TestGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
+  return (
+    <>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[200, 200]} />
+        <meshStandardMaterial color="#3a6b3a" />
+      </mesh>
+      <gridHelper args={[200, 40, '#5a8a5a', '#4a7a4a']} position={[0, 0.01, 0]} />
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[100, 0.5, 100]} position={[0, -0.5, 0]} />
+      </RigidBody>
+      <Player
+        mascot={mascot}
+        skin={skin}
+        groundRayHeight={20}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        spawnAt={[0, 0, 10]}
+      />
+    </>
+  )
+}
+
 // Test world for the GLB-import experiment: loads /st.glb through the same
 // hybrid pipeline as CityWorld, then adds the shared Player and an exit
 // portal back to /vr — proving a fully imported map works end-to-end with
@@ -1344,7 +1380,14 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
   })
 
   return (
-    <group ref={group}>
+    <group
+      ref={group}
+      onClick={(e) => {
+        e.stopPropagation()
+        useTargetStore.getState().setTarget('player', id)
+        onSelectPlayer?.({ id, name: player?.name || 'Viajero' })
+      }}
+    >
       <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
         <group scale={AVATAR_RELATIVE_SCALE}>
           <PlayerAvatarBody avatarId={player?.avatarId || 'hombre'} />
@@ -1362,6 +1405,7 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
           type="button"
           onClick={(e) => {
             e.stopPropagation()
+            useTargetStore.getState().setTarget('player', id)
             onSelectPlayer?.({ id, name: player?.name || 'Viajero' })
           }}
           className="cursor-pointer whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg transition-colors hover:bg-primary/30"
@@ -1818,7 +1862,36 @@ function World({
   anfiteatroMode,
   worldTreeMode,
   graffitiMode,
+  testMode,
 }) {
+  if (testMode) {
+    // ponytail: same NPCs/mobs as the real campus, just lined up on a flat
+    // test field so they're easy to walk between while testing — the real
+    // registries (vrNpcRegistry, mobRegistry) aren't touched, only the
+    // position each is rendered at here.
+    const linedNpcs = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, ...VR_NPCS].map((npc, i) => ({
+      ...npc,
+      position: [i * 4 - 12, 0, 0],
+    }))
+    return (
+      <>
+        <TestGroundWorld
+          mascot={mascot}
+          skin={skin}
+          keysRef={keysRef}
+          cameraRef={cameraRef}
+          playerPositionRef={playerPositionRef}
+          playerRotationRef={playerRotationRef}
+          authorName={authorName}
+          playerId={playerId}
+        />
+        {linedNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
+        <MobField />
+        <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
+      </>
+    )
+  }
+
   if (graffitiMode) {
     return (
       <GraffitiWorld
@@ -2132,6 +2205,7 @@ function NpcMissionCard({
 // world: lets them whisper that player or add/remove them as a friend
 // (friends then show up in the Amigos tab of MascotCompanion).
 function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
+  const [comingSoon, setComingSoon] = useState('')
   if (!player) return null
 
   return (
@@ -2157,6 +2231,31 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
         >
           {isFriend ? '✖️ Quitar amigo' : '➕ Agregar amigo'}
         </button>
+        {/* ponytail: seguir/colocar ícono piden pathing y un sistema de marcadores
+            propio — placeholders honestos en lo que se justifica construirlos,
+            mismo patrón que el botón de Arena. */}
+        <button
+          type="button"
+          onClick={() => setComingSoon('Inspeccionar equipo llega pronto 🔍')}
+          className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
+        >
+          🔍 Inspeccionar
+        </button>
+        <button
+          type="button"
+          onClick={() => setComingSoon('Seguir jugadores llega pronto 🚶')}
+          className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
+        >
+          🚶 Seguir
+        </button>
+        <button
+          type="button"
+          onClick={() => setComingSoon('Los íconos de marcador llegan pronto 🔖')}
+          className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
+        >
+          🔖 Colocar ícono
+        </button>
+        {comingSoon && <p className="text-center text-xs text-text-muted">{comingSoon}</p>}
       </div>
     </div>
   )
@@ -2721,7 +2820,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode / graffitiMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, graffitiMode = false }) {
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, graffitiMode = false, testMode = false }) {
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -2746,7 +2845,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || graffitiMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || graffitiMode || testMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
   // Admin's hour/season/weather (DevToolsPanel) is mirrored to every
   // connected player via VR presence — see useVrMultiplayer's worldState
@@ -3173,6 +3272,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               roomMode={roomMode}
               anfiteatroMode={anfiteatroMode}
               graffitiMode={graffitiMode}
+              testMode={testMode}
             />
             {/* Parked companion mesh when follow mode is off */}
             <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
@@ -3287,7 +3387,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           />
         )}
 
-        {!isPrivateWorld && selectedPlayer && (
+        {selectedPlayer && (
           <PlayerMenu
             player={selectedPlayer}
             isFriend={friends.includes(selectedPlayer.name)}

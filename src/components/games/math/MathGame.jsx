@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { MATH_LEVELS, calcStars } from '../../../data/mathLevels'
+import { MATH_CATEGORIES, calcStars } from '../../../data/mathLevels'
 import { useCurrencyStore } from '../../../stores/useCurrencyStore'
 import { useLevelStore } from '../../../stores/useLevelStore'
 
@@ -10,10 +10,15 @@ const saveProgress = (lvlId, stars) => {
   const p = loadProgress()
   if ((p[lvlId] ?? 0) < stars) localStorage.setItem(LS_KEY, JSON.stringify({ ...p, [lvlId]: stars }))
 }
-const isUnlocked = (lvlId, progress) => lvlId === 1 || (progress[lvlId - 1] ?? 0) >= 1
+// El primer nivel de cada categoría siempre está abierto; los siguientes piden
+// al menos 1 estrella en el nivel anterior de esa misma categoría.
+const isUnlocked = (category, levelIndex, progress) =>
+  levelIndex === 0 || (progress[category.levels[levelIndex - 1].id] ?? 0) >= 1
 
 // ── Problem generation ────────────────────────────────────────────────────────
 function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a }
+
+const PCT_VALUES = [10, 20, 25, 50, 75]
 
 function generateProblem(level) {
   const op = level.ops[Math.floor(Math.random() * level.ops.length)]
@@ -22,7 +27,20 @@ function generateProblem(level) {
   if (op === '+') { a = rand(min, max); b = rand(min, max); answer = a + b }
   else if (op === '-') { a = rand(min + 1, max); b = rand(min, a); answer = a - b }
   else if (op === '×') { a = rand(min, max); b = rand(min, max); answer = a * b }
-  else { b = rand(min, max); answer = rand(min, max); a = b * answer } // ÷ always exact
+  else if (op === '÷') { b = rand(min, max); answer = rand(min, max); a = b * answer } // always exact
+  else if (op === 'frac') {
+    // Suma de fracciones con el mismo denominador — sin reducir, para que se
+    // vea claramente de dónde sale (reducir sería un segundo tema en sí mismo).
+    const d = rand(Math.max(4, min), max)
+    const n1 = rand(1, d - 2)
+    const n2 = rand(1, d - n1 - 1)
+    return { text: `${n1}/${d}  +  ${n2}/${d}`, answer: `${n1 + n2}/${d}`, isFrac: true, fracD: d, fracSum: n1 + n2 }
+  } else { // '%'
+    const pctValues = level.pctValues ?? PCT_VALUES
+    const p = pctValues[rand(0, pctValues.length - 1)]
+    const n = rand(1, 10) * 20 // múltiplo de 20: exacto para todos los % que usamos
+    return { text: `${p}% de ${n}`, answer: Math.round((p * n) / 100) }
+  }
   return { text: `${a}  ${op}  ${b}`, answer }
 }
 
@@ -42,19 +60,69 @@ function generateOptions(answer) {
   return [...opts].sort(() => Math.random() - 0.5)
 }
 
-// ── Level Select ──────────────────────────────────────────────────────────────
-function LevelSelect({ progress, onSelect }) {
+function generateFracOptions(problem) {
+  const { fracSum: sum, fracD: d } = problem
+  const opts = new Set([`${sum}/${d}`])
+  for (const delta of [-1, 1, -2, 2]) {
+    if (opts.size >= 4) break
+    const v = sum + delta
+    if (v >= 1 && v < d) opts.add(`${v}/${d}`)
+  }
+  let dv = d + 1
+  while (opts.size < 4) { opts.add(`${sum}/${dv}`); dv++ }
+  return [...opts].sort(() => Math.random() - 0.5)
+}
+
+// ── Category Select ───────────────────────────────────────────────────────────
+function CategorySelect({ progress, onSelect }) {
   return (
     <div className="flex flex-col items-center gap-6 p-6 w-full max-w-lg mx-auto">
       <div className="text-center">
         <div className="text-5xl mb-2">🧮</div>
         <h1 className="text-2xl font-black text-text">Mazmorra Matemática</h1>
-        <p className="text-sm text-text-muted mt-1">Derrota a los monstruos resolviendo operaciones</p>
+        <p className="text-sm text-text-muted mt-1">Elige una categoría y derrota a sus monstruos</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 w-full">
-        {MATH_LEVELS.map((level) => {
-          const unlocked = isUnlocked(level.id, progress)
+        {MATH_CATEGORIES.map((cat) => {
+          const totalStars = cat.levels.reduce((s, l) => s + (progress[l.id] ?? 0), 0)
+          const maxStars = cat.levels.length * 3
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onSelect(cat)}
+              className="relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-95 cursor-pointer"
+              style={{ borderColor: cat.color + '55', background: cat.bg }}
+            >
+              <span className="text-4xl">{cat.icon}</span>
+              <p className="text-sm font-bold text-text leading-tight">{cat.title}</p>
+              <p className="text-[10px] text-text-muted">{cat.levels.length} niveles</p>
+              <div className="flex gap-0.5 text-xs">
+                {Array.from({ length: maxStars }).map((_, i) => (
+                  <span key={i} className={i < totalStars ? 'text-amber-400' : 'text-white/15'}>★</span>
+                ))}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Level Select ──────────────────────────────────────────────────────────────
+function LevelSelect({ category, progress, onSelect, onBack }) {
+  return (
+    <div className="flex flex-col items-center gap-6 p-6 w-full max-w-lg mx-auto">
+      <div className="text-center">
+        <span className="text-5xl">{category.icon}</span>
+        <h1 className="text-xl font-black text-text mt-2">{category.title}</h1>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 w-full">
+        {category.levels.map((level, idx) => {
+          const unlocked = isUnlocked(category, idx, progress)
           const stars    = progress[level.id] ?? 0
           const { enemy } = level
           return (
@@ -77,10 +145,7 @@ function LevelSelect({ progress, onSelect }) {
                 <span className="absolute top-2 right-2 text-lg">🔒</span>
               )}
               <span className="text-4xl">{enemy.emoji}</span>
-              <div>
-                <p className="text-xs font-semibold text-text-muted">{level.floor}</p>
-                <p className="text-sm font-bold text-text leading-tight">{level.title}</p>
-              </div>
+              <p className="text-sm font-bold text-text leading-tight">{level.title}</p>
               <div className="flex gap-0.5 text-sm">
                 {[1, 2, 3].map((s) => (
                   <span key={s} className={stars >= s ? 'text-amber-400' : 'text-white/15'}>★</span>
@@ -95,6 +160,10 @@ function LevelSelect({ progress, onSelect }) {
           )
         })}
       </div>
+
+      <button type="button" onClick={onBack} className="text-xs text-text-muted hover:text-text py-1">
+        ← Elegir categoría
+      </button>
     </div>
   )
 }
@@ -122,7 +191,7 @@ function Playing({ level, onFinish }) {
   const [timeLeft, setTimeLeft] = useState(level.timeSecs)
   const [feedback, setFeedback] = useState(null) // 'correct' | 'wrong'
   const [problem,  setProblem]  = useState(() => generateProblem(level))
-  const [options,  setOptions]  = useState(() => generateOptions(generateProblem(level).answer))
+  const [options,  setOptions]  = useState(() => (problem.isFrac ? generateFracOptions(problem) : generateOptions(problem.answer)))
   const [locked,   setLocked]   = useState(false)
   const timerRef = useRef(null)
 
@@ -130,7 +199,7 @@ function Playing({ level, onFinish }) {
   useEffect(() => {
     const p = generateProblem(level)
     setProblem(p)
-    setOptions(generateOptions(p.answer))
+    setOptions(p.isFrac ? generateFracOptions(p) : generateOptions(p.answer))
     setTimeLeft(level.timeSecs)
     setLocked(false)
     setFeedback(null)
@@ -200,7 +269,6 @@ function Playing({ level, onFinish }) {
           ))}
         </div>
         <div className="text-center">
-          <span className="text-xs text-text-muted">{level.floor} · </span>
           <span className="font-bold text-text">{qIdx + 1}/{total}</span>
         </div>
         {comboMult > 1
@@ -211,6 +279,10 @@ function Playing({ level, onFinish }) {
 
       {/* Timer */}
       <TimerBar pct={timeLeft / level.timeSecs} />
+
+      {level.fact && (
+        <p className="text-center text-[11px] italic text-text-muted leading-snug">💡 {level.fact}</p>
+      )}
 
       {/* Enemy + question */}
       <div className="flex flex-col items-center gap-3 py-4">
@@ -252,7 +324,7 @@ function Playing({ level, onFinish }) {
 }
 
 // ── Results Phase ─────────────────────────────────────────────────────────────
-function Results({ level, correct, heartsLeft, onReplay, onSelect }) {
+function Results({ category, level, correct, heartsLeft, onReplay, onSelectLevel, onBackToLevels }) {
   const earnCoins = useCurrencyStore((s) => s.earnCoins)
   const addXp     = useLevelStore((s) => s.addXp)
   const stars     = calcStars(level, correct)
@@ -267,7 +339,8 @@ function Results({ level, correct, heartsLeft, onReplay, onSelect }) {
     }
   }, []) // eslint-disable-line
 
-  const nextLevel = MATH_LEVELS.find((l) => l.id === level.id + 1)
+  const levelIdx = category.levels.findIndex((l) => l.id === level.id)
+  const nextLevel = category.levels[levelIdx + 1]
 
   return (
     <div className="flex flex-col items-center gap-6 p-6 w-full max-w-sm mx-auto text-center">
@@ -301,12 +374,12 @@ function Results({ level, correct, heartsLeft, onReplay, onSelect }) {
           🔄 Reintentar
         </button>
         {nextLevel && stars > 0 && (
-          <button type="button" onClick={() => onSelect(nextLevel)}
+          <button type="button" onClick={() => onSelectLevel(nextLevel)}
             className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-text-muted hover:text-text">
             Siguiente: {nextLevel.enemy.emoji} {nextLevel.title} →
           </button>
         )}
-        <button type="button" onClick={() => onSelect(null)}
+        <button type="button" onClick={onBackToLevels}
           className="text-xs text-text-muted hover:text-text py-1">
           ← Elegir nivel
         </button>
@@ -326,13 +399,15 @@ function Stat({ label, value, color }) {
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 export default function MathGame() {
-  const [progress,      setProgress]      = useState(loadProgress)
-  const [selectedLevel, setSelectedLevel] = useState(null)
-  const [phase,         setPhase]         = useState('select') // 'select' | 'playing' | 'results'
-  const [results,       setResults]       = useState(null)
+  const [progress,        setProgress]        = useState(loadProgress)
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [selectedLevel,   setSelectedLevel]   = useState(null)
+  const [phase,           setPhase]           = useState('categories') // categories | levels | playing | results
+  const [results,         setResults]         = useState(null)
 
-  const handleSelect = (level) => {
-    if (!level) { setPhase('select'); setSelectedLevel(null); return }
+  const handleSelectCategory = (cat) => { setSelectedCategory(cat); setPhase('levels') }
+
+  const handleSelectLevel = (level) => {
     setSelectedLevel(level)
     setPhase('playing')
     setResults(null)
@@ -348,8 +423,16 @@ export default function MathGame() {
 
   return (
     <div className="flex min-h-full flex-col items-center justify-start bg-background py-4 overflow-y-auto">
-      {phase === 'select' && (
-        <LevelSelect progress={progress} onSelect={handleSelect} />
+      {phase === 'categories' && (
+        <CategorySelect progress={progress} onSelect={handleSelectCategory} />
+      )}
+      {phase === 'levels' && selectedCategory && (
+        <LevelSelect
+          category={selectedCategory}
+          progress={progress}
+          onSelect={handleSelectLevel}
+          onBack={() => setPhase('categories')}
+        />
       )}
       {phase === 'playing' && selectedLevel && (
         <Playing
@@ -358,13 +441,15 @@ export default function MathGame() {
           onFinish={handleFinish}
         />
       )}
-      {phase === 'results' && results && (
+      {phase === 'results' && results && selectedCategory && selectedLevel && (
         <Results
+          category={selectedCategory}
           level={selectedLevel}
           correct={results.correct}
           heartsLeft={results.heartsLeft}
-          onReplay={() => handleSelect(selectedLevel)}
-          onSelect={handleSelect}
+          onReplay={() => handleSelectLevel(selectedLevel)}
+          onSelectLevel={handleSelectLevel}
+          onBackToLevels={() => setPhase('levels')}
         />
       )}
     </div>

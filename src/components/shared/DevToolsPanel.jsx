@@ -5,13 +5,17 @@ import { useGameStore } from '../../stores/useGameStore'
 import { useSyncStatusStore } from '../../stores/useSyncStatusStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useDayNightStore } from '../../stores/useDayNightStore'
-import { useDevCalibrationStore } from '../../stores/useDevCalibrationStore'
+import { useAdminThemeStore } from '../../stores/useAdminThemeStore'
 import { useLevelStore, levelProgress, MAX_LEVEL } from '../../stores/useLevelStore'
 import { useTutorialStore } from '../../stores/useTutorialStore'
+import { useMobStore } from '../../stores/useMobStore'
 import { TUTORIAL_MISSIONS } from '../../data/tutorialMissions'
-import { setVoicePermission } from '../../services/admin/gmCommands'
+import { MOB_TYPES } from '../../data/mobRegistry'
+import { SHOP_ITEMS, SHOP_CATEGORIES } from '../../data/shopRegistry'
+import { findPlayers, runGmCommand, SELF_TARGET, setVoicePermission } from '../../services/admin/gmCommands'
 import { pushSnapshotToCloud } from '../../services/persistence/autoSave'
 import { useHolidayStore, HOLIDAYS } from '../../stores/useHolidayStore'
+import { useDraggablePopup } from '../../hooks/useDraggablePopup'
 import GmConsole from './GmConsole'
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -19,6 +23,7 @@ import GmConsole from './GmConsole'
 const XP_TEST_AMOUNTS = [500, 2500, 5000]
 const SEASONS = ['primavera', 'verano', 'otoño', 'invierno']
 const WEATHERS = ['despejado', 'nublado', 'lluvia']
+const NPC_SPAWN_FALLBACK = [0, 0, -48] // cerca del spawn del Gran Aula
 
 const SYNC_LABEL = {
   idle: '⚪ Sin sincronizar',
@@ -57,6 +62,7 @@ const NAV_GROUPS = [
       { to: '/vr/anfiteatro',   label: '🥽 Anfiteatro' },
       { to: '/vr/graffiti',     label: '🥽 Graffiti' },
       { to: '/vr/cueva-platon', label: '🥽 Cueva de Platón' },
+      { to: '/vr/pruebas',      label: '🧪 Mapa de Pruebas' },
     ],
   },
   {
@@ -69,12 +75,23 @@ const NAV_GROUPS = [
   },
 ]
 
-// ─── Section wrapper ────────────────────────────────────────────────────────
-function Section({ title, children }) {
+// ─── Accordion section ──────────────────────────────────────────────────────
+// Todo el panel es un acordeón: cada sección arranca cerrada y se abre/cierra
+// independiente de las demás — así el panel no es una lista gigante siempre
+// desplegada (queja original: "ya tiene muchas cosas... tiene que verse mejor").
+function AccordionSection({ id, title, openId, setOpenId, children }) {
+  const isOpen = openId === id
   return (
-    <div className="mb-2 rounded-lg border border-border/60 bg-surface-hover px-2 py-1.5">
-      <p className="mb-1 text-xs font-semibold text-text-muted">{title}</p>
-      {children}
+    <div className="mb-1.5 overflow-hidden rounded-lg border border-border/60 bg-surface-hover">
+      <button
+        type="button"
+        onClick={() => setOpenId(isOpen ? null : id)}
+        className="flex w-full items-center justify-between px-2 py-1.5 text-left text-xs font-semibold text-text-muted hover:text-text"
+      >
+        <span>{title}</span>
+        <span className="text-[10px]">{isOpen ? '▲' : '▼'}</span>
+      </button>
+      {isOpen && <div className="border-t border-border/40 px-2 py-1.5">{children}</div>}
     </div>
   )
 }
@@ -84,6 +101,7 @@ export default function DevToolsPanel() {
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [openSection, setOpenSection] = useState(null)
   const [consoleOpen, setConsoleOpen] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const syncStatus = useSyncStatusStore((s) => s.status)
@@ -100,9 +118,25 @@ export default function DevToolsPanel() {
   const weather = useDayNightStore((s) => s.weather)
   const xp = useLevelStore((s) => s.xp)
   const { level, isMaxLevel } = levelProgress(xp)
-  const avatarOverride = useDevCalibrationStore((s) => s.avatarRotationOverride)
   const activeHoliday = useHolidayStore((s) => s.activeHoliday)
   const setHoliday = useHolidayStore((s) => s.set)
+  const hackerThemeEnabled = useAdminThemeStore((s) => s.enabled)
+  const toggleHackerTheme = useAdminThemeStore((s) => s.toggle)
+
+  // Dar objeto — a mí o a otro jugador (mismo /additem que la Consola GM,
+  // pero con una cuadrícula buscable en vez de tener que saber el id de memoria).
+  const [giveTarget, setGiveTarget] = useState({ id: SELF_TARGET, label: 'yo (tú)' })
+  const [giveTargetQuery, setGiveTargetQuery] = useState('')
+  const [giveSearch, setGiveSearch] = useState('')
+  const [giveBusy, setGiveBusy] = useState(false)
+  const [giveMsg, setGiveMsg] = useState('')
+
+  // Agregar NPC — coloca un monstruo cerca del spawn del campus (mismo
+  // /npcadd de la Consola GM); no depende de dónde esté parado el admin
+  // porque este panel vive fuera del mundo VR también.
+  const [npcMsg, setNpcMsg] = useState('')
+
+  const { elRef, style, onPointerDown } = useDraggablePopup('admin-devtools')
 
   if (!isAdmin?.()) return null
 
@@ -144,13 +178,46 @@ export default function DevToolsPanel() {
     navigate('/vr-templo')
   }
 
-  return (
-    <div className="fixed bottom-4 left-4 z-[999]">
-      {open && (
-        <div className="mb-2 max-h-[80vh] w-64 overflow-y-auto rounded-xl border border-border bg-surface/95 p-2 text-sm shadow-xl backdrop-blur">
+  const handleGiveTargetSearch = async () => {
+    const query = giveTargetQuery.trim()
+    if (!query) { setGiveTarget({ id: SELF_TARGET, label: 'yo (tú)' }); return }
+    const players = await findPlayers(query)
+    if (!players.length) { setGiveMsg('❌ Sin resultados para ese jugador.'); return }
+    const p = players[0]
+    setGiveTarget({ id: p.id, label: `${p.display_name} <${p.email}>` })
+    setGiveMsg(`🎯 Objetivo: ${p.display_name}`)
+  }
 
-          {/* ── Sync ─────────────────────────────────────────────── */}
-          <Section title="☁️ Sincronización">
+  const handleGiveItem = async (itemId) => {
+    if (giveBusy) return
+    setGiveBusy(true)
+    try {
+      const msg = await runGmCommand(giveTarget.id, 'additem', [itemId])
+      setGiveMsg(`${msg} → ${giveTarget.label}`)
+    } catch (err) {
+      setGiveMsg(`❌ ${err.message}`)
+    } finally {
+      setGiveBusy(false)
+    }
+  }
+
+  const filteredShopItems = SHOP_ITEMS.filter((i) =>
+    i.name.toLowerCase().includes(giveSearch.toLowerCase()) || i.id.includes(giveSearch.toLowerCase()),
+  )
+
+  const handleAddNpc = (typeId) => {
+    const type = MOB_TYPES[typeId]
+    useMobStore.getState().spawnAt(typeId, NPC_SPAWN_FALLBACK)
+    setNpcMsg(`✅ ${type.icon} ${type.name} colocado cerca del spawn del campus (entra a 🥽 Campus para verlo).`)
+  }
+
+  return (
+    <div ref={elRef} style={style} className="fixed bottom-4 left-4 z-[999]">
+      {open && (
+        <div className="mb-2 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-border bg-surface/95 p-2 text-sm shadow-xl backdrop-blur">
+
+          {/* ── Sync + Consola ───────────────────────────────────── */}
+          <AccordionSection id="sync" title="☁️ Sincronización" openId={openSection} setOpenId={setOpenSection}>
             <p className="text-xs text-text">{SYNC_LABEL[syncStatus]}</p>
             {lastSavedAt && (
               <p className="text-[10px] text-text-muted">
@@ -164,14 +231,78 @@ export default function DevToolsPanel() {
               className="mt-1 w-full rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-background disabled:opacity-50">
               {syncing ? 'Guardando…' : '🔄 Forzar guardado'}
             </button>
+          </AccordionSection>
+
+          {/* ── Consola GM ───────────────────────────────────────── */}
+          <AccordionSection id="console" title="🖥️ Consola de comandos" openId={openSection} setOpenId={setOpenSection}>
+            <p className="text-[10px] text-text-muted">
+              Ejecuta /additem, /addcoins, /setlevel, /npcadd, /target y más — abre la ventana de la consola para escribir comandos.
+            </p>
             <button type="button" onClick={() => { setConsoleOpen(true); setOpen(false) }}
               className="mt-1 w-full rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary">
-              🖥️ Consola GM
+              🖥️ Abrir Consola GM
             </button>
-          </Section>
+          </AccordionSection>
+
+          {/* ── Tema Admin (hacker theme on/off) ─────────────────── */}
+          <AccordionSection id="admin-theme" title="🎨 Tema Admin" openId={openSection} setOpenId={setOpenSection}>
+            <p className="text-[10px] text-text-muted">
+              El tema "hacker" que solo tú ves como admin. Puedes apagarlo si ya no lo necesitas ver.
+            </p>
+            <button type="button" onClick={toggleHackerTheme}
+              className="mt-1 w-full rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-background">
+              {hackerThemeEnabled ? '⚡ Tema hacker: ON' : '⚪ Tema hacker: OFF'}
+            </button>
+          </AccordionSection>
+
+          {/* ── Dar objeto ───────────────────────────────────────── */}
+          <AccordionSection id="give-item" title="🎁 Dar objeto" openId={openSection} setOpenId={setOpenSection}>
+            <p className="text-[10px] text-text-muted">Objetivo: <span className="font-semibold text-text">{giveTarget.label}</span></p>
+            <div className="mt-1 flex gap-1">
+              <input type="text" value={giveTargetQuery} onChange={(e) => setGiveTargetQuery(e.target.value)}
+                placeholder="correo o nombre (vacío = yo)"
+                className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-text outline-none focus:border-primary" />
+              <button type="button" onClick={handleGiveTargetSearch}
+                className="rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary">
+                🎯
+              </button>
+            </div>
+            <input type="text" value={giveSearch} onChange={(e) => setGiveSearch(e.target.value)}
+              placeholder="Buscar objeto…"
+              className="mt-1.5 w-full rounded-lg border border-border bg-background px-2 py-1 text-xs text-text outline-none focus:border-primary" />
+            <div className="mt-1.5 grid max-h-48 grid-cols-2 gap-1 overflow-y-auto">
+              {filteredShopItems.map((item) => (
+                <button key={item.id} type="button" disabled={giveBusy} onClick={() => handleGiveItem(item.id)}
+                  title={`${SHOP_CATEGORIES[item.category]?.label ?? item.category}`}
+                  className="flex items-center gap-1 rounded-lg border border-border px-1.5 py-1 text-left text-[11px] text-text hover:border-primary hover:bg-primary/10 disabled:opacity-50">
+                  <span>{item.icon}</span>
+                  <span className="truncate">{item.name}</span>
+                </button>
+              ))}
+              {filteredShopItems.length === 0 && (
+                <p className="col-span-2 py-2 text-center text-[10px] text-text-muted">Sin resultados.</p>
+              )}
+            </div>
+            {giveMsg && <p className="mt-1 text-[10px] text-text-muted">{giveMsg}</p>}
+          </AccordionSection>
+
+          {/* ── Agregar NPC ──────────────────────────────────────── */}
+          <AccordionSection id="add-npc" title="👹 Agregar NPC" openId={openSection} setOpenId={setOpenSection}>
+            <p className="text-[10px] text-text-muted">Coloca un monstruo instanciado cerca del spawn del Campus VR.</p>
+            <div className="mt-1.5 grid grid-cols-2 gap-1">
+              {Object.values(MOB_TYPES).map((type) => (
+                <button key={type.id} type="button" onClick={() => handleAddNpc(type.id)}
+                  className="flex items-center gap-1 rounded-lg border border-border px-1.5 py-1 text-left text-[11px] text-text hover:border-primary hover:bg-primary/10">
+                  <span>{type.icon}</span>
+                  <span className="truncate">{type.name}</span>
+                </button>
+              ))}
+            </div>
+            {npcMsg && <p className="mt-1 text-[10px] text-text-muted">{npcMsg}</p>}
+          </AccordionSection>
 
           {/* ── Tutorial ─────────────────────────────────────────── */}
-          <Section title="🎬 Tutorial — saltar a paso">
+          <AccordionSection id="tutorial" title="🎬 Tutorial — saltar a paso" openId={openSection} setOpenId={setOpenSection}>
             {TUTORIAL_MISSIONS.map((m) => (
               <button key={m.id} type="button" onClick={() => jumpToTutorialStep(m.id)}
                 className="block w-full rounded-lg px-2 py-1 text-left text-xs text-text hover:bg-primary/10">
@@ -182,10 +313,10 @@ export default function DevToolsPanel() {
               className="mt-1 w-full rounded-lg border border-border px-2 py-1 text-xs text-text-muted hover:bg-surface">
               ↺ Reiniciar tutorial
             </button>
-          </Section>
+          </AccordionSection>
 
           {/* ── XP ───────────────────────────────────────────────── */}
-          <Section title="⭐ Nivel y XP">
+          <AccordionSection id="xp" title="⭐ Nivel y XP" openId={openSection} setOpenId={setOpenSection}>
             <p className="text-[10px] text-text-muted">
               Nivel {level}{isMaxLevel && ` (máx. ${MAX_LEVEL})`}
             </p>
@@ -197,10 +328,10 @@ export default function DevToolsPanel() {
                 </button>
               ))}
             </div>
-          </Section>
+          </AccordionSection>
 
           {/* ── Voz ──────────────────────────────────────────────── */}
-          <Section title="🎙️ Voz">
+          <AccordionSection id="voice" title="🎙️ Voz" openId={openSection} setOpenId={setOpenSection}>
             <button type="button" onClick={toggleMyVoice}
               className="w-full rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-background">
               {myVoiceEnabled ? '🎙️ Mi voz: ON' : '🔇 Mi voz: OFF'}
@@ -220,12 +351,12 @@ export default function DevToolsPanel() {
               </button>
             </div>
             {voiceMsg && <p className="mt-1 text-[10px] text-text-muted">{voiceMsg}</p>}
-          </Section>
+          </AccordionSection>
 
           {/* ── Hora/Clima ───────────────────────────────────────── */}
-          <Section title="🌦️ Hora y Clima (campus VR)">
+          <AccordionSection id="daynight" title="🌦️ Hora y Clima (campus VR)" openId={openSection} setOpenId={setOpenSection}>
             <p className="text-[10px] text-text-muted">
-              {dnMode === 'real' ? '🟢 Hora real' : `🟠 Forzada: ${Math.floor(dnHour)}:00`}
+              {dnMode === 'real' ? '🟢 Hora real' : `🟠 Forzada: ${Math.floor(dnHour)}:00`} — se guarda para todos.
             </p>
             <div className="mt-1 flex items-center gap-1">
               <input type="range" min={0} max={23} step={1} value={Math.floor(dnHour)}
@@ -248,10 +379,10 @@ export default function DevToolsPanel() {
                 {WEATHERS.map((w) => <option key={w} value={w}>{w}</option>)}
               </select>
             </div>
-          </Section>
+          </AccordionSection>
 
           {/* ── Tema festivo ─────────────────────────────────────── */}
-          <Section title="🎉 Tema Festivo">
+          <AccordionSection id="holiday" title="🎉 Tema Festivo" openId={openSection} setOpenId={setOpenSection}>
             <p className="text-[10px] text-text-muted">
               Activo: <span className="font-bold text-text">{HOLIDAYS[activeHoliday]?.icon} {HOLIDAYS[activeHoliday]?.label}</span>
             </p>
@@ -271,51 +402,26 @@ export default function DevToolsPanel() {
                 </button>
               ))}
             </div>
-          </Section>
+          </AccordionSection>
 
-          {/* ── Avatar calibration ───────────────────────────────── */}
-          <Section title="🧭 Calibrar giro del avatar">
-            <p className="text-[10px] text-text-muted">
-              Ajusta hasta ver la espalda del personaje al caminar.
-            </p>
-            <p className="mt-1 text-xs text-text">
-              Ajuste actual: {Math.round((avatarOverride * 180) / Math.PI)}°
-            </p>
-            <div className="mt-1 grid grid-cols-3 gap-1">
-              {[-90, -15, -5, 5, 15, 90].map((deg) => (
-                <button key={deg} type="button"
-                  onClick={() => useDevCalibrationStore.getState().nudge((deg * Math.PI) / 180)}
-                  className="rounded-lg border border-primary/40 px-1 py-1 text-xs font-semibold text-primary">
-                  {deg > 0 ? `+${deg}°` : `${deg}°`}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={() => useDevCalibrationStore.getState().reset()}
-              className="mt-1 w-full rounded-lg border border-danger/40 px-1 py-1 text-xs font-semibold text-danger">
-              ↺ Reiniciar
-            </button>
-          </Section>
-
-          {/* ── Navigation ───────────────────────────────────────── */}
+          {/* ── Navigation (acordeón por grupo) ──────────────────── */}
           {NAV_GROUPS.map((group) => (
-            <div key={group.label} className="mb-1">
-              <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted/60">
-                {group.label}
-              </p>
+            <AccordionSection key={group.label} id={`nav-${group.label}`} title={group.label} openId={openSection} setOpenId={setOpenSection}>
               {group.links.map((l) => (
                 <Link key={l.to} to={l.to} onClick={() => setOpen(false)}
                   className="block rounded-lg px-2 py-1 text-xs text-text hover:bg-primary/10">
                   {l.label}
                 </Link>
               ))}
-            </div>
+            </AccordionSection>
           ))}
         </div>
       )}
 
-      <button type="button" onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface/95 text-lg shadow-xl backdrop-blur"
-        aria-label="Dev tools" title="Dev tools (admin)">
+      <button type="button" onClick={() => setOpen((v) => !v)} onPointerDown={onPointerDown}
+        style={{ touchAction: 'none' }}
+        className="flex h-10 w-10 cursor-grab items-center justify-center rounded-full border border-border bg-surface/95 text-lg shadow-xl backdrop-blur active:cursor-grabbing"
+        aria-label="Dev tools" title="Dev tools (admin) — arrastra para mover">
         🛠️
       </button>
 

@@ -252,7 +252,7 @@ function Sidebar({ tab, setTab, onClose }) {
 }
 
 // ── Course card (compact) ─────────────────────────────────────────────────────
-function CourseCard({ course, pct, owned, accent, onClick }) {
+export function CourseCard({ course, pct, owned, accent, onClick }) {
   const { t } = useI18n()
   return (
     <button
@@ -550,58 +550,40 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
 }
 
 // ── Tab: Escuelas ─────────────────────────────────────────────────────────────
-function EscuelasTab({ categories, progressByCourse, hasAccessToCourse, handleSelect }) {
+// Cada categoría ahora es una tarjeta que lleva a su propia página dedicada
+// (/escuela/:slug — ver SchoolPage.jsx) en vez de expandir la lista de cursos
+// aquí mismo: el conocimiento se especializa, una sola pantalla con título +
+// lista no alcanzaba a mostrar subcategorías ni el chat con el profesor.
+function EscuelasTab({ categories }) {
   const { t } = useI18n()
-  const [expanded, setExpanded] = useState(null)
+  const navigate = useNavigate()
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-black text-text mb-1">{t('dashboard.schoolsTitle')}</h1>
       <p className="text-sm text-text-muted mb-6">{t('dashboard.schoolsSubtitle')}</p>
 
-      <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         {categories.map(([category, cats]) => {
-          const meta   = CATEGORY_META[category] ?? CATEGORY_META.Otros
-          const isOpen = expanded === category
+          const meta = CATEGORY_META[category] ?? CATEGORY_META.Otros
           return (
-            <div key={category} className="rounded-2xl overflow-hidden border border-border">
-              {/* School header */}
-              <button
-                type="button"
-                onClick={() => setExpanded(isOpen ? null : category)}
-                className={`w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r ${meta.gradient} transition-opacity hover:opacity-95`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl drop-shadow-sm">{meta.icon}</span>
-                  <div className="text-left">
-                    <p className="text-base font-extrabold text-background drop-shadow-sm">{category}</p>
-                    <p className="text-xs font-medium text-background/70">
-                      {cats.length} {cats.length === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')}
-                    </p>
-                  </div>
+            <button
+              key={category}
+              type="button"
+              onClick={() => navigate(`/escuela/${meta.slug}`)}
+              className={`flex items-center justify-between rounded-2xl px-5 py-4 text-left bg-gradient-to-r ${meta.gradient} transition-transform hover:-translate-y-0.5 hover:opacity-95`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl drop-shadow-sm">{meta.icon}</span>
+                <div>
+                  <p className="text-base font-extrabold text-background drop-shadow-sm">{category}</p>
+                  <p className="text-xs font-medium text-background/70">
+                    {cats.length} {cats.length === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')}
+                  </p>
                 </div>
-                <span className="text-background/70 text-lg transition-transform duration-200"
-                  style={{ display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
-                  ▾
-                </span>
-              </button>
-
-              {/* Courses grid */}
-              {isOpen && (
-                <div className="p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-background">
-                  {cats.map((course) => (
-                    <CourseCard
-                      key={course.id}
-                      course={course}
-                      pct={progressByCourse(course.id)}
-                      owned={hasAccessToCourse(course.id)}
-                      accent={meta.accent}
-                      onClick={() => handleSelect(course)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+              <span className="text-background/70 text-lg">→</span>
+            </button>
           )
         })}
       </div>

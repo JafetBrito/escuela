@@ -132,6 +132,16 @@ export const GAMES = [
     reward: 220,
   },
   {
+    id: 'historia-matematicas',
+    title: 'Historia de las Matemáticas',
+    icon: '🏛️',
+    category: 'Matemáticas',
+    description: 'Viaja por un mapa cronológico y resuelve los mismos retos numéricos que inventaron los egipcios, y próximamente griegos, babilonios y más.',
+    type: 'component',
+    component: 'math-history',
+    reward: 260,
+  },
+  {
     id: 'geometria-puzzle',
     title: 'Puzzle de Geometría',
     icon: '📐',

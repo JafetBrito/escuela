@@ -7,8 +7,8 @@
   --color-surface: #1e293b;
   --color-surface-hover: #273449;
   --color-border: #334155;
-  --color-primary: #98ca3f;
-  --color-primary-hover: #86b336;
+  --color-primary: #f97316;
+  --color-primary-hover: #ea580c;
   --color-text: #f1f5f9;
   --color-text-muted: #94a3b8;
   --color-danger: #ef4444;
@@ -82,8 +82,8 @@ body {
   --color-surface: #ffffff;
   --color-surface-hover: #f1f5f9;
   --color-border: #e2e8f0;
-  --color-primary: #4f8a10;
-  --color-primary-hover: #3f6f0c;
+  --color-primary: #c2410c;
+  --color-primary-hover: #9a3412;
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-danger: #dc2626;

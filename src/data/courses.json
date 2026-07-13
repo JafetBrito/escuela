@@ -6,6 +6,7 @@
     "icon": "🧠",
     "color": "#98ca3f",
     "category": "Inteligencia Artificial",
+    "subcategory": "Herramientas de IA",
     "locked": false
   },
   {
@@ -15,6 +16,7 @@
     "icon": "🤖",
     "color": "#60a5fa",
     "category": "Inteligencia Artificial",
+    "subcategory": "Herramientas de IA",
     "locked": true
   },
   {
@@ -24,6 +26,7 @@
     "icon": "✨",
     "color": "#a78bfa",
     "category": "Inteligencia Artificial",
+    "subcategory": "Prompt Engineering",
     "locked": false
   },
   {
@@ -33,6 +36,7 @@
     "icon": "⏰",
     "color": "#fbbf24",
     "category": "Productividad",
+    "subcategory": "Hábitos",
     "locked": true
   },
   {
@@ -42,6 +46,7 @@
     "icon": "🗂️",
     "color": "#f472b6",
     "category": "Productividad",
+    "subcategory": "Herramientas",
     "locked": true
   },
   {
@@ -51,6 +56,7 @@
     "icon": "🎨",
     "color": "#34d399",
     "category": "Diseño",
+    "subcategory": "Fundamentos",
     "locked": true
   },
   {
@@ -60,6 +66,7 @@
     "icon": "🖌️",
     "color": "#f87171",
     "category": "Diseño",
+    "subcategory": "Herramientas",
     "locked": true
   },
   {
@@ -78,6 +85,7 @@
     "icon": "🧩",
     "color": "#fb923c",
     "category": "Programación",
+    "subcategory": "Fundamentos",
     "locked": true
   },
   {
@@ -87,6 +95,7 @@
     "icon": "🐍",
     "color": "#facc15",
     "category": "Programación",
+    "subcategory": "Fundamentos",
     "locked": true
   },
   {
@@ -96,6 +105,7 @@
     "icon": "🐚",
     "color": "#22c55e",
     "category": "Programación",
+    "subcategory": "Terminal y Sistemas",
     "locked": false
   },
   {
@@ -141,16 +151,17 @@
     "icon": "🧬",
     "color": "#4ade80",
     "category": "Ciencias",
+    "subcategory": "Ciencias de la Vida",
     "locked": true
   },
   {
     "id": "course-psicologia",
     "title": "Introducción a la Psicología",
-    "description": "Entiende cómo funciona la mente humana: emociones, comportamiento, memoria y aprendizaje. Con casos reales y aplicaciones cotidianas. Próximamente.",
+    "description": "Entiende cómo funciona la mente humana: emociones, comportamiento, memoria y aprendizaje. Un curso mayormente de lectura, con casos reales y aplicaciones cotidianas.",
     "icon": "🧠",
     "color": "#e879f9",
     "category": "Ciencias Sociales",
-    "locked": true
+    "locked": false
   },
   {
     "id": "course-historia",
@@ -168,6 +179,7 @@
     "icon": "📐",
     "color": "#60a5fa",
     "category": "Matemáticas",
+    "subcategory": "Fundamentos",
     "locked": true
   },
   {
@@ -177,6 +189,7 @@
     "icon": "∞",
     "color": "#818cf8",
     "category": "Matemáticas",
+    "subcategory": "Historia de las Matemáticas",
     "locked": false
   },
   {
@@ -186,6 +199,7 @@
     "icon": "🩺",
     "color": "#34d399",
     "category": "Ciencias",
+    "subcategory": "Ciencias de la Vida",
     "locked": false
   }
 ]

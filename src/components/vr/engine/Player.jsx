@@ -47,6 +47,9 @@ import {
 // first hit going down from above is the ceiling, which used to snap the
 // player up there permanently instead of onto the real floor.
 export function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
+  // ponytail: worlds with a flat physics-only floor (no visual scenery mesh,
+  // e.g. the Test Map) pass no scenery at all — flat ground is y=0 anyway.
+  if (!scenery) return 0
   raycaster.set(new THREE.Vector3(x, groundRayHeight, z), DOWN)
   const hits = raycaster.intersectObject(scenery, true).filter((h) => h.object.userData.isFloor)
   if (!hits.length) return 0
@@ -57,7 +60,7 @@ export function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
 // walls/objects in the way. Returns true if movement of `distance` along
 // `direction` would walk into something.
 export function isBlocked(raycaster, scenery, origin, direction, distance) {
-  if (distance <= 0) return false
+  if (distance <= 0 || !scenery) return false
   raycaster.set(origin, direction)
   const hits = raycaster.intersectObject(scenery, true)
   return hits.length > 0 && hits[0].distance < COLLISION_RADIUS + distance

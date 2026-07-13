@@ -1,9 +1,15 @@
 // Generic "MISIONES" template applied to every module. Every module gets the
-// same three base mission types (quiz/chat/item), completed using the
-// mascot AI (chat) and the player's objetos (items). Modules can override the
-// label/hint of the chat and item missions via `module.missions`, and add
-// extra "misiones divertidas" tied to their own content via
-// `module.funMissions` (each can grant its own collectible "objeto").
+// same two base mission types (quiz/chat), completed via the reto de
+// conocimiento and the mascot AI. Modules can override the label/hint of the
+// chat mission via `module.missions`, and add extra "misiones divertidas"
+// tied to their own content via `module.funMissions` (each can grant its own
+// collectible "objeto").
+//
+// ponytail: there used to be a third default type, 'item' ("Activa un objeto
+// de tu inventario") — it had no completion wiring anywhere (nothing ever
+// marked it done), so it showed up as a permanently-stuck mission on every
+// course. Removed globally instead of trying to patch it, since it was only
+// ever meant for the old test course and added nothing elsewhere.
 export const MISSION_TYPES = {
   quiz: {
     icon: '🧩',
@@ -29,18 +35,6 @@ export const MISSION_TYPES = {
       description: 'Obtenido al hablar con tu mascota sobre una clase.',
     },
   },
-  item: {
-    icon: '🎒',
-    label: 'Activa un objeto de tu inventario',
-    reward: 1500,
-    itemReward: {
-      id: 'chispa-objeto',
-      name: 'Chispa de Objeto',
-      icon: '✨',
-      rarity: 'common',
-      description: 'Obtenida al activar uno de tus objetos durante una clase.',
-    },
-  },
 }
 
 export function getModuleMissions(module) {
@@ -52,9 +46,6 @@ export function getModuleMissions(module) {
   }
   if (!module?.noChat) {
     missions.push({ id: 'chat', type: 'chat', ...MISSION_TYPES.chat, ...(overrides.chat ?? {}) })
-  }
-  if (!module?.noItem) {
-    missions.push({ id: 'item', type: 'item', ...MISSION_TYPES.item, ...(overrides.item ?? {}) })
   }
 
   for (const fun of module?.funMissions ?? []) {

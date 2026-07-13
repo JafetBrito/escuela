@@ -1,5 +1,6 @@
 import { useTargetStore } from '../../stores/useTargetStore'
 import { useMobStore } from '../../stores/useMobStore'
+import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { getMobType } from '../../data/mobRegistry'
 import { getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 
@@ -20,6 +21,7 @@ export default function TargetFrame() {
   const target = useTargetStore((s) => s.target)
   const clearTarget = useTargetStore((s) => s.clearTarget)
   const mobs = useMobStore((s) => s.mobs)
+  const players = useVrPresenceStore((s) => s.players)
 
   if (!target) return null
 
@@ -31,6 +33,11 @@ export default function TargetFrame() {
     name = type.name; icon = type.icon; color = type.color
     hp = mob.hp; maxHp = mob.maxHp; alive = mob.alive
     subtitle = `Nv. ${type.level}`
+  } else if (target.kind === 'player') {
+    const player = players[target.id]
+    if (!player) { clearTarget(); return null }
+    name = player.name || 'Viajero'; icon = '🧑‍🚀'; color = '#38bdf8'
+    subtitle = 'Jugador'
   } else {
     const npc = IDLE_NPCS[target.id] ?? getVrNpcById(target.id)
     if (!npc) { clearTarget(); return null }

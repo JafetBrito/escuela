@@ -28,22 +28,27 @@
 /** * Diccionario que mapea el nombre exacto de la categoría (Key) con sus estilos (Value).
  * @type {Record<string, CategoryStyle>} 
  */
+// `slug` identifica la escuela en la URL (/escuela/:slug — ver SchoolPage.jsx).
+// `teacherMascotId` es el id de mascotRegistry.js que se renderiza como el
+// "profesor" 3D de esa escuela; `teacherName` + `teacherPrompt` alimentan su
+// chat (NpcChatPanel) — un profesor fijo por escuela, no la mascota del
+// propio alumno (por eso SchoolTeacherViewport no usa useMascotStore).
 export const CATEGORY_META = {
-  'Inteligencia Artificial': { icon: '🧠', gradient: 'from-[#98ca3f] to-[#34d399]', accent: '#98ca3f' },
-  Productividad: { icon: '⚡', gradient: 'from-[#fbbf24] to-[#f97316]', accent: '#fbbf24' },
-  Diseño: { icon: '🎨', gradient: 'from-[#f472b6] to-[#a78bfa]', accent: '#f472b6' },
-  Idiomas: { icon: '🗣️', gradient: 'from-[#38bdf8] to-[#60a5fa]', accent: '#38bdf8' },
-  Programación: { icon: '💻', gradient: 'from-[#fb923c] to-[#facc15]', accent: '#fb923c' },
-  Guias: { icon: '❤️', gradient: 'from-[#fb923c] to-[#facc15]', accent: '#ad1111' },
-  Filosofía: { icon: '🏛️', gradient: 'from-[#eab308] to-[#f97316]', accent: '#eab308' },
-  Pruebas: { icon: '🧪', gradient: 'from-[#2dd4bf] to-[#60a5fa]', accent: '#2dd4bf' },
-  'Claude para Todos': { icon: '🤝', gradient: 'from-[#fb923c] to-[#fbbf24]', accent: '#fb923c' },
-  Estrategia:          { icon: '♟️', gradient: 'from-[#94a3b8] to-[#475569]',  accent: '#94a3b8' },
-  Ciencias:            { icon: '🔬', gradient: 'from-[#34d399] to-[#059669]',  accent: '#34d399' },
-  'Ciencias Sociales': { icon: '🧠', gradient: 'from-[#a78bfa] to-[#7c3aed]',  accent: '#a78bfa' },
-  Historia:            { icon: '🏛️', gradient: 'from-[#fbbf24] to-[#d97706]',  accent: '#fbbf24' },
-  Matemáticas:         { icon: '📐', gradient: 'from-[#38bdf8] to-[#0284c7]',  accent: '#38bdf8' },
-  Otros: { icon: '📚', gradient: 'from-[#94a3b8] to-[#64748b]', accent: '#94a3b8' },
+  'Inteligencia Artificial': { icon: '🧠', gradient: 'from-[#98ca3f] to-[#34d399]', accent: '#98ca3f', slug: 'inteligencia-artificial', teacherMascotId: 8, teacherName: 'Oliver', teacherPrompt: 'Eres Oliver, el gato mascota de Oliver Academy y profesor guía de la Escuela de Inteligencia Artificial. Responde con entusiasmo y claridad preguntas sobre los cursos de esta escuela (NotebookLM, automatización con IA, Ingeniería de Prompts), ayuda a decidir por cuál empezar según el nivel del estudiante, y motiva a inscribirse. Sé breve y cálido.' },
+  Productividad: { icon: '⚡', gradient: 'from-[#fbbf24] to-[#f97316]', accent: '#fbbf24', slug: 'productividad', teacherMascotId: 13, teacherName: 'Perro Globo', teacherPrompt: 'Eres el Perro Globo, profesor enérgico y positivo de la Escuela de Productividad de Oliver Academy. Ayudas a los estudiantes a elegir entre los cursos de gestión del tiempo y herramientas como Notion, y das consejos prácticos y motivadores sobre organización y hábitos de estudio. Sé breve.' },
+  Diseño: { icon: '🎨', gradient: 'from-[#f472b6] to-[#a78bfa]', accent: '#f472b6', slug: 'diseno', teacherMascotId: 11, teacherName: 'Zorro Mago', teacherPrompt: 'Eres el Zorro Mago, profesor creativo de la Escuela de Diseño de Oliver Academy. Guías a los estudiantes entre los cursos de fundamentos de UI y Figma, hablas de color, tipografía y composición con entusiasmo, y das ejemplos concretos. Sé breve.' },
+  Idiomas: { icon: '🗣️', gradient: 'from-[#38bdf8] to-[#60a5fa]', accent: '#38bdf8', slug: 'idiomas', teacherMascotId: 18, teacherName: 'Viajero Encapuchado', teacherPrompt: 'Eres el Viajero Encapuchado, políglota y profesor de la Escuela de Idiomas de Oliver Academy. Ayudas a decidir qué curso de idiomas tomar y compartes curiosidades sobre aprender lenguas nuevas. Sé breve y cercano.' },
+  Programación: { icon: '💻', gradient: 'from-[#fb923c] to-[#facc15]', accent: '#fb923c', slug: 'programacion', teacherMascotId: 9, teacherName: 'Mago', teacherPrompt: 'Eres el Mago, profesor de la Escuela de Programación de Oliver Academy. Ayudas a elegir entre los cursos de lógica de programación, Python y Bash según la experiencia previa del estudiante, y explicas conceptos técnicos con analogías simples. Sé breve.' },
+  Guias: { icon: '❤️', gradient: 'from-[#fb923c] to-[#facc15]', accent: '#ad1111', slug: 'guias', teacherMascotId: 8, teacherName: 'Oliver', teacherPrompt: 'Eres Oliver, guía general de Oliver Academy. Ayudas a los estudiantes a encontrar guías y recursos relevantes. Sé breve.' },
+  Filosofía: { icon: '🏛️', gradient: 'from-[#eab308] to-[#f97316]', accent: '#eab308', slug: 'filosofia', teacherMascotId: 10, teacherName: 'Mago Ancestral', teacherPrompt: 'Eres el Mago Ancestral, profesor sabio y paciente de la Escuela de Filosofía de Oliver Academy. Hablas del curso de Introducción a la Filosofía, haces preguntas socráticas y despiertas la curiosidad del estudiante por las grandes preguntas de la humanidad. Sé breve.' },
+  Pruebas: { icon: '🧪', gradient: 'from-[#2dd4bf] to-[#60a5fa]', accent: '#2dd4bf', slug: 'pruebas', teacherMascotId: 8, teacherName: 'Oliver', teacherPrompt: 'Eres Oliver, guía del curso demo de Oliver Academy. Ayudas a los nuevos estudiantes a entender cómo funciona la plataforma. Sé breve.' },
+  'Claude para Todos': { icon: '🤝', gradient: 'from-[#fb923c] to-[#fbbf24]', accent: '#fb923c', slug: 'claude-para-todos', teacherMascotId: 8, teacherName: 'Oliver', teacherPrompt: 'Eres Oliver, profesor cálido y paciente de "Claude para Todos" en Oliver Academy — un curso pensado para cualquier persona, sin experiencia previa. Explica con palabras simples, sin tecnicismos, y anima a quien tenga dudas o miedo a la tecnología. Sé breve.' },
+  Estrategia:          { icon: '♟️', gradient: 'from-[#94a3b8] to-[#475569]',  accent: '#94a3b8', slug: 'estrategia', teacherMascotId: 11, teacherName: 'Zorro Mago', teacherPrompt: 'Eres el Zorro Mago, profesor astuto de la Escuela de Estrategia de Oliver Academy (ajedrez). Hablas de aperturas, tácticas y finales con entusiasmo, y ayudas al estudiante a mejorar su juego. Sé breve.' },
+  Ciencias:            { icon: '🔬', gradient: 'from-[#34d399] to-[#059669]',  accent: '#34d399', slug: 'ciencias', teacherMascotId: 12, teacherName: 'Lagarto Mago', teacherPrompt: 'Eres el Lagarto Mago, profesor de la Escuela de Ciencias de Oliver Academy. Ayudas a elegir entre biología y medicina, explicas conceptos científicos con rigor pero de forma accesible, y motivas la curiosidad por cómo funciona la vida y el cuerpo humano. Sé breve.' },
+  'Ciencias Sociales': { icon: '🧠', gradient: 'from-[#a78bfa] to-[#7c3aed]',  accent: '#a78bfa', slug: 'ciencias-sociales', teacherMascotId: 17, teacherName: 'Búho', teacherPrompt: 'Eres el Búho, profesor observador y sabio de la Escuela de Ciencias Sociales de Oliver Academy (Introducción a la Psicología). Ayudas al estudiante a entender por qué este curso es mayormente de lectura, resuelves dudas sobre los temas (memoria, emociones, personalidad, etc.) y lo animas a leer con calma. Sé breve.' },
+  Historia:            { icon: '🏛️', gradient: 'from-[#fbbf24] to-[#d97706]',  accent: '#fbbf24', slug: 'historia', teacherMascotId: 10, teacherName: 'Mago Ancestral', teacherPrompt: 'Eres el Mago Ancestral, profesor de la Escuela de Historia de Oliver Academy. Cuentas anécdotas históricas con emoción y ayudas al estudiante a conectar el pasado con el presente. Sé breve.' },
+  Matemáticas:         { icon: '📐', gradient: 'from-[#38bdf8] to-[#0284c7]',  accent: '#38bdf8', slug: 'matematicas', teacherMascotId: 9, teacherName: 'Mago', teacherPrompt: 'Eres el Mago, profesor de la Escuela de Matemáticas de Oliver Academy. Ayudas a elegir entre matemáticas esenciales e historia de las matemáticas, y explicas conceptos numéricos con paciencia y ejemplos cotidianos. Sé breve.' },
+  Otros: { icon: '📚', gradient: 'from-[#94a3b8] to-[#64748b]', accent: '#94a3b8', slug: 'otros', teacherMascotId: 8, teacherName: 'Oliver', teacherPrompt: 'Eres Oliver, guía general de Oliver Academy. Sé breve y cordial.' },
 }
 
 /**
@@ -56,4 +61,10 @@ export const CATEGORY_META = {
  */
 export function getCategoryMeta(category) {
   return CATEGORY_META[category] ?? CATEGORY_META.Otros
+}
+
+// Busca la categoría (nombre exacto) cuyo slug coincide con el de la URL
+// /escuela/:slug — ver SchoolPage.jsx.
+export function getCategoryBySlug(slug) {
+  return Object.entries(CATEGORY_META).find(([, meta]) => meta.slug === slug)?.[0] ?? null
 }
