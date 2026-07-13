@@ -12,13 +12,23 @@ import { create } from 'zustand'
 import { es } from './locales/es'
 import { en } from './locales/en'
 import { fr } from './locales/fr'
+import { it } from './locales/it'
+import { zh } from './locales/zh'
+import { ca } from './locales/ca'
+import { de } from './locales/de'
+import { ja } from './locales/ja'
+import { hi } from './locales/hi'
+import { pirata } from './locales/pirata'
 
-const LOCALES = { es, en, fr }
+const LOCALES = { es, en, fr, it, zh, ca, de, ja, hi, pirata }
 const BASE = 'es'
 
-export const SUPPORTED_LANGUAGES = Object.keys(LOCALES) // ['es', 'en', 'fr']
+export const SUPPORTED_LANGUAGES = Object.keys(LOCALES) // ['es', 'en', 'fr', 'it', 'zh', 'ca', 'de', 'ja', 'hi', 'pirata']
 
-export const LANGUAGE_NAMES = { es: 'Español', en: 'English', fr: 'Français' }
+export const LANGUAGE_NAMES = {
+  es: 'Español', en: 'English', fr: 'Français', it: 'Italiano', zh: '中文', ca: 'Català',
+  de: 'Deutsch', ja: '日本語', hi: 'हिन्दी', pirata: '🏴‍☠️ Pirata',
+}
 
 function isSupported(lang) {
   return Object.prototype.hasOwnProperty.call(LOCALES, lang)

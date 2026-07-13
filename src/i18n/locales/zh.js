@@ -1,0 +1,85 @@
+// 中文（简体）覆盖层。目前只翻译了页头/菜单、Dashboard 底部标签栏和登录前的
+// 首页（landing page）——缺失的键会自动回退到西班牙语（见 ../index.js 的
+// translate()）。
+export const zh = {
+  nav: {
+    dashboard: '仪表盘',
+    groups: {
+      academia: '学院',
+      progreso: '进度',
+      campus: '校园',
+      comunidad: '社区',
+    },
+    items: {
+      notas: '笔记',
+      biblioteca: '图书馆',
+      guias: '指南',
+      ia: 'AI 工具',
+      herramientas: '工具',
+      anuncios: '公告',
+      mascota: '我的团队',
+      arbol: '技能树',
+      misiones: '任务',
+      logros: '成就',
+      misTareas: '我的任务',
+      vr: 'VR 校园',
+      templo: '神庙',
+      anfiteatro: '圆形剧场',
+      cueva: '柏拉图的洞穴',
+      mundo: '2D 世界',
+      rol: '角色扮演世界',
+      graffiti: '涂鸦街',
+      games: '游戏',
+      arena: '竞技场',
+      amigos: '好友',
+      chats: '聊天',
+      tienda: '商店',
+    },
+    profile: {
+      settings: '设置',
+      signOut: '退出登录',
+      language: '语言',
+    },
+    backToDashboard: '← 返回仪表盘',
+  },
+  dashboard: {
+    tabs: { inicio: '首页', escuelas: '学院', progreso: '我的进度' },
+    more: '更多',
+  },
+  landing: {
+    header: { dashboard: '我的仪表盘', signOut: '退出登录', signIn: '登录', signUp: '注册' },
+    hero: {
+      badge: '✨ 我们是一所学校 · 众多课程 · 一把钥匙',
+      titlePrefix: '按照自己的节奏学习，与',
+      subtitle: '每门课程都有专属的 3D 人工智能伙伴，陪你上好每一节课，解答你的疑问，帮助你保持学习节奏。获取通用钥匙解锁所有课程，或购买单课钥匙解锁你最感兴趣的课程。',
+      ctaLoggedIn: '前往我的仪表盘',
+      ctaGuest: '免费注册',
+      ctaKey: '我已经有钥匙了',
+      guestNote: '免费创建账户，畅玩所有课程 — 每门课程的前 2 节课无需信用卡即可体验。',
+      statCourses: '课程',
+      statAvailable: '当前可用',
+      statMascots: 'AI 伙伴',
+      statCategories: '类别',
+    },
+    howItWorks: {
+      title: '如何运作？',
+      subtitle: '三步开始，今天就学习新知识。',
+    },
+    categories: {
+      title: '课程类别',
+      subtitle: '探索现已可用的课程，以及即将推出的内容。',
+    },
+    features: {
+      title: '你的账户包含的一切',
+      subtitle: '一个账户保存你的进度、你的伙伴，以及你解锁的一切内容。',
+    },
+    finalCta: {
+      title: '你的 AI 伙伴已经在等你了 🐾',
+      subtitle: '免费创建账户，畅玩所有课程 — 每门课程的前 2 节课完全免费。随时获取钥匙解锁其余内容。',
+      ctaLoggedIn: '前往我的仪表盘',
+      ctaGuest: '创建我的账户',
+      ctaKey: '我已经有钥匙了',
+    },
+    footer: '© {year} Oliver Academy — 一所学校，众多课程等你探索。',
+  },
+}

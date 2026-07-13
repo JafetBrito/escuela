@@ -1,0 +1,85 @@
+// Overlay italiano. Copre solo header/menu, il tab inferiore del Dashboard e
+// la landing page (pre-login) — le altre chiavi mancanti ricadono in
+// spagnolo automaticamente (vedi translate() in ../index.js).
+export const it = {
+  nav: {
+    dashboard: 'Dashboard',
+    groups: {
+      academia: 'Accademia',
+      progreso: 'Progresso',
+      campus: 'Campus',
+      comunidad: 'Comunità',
+    },
+    items: {
+      notas: 'Note',
+      biblioteca: 'Biblioteca',
+      guias: 'Guide',
+      ia: 'Strumenti IA',
+      herramientas: 'Strumenti',
+      anuncios: 'Annunci',
+      mascota: 'La Mia Squadra',
+      arbol: 'Albero delle Abilità',
+      misiones: 'Missioni',
+      logros: 'Successi',
+      misTareas: 'I Miei Compiti',
+      vr: 'Campus VR',
+      templo: 'Tempio',
+      anfiteatro: 'Anfiteatro',
+      cueva: 'Caverna di Platone',
+      mundo: 'Mondo 2D',
+      rol: 'Mondo GDR',
+      graffiti: 'Via dei Graffiti',
+      games: 'Giochi',
+      arena: 'Arena',
+      amigos: 'Amici',
+      chats: 'Chat',
+      tienda: 'Negozio',
+    },
+    profile: {
+      settings: 'Impostazioni',
+      signOut: 'Disconnetti',
+      language: 'Lingua',
+    },
+    backToDashboard: '← Torna alla Dashboard',
+  },
+  dashboard: {
+    tabs: { inicio: 'Home', escuelas: 'Scuole', progreso: 'I Miei Progressi' },
+    more: 'Altro',
+  },
+  landing: {
+    header: { dashboard: 'La Mia Dashboard', signOut: 'Disconnetti', signIn: 'Accedi', signUp: 'Crea Account' },
+    hero: {
+      badge: '✨ Siamo una scuola · Tanti corsi · Una sola chiave',
+      titlePrefix: 'Impara al tuo ritmo con',
+      subtitle: 'Ogni corso ha la sua mascotte IA in 3D che ti accompagna lezione per lezione, risponde ai tuoi dubbi e ti aiuta a non perdere il ritmo. Ottieni la chiave master per tutti i corsi, o una chiave per il corso che ti interessa di più.',
+      ctaLoggedIn: 'Vai alla mia Dashboard',
+      ctaGuest: 'Registrati gratis',
+      ctaKey: 'Ho già la mia chiave',
+      guestNote: 'Crea il tuo account gratuito ed entra in tutti i corsi — prova le prime 2 lezioni di ciascuno senza carta.',
+      statCourses: 'Corsi',
+      statAvailable: 'Disponibili ora',
+      statMascots: 'Mascotte IA',
+      statCategories: 'Categorie',
+    },
+    howItWorks: {
+      title: 'Come funziona?',
+      subtitle: 'Tre passi per iniziare a imparare oggi stesso.',
+    },
+    categories: {
+      title: 'Categorie dei corsi',
+      subtitle: 'Scopri cosa è già disponibile e cosa arriverà presto.',
+    },
+    features: {
+      title: 'Tutto ciò che include il tuo account',
+      subtitle: 'Un solo account salva i tuoi progressi, la tua mascotte e tutto ciò che sblocchi.',
+    },
+    finalCta: {
+      title: 'La tua mascotte IA ti sta già aspettando 🐾',
+      subtitle: 'Crea il tuo account gratuito ed entra in tutti i corsi — le prime 2 lezioni di ciascuno sono gratuite. Ottieni la tua chiave quando vuoi sbloccare il resto.',
+      ctaLoggedIn: 'Vai alla mia Dashboard',
+      ctaGuest: 'Crea il mio account',
+      ctaKey: 'Ho già la mia chiave',
+    },
+    footer: '© {year} Oliver Academy — Una scuola, tanti corsi da scoprire.',
+  },
+}

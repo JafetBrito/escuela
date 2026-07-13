@@ -1,0 +1,85 @@
+// 日本語オーバーレイ。現時点ではヘッダー/メニュー、Dashboard下部のタブバー、
+// ログイン前のランディングページのみ対応 — 未翻訳のキーは自動的にスペイン語
+// にフォールバックします（../index.js の translate() を参照）。
+export const ja = {
+  nav: {
+    dashboard: 'ダッシュボード',
+    groups: {
+      academia: 'アカデミー',
+      progreso: '進捗',
+      campus: 'キャンパス',
+      comunidad: 'コミュニティ',
+    },
+    items: {
+      notas: 'ノート',
+      biblioteca: '図書館',
+      guias: 'ガイド',
+      ia: 'AIツール',
+      herramientas: 'ツール',
+      anuncios: 'お知らせ',
+      mascota: 'マイチーム',
+      arbol: 'スキルツリー',
+      misiones: 'ミッション',
+      logros: '実績',
+      misTareas: 'マイタスク',
+      vr: 'VRキャンパス',
+      templo: '神殿',
+      anfiteatro: '円形劇場',
+      cueva: 'プラトンの洞窟',
+      mundo: '2Dワールド',
+      rol: 'ロールプレイワールド',
+      graffiti: 'グラフィティストリート',
+      games: 'ゲーム',
+      arena: 'アリーナ',
+      amigos: 'フレンド',
+      chats: 'チャット',
+      tienda: 'ショップ',
+    },
+    profile: {
+      settings: '設定',
+      signOut: 'ログアウト',
+      language: '言語',
+    },
+    backToDashboard: '← ダッシュボードに戻る',
+  },
+  dashboard: {
+    tabs: { inicio: 'ホーム', escuelas: 'スクール', progreso: 'マイ進捗' },
+    more: 'その他',
+  },
+  landing: {
+    header: { dashboard: 'マイダッシュボード', signOut: 'ログアウト', signIn: 'ログイン', signUp: 'アカウント作成' },
+    hero: {
+      badge: '✨ 私たちは学校です · 豊富なコース · たった一つの鍵',
+      titlePrefix: '自分のペースで学べる、',
+      subtitle: '各コースには専用の3D AIマスコットがいて、授業ごとに寄り添い、疑問に答え、ペースを保つ手助けをしてくれます。すべてのコースに使えるマスターキーを手に入れるか、一番興味のあるコースのキーを購入しましょう。',
+      ctaLoggedIn: 'マイダッシュボードへ',
+      ctaGuest: '無料登録',
+      ctaKey: 'すでに鍵を持っています',
+      guestNote: '無料アカウントを作成してすべてのコースにアクセス — 各コースの最初の2レッスンはクレジットカード不要で体験できます。',
+      statCourses: 'コース数',
+      statAvailable: '現在利用可能',
+      statMascots: 'AIマスコット',
+      statCategories: 'カテゴリー',
+    },
+    howItWorks: {
+      title: '仕組みは？',
+      subtitle: '今日から学び始めるための3つのステップ。',
+    },
+    categories: {
+      title: 'コースカテゴリー',
+      subtitle: '現在利用可能なものと、近日公開予定のものをチェックしよう。',
+    },
+    features: {
+      title: 'アカウントに含まれるすべて',
+      subtitle: '一つのアカウントで進捗、マスコット、解除したものすべてを保存します。',
+    },
+    finalCta: {
+      title: 'あなたのAIマスコットが待っています 🐾',
+      subtitle: '無料アカウントを作成してすべてのコースにアクセス — 各コースの最初の2レッスンは無料です。残りを解除したくなったらいつでも鍵を手に入れましょう。',
+      ctaLoggedIn: 'マイダッシュボードへ',
+      ctaGuest: 'アカウントを作成',
+      ctaKey: 'すでに鍵を持っています',
+    },
+    footer: '© {year} Oliver Academy — 一つの学校、探求すべき多くのコース。',
+  },
+}

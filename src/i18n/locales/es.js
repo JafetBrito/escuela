@@ -106,6 +106,42 @@ export const es = {
     vrWillOpen: 'Se abrirá la experiencia VR de esta clase',
     paywallBanner: '🔑 Estás viendo las primeras 2 clases gratis. Consigue tu llave para desbloquear el resto de este curso →',
   },
+  landing: {
+    header: { dashboard: 'Mi Dashboard', signOut: 'Cerrar sesión', signIn: 'Iniciar sesión', signUp: 'Crear cuenta' },
+    hero: {
+      badge: '✨ Somos una escuela · Muchos cursos · Una sola llave',
+      titlePrefix: 'Aprende a tu ritmo con',
+      subtitle: 'Cada curso tiene su propia mascota IA en 3D que te acompaña clase por clase, responde tus dudas y te ayuda a no perder el ritmo. Consigue tu llave maestra para todos los cursos, o una llave para el curso que más te interese.',
+      ctaLoggedIn: 'Ir a mi Dashboard',
+      ctaGuest: 'Registrarme gratis',
+      ctaKey: 'Ya tengo mi llave',
+      guestNote: 'Crea tu cuenta gratis y entra a todos los cursos — prueba las primeras 2 clases de cada uno sin tarjeta.',
+      statCourses: 'Cursos',
+      statAvailable: 'Disponibles ahora',
+      statMascots: 'Mascotas IA',
+      statCategories: 'Categorías',
+    },
+    howItWorks: {
+      title: '¿Cómo funciona?',
+      subtitle: 'Tres pasos para empezar a aprender hoy mismo.',
+    },
+    categories: {
+      title: 'Categorías de cursos',
+      subtitle: 'Explora lo que ya está disponible y lo que viene próximamente.',
+    },
+    features: {
+      title: 'Todo lo que incluye tu cuenta',
+      subtitle: 'Una sola cuenta guarda tu progreso, tu mascota y todo lo que vayas desbloqueando.',
+    },
+    finalCta: {
+      title: 'Tu mascota IA ya te está esperando 🐾',
+      subtitle: 'Crea tu cuenta gratis y entra a todos los cursos — las primeras 2 clases de cada uno son gratis. Consigue tu llave cuando quieras desbloquear el resto.',
+      ctaLoggedIn: 'Ir a mi Dashboard',
+      ctaGuest: 'Crear mi cuenta',
+      ctaKey: 'Ya tengo mi llave',
+    },
+    footer: '© {year} Oliver Academy — Una escuela, muchos cursos por explorar.',
+  },
   announcements: {
     title: 'Tablón de Anuncios',
     subtitle: 'Noticias, actividades y recordatorios importantes de Oliver Academy.',

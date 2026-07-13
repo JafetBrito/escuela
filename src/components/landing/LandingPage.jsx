@@ -10,6 +10,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { CATEGORY_META, getCategoryMeta } from '../../data/categoryMeta'
 import { isSupabaseConfigured } from '../../services/supabase/client'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 
 const ORANGE_CAT = getMascotById(8)
 
@@ -65,6 +66,7 @@ const FEATURES = [
 ]
 
 export default function LandingPage() {
+  const { t, lang, setLang } = useI18n()
   const navigate = useNavigate()
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
   const session = useAuthStore((s) => s.session)
@@ -104,20 +106,30 @@ export default function LandingPage() {
             <span aria-hidden="true">🐱</span>
           </Link>
           <div className="flex items-center gap-3">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              aria-label="Idioma"
+              className="rounded-md border border-border/60 bg-surface px-1.5 py-1 text-xs text-text outline-none focus:border-primary"
+            >
+              {SUPPORTED_LANGUAGES.map((code) => (
+                <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
+              ))}
+            </select>
             {loggedIn ? (
               <>
                 <Link to="/dashboard">
-                  <Button variant="ghost">Mi Dashboard</Button>
+                  <Button variant="ghost">{t('landing.header.dashboard')}</Button>
                 </Link>
-                <Button onClick={handleSignOut}>Cerrar sesión</Button>
+                <Button onClick={handleSignOut}>{t('landing.header.signOut')}</Button>
               </>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost">Iniciar sesión</Button>
+                  <Button variant="ghost">{t('landing.header.signIn')}</Button>
                 </Link>
                 <Link to="/crear-cuenta" className="hidden sm:block">
-                  <Button>Crear cuenta</Button>
+                  <Button>{t('landing.header.signUp')}</Button>
                 </Link>
               </>
             )}
@@ -136,45 +148,42 @@ export default function LandingPage() {
 
           <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-6 py-20 text-center md:px-12 md:py-28">
             <span className="rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
-              ✨ Somos una escuela · Muchos cursos · Una sola llave
+              {t('landing.hero.badge')}
             </span>
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl">
-              Aprende a tu ritmo con{' '}
+              {t('landing.hero.titlePrefix')}{' '}
               <span className="bg-gradient-to-r from-primary to-[#34d399] bg-clip-text text-transparent">
                 Oliver Academy
               </span>
             </h1>
             <p className="max-w-2xl text-lg text-text-muted">
-              Cada curso tiene su propia mascota IA en 3D que te acompaña clase por clase, responde
-              tus dudas y te ayuda a no perder el ritmo. Consigue tu llave maestra para todos los
-              cursos, o una llave para el curso que más te interese.
+              {t('landing.hero.subtitle')}
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link to={loggedIn ? '/dashboard' : '/crear-cuenta'}>
                 <Button className="px-8 py-4 text-lg shadow-lg shadow-primary/20">
-                  {loggedIn ? 'Ir a mi Dashboard' : 'Registrarme gratis'}
+                  {loggedIn ? t('landing.hero.ctaLoggedIn') : t('landing.hero.ctaGuest')}
                 </Button>
               </Link>
               <Link to="/unlock">
                 <Button variant="secondary" className="px-8 py-4 text-lg">
-                  Ya tengo mi llave
+                  {t('landing.hero.ctaKey')}
                 </Button>
               </Link>
             </div>
             {!loggedIn && (
               <p className="text-sm text-text-muted">
-                Crea tu cuenta gratis y entra a todos los cursos — prueba las primeras 2 clases
-                de cada uno sin tarjeta.
+                {t('landing.hero.guestNote')}
               </p>
             )}
 
             {/* Stat strip */}
             <div className="mt-8 grid w-full max-w-2xl grid-cols-2 gap-4 sm:grid-cols-4">
               {[
-                { label: 'Cursos', value: `${totalCourses}+` },
-                { label: 'Disponibles ahora', value: availableCourses },
-                { label: 'Mascotas IA', value: '13' },
-                { label: 'Categorías', value: Object.keys(CATEGORY_META).length - 1 },
+                { label: t('landing.hero.statCourses'), value: `${totalCourses}+` },
+                { label: t('landing.hero.statAvailable'), value: availableCourses },
+                { label: t('landing.hero.statMascots'), value: '13' },
+                { label: t('landing.hero.statCategories'), value: Object.keys(CATEGORY_META).length - 1 },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -191,8 +200,8 @@ export default function LandingPage() {
         {/* How it works */}
         <section className="mx-auto max-w-6xl px-6 pb-20 md:px-12">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold md:text-3xl">¿Cómo funciona?</h2>
-            <p className="mt-2 text-text-muted">Tres pasos para empezar a aprender hoy mismo.</p>
+            <h2 className="text-2xl font-bold md:text-3xl">{t('landing.howItWorks.title')}</h2>
+            <p className="mt-2 text-text-muted">{t('landing.howItWorks.subtitle')}</p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {STEPS.map((step) => (
@@ -213,9 +222,9 @@ export default function LandingPage() {
         {/* Categories */}
         <section className="mx-auto max-w-6xl px-6 pb-20 md:px-12">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold md:text-3xl">Categorías de cursos</h2>
+            <h2 className="text-2xl font-bold md:text-3xl">{t('landing.categories.title')}</h2>
             <p className="mt-2 text-text-muted">
-              Explora lo que ya está disponible y lo que viene próximamente.
+              {t('landing.categories.subtitle')}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -246,9 +255,9 @@ export default function LandingPage() {
         {/* Features */}
         <section className="mx-auto max-w-6xl px-6 pb-20 md:px-12">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold md:text-3xl">Todo lo que incluye tu cuenta</h2>
+            <h2 className="text-2xl font-bold md:text-3xl">{t('landing.features.title')}</h2>
             <p className="mt-2 text-text-muted">
-              Una sola cuenta guarda tu progreso, tu mascota y todo lo que vayas desbloqueando.
+              {t('landing.features.subtitle')}
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -270,7 +279,7 @@ export default function LandingPage() {
           <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-[#34d399]/10 p-10 text-center">
             <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
             <h2 className="text-2xl font-extrabold md:text-3xl">
-              Tu mascota IA ya te está esperando 🐾
+              {t('landing.finalCta.title')}
             </h2>
             <div className="mx-auto mt-4 h-48 w-48 overflow-hidden rounded-2xl border border-border bg-background/40">
               <Canvas camera={{ position: [0, 0, 3.5], fov: 45 }}>
@@ -282,18 +291,17 @@ export default function LandingPage() {
               </Canvas>
             </div>
             <p className="mx-auto mt-3 max-w-xl text-text-muted">
-              Crea tu cuenta gratis y entra a todos los cursos — las primeras 2 clases de cada
-              uno son gratis. Consigue tu llave cuando quieras desbloquear el resto.
+              {t('landing.finalCta.subtitle')}
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link to={loggedIn ? '/dashboard' : '/crear-cuenta'}>
                 <Button className="px-8 py-4 text-lg shadow-lg shadow-primary/20">
-                  {loggedIn ? 'Ir a mi Dashboard' : 'Crear mi cuenta'}
+                  {loggedIn ? t('landing.finalCta.ctaLoggedIn') : t('landing.finalCta.ctaGuest')}
                 </Button>
               </Link>
               <Link to="/unlock">
                 <Button variant="secondary" className="px-8 py-4 text-lg">
-                  Ya tengo mi llave
+                  {t('landing.finalCta.ctaKey')}
                 </Button>
               </Link>
             </div>
@@ -302,7 +310,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted md:px-12">
-        © {new Date().getFullYear()} Oliver Academy — Una escuela, muchos cursos por explorar.
+        {t('landing.footer', { year: new Date().getFullYear() })}
       </footer>
 
       <WelcomeVideoModal />
