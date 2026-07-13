@@ -7,9 +7,28 @@
 //  into PATCH_NOTES_ARCHIVE: still here, still real data, just not rendered
 //  anywhere — nothing is deleted, the modal just stops indexing it.
 
-export const LATEST_VERSION = '0.10.0'
+export const LATEST_VERSION = '0.11.0'
 
 const PATCH_NOTES_ALL = [
+  {
+    version: '0.11.0',
+    date: '2026-07-13',
+    title: 'Identidad Naranja · Combate VR · Nuevos Cursos y Escuelas',
+    emoji: '🍊',
+    tag: 'NOVEDAD',
+    tagColor: '#22c55e',
+    changes: [
+      { icon: '🍊', text: 'Nueva identidad visual: cambiamos el verde original (inspirado en otras plataformas) por el naranja de Oliver en todo el sitio, incluido el tema claro.' },
+      { icon: '🗡️', text: 'Sistema de objetivo (target) estilo WoW en el mundo VR: haz clic en un monstruo, un NPC o incluso otro jugador para ver su marco con nombre y vida, y ejecuta de verdad las habilidades de tu clase.' },
+      { icon: '🧪', text: 'Nuevo Mapa de Pruebas VR (/vr/pruebas): un terreno plano con todos los NPCs en línea, para probar combate y misiones sin cargar todo el campus.' },
+      { icon: '🧮', text: 'Mazmorra Matemática rediseñada: ahora son 7 categorías (suma, resta, multiplicación, división, fracciones, porcentajes, mixto) con 2 niveles cada una, y un dato histórico real en cada piso.' },
+      { icon: '🏺', text: 'Nuevo juego: Historia de las Matemáticas — un mapa cronológico por civilización, empezando en el Antiguo Egipto, con lecciones que se leen en voz alta antes de cada reto.' },
+      { icon: '🧠', text: 'Nuevo curso: Introducción a la Psicología — 13 clases mayormente de lectura, con un buen marco de bienvenida y misiones de reflexión con tu mascota en casi cada clase.' },
+      { icon: '🏫', text: 'Cada escuela (categoría de cursos) tiene ahora su propia página con subcategorías y un profesor 3D con el que puedes chatear sobre esa escuela.' },
+      { icon: '🛠️', text: 'Menú flotante de administrador reorganizado en acordeón: consola de comandos, dar objetos y agregar NPCs desde botones, y el tema especial de admin ahora se puede apagar.' },
+      { icon: '🧹', text: 'Eliminamos la misión "Activa un objeto de tu inventario" de todos los cursos: no tenía forma de completarse y no aportaba nada.' },
+    ],
+  },
   {
     version: '0.10.0',
     date: '2026-06-26',

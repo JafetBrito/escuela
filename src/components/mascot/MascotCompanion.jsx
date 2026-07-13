@@ -140,7 +140,10 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
   const avatar      = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    // bottom-20 en móvil: la barra de pestañas inferior del Dashboard
+    // (DashboardPage.jsx) solo se oculta a partir de md — con bottom-4/sm:bottom-6
+    // la mascota le quedaba encima entre 0-767px. Coincide con ese mismo breakpoint.
+    <div className="fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3 md:bottom-6 md:right-6">
       {open && (
         <div className="flex h-[80vh] w-[95vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           {/* Header */}
