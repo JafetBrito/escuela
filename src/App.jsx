@@ -20,6 +20,7 @@ import LoginPage from './components/auth/LoginPage'
 import PortalPage from './components/portal/PortalPage'
 import DashboardPage from './components/dashboard/DashboardPage'
 import SchoolPage from './components/dashboard/SchoolPage'
+import MainCategoryPage from './components/dashboard/MainCategoryPage'
 import ShopPage from './components/shop/ShopPage'
 import SettingsPage from './components/settings/SettingsPage'
 import GamesPage from './components/games/GamesPage'
@@ -194,6 +195,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SchoolPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/escuela-categoria/:id"
+          element={
+            <ProtectedRoute>
+              <MainCategoryPage />
             </ProtectedRoute>
           }
         />

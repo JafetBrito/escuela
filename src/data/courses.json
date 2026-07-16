@@ -12,7 +12,7 @@
   {
     "id": "course-002",
     "title": "Automatiza tu estudio con IA",
-    "description": "Crea flujos de trabajo, prompts y automatizaciones con IA para estudiar más rápido. Próximamente.",
+    "description": "Crea flujos de trabajo, prompts y automatizaciones con IA para estudiar más rápido: resúmenes automáticos, tarjetas de repaso generadas solas y asistentes personalizados para cada materia. Aprenderás a conectar herramientas de IA entre sí sin necesitar saber programar. Próximamente.",
     "icon": "🤖",
     "color": "#60a5fa",
     "category": "Inteligencia Artificial",
@@ -32,7 +32,7 @@
   {
     "id": "course-004",
     "title": "Gestión del tiempo para estudiantes",
-    "description": "Técnicas y herramientas para organizar tu estudio, evitar la procrastinación y avanzar cada día. Próximamente.",
+    "description": "Técnicas probadas como Pomodoro, time-blocking y la matriz de Eisenhower, adaptadas a la vida real de un estudiante con tareas, exámenes y vida fuera de la escuela. Aprenderás a identificar por qué procrastinas y a construir un sistema que sí sostengas. Próximamente.",
     "icon": "⏰",
     "color": "#fbbf24",
     "category": "Productividad",
@@ -42,7 +42,7 @@
   {
     "id": "course-005",
     "title": "Notion para estudiantes",
-    "description": "Organiza apuntes, tareas y proyectos en un solo lugar con Notion. Próximamente.",
+    "description": "Organiza apuntes, tareas, proyectos y tu calendario en un solo lugar con Notion, desde cero. Verás plantillas listas para copiar: un dashboard de materias, un rastreador de tareas y un sistema de notas conectadas. Próximamente.",
     "icon": "🗂️",
     "color": "#f472b6",
     "category": "Productividad",
@@ -52,7 +52,7 @@
   {
     "id": "course-006",
     "title": "Fundamentos de diseño UI",
-    "description": "Aprende los principios básicos de color, tipografía y composición para diseñar interfaces atractivas. Próximamente.",
+    "description": "Aprende los principios básicos de color, tipografía, espaciado y composición que hacen que una interfaz se vea profesional en vez de improvisada. Con ejemplos reales de apps y sitios web, entenderás por qué ciertos diseños funcionan y otros no. Próximamente.",
     "icon": "🎨",
     "color": "#34d399",
     "category": "Diseño",
@@ -62,7 +62,7 @@
   {
     "id": "course-007",
     "title": "Diseño con Figma",
-    "description": "Crea prototipos y diseños profesionales usando Figma desde cero. Próximamente.",
+    "description": "Crea prototipos y diseños profesionales usando Figma desde cero: componentes reutilizables, auto-layout, y cómo entregar un diseño listo para que un desarrollador lo construya. Ideal si ya tienes una idea y quieres verla tomar forma. Próximamente.",
     "icon": "🖌️",
     "color": "#f87171",
     "category": "Diseño",
@@ -72,7 +72,7 @@
   {
     "id": "course-008",
     "title": "Inglés para programadores",
-    "description": "Vocabulario y frases técnicas en inglés que todo desarrollador necesita conocer. Próximamente.",
+    "description": "Vocabulario y frases técnicas en inglés que todo desarrollador necesita conocer: leer documentación, entender mensajes de error, escribir commits claros y sobrevivir una entrevista técnica en inglés. Próximamente.",
     "icon": "🗣️",
     "color": "#38bdf8",
     "category": "Idiomas",
@@ -81,7 +81,7 @@
   {
     "id": "course-009",
     "title": "Lógica de programación",
-    "description": "Aprende a pensar como programador resolviendo problemas paso a paso. Próximamente.",
+    "description": "Aprende a pensar como programador resolviendo problemas paso a paso, antes de preocuparte por la sintaxis de ningún lenguaje. Diagramas de flujo, pseudocódigo y los patrones que se repiten en casi cualquier problema. Próximamente.",
     "icon": "🧩",
     "color": "#fb923c",
     "category": "Programación",
@@ -91,7 +91,7 @@
   {
     "id": "course-010",
     "title": "Introducción a Python",
-    "description": "Tu primer lenguaje de programación, explicado de forma simple y práctica. Próximamente.",
+    "description": "Tu primer lenguaje de programación, explicado de forma simple y práctica: variables, condicionales, ciclos y funciones, con ejercicios pequeños que puedes correr y ver funcionar de inmediato. Próximamente.",
     "icon": "🐍",
     "color": "#facc15",
     "category": "Programación",
@@ -165,7 +165,7 @@
   {
     "id": "course-historia",
     "title": "Historia del Mundo",
-    "description": "Un viaje desde las primeras civilizaciones hasta el mundo moderno. Guerras, imperios, revoluciones y los personajes que cambiaron la historia. Próximamente.",
+    "description": "Un viaje desde las primeras civilizaciones hasta el mundo moderno: guerras, imperios, revoluciones y los personajes que cambiaron el rumbo de la historia. No memorizarás fechas sueltas — conectarás causas y consecuencias. Próximamente.",
     "icon": "🏛️",
     "color": "#f59e0b",
     "category": "Historia",
@@ -183,7 +183,7 @@
   {
     "id": "course-matematicas",
     "title": "Matemáticas Esenciales",
-    "description": "Aritmética, álgebra, geometría y estadística. Todo lo que necesitas para entender el mundo en números, con ejercicios interactivos y sin miedo a las fórmulas. Próximamente.",
+    "description": "Aritmética, álgebra, geometría y estadística explicadas desde cero, sin dar nada por sabido. Todo lo que necesitas para entender el mundo en números, con ejercicios interactivos, ejemplos cotidianos y sin miedo a las fórmulas. Próximamente.",
     "icon": "📐",
     "color": "#60a5fa",
     "category": "Matemáticas",
@@ -241,7 +241,7 @@
   {
     "id": "course-antropologia",
     "title": "Introducción a la Antropología",
-    "description": "Qué nos hace humanos, cómo varían las culturas y qué tienen en común. Próximamente.",
+    "description": "Qué nos hace humanos, cómo varían las culturas alrededor del mundo y qué tienen en común a pesar de las diferencias. Rituales, parentesco, y cómo se estudia una cultura sin imponerle la propia. Próximamente.",
     "icon": "🗿",
     "color": "#f97316",
     "category": "Antropología",
@@ -250,7 +250,7 @@
   {
     "id": "course-neurociencia",
     "title": "Introducción a la Neurociencia",
-    "description": "Cómo funciona el cerebro humano: neuronas, memoria, emociones y consciencia. Próximamente.",
+    "description": "Cómo funciona el cerebro humano: neuronas, memoria, emociones, sueño y consciencia, explicado con ejemplos que puedes reconocer en tu día a día. No hace falta ninguna base de biología para empezar. Próximamente.",
     "icon": "🧠",
     "color": "#818cf8",
     "category": "Neurociencia",
@@ -259,7 +259,7 @@
   {
     "id": "course-economia",
     "title": "Introducción a la Economía",
-    "description": "Oferta, demanda, dinero e inflación explicados para la vida real. Próximamente.",
+    "description": "Oferta, demanda, dinero, inflación y cómo se mueven los mercados, explicados para la vida real, no para un examen. Entenderás por qué suben los precios y cómo tomar mejores decisiones con tu propio dinero. Próximamente.",
     "icon": "📈",
     "color": "#22c55e",
     "category": "Economía",
@@ -297,7 +297,7 @@
   {
     "id": "course-astronomia",
     "title": "Introducción a la Astronomía",
-    "description": "Estrellas, planetas, galaxias y nuestro lugar en el universo. Próximamente.",
+    "description": "Estrellas, planetas, galaxias y nuestro lugar en un universo que apenas empezamos a entender. Desde cómo nace una estrella hasta cómo sabemos que el universo se está expandiendo. Próximamente.",
     "icon": "🔭",
     "color": "#38bdf8",
     "category": "Astronomía",
@@ -306,7 +306,7 @@
   {
     "id": "course-fisica",
     "title": "Introducción a la Física",
-    "description": "Las leyes que gobiernan el universo, desde una manzana cayendo hasta la luz. Próximamente.",
+    "description": "Las leyes que gobiernan el universo, desde una manzana cayendo hasta la velocidad de la luz. Mecánica, energía y las ideas que cambiaron para siempre cómo entendemos la realidad. Próximamente.",
     "icon": "⚛️",
     "color": "#22d3ee",
     "category": "Física",
@@ -315,7 +315,7 @@
   {
     "id": "course-quimica",
     "title": "Introducción a la Química",
-    "description": "Átomos, moléculas y reacciones — de qué está hecho todo lo que existe. Próximamente.",
+    "description": "Átomos, moléculas y reacciones — de qué está hecho literalmente todo lo que existe, desde el aire que respiras hasta tu propio cuerpo. Aprenderás a leer la tabla periódica sin miedo. Próximamente.",
     "icon": "🧪",
     "color": "#a3e635",
     "category": "Química",
@@ -324,7 +324,7 @@
   {
     "id": "course-literatura",
     "title": "Introducción a la Literatura",
-    "description": "Grandes obras y autores que cambiaron la forma de contar historias. Próximamente.",
+    "description": "Grandes obras y autores que cambiaron para siempre la forma de contar historias, desde la épica clásica hasta la narrativa moderna. Aprenderás a leer con otros ojos, más allá de si algo te gustó o no. Próximamente.",
     "icon": "✒️",
     "color": "#fb7185",
     "category": "Literatura",
@@ -333,7 +333,7 @@
   {
     "id": "course-arte",
     "title": "Introducción al Arte",
-    "description": "Historia del arte, movimientos y cómo mirar una obra con otros ojos. Próximamente.",
+    "description": "Historia del arte y sus grandes movimientos, desde el renacimiento hasta el arte contemporáneo, y cómo mirar una obra con otros ojos. No hace falta saber dibujar para aprender a ver — solo curiosidad. Próximamente.",
     "icon": "🖌️",
     "color": "#f472b6",
     "category": "Arte",
@@ -342,10 +342,64 @@
   {
     "id": "course-sociologia",
     "title": "Introducción a la Sociología",
-    "description": "Cómo se organizan los grupos humanos y por qué la sociedad funciona como funciona. Próximamente.",
+    "description": "Cómo se organizan los grupos humanos, por qué existen las clases sociales, y por qué la sociedad funciona (o no funciona) como funciona. Herramientas para entender lo que pasa a tu alrededor, no solo teoría. Próximamente.",
     "icon": "🧑‍🤝‍🧑",
     "color": "#fbbf24",
     "category": "Sociología",
+    "locked": true
+  },
+  {
+    "id": "course-logica",
+    "title": "Introducción a la Lógica",
+    "description": "Lógica clásica, lógica matemática y lógica computacional: cómo razonar de forma válida y detectar falacias. Próximamente.",
+    "icon": "🔣",
+    "color": "#818cf8",
+    "category": "Lógica",
+    "locked": true
+  },
+  {
+    "id": "course-artes-escenicas",
+    "title": "Introducción a las Artes Escénicas y Música",
+    "description": "Teatro, cinematografía, teoría musical y composición — el arte que se hace en vivo o en el tiempo. Próximamente.",
+    "icon": "🎭",
+    "color": "#fb7185",
+    "category": "Artes Escénicas y Música",
+    "locked": true
+  },
+  {
+    "id": "course-ingenieria",
+    "title": "Introducción a la Ingeniería",
+    "description": "Ingeniería civil, mecánica, electrónica y de sistemas computacionales — cómo se diseña y construye el mundo físico. Próximamente.",
+    "icon": "⚙️",
+    "color": "#f97316",
+    "category": "Ingeniería",
+    "locked": true
+  },
+  {
+    "id": "course-educacion",
+    "title": "Introducción a la Educación",
+    "description": "Pedagogía, diseño instruccional y tecnología educativa — cómo se diseña la forma en la que aprendemos. Próximamente.",
+    "icon": "🍎",
+    "color": "#f472b6",
+    "category": "Educación",
+    "locked": true
+  },
+  {
+    "id": "course-agricultura",
+    "title": "Introducción a la Agricultura y Veterinaria",
+    "description": "Agronomía, zootecnia y medicina veterinaria — cómo cultivamos y cuidamos plantas y animales a gran escala. Próximamente.",
+    "icon": "🌾",
+    "color": "#84cc16",
+    "category": "Agricultura y Veterinaria",
+    "locked": true
+  },
+  {
+    "id": "course-comunicacion",
+    "title": "Introducción a la Comunicación y Medios",
+    "description": "Periodismo, producción audiovisual y relaciones públicas — cómo se cuentan las historias que llegan a todos. Próximamente.",
+    "icon": "📰",
+    "color": "#38bdf8",
+    "category": "Comunicación y Medios",
     "locked": true
   }
 ]

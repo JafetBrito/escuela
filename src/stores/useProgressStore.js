@@ -6,6 +6,7 @@ import { useLevelStore } from './useLevelStore'
 import { useCollectionStore } from './useCollectionStore'
 import { useAuthStore } from './useAuthStore'
 import { isCourseCompleted } from '../data/achievementsRegistry'
+import { DEV_UNLOCK_ALL } from '../config/devUnlock'
 
 // Any user (with or without an account) can try the first 2 classes of
 // every course for free. Classes 3+ require a license for that course
@@ -120,6 +121,8 @@ export const useProgressStore = create((set, get) => ({
   // On top of that, classes beyond FREE_MODULE_ORDER_LIMIT require a license
   // for this course (hasAccessToCourse).
   isModuleUnlocked: (courseId, id) => {
+    if (DEV_UNLOCK_ALL) return true
+
     const courseData = getCourseData(courseId)
     const targetModule = courseData.modules.find((m) => m.id === id)
     if (!targetModule) return false

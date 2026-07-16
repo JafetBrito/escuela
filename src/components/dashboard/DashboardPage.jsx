@@ -12,6 +12,7 @@ import { useGameStore } from '../../stores/useGameStore'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
+import { MAIN_CATEGORIES } from '../../data/categoryTaxonomy'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
@@ -535,42 +536,59 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
 }
 
 // ── Tab: Escuelas ─────────────────────────────────────────────────────────────
-// Cada categoría ahora es una tarjeta que lleva a su propia página dedicada
-// (/escuela/:slug — ver SchoolPage.jsx) en vez de expandir la lista de cursos
-// aquí mismo: el conocimiento se especializa, una sola pantalla con título +
-// lista no alcanzaba a mostrar subcategorías ni el chat con el profesor.
-function EscuelasTab({ categories }) {
+// Cada una de las 5 grandes áreas del conocimiento (+ Plataforma) es una
+// tarjeta que lleva a /escuela-categoria/:id (ver MainCategoryPage.jsx), que
+// lista sus subcategorías y cursos de un vistazo — ya no hay mascota/chat en
+// este primer paso, solo navegar directo a lo que se quiere estudiar.
+function EscuelasTab() {
   const { t } = useI18n()
   const navigate = useNavigate()
+
+  const withCounts = useMemo(() => MAIN_CATEGORIES.map((m) => {
+    const subcategories = m.subcategories.map((s) => ({
+      ...s,
+      count: courses.filter((c) => s.schoolCategories.includes(c.category ?? 'Otros')).length,
+    }))
+    return { ...m, subcategories, count: subcategories.reduce((n, s) => n + s.count, 0) }
+  }), [])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-black text-text mb-1">{t('dashboard.schoolsTitle')}</h1>
       <p className="text-sm text-text-muted mb-6">{t('dashboard.schoolsSubtitle')}</p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {categories.map(([category, cats]) => {
-          const meta = CATEGORY_META[category] ?? CATEGORY_META.Otros
-          return (
+      <div className="space-y-4">
+        {withCounts.map((m) => (
+          <div key={m.id} className="overflow-hidden rounded-2xl border border-border bg-surface">
             <button
-              key={category}
               type="button"
-              onClick={() => navigate(`/escuela/${meta.slug}`)}
-              className={`flex items-center justify-between rounded-2xl px-5 py-4 text-left bg-gradient-to-r ${meta.gradient} transition-transform hover:-translate-y-0.5 hover:opacity-95`}
+              onClick={() => navigate(`/escuela-categoria/${m.id}`)}
+              className={`flex w-full items-center justify-between px-5 py-4 text-left bg-gradient-to-r ${m.gradient} transition hover:opacity-95`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-3xl drop-shadow-sm">{meta.icon}</span>
+                <span className="text-3xl drop-shadow-sm">{m.icon}</span>
                 <div>
-                  <p className="text-base font-extrabold text-background drop-shadow-sm">{category}</p>
+                  <p className="text-base font-extrabold text-background drop-shadow-sm">{m.title}</p>
                   <p className="text-xs font-medium text-background/70">
-                    {cats.length} {cats.length === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')}
+                    {m.count} {m.count === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')} · {m.subcategories.length} subcategorías
                   </p>
                 </div>
               </div>
               <span className="text-background/70 text-lg">→</span>
             </button>
-          )
-        })}
+            <div className="flex flex-wrap gap-2 p-4">
+              {m.subcategories.map((s) => (
+                <Link
+                  key={s.name}
+                  to={`/escuela-categoria/${m.id}`}
+                  className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-text-muted transition hover:border-primary hover:text-primary"
+                >
+                  {s.name} <span className="opacity-60">· {s.count}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -813,7 +831,7 @@ export default function DashboardPage() {
   const tasks             = useTasksStore((s) => s.tasks)
   const fetchTasks        = useTasksStore((s) => s.fetchMyTasks)
 
-  const [tab, setTab]               = useState('inicio')
+  const [tab, setTab]               = useState(() => new URLSearchParams(window.location.search).get('tab') || 'inicio')
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 

@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from '../services/supabase/client'
 import { validateLicense } from '../services/crypto/keyCrypto'
 import { applyProgressSnapshot } from '../services/persistence/progressSnapshot'
 import { loadLocalSnapshot } from '../services/persistence/localStore'
+import { DEV_UNLOCK_ALL } from '../config/devUnlock'
 
 // Three user roles:
 //  - 'admin'            -> profile.role === 'admin', access to everything
@@ -188,6 +189,7 @@ export const useAuthStore = create((set, get) => ({
   // 'full' licenses unlock every course; 'single' licenses only unlock the
   // course they were issued for. The demo course and admins are always open.
   hasAccessToCourse: (courseId) => {
+    if (DEV_UNLOCK_ALL) return true
     if (courseId === 'course-demo' || courseId === 'course-claude-mayores') return true
     if (get().profile?.role === 'admin') return true
     const license = get().license
