@@ -12,10 +12,12 @@ function formatTime(seconds) {
 // (controls:0, disablekb:1, modestbranding:1, rel:0), iframe is
 // pointer-events:none and sits under a transparent overlay so all
 // interaction goes through CustomControls via the IFrame API.
-export default function VideoPlayer({ videoId, className = '', aspectClassName = 'aspect-video' }) {
+export default function VideoPlayer({ videoId, className = '', aspectClassName = 'aspect-video', onEnded }) {
   const containerId = useId().replace(/:/g, '')
   const playerRef = useRef(null)
   const progressTimerRef = useRef(null)
+  const onEndedRef = useRef(onEnded)
+  onEndedRef.current = onEnded
 
   const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -54,6 +56,7 @@ export default function VideoPlayer({ videoId, className = '', aspectClassName =
             } else {
               clearInterval(progressTimerRef.current)
             }
+            if (event.data === YT.PlayerState.ENDED) onEndedRef.current?.()
           },
         },
       })

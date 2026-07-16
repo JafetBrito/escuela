@@ -40,7 +40,7 @@ begin
     'en_vivo',
     'Closures: ejemplo con contador',
     '[{"label":"Repaso de scope"},{"label":"Closures: ejemplo con contador"},{"label":"Ejercicio en vivo"},{"label":"Preguntas"}]'::jsonb,
-    '[{"label":"Slides de la clase","url":"https://example.com/slides.pdf","type":"pdf"},{"label":"Repo de ejemplos","url":"https://github.com"}]'::jsonb,
+    '[{"label":"Diapositiva de portada","url":"https://picsum.photos/seed/oliver1/400/300","type":"image"},{"label":"Guía de la clase (PDF)","url":"https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf","type":"pdf"},{"label":"Repo de ejemplos","url":"https://github.com"}]'::jsonb,
     '[{"title":"Escribe una función contador con closure","description":"Usa el patrón visto en clase y pruébalo en la consola."}]'::jsonb,
     demo_student, demo_admin, 'aqz-KE-bpKQ'
   );

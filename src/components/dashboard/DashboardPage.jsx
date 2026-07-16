@@ -37,6 +37,7 @@ const CAMPUS_LINKS = [
 const NAV_SECTIONS = [
   { key: 'academia', links: [
     { to: '/clases-disponibles', key: 'clasesDisponibles', icon: '🎬' },
+    { to: '/clase-online', key: 'claseOnline',  icon: '📺' },
     { to: '/horario',      key: 'horario',      icon: '🗓️' },
     { to: '/notas',        key: 'notas',        icon: '📝' },
     { to: '/biblioteca',   key: 'biblioteca',   icon: '📚' },

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
-import { useLiveClassStore, canJoinClass, makeJitsiUrl } from '../../stores/useLiveClassStore'
+import { useLiveClassStore, canJoinClass, makeJitsiUrl, classShortCode } from '../../stores/useLiveClassStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import HubContent from '../liveclass/HubContent'
 
 const STATUS_META = {
   programada: { label: 'Programada', cls: 'bg-amber-500/20 text-amber-400' },
@@ -109,11 +110,65 @@ function CreateForm({ students, onCreate }) {
   )
 }
 
+// Invoca a un alumno en el momento — crea la clase, la marca en vivo y
+// dispara la notificación de inmediato, sin pasar por fecha/hora. Para
+// cuando el profesor quiere empezar a dar clase ya mismo.
+function QuickStartForm({ students, onQuickStart }) {
+  const [open, setOpen] = useState(false)
+  const [studentId, setStudentId] = useState('')
+  const [title, setTitle] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const handleStart = async () => {
+    setBusy(true)
+    await onQuickStart(studentId || null, title.trim() || 'Clase en vivo')
+    setBusy(false)
+    setOpen(false)
+    setStudentId('')
+    setTitle('')
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="mb-4 ml-2 rounded-xl border-2 border-red-500 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20">
+        ⚡ Iniciar clase ahora
+      </button>
+    )
+  }
+
+  return (
+    <div className="mb-6 space-y-3 rounded-2xl border border-red-500/30 bg-red-500/5 p-4">
+      <h3 className="font-bold text-text">⚡ Iniciar clase ahora</h3>
+      <p className="text-xs text-text-muted">Crea la clase, la marca en vivo y notifica al alumno de inmediato — sin programar nada. Se abre el panel de control con el link de Jitsi listo.</p>
+      <div>
+        <label className="text-[10px] font-bold uppercase text-text-muted">¿A quién invocas?</label>
+        <select value={studentId} onChange={(e) => setStudentId(e.target.value)}
+          className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary">
+          <option value="">Todos los alumnos</option>
+          {students.map((s) => <option key={s.id} value={s.id}>{s.display_name || s.email}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-[10px] font-bold uppercase text-text-muted">Título (opcional)</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Clase en vivo"
+          className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm text-text-muted hover:text-text">Cancelar</button>
+        <button type="button" onClick={handleStart} disabled={busy} className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
+          {busy ? 'Invocando…' : '🔴 Invocar y empezar'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const TABS = [
   { key: 'contenido', label: '📍 Contenido' },
   { key: 'recursos', label: '📎 Recursos' },
   { key: 'misiones', label: '🎯 Misiones' },
   { key: 'preguntas', label: '❓ Preguntas' },
+  { key: 'preview', label: '👁️ Vista del alumno' },
 ]
 
 // Panel de control de una clase abierta — aquí el profesor organiza todo en
@@ -121,6 +176,7 @@ const TABS = [
 function ControlPanel({ classId, students, onClose }) {
   const activeClass    = useLiveClassStore((s) => s.activeClass)
   const questions      = useLiveClassStore((s) => s.questions)
+  const pings          = useLiveClassStore((s) => s.pings)
   const openClass      = useLiveClassStore((s) => s.openClass)
   const startClass     = useLiveClassStore((s) => s.startClass)
   const endClass       = useLiveClassStore((s) => s.endClass)
@@ -191,6 +247,7 @@ function ControlPanel({ classId, students, onClose }) {
           <p className="text-xs text-text-muted">
             👤 {targetStudent ? (targetStudent.display_name || targetStudent.email) : 'Todos los alumnos'}
             {' · '}{new Date(activeClass.scheduled_at).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            {' · '}🔗 código: <span className="font-mono font-bold text-primary">{classShortCode(activeClass.id)}</span>
           </p>
         </div>
         <div className="flex gap-2">
@@ -204,6 +261,17 @@ function ControlPanel({ classId, students, onClose }) {
           )}
         </div>
       </div>
+
+      {pings.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5">
+          <span className="text-xs font-bold uppercase tracking-wide text-amber-400">Actividad en vivo</span>
+          {pings.slice(0, 6).map((p) => (
+            <span key={p.id} className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-300">
+              {p.kind === 'mano' ? '🖐️' : '👋'} hace {Math.max(0, Math.round((Date.now() - new Date(p.created_at)) / 1000))}s
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1">
         {TABS.map((t) => (
@@ -338,6 +406,15 @@ function ControlPanel({ classId, students, onClose }) {
           </div>
         </div>
       )}
+
+      {tab === 'preview' && (
+        <div>
+          <p className="mb-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs text-text-muted">
+            👁️ Esto es exactamente lo que ve el alumno en su Hub — incluyendo los botones de "levantar la mano" y preguntas, que aquí también funcionan de verdad.
+          </p>
+          <HubContent activeClass={activeClass} />
+        </div>
+      )}
     </div>
   )
 }
@@ -350,6 +427,7 @@ export default function AdminLiveClassesPage() {
   const fetchClasses  = useLiveClassStore((s) => s.fetchClasses)
   const fetchStudents = useLiveClassStore((s) => s.fetchStudents)
   const createClass   = useLiveClassStore((s) => s.createClass)
+  const startClass    = useLiveClassStore((s) => s.startClass)
   const deleteClass   = useLiveClassStore((s) => s.deleteClass)
   const closeClass    = useLiveClassStore((s) => s.closeClass)
   const [openId, setOpenId] = useState(null)
@@ -373,6 +451,21 @@ export default function AdminLiveClassesPage() {
 
   const handleCreate = (payload) => createClass({ ...payload, created_by: session?.user?.id })
 
+  const handleQuickStart = async (studentId, title) => {
+    const { data } = await createClass({
+      title,
+      description: null,
+      student_id: studentId,
+      meet_url: makeJitsiUrl(title),
+      scheduled_at: new Date().toISOString(),
+      created_by: session?.user?.id,
+    })
+    if (data) {
+      await startClass(data.id)
+      setOpenId(data.id)
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
@@ -388,7 +481,10 @@ export default function AdminLiveClassesPage() {
               <ControlPanel classId={openId} students={students} onClose={() => { closeClass(); setOpenId(null) }} />
             ) : (
               <>
-                <CreateForm students={students} onCreate={handleCreate} />
+                <div className="flex flex-wrap items-start gap-2">
+                  <CreateForm students={students} onCreate={handleCreate} />
+                  <QuickStartForm students={students} onQuickStart={handleQuickStart} />
+                </div>
                 <div className="space-y-3">
                   {classes.map((c) => {
                     const meta = STATUS_META[c.status] ?? STATUS_META.programada

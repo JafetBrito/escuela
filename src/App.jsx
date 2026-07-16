@@ -75,6 +75,7 @@ const AdminLiveClassesPage = lazy(() => import('./components/admin/AdminLiveClas
 const MyClassesPage = lazy(() => import('./components/liveclass/MyClassesPage'))
 const SchedulePage = lazy(() => import('./components/liveclass/SchedulePage'))
 const AvailableClassesPage = lazy(() => import('./components/liveclass/AvailableClassesPage'))
+const OnlineClassPage = lazy(() => import('./components/onlineclass/OnlineClassPage'))
 const AnnouncementsPage = lazy(() => import('./components/announcements/AnnouncementsPage'))
 const World2dPage  = lazy(() => import('./components/world2d/World2dPage'))
 const RolLobbyPage = lazy(() => import('./components/rol/RolLobbyPage'))
@@ -355,6 +356,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AvailableClassesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clase-online"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <OnlineClassPage />
               </Suspense>
             </ProtectedRoute>
           }

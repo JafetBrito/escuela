@@ -30,11 +30,25 @@ export function makeJitsiUrl(title) {
   return `https://meet.jit.si/OliverAcademy-${slug}-${crypto.randomUUID().slice(0, 6)}`
 }
 
+// Código corto de sincronización: se deriva del id de la clase (sin guardar
+// nada nuevo) — el alumno lo teclea en el segundo dispositivo para saltar
+// directo al Hub de esa clase, en vez de tocar un link.
+export function classShortCode(classId) {
+  return classId.replace(/-/g, '').slice(0, 6).toUpperCase()
+}
+
+export function findClassByCode(classes, code) {
+  const norm = (code || '').trim().toUpperCase()
+  if (!norm) return null
+  return classes.find((c) => classShortCode(c.id) === norm) ?? null
+}
+
 export const useLiveClassStore = create((set, get) => ({
   classes: [],
   loading: false,
   activeClass: null,
   questions: [],
+  pings: [],
   students: [],
   _channel: null,
 
@@ -57,11 +71,12 @@ export const useLiveClassStore = create((set, get) => ({
   openClass: async (classId) => {
     get().closeClass()
 
-    const [{ data: cls }, { data: qs }] = await Promise.all([
+    const [{ data: cls }, { data: qs }, { data: pgs }] = await Promise.all([
       supabase.from('live_classes').select('*').eq('id', classId).single(),
       supabase.from('live_class_questions').select('*').eq('live_class_id', classId).order('created_at', { ascending: true }),
+      supabase.from('live_class_pings').select('*').eq('live_class_id', classId).order('created_at', { ascending: false }).limit(20),
     ])
-    set({ activeClass: cls ?? null, questions: qs ?? [] })
+    set({ activeClass: cls ?? null, questions: qs ?? [], pings: pgs ?? [] })
 
     const channel = supabase.channel(`live_class:${classId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_classes', filter: `id=eq.${classId}` },
@@ -70,6 +85,8 @@ export const useLiveClassStore = create((set, get) => ({
         (payload) => set((s) => ({ questions: [...s.questions, payload.new] })))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_class_questions', filter: `live_class_id=eq.${classId}` },
         (payload) => set((s) => ({ questions: s.questions.map((q) => q.id === payload.new.id ? payload.new : q) })))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_class_pings', filter: `live_class_id=eq.${classId}` },
+        (payload) => set((s) => ({ pings: [payload.new, ...s.pings].slice(0, 20) })))
       .subscribe()
 
     set({ _channel: channel })
@@ -78,12 +95,20 @@ export const useLiveClassStore = create((set, get) => ({
   closeClass: () => {
     const ch = get()._channel
     if (ch) supabase.removeChannel(ch)
-    set({ activeClass: null, questions: [], _channel: null })
+    set({ activeClass: null, questions: [], pings: [], _channel: null })
   },
 
   askQuestion: async (classId, studentId, question) => {
-    if (!question.trim()) return
-    await supabase.from('live_class_questions').insert({ live_class_id: classId, student_id: studentId, question: question.trim() })
+    if (!question.trim()) return { error: null }
+    const { error } = await supabase.from('live_class_questions').insert({ live_class_id: classId, student_id: studentId, question: question.trim() })
+    return { error }
+  },
+
+  // Botón de "levantar la mano" / ping — sin texto, solo una señal rápida
+  // que el admin ve aparecer en vivo en su panel mientras da la clase.
+  sendPing: async (classId, studentId, kind = 'mano') => {
+    const { error } = await supabase.from('live_class_pings').insert({ live_class_id: classId, student_id: studentId, kind })
+    return { error }
   },
 
   // ── Admin ─────────────────────────────────────────────────────────────

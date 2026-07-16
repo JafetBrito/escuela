@@ -12,6 +12,7 @@ export const en = {
     items: {
       misClases: 'My Classes',
       clasesDisponibles: 'Available Classes',
+      claseOnline: 'Online Class',
       horario: 'Schedule',
       notas: 'Notes',
       biblioteca: 'Library',

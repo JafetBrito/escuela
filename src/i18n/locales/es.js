@@ -16,6 +16,7 @@ export const es = {
     items: {
       misClases: 'Mis Clases',
       clasesDisponibles: 'Clases Disponibles',
+      claseOnline: 'Clase Online',
       horario: 'Horario',
       notas: 'Notas',
       biblioteca: 'Librería',

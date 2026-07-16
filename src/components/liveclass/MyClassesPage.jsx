@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { Link } from 'react-router-dom'
-import { useLiveClassStore, canJoinClass } from '../../stores/useLiveClassStore'
-import { useAuthStore } from '../../stores/useAuthStore'
+import { useLiveClassStore, canJoinClass, findClassByCode } from '../../stores/useLiveClassStore'
+import HubContent from './HubContent'
 
 const STATUS_META = {
   programada: { label: 'Programada', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
@@ -71,24 +71,46 @@ function ClassCard({ cls, onOpen }) {
   )
 }
 
+// ── Sincronizar con código — la contraparte de la pantalla "En tu teléfono" ──
+// de /clases-disponibles: teclea el código y salta directo al Hub de esa clase.
+function SyncCodeInput({ classes, onOpen }) {
+  const [code, setCode] = useState('')
+  const [error, setError] = useState(false)
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const match = findClassByCode(classes, code)
+    if (!match) { setError(true); return }
+    setError(false)
+    onOpen(match.id)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-6 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-primary/70">🔗 Sincronizar con código</p>
+      <p className="mt-0.5 text-xs text-text-muted">¿Estás viendo una clase en otra pantalla? Escribe el código que te mostró.</p>
+      <div className="mt-2 flex gap-2">
+        <input
+          value={code}
+          onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(false) }}
+          placeholder="Ej: 3F9A2B"
+          maxLength={6}
+          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm uppercase tracking-widest text-text outline-none focus:border-primary"
+        />
+        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Conectar</button>
+      </div>
+      {error && <p className="mt-1.5 text-xs text-danger">No encontramos una clase con ese código.</p>}
+    </form>
+  )
+}
+
 // ── Hub de una clase abierta ────────────────────────────────────────────────
 function ClassHub({ onBack }) {
   const activeClass = useLiveClassStore((s) => s.activeClass)
-  const questions   = useLiveClassStore((s) => s.questions)
-  const askQuestion = useLiveClassStore((s) => s.askQuestion)
-  const session     = useAuthStore((s) => s.session)
-  const [draft, setDraft] = useState('')
   const countdown = useCountdown(activeClass?.status === 'programada' ? activeClass?.scheduled_at : null)
 
   if (!activeClass) return null
   const meta = STATUS_META[activeClass.status] ?? STATUS_META.programada
-
-  const handleAsk = async (e) => {
-    e.preventDefault()
-    if (!draft.trim()) return
-    await askQuestion(activeClass.id, session?.user?.id, draft)
-    setDraft('')
-  }
 
   return (
     <div className="space-y-4">
@@ -118,80 +140,7 @@ function ClassHub({ onBack }) {
         )}
       </div>
 
-      {/* Tema actual */}
-      {activeClass.current_topic && (
-        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-primary/70">📍 En este momento</p>
-          <p className="mt-0.5 text-lg font-bold text-text">{activeClass.current_topic}</p>
-        </div>
-      )}
-
-      {/* Agenda */}
-      {activeClass.agenda?.length > 0 && (
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">Agenda</p>
-          <ul className="space-y-1.5">
-            {activeClass.agenda.map((item, i) => (
-              <li key={i} className={`flex items-center gap-2 text-sm ${item.label === activeClass.current_topic ? 'font-bold text-primary' : 'text-text-muted'}`}>
-                <span>{item.label === activeClass.current_topic ? '▶️' : '▫️'}</span> {item.label}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Recursos */}
-      {activeClass.resources?.length > 0 && (
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">Recursos</p>
-          <div className="space-y-1.5">
-            {activeClass.resources.map((r, i) => (
-              <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="block text-sm text-primary hover:underline">
-                {r.type === 'pdf' ? '📄' : '🔗'} {r.label}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Misiones */}
-      {activeClass.missions?.length > 0 && (
-        <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">🎯 Misiones de la clase</p>
-          <div className="space-y-2">
-            {activeClass.missions.map((m, i) => (
-              <div key={i} className="rounded-xl bg-surface-hover px-3 py-2">
-                <p className="text-sm font-semibold text-text">{m.title}</p>
-                {m.description && <p className="mt-0.5 text-xs text-text-muted">{m.description}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Preguntas */}
-      <div className="rounded-2xl border border-border bg-surface p-4">
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">Preguntas</p>
-        <div className="space-y-2">
-          {questions.length === 0 && <p className="text-sm text-text-muted">Aún no has hecho preguntas en esta clase.</p>}
-          {questions.map((q) => (
-            <div key={q.id} className="rounded-xl bg-surface-hover px-3 py-2">
-              <p className="text-sm text-text">❓ {q.question}</p>
-              {q.answered && <p className="mt-1 text-sm text-emerald-400">💬 {q.answer}</p>}
-              {!q.answered && <p className="mt-1 text-xs text-text-muted">Esperando respuesta…</p>}
-            </div>
-          ))}
-        </div>
-        <form onSubmit={handleAsk} className="mt-3 flex gap-2">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Escribe tu duda…"
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-          />
-          <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Enviar</button>
-        </form>
-      </div>
+      <HubContent activeClass={activeClass} />
     </div>
   )
 }
@@ -217,6 +166,7 @@ export default function MyClassesPage() {
             <>
               <h1 className="mb-1 text-2xl font-black text-text">🎓 Mis Clases</h1>
               <p className="mb-6 text-sm text-text-muted">Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.</p>
+              <SyncCodeInput classes={classes} onOpen={openClass} />
               <ClassList classes={classes} onOpen={openClass} />
             </>
           )}
