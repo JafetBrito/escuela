@@ -10,6 +10,9 @@ export const en = {
       comunidad: 'Community',
     },
     items: {
+      misClases: 'My Classes',
+      clasesDisponibles: 'Available Classes',
+      horario: 'Schedule',
       notas: 'Notes',
       biblioteca: 'Library',
       guias: 'Guides',

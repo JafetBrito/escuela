@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { taskTypeOf } from '../../data/taskTypes'
+import WeeklyClassCalendar from '../liveclass/WeeklyClassCalendar'
 
 // ── Subject config ─────────────────────────────────────────────────────────────
 const SUBJECTS = {
@@ -529,6 +530,7 @@ export default function TasksPage() {
               { key: 'tasks',     label: '📋 Mis Tareas',      badge: pending > 0 ? pending : null },
               { key: 'completed', label: '✅ Completadas',     badge: (delivered + reviewed) > 0 ? (delivered + reviewed) : null },
               { key: 'grades',    label: '⭐ Calificaciones',   badge: graded.length > 0 ? graded.length : null },
+              { key: 'clases',    label: '🎓 Clases',          badge: null },
             ].map(({ key, label, badge }) => (
               <button
                 key={key}
@@ -672,6 +674,9 @@ export default function TasksPage() {
                   <GradesView tasks={tasks} />
                 )
               )}
+
+              {/* ── Clases tab ────────────────────────────── */}
+              {activeTab === 'clases' && <WeeklyClassCalendar />}
             </div>
           </div>
         </div>

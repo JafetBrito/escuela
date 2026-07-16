@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
@@ -9,9 +9,7 @@ export default function ProtectedRoute({ children, requireTutorial = false }) {
   const session    = useAuthStore((s) => s.session)
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
   const isAdmin    = useAuthStore((s) => s.isAdmin)
-  const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
-  const location   = useLocation()
 
   if (!authReady) {
     return (
@@ -27,15 +25,12 @@ export default function ProtectedRoute({ children, requireTutorial = false }) {
     return <Navigate to="/login" replace />
   }
 
-  // Account exists but onboarding was never finished (avatar + class not set).
-  // Admins bypass this check — they can use /admin-setup to configure quickly.
   const adminBypass = isAdmin?.() ?? false
-  if (!playerClass && !adminBypass && location.pathname !== '/crear-cuenta') {
-    return <Navigate to="/crear-cuenta" replace />
-  }
 
-  // VR campus routes require the tutorial to be done first (mascot + Oliver's
-  // class chosen). Send new users to the tutorial (/vr-templo).
+  // Solo las rutas del mundo VR piden mascota+clase de Oliver — el resto de
+  // la plataforma (dashboard, cursos, tienda...) solo requiere estar logueado.
+  // Antes esto también bloqueaba TODAS las rutas si player.class era null,
+  // lo que mandaba a usuarios YA existentes de vuelta a /crear-cuenta.
   if (requireTutorial && !oliverClass && !adminBypass) {
     return <Navigate to="/vr-templo" replace />
   }

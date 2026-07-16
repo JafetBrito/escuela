@@ -8,6 +8,7 @@ import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useGameStore } from '../../stores/useGameStore'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
@@ -17,8 +18,6 @@ import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
-import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
-import { useQuestsStore } from '../../stores/useQuestsStore'
 import { getAllAchievements, ACHIEVEMENT_CATEGORIES } from '../../data/achievementsRegistry'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { formatCurrency } from '../../utils/currency'
@@ -37,6 +36,8 @@ const CAMPUS_LINKS = [
 // Ninguna página existente queda fuera.
 const NAV_SECTIONS = [
   { key: 'academia', links: [
+    { to: '/clases-disponibles', key: 'clasesDisponibles', icon: '🎬' },
+    { to: '/horario',      key: 'horario',      icon: '🗓️' },
     { to: '/notas',        key: 'notas',        icon: '📝' },
     { to: '/biblioteca',   key: 'biblioteca',   icon: '📚' },
     { to: '/guias',        key: 'guias',        icon: '📖' },
@@ -45,14 +46,14 @@ const NAV_SECTIONS = [
     { to: '/anuncios',     key: 'anuncios',     icon: '📋' },
   ]},
   { key: 'progreso', links: [
-    { to: '/mascota',   key: 'mascota',  icon: '⚔️' },
-    { to: '/arbol',     key: 'arbol',    icon: '🌳' },
-    { to: '/misiones',  key: 'misiones', icon: '📜' },
-    { to: '/logros',    key: 'logros',   icon: '🏅' },
     { to: '/mis-tareas', key: 'misTareas', icon: '📋' },
+    { to: '/logros',    key: 'logros',   icon: '🏅' },
   ]},
   { key: 'campus', links: [
     { to: '/vr',            key: 'vr',         icon: '🕶️' },
+    { to: '/mascota',       key: 'mascota',    icon: '⚔️' },
+    { to: '/arbol',         key: 'arbol',      icon: '🌳' },
+    { to: '/misiones',      key: 'misiones',   icon: '📜' },
     { to: '/vr-templo',     key: 'templo',     icon: '🏛️' },
     { to: '/vr/anfiteatro', key: 'anfiteatro', icon: '🎭' },
     { to: '/vr/cueva-platon', key: 'cueva',    icon: '🕯️' },
@@ -304,15 +305,11 @@ export function CourseCard({ course, pct, owned, accent, onClick }) {
 }
 
 // ── Tab: Inicio ───────────────────────────────────────────────────────────────
-function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, announcements, tasks, patchNotesOpen, setPatchNotesOpen }) {
+function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, tasks, patchNotesOpen, setPatchNotesOpen }) {
   const { t }    = useI18n()
   const latest   = PATCH_NOTES[0]
   const xp       = useLevelStore((s) => s.xp)
   const { level, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
-
-  // Solo anuncios de clase en la tarjeta del dashboard — las actualizaciones
-  // del servidor (versión/git) tienen su propio tablón arriba.
-  const classAnnouncements = announcements.filter((a) => a.category !== 'actualizacion' && !a.synthetic)
 
   const inProgress = useMemo(() => courses.filter((c) => {
     const p = progressByCourse(c.id)
@@ -325,9 +322,20 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   [progressByCourse])
 
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
+  const hasOliver = useGameStore((s) => Boolean(s.oliver.class))
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+
+      {!hasOliver && (
+        <Link to="/vr-templo" className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 transition hover:bg-primary/15">
+          <div>
+            <p className="text-sm font-bold text-text">🐾 ¿Quieres tu mascota y el mundo VR?</p>
+            <p className="text-xs text-text-muted">Es opcional — puedes seguir tomando cursos sin esto. Cuando quieras, crea tu personaje aquí.</p>
+          </div>
+          <span className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Crear →</span>
+        </Link>
+      )}
 
       {/* Greeting */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -480,58 +488,31 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         </div>
       )}
 
-      {/* Anuncios de clase + Tareas (las actualizaciones del servidor van arriba) */}
-      {(classAnnouncements.length > 0 || tasks.some((task) => task.status === 'pendiente')) && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {classAnnouncements.length > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-              <div className="flex items-center justify-between border-b border-border bg-blue-500/5 px-4 py-3">
-                <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
-                  <span>📢</span>{t('dashboard.announcements')}
-                </h3>
-                <Link to="/anuncios" className="text-xs text-primary hover:underline">{t('dashboard.seeAll')}</Link>
+      {/* Tareas pendientes — anuncios y mensajes viven ahora en /anuncios
+          (tablón + buzón), para no repetir el mismo contenido aquí. */}
+      {tasks.some((task) => task.status === 'pendiente') && (
+        <div className="overflow-hidden rounded-2xl border border-amber-500/30 bg-surface">
+          <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
+              <span>📋</span>{t('dashboard.myTasks')}
+            </h3>
+            <Link to="/mis-tareas" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
+          </div>
+          <div className="divide-y divide-border/60">
+            {tasks.filter((task) => task.status === 'pendiente').slice(0, 4).map((task) => (
+              <div key={task.id} className="flex items-start gap-3 px-4 py-2.5">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-text line-clamp-1">{task.title}</p>
+                  {task.due_date && (
+                    <p className="text-[11px] text-text-muted">
+                      📅 {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="divide-y divide-border/60">
-                {classAnnouncements.slice(0, 3).map((a) => (
-                  <div key={a.id} className="flex items-start gap-3 px-4 py-2.5">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-base">{a.icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <span className={`mb-0.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${NOTIF_CATEGORY_STYLE[a.category] ?? NOTIF_CATEGORY_STYLE.general}`}>
-                        {t(`announcements.categories.${a.category}`)}
-                      </span>
-                      <p className="text-xs font-semibold text-text line-clamp-1">{a.title}</p>
-                      {a.body && <p className="text-[11px] text-text-muted line-clamp-1">{a.body}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {tasks.some((task) => task.status === 'pendiente') && (
-            <div className="overflow-hidden rounded-2xl border border-amber-500/30 bg-surface">
-              <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
-                  <span>📋</span>{t('dashboard.myTasks')}
-                </h3>
-                <Link to="/mis-tareas" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
-              </div>
-              <div className="divide-y divide-border/60">
-                {tasks.filter((task) => task.status === 'pendiente').slice(0, 3).map((task) => (
-                  <div key={task.id} className="flex items-start gap-3 px-4 py-2.5">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-text line-clamp-1">{task.title}</p>
-                      {task.due_date && (
-                        <p className="text-[11px] text-text-muted">
-                          📅 {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
@@ -644,12 +625,12 @@ function DataTable({ columns, children, empty }) {
   )
 }
 
+// Solo avance académico aquí — mascota/árbol/misiones son del mundo VR y
+// viven en el grupo de nav "Campus", no en "Mi Progreso".
 const SECTIONS = [
   { id: 'cursos',         label: 'Cursos',         icon: '📚', color: '#2563eb' },
   { id: 'calificaciones', label: 'Calificaciones', icon: '📝', color: '#0d9488' },
   { id: 'logros',         label: 'Logros',         icon: '🏅', color: '#7c3aed' },
-  { id: 'misiones',       label: 'Misiones',       icon: '📜', color: '#16a34a' },
-  { id: 'personaje',      label: 'Personaje',      icon: '⚔️', color: '#ea580c' },
   { id: 'economia',       label: 'Economía',       icon: '💰', color: '#dc2626' },
 ]
 
@@ -661,8 +642,6 @@ function ProgresoTab({ progressByCourse, profile }) {
   const coins            = useCurrencyStore((s) => s.coins)
   const tasks            = useTasksStore((s) => s.tasks)
   const unlocked         = useAchievementsStore((s) => s.unlocked)
-  const missionsClaimed  = useGlobalMissionsStore((s) => s.claimed)
-  const questsCompleted  = useQuestsStore((s) => s.completed)
   const mascotId         = useMascotStore((s) => s.mascot)
   const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
   const [activeSection, setActiveSection] = useState('cursos')
@@ -803,48 +782,6 @@ function ProgresoTab({ progressByCourse, profile }) {
             </>
           )}
 
-          {/* Misiones */}
-          {activeSection === 'misiones' && (
-            <div className="rounded-xl border border-border bg-surface">
-              <InfoRow label="Misiones globales reclamadas" value={missionsClaimed.length} />
-              <InfoRow label="Cadenas de misión completadas" value={questsCompleted.length} />
-              <InfoRow label="Total completado" value={missionsClaimed.length + questsCompleted.length} />
-              <div className="p-4">
-                <Link to="/misiones" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
-                  Ver tablón de misiones →
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Personaje */}
-          {activeSection === 'personaje' && (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-border bg-surface p-5">
-                <div className="mb-1.5 flex justify-between text-xs text-text-muted">
-                  <span>{xpIntoLevel} XP</span>
-                  <span>{isMaxLevel ? 'MAX' : `${xpForNextLevel} XP`}</span>
-                </div>
-                <div className="h-2 rounded-full bg-surface-hover">
-                  <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
-                </div>
-                <p className="mt-1.5 text-xs text-text-muted">{t('dashboard.progress.totalXp', { xp })}</p>
-              </div>
-              <div className="rounded-xl border border-border bg-surface">
-                <Link to="/arbol" className="flex items-center gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-surface-hover">
-                  <span className="text-lg">🌳</span>
-                  <span className="flex-1 text-sm text-text">{t('nav.items.arbol')}</span>
-                  <span className="text-text-muted">›</span>
-                </Link>
-                <Link to="/mascota" className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-hover">
-                  <span className="text-lg">⚔️</span>
-                  <span className="flex-1 text-sm text-text">{t('nav.items.mascota')}</span>
-                  <span className="text-text-muted">›</span>
-                </Link>
-              </div>
-            </div>
-          )}
-
           {/* Economía */}
           {activeSection === 'economia' && (
             <div className="rounded-xl border border-border bg-surface">
@@ -871,7 +808,6 @@ export default function DashboardPage() {
   const license           = useAuthStore((s) => s.license)
   const profile           = useAuthStore((s) => s.profile)
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
-  const announcements     = useAnnouncementsStore((s) => s.announcements)
   const fetchAnnouncements = useAnnouncementsStore((s) => s.fetch)
   const tasks             = useTasksStore((s) => s.tasks)
   const fetchTasks        = useTasksStore((s) => s.fetchMyTasks)
@@ -941,7 +877,6 @@ export default function DashboardPage() {
             <InicioTab
               profile={profile}
               license={license}
-              announcements={announcements}
               tasks={tasks}
               patchNotesOpen={patchNotesOpen}
               setPatchNotesOpen={setPatchNotesOpen}

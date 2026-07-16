@@ -14,6 +14,9 @@ export const es = {
       comunidad: 'Comunidad',
     },
     items: {
+      misClases: 'Mis Clases',
+      clasesDisponibles: 'Clases Disponibles',
+      horario: 'Horario',
       notas: 'Notas',
       biblioteca: 'Librería',
       guias: 'Guías',

@@ -17,6 +17,9 @@ const GROUPS = [
     label: 'Academia',
     icon: '🎓',
     items: [
+      { to: '/mis-clases',   key: 'misClases',    label: 'Mis Clases',   icon: '🎓' },
+      { to: '/clases-disponibles', key: 'clasesDisponibles', label: 'Clases Disponibles', icon: '🎬' },
+      { to: '/horario',      key: 'horario',      label: 'Horario',      icon: '🗓️' },
       { to: '/notas',        key: 'notas',        label: 'Notas',        icon: '📝' },
       { to: '/biblioteca',   key: 'biblioteca',   label: 'Librería',     icon: '📚' },
       { to: '/guias',        key: 'guias',        label: 'Guías',        icon: '📖' },
@@ -32,11 +35,8 @@ const GROUPS = [
     label: 'Progreso',
     icon: '🛡️',
     items: [
-      { to: '/mascota',   key: 'mascota',   label: 'Mi Equipo', icon: '⚔️' },
-      { to: '/arbol',     key: 'arbol',     label: 'Árbol',     icon: '🌳' },
-      { to: '/misiones',  key: 'misiones',  label: 'Misiones',  icon: '📜' },
-      { to: '/logros',    key: 'logros',    label: 'Logros',    icon: '🏅' },
       { to: '/mis-tareas', key: 'misTareas', label: 'Mis Tareas', icon: '📋' },
+      { to: '/logros',    key: 'logros',    label: 'Logros',    icon: '🏅' },
     ],
   },
   {
@@ -46,6 +46,9 @@ const GROUPS = [
     icon: '🌍',
     items: [
       { to: '/vr',     key: 'vr',       label: 'VR',         icon: '🕶️' },
+      { to: '/mascota',   key: 'mascota',   label: 'Mi Equipo', icon: '⚔️' },
+      { to: '/arbol',     key: 'arbol',     label: 'Árbol',     icon: '🌳' },
+      { to: '/misiones',  key: 'misiones',  label: 'Misiones',  icon: '📜' },
       { to: '/mundo',  key: 'mundo',    label: 'Mundo 2D',   icon: '📱' },
       { to: '/rol',    key: 'rol',      label: 'Mundo ROL',  icon: '🎲' },
       { to: '/vr/graffiti', key: 'graffiti', label: 'Calle Graffiti', icon: '🎨' },

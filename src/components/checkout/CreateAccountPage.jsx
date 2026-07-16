@@ -17,12 +17,10 @@ const WELCOME_VIDEO_URL = ''
 
 const OLIVER = getMascotById(8)
 
-// Character creation (avatar + class + mascot) happens ONCE in the VR tutorial
-// (Árbol del Mundo, /vr-templo), like WoW's account→character split. This page
-// only creates the ACCOUNT: nickname + email + password. That removes the old
-// duplication where class was picked here AND again in the VR world, and means
-// the class is only ever chosen while the user is already logged in — so it
-// actually reaches the cloud (see useGameStore.selectPlayerClass force-sync).
+// Esta página solo crea la CUENTA (nombre + correo + contraseña) y te manda
+// directo al dashboard — puedes ver y tomar cursos así, sin más pasos. La
+// mascota + clase de Oliver (mundo VR) son un paso aparte y opcional que se
+// hace después, desde /vr-templo, para quien sí quiera esa parte.
 export default function CreateAccountPage() {
   const navigate = useNavigate()
 
@@ -44,17 +42,18 @@ export default function CreateAccountPage() {
   const supabaseReady   = isSupabaseConfigured()
   const googleButtonRef = useRef(null)
 
-  // Character creation continues in the VR tutorial world.
-  const goToCharacterCreation = (name) => {
+  // Cuenta creada → directo a la plataforma. Crear mascota/clase de Oliver
+  // (mundo VR) queda como paso opcional, disponible después desde el dashboard.
+  const finishSignup = (name) => {
     setPlayerNickname((name || '').trim() || email.split('@')[0] || 'Aventurero')
-    navigate('/vr-templo')
+    navigate('/dashboard')
   }
 
   useEffect(() => {
     if (supabaseReady || !googleButtonRef.current) return
     renderGoogleButton(
       googleButtonRef.current,
-      (googleUser) => { registerWithGoogle(googleUser); goToCharacterCreation(googleUser?.name) },
+      (googleUser) => { registerWithGoogle(googleUser); finishSignup(googleUser?.name) },
       (err) => setError(err.message),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,7 +72,7 @@ export default function CreateAccountPage() {
         setError('Te enviamos un correo de confirmación. Ábrelo, confirma tu cuenta e inicia sesión para crear tu personaje — si no confirmas, tu progreso no se guardará en la nube.')
         return
       }
-      goToCharacterCreation(nickname)
+      finishSignup(nickname)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -172,8 +171,9 @@ export default function CreateAccountPage() {
             <div className="mx-auto max-w-md rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
               <h2 className="mb-1 text-2xl font-black">Crea tu cuenta</h2>
               <p className="mb-6 text-sm text-text-muted">
-                Elige tu nombre y crea tu acceso. Después, en el mundo VR, elegirás tu
-                clase y tu mascota. Las APIs se configuran luego en Ajustes.
+                Elige tu nombre y crea tu acceso — ya puedes ver y tomar tus cursos.
+                Cuando quieras, desde el dashboard puedes crear tu mascota y entrar
+                al mundo VR. Las APIs se configuran luego en Ajustes.
               </p>
 
               {supabaseReady ? (
@@ -203,8 +203,8 @@ export default function CreateAccountPage() {
                     </label>
 
                     {session ? (
-                      <Button type="button" onClick={() => goToCharacterCreation(nickname)}>
-                        Ya tienes sesión — crear personaje →
+                      <Button type="button" onClick={() => finishSignup(nickname)}>
+                        Ya tienes sesión — continuar →
                       </Button>
                     ) : (
                       <Button type="submit" disabled={status === 'processing'} className="py-3 text-base">
@@ -235,7 +235,7 @@ export default function CreateAccountPage() {
                   {!isGoogleAuthConfigured() && (
                     <p className="text-xs text-text-muted">Google Auth tampoco está configurado aún.</p>
                   )}
-                  <Button onClick={() => goToCharacterCreation(nickname)} className="mt-1">Continuar sin cuenta →</Button>
+                  <Button onClick={() => finishSignup(nickname)} className="mt-1">Continuar sin cuenta →</Button>
                 </div>
               )}
 

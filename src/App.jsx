@@ -71,6 +71,10 @@ const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
 const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
 const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
 const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
+const AdminLiveClassesPage = lazy(() => import('./components/admin/AdminLiveClassesPage'))
+const MyClassesPage = lazy(() => import('./components/liveclass/MyClassesPage'))
+const SchedulePage = lazy(() => import('./components/liveclass/SchedulePage'))
+const AvailableClassesPage = lazy(() => import('./components/liveclass/AvailableClassesPage'))
 const AnnouncementsPage = lazy(() => import('./components/announcements/AnnouncementsPage'))
 const World2dPage  = lazy(() => import('./components/world2d/World2dPage'))
 const RolLobbyPage = lazy(() => import('./components/rol/RolLobbyPage'))
@@ -311,6 +315,46 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminTasksPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/clases"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminLiveClassesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mis-clases"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <MyClassesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/horario"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <SchedulePage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clases-disponibles"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AvailableClassesPage />
               </Suspense>
             </ProtectedRoute>
           }
