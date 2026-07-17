@@ -146,6 +146,14 @@ export const en = {
     footer: '© {year} Oliver Academy — One school, many courses to explore.',
   },
   pages: {
+    cerebro: {
+      title: '🧠 Second Brain',
+      subtitle: 'Characters, places, and concepts that appear in the courses, explained separately so they don\'t clutter the class.',
+      notFoundPrefix: 'We couldn\'t find',
+      notFoundSuffix: 'in the second brain yet.',
+      backToAll: '← See all entries',
+      allEntries: '← All entries',
+    },
     achievements: {
       title: '🏅 Achievements',
       subtitle: 'Medals, milestones, and secret feats your mascot unlocks together with you. Every achievement plays a sound and shows a notification when unlocked.',

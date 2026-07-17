@@ -20,6 +20,7 @@ export const nah = {
       ia: 'IA Tlatequitiliztli',
       herramientas: 'Tlatquitl',
       anuncios: 'Tzahtziliztli',
+      cerebro: 'Ic Ome Tonalnamiquiliz',
       mascota: 'Noicniuhtzin',
       arbol: 'Cuahuitl Tlamatiliztli',
       misiones: 'Tequitl',
@@ -84,5 +85,15 @@ export const nah = {
       ctaKey: 'Yeh nicpia notlahtlacolli',
     },
     footer: '© {year} Oliver Academy — Ce Calmecac, miac tlamachtilli para ximotemoa.',
+  },
+  pages: {
+    cerebro: {
+      title: '🧠 Ic Ome Tonalnamiquiliz',
+      subtitle: 'Tlacameh, tlalli huan tlanemiliztli tlein monextiah ipan tlamachtilli, tlanextilli occan inic amo quitentiliz clase.',
+      notFoundPrefix: 'Amo ticnextihqueh',
+      notFoundSuffix: 'ipan ic ome tonalnamiquiliz oc.',
+      backToAll: '← Xiquinta mochi tlanextilli',
+      allEntries: '← Mochi tlanextilli',
+    },
   },
 }

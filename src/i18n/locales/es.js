@@ -150,6 +150,14 @@ export const es = {
     footer: '© {year} Oliver Academy — Una escuela, muchos cursos por explorar.',
   },
   pages: {
+    cerebro: {
+      title: '🧠 Segundo Cerebro',
+      subtitle: 'Personajes, lugares y conceptos que aparecen en los cursos, explicados aparte para no saturar la clase.',
+      notFoundPrefix: 'No encontramos',
+      notFoundSuffix: 'en el segundo cerebro todavía.',
+      backToAll: '← Ver todas las entradas',
+      allEntries: '← Todas las entradas',
+    },
     achievements: {
       title: '🏅 Logros',
       subtitle: 'Medallas, hitos y proezas secretas que tu mascota va desbloqueando contigo. Cada logro suena y aparece como notificación al desbloquearse.',

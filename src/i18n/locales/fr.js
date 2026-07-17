@@ -18,6 +18,7 @@ export const fr = {
       ia: 'Outils IA',
       herramientas: 'Outils',
       anuncios: 'Annonces',
+      cerebro: 'Deuxième Cerveau',
       mascota: 'Mon Équipe',
       arbol: 'Arbre de compétences',
       misiones: 'Missions',
@@ -42,5 +43,15 @@ export const fr = {
       language: 'Langue',
     },
     backToDashboard: '← Retour au tableau de bord',
+  },
+  pages: {
+    cerebro: {
+      title: '🧠 Deuxième Cerveau',
+      subtitle: 'Personnages, lieux et concepts qui apparaissent dans les cours, expliqués à part pour ne pas surcharger le cours.',
+      notFoundPrefix: 'Nous n\'avons pas trouvé',
+      notFoundSuffix: 'dans le deuxième cerveau pour l\'instant.',
+      backToAll: '← Voir toutes les entrées',
+      allEntries: '← Toutes les entrées',
+    },
   },
 }

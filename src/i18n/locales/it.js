@@ -17,6 +17,7 @@ export const it = {
       ia: 'Strumenti IA',
       herramientas: 'Strumenti',
       anuncios: 'Annunci',
+      cerebro: 'Secondo Cervello',
       mascota: 'La Mia Squadra',
       arbol: 'Albero delle Abilità',
       misiones: 'Missioni',
@@ -81,5 +82,15 @@ export const it = {
       ctaKey: 'Ho già la mia chiave',
     },
     footer: '© {year} Oliver Academy — Una scuola, tanti corsi da scoprire.',
+  },
+  pages: {
+    cerebro: {
+      title: '🧠 Secondo Cervello',
+      subtitle: 'Personaggi, luoghi e concetti che appaiono nei corsi, spiegati a parte per non appesantire la lezione.',
+      notFoundPrefix: 'Non abbiamo trovato',
+      notFoundSuffix: 'nel secondo cervello per ora.',
+      backToAll: '← Vedi tutte le voci',
+      allEntries: '← Tutte le voci',
+    },
   },
 }

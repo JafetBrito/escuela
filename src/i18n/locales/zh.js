@@ -17,6 +17,7 @@ export const zh = {
       ia: 'AI 工具',
       herramientas: '工具',
       anuncios: '公告',
+      cerebro: '第二大脑',
       mascota: '我的团队',
       arbol: '技能树',
       misiones: '任务',
@@ -81,5 +82,15 @@ export const zh = {
       ctaKey: '我已经有钥匙了',
     },
     footer: '© {year} Oliver Academy — 一所学校，众多课程等你探索。',
+  },
+  pages: {
+    cerebro: {
+      title: '🧠 第二大脑',
+      subtitle: '课程中出现的人物、地点和概念，单独解释以免影响课程本身。',
+      notFoundPrefix: '暂时没有找到',
+      notFoundSuffix: '这个词条。',
+      backToAll: '← 查看所有词条',
+      allEntries: '← 所有词条',
+    },
   },
 }
