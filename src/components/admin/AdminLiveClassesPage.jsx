@@ -185,8 +185,10 @@ function ControlPanel({ classId, students, onClose }) {
   const uploadResource = useLiveClassStore((s) => s.uploadResource)
   const addMission     = useLiveClassStore((s) => s.addMission)
   const removeMission  = useLiveClassStore((s) => s.removeMission)
+  const sendPing       = useLiveClassStore((s) => s.sendPing)
 
   const [tab, setTab] = useState('contenido')
+  const [pingSent, setPingSent] = useState(false)
   const [topicDraft, setTopicDraft] = useState('')
   const [videoDraft, setVideoDraft] = useState('')
   const [agendaDraft, setAgendaDraft] = useState('')
@@ -236,6 +238,15 @@ function ControlPanel({ classId, students, onClose }) {
     setMissionDesc('')
   }
 
+  // Ping dirigido al alumno (no una respuesta a su mano/ping) — le suena y
+  // se lo anuncia por voz en su Hub, útil para llamar su atención en vivo.
+  const handleCallAttention = async () => {
+    if (!activeClass.student_id) return
+    await sendPing(classId, activeClass.student_id, 'atencion')
+    setPingSent(true)
+    setTimeout(() => setPingSent(false), 2000)
+  }
+
   return (
     <div className="space-y-4">
       <button onClick={onClose} className="text-sm text-text-muted hover:text-primary">← Todas las clases</button>
@@ -251,6 +262,12 @@ function ControlPanel({ classId, students, onClose }) {
           </p>
         </div>
         <div className="flex gap-2">
+          {activeClass.student_id && (
+            <button onClick={handleCallAttention} disabled={pingSent}
+              className={`rounded-lg border px-4 py-2 text-sm font-bold transition ${pingSent ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-border text-text hover:bg-surface-hover'}`}>
+              {pingSent ? '✅ Enviado' : '🔔 Llamar la atención'}
+            </button>
+          )}
           <a href={activeClass.meet_url} target="_blank" rel="noopener noreferrer"
             className="rounded-lg border border-border px-4 py-2 text-sm font-bold text-text hover:bg-surface-hover">🎥 Abrir Jitsi</a>
           {activeClass.status !== 'en_vivo' && activeClass.status !== 'finalizada' && (

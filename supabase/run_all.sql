@@ -598,6 +598,15 @@ alter table public.student_notifications
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 013 — el admin también puede enviar ping ("atención") al alumno
+-- ════════════════════════════════════════════════════════════════════════
+
+drop policy if exists "live_class_pings: admin sends" on public.live_class_pings;
+create policy "live_class_pings: admin sends" on public.live_class_pings
+  for insert with check (public.is_admin());
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

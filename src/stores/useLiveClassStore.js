@@ -1,5 +1,16 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
+import { useAuthStore } from './useAuthStore'
+import { playNotificationSound } from '../utils/sound'
+import { speak } from '../utils/tts'
+
+// Anuncia (sonido + voz) un evento del Hub a quien lo está viendo en vivo —
+// se omite para quien lo acaba de generar (ya tiene su propia confirmación
+// visual, no necesita escucharse a sí mismo).
+function announce(text) {
+  playNotificationSound()
+  speak(text)
+}
 
 // Mis Clases: el video real ocurre en Google Meet (externo, en la
 // computadora) — este store solo sincroniza el "Hub" (agenda, tema actual,
@@ -82,11 +93,35 @@ export const useLiveClassStore = create((set, get) => ({
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_classes', filter: `id=eq.${classId}` },
         (payload) => set({ activeClass: payload.new }))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_class_questions', filter: `live_class_id=eq.${classId}` },
-        (payload) => set((s) => ({ questions: [...s.questions, payload.new] })))
+        (payload) => {
+          set((s) => ({ questions: [...s.questions, payload.new] }))
+          // Quien preguntó ya ve su propia pregunta en pantalla — solo se
+          // anuncia a quien la recibe (el admin).
+          if (payload.new.student_id !== useAuthStore.getState().session?.user?.id) {
+            announce('Nueva pregunta en la clase')
+          }
+        })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_class_questions', filter: `live_class_id=eq.${classId}` },
-        (payload) => set((s) => ({ questions: s.questions.map((q) => q.id === payload.new.id ? payload.new : q) })))
+        (payload) => {
+          set((s) => ({ questions: s.questions.map((q) => q.id === payload.new.id ? payload.new : q) }))
+          if (payload.new.answered && payload.new.student_id === useAuthStore.getState().session?.user?.id) {
+            announce('Tu pregunta fue respondida')
+          }
+        })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_class_pings', filter: `live_class_id=eq.${classId}` },
-        (payload) => set((s) => ({ pings: [payload.new, ...s.pings].slice(0, 20) })))
+        (payload) => {
+          set((s) => ({ pings: [payload.new, ...s.pings].slice(0, 20) }))
+          const p = payload.new
+          const isAdmin = useAuthStore.getState().isAdmin?.()
+          const myId = useAuthStore.getState().session?.user?.id
+          if (p.kind === 'atencion') {
+            // Lo manda el admin — solo se anuncia al alumno que lo recibe.
+            if (!isAdmin) announce('Tu profesor te está llamando')
+          } else if (p.student_id !== myId) {
+            // "mano"/"ping" del alumno — se anuncia a quien lo ve (el admin).
+            announce(p.kind === 'mano' ? 'Un alumno levantó la mano' : 'Nuevo ping de un alumno')
+          }
+        })
       .subscribe()
 
     set({ _channel: channel })

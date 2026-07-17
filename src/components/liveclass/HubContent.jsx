@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveClassStore } from '../../stores/useLiveClassStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import ResourceGallery from '../shared/ResourceGallery'
@@ -14,11 +14,24 @@ const PING_KINDS = [
 // (computadora, modo "verlo aquí mismo") y en la vista previa del admin.
 export default function HubContent({ activeClass }) {
   const questions   = useLiveClassStore((s) => s.questions)
+  const pings       = useLiveClassStore((s) => s.pings)
   const askQuestion = useLiveClassStore((s) => s.askQuestion)
   const sendPing    = useLiveClassStore((s) => s.sendPing)
   const session     = useAuthStore((s) => s.session)
   const [draft, setDraft] = useState('')
   const [pingState, setPingState] = useState({}) // { [kind]: 'sent' | 'error' }
+
+  // Aviso visual cuando el profesor "llama la atención" — complementa el
+  // sonido/voz de useLiveClassStore, se apaga solo tras unos segundos.
+  const lastAttention = pings.find((p) => p.kind === 'atencion')
+  const [dismissedAttentionId, setDismissedAttentionId] = useState(null)
+  const showAttention = lastAttention && lastAttention.id !== dismissedAttentionId
+
+  useEffect(() => {
+    if (!lastAttention) return
+    const timer = setTimeout(() => setDismissedAttentionId(lastAttention.id), 8000)
+    return () => clearTimeout(timer)
+  }, [lastAttention])
 
   const handleAsk = async (e) => {
     e.preventDefault()
@@ -37,6 +50,12 @@ export default function HubContent({ activeClass }) {
 
   return (
     <div className="space-y-4">
+      {showAttention && (
+        <div className="animate-pulse rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center">
+          <p className="text-sm font-bold text-amber-400">🔔 ¡Tu profesor te está llamando!</p>
+        </div>
+      )}
+
       {/* Acciones rápidas — el admin las ve aparecer en vivo mientras da la clase */}
       <div className="flex gap-2">
         {PING_KINDS.map((p) => {
