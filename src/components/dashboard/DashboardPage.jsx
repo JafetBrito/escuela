@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import PatchNotesModal from '../shared/PatchNotesModal'
-import Logo from '../shared/Logo'
 import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
@@ -15,8 +15,7 @@ import { CATEGORY_META } from '../../data/categoryMeta'
 import { MAIN_CATEGORIES } from '../../data/categoryTaxonomy'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
-import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
-import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
+import { useI18n } from '../../i18n'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
 import { getAllAchievements, ACHIEVEMENT_CATEGORIES } from '../../data/achievementsRegistry'
@@ -31,231 +30,6 @@ const CAMPUS_LINKS = [
   { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲' },
   { to: '/games', key: 'games', label: 'Games',      icon: '🎮' },
 ]
-
-// Navegación COMPLETA del sidebar, por subcategoría (mismos grupos que el
-// AppTopBar). `key` → nav.items.<key> / el header de sección → nav.groups.<key>.
-// Ninguna página existente queda fuera.
-const NAV_SECTIONS = [
-  { key: 'academia', links: [
-    { to: '/clases-disponibles', key: 'clasesDisponibles', icon: '🎬' },
-    { to: '/clase-online', key: 'claseOnline',  icon: '📺' },
-    { to: '/horario',      key: 'horario',      icon: '🗓️' },
-    { to: '/notas',        key: 'notas',        icon: '📝' },
-    { to: '/biblioteca',   key: 'biblioteca',   icon: '📚' },
-    { to: '/guias',        key: 'guias',        icon: '📖' },
-    { to: '/ia',           key: 'ia',           icon: '🤖' },
-    { to: '/herramientas', key: 'herramientas', icon: '🔧' },
-    { to: '/anuncios',     key: 'anuncios',     icon: '📋' },
-  ]},
-  { key: 'progreso', links: [
-    { to: '/mis-tareas', key: 'misTareas', icon: '📋' },
-    { to: '/logros',    key: 'logros',   icon: '🏅' },
-  ]},
-  { key: 'campus', links: [
-    { to: '/vr',            key: 'vr',         icon: '🕶️' },
-    { to: '/mascota',       key: 'mascota',    icon: '⚔️' },
-    { to: '/arbol',         key: 'arbol',      icon: '🌳' },
-    { to: '/misiones',      key: 'misiones',   icon: '📜' },
-    { to: '/vr-templo',     key: 'templo',     icon: '🏛️' },
-    { to: '/vr/anfiteatro', key: 'anfiteatro', icon: '🎭' },
-    { to: '/vr/cueva-platon', key: 'cueva',    icon: '🕯️' },
-    { to: '/vr/graffiti',   key: 'graffiti',   icon: '🎨' },
-    { to: '/mundo',         key: 'mundo',      icon: '📱' },
-    { to: '/rol',           key: 'rol',        icon: '🎲' },
-    { to: '/games',         key: 'games',      icon: '🎮' },
-    { to: '/arena',         key: 'arena',      icon: '⚔️' },
-  ]},
-  { key: 'comunidad', links: [
-    { to: '/amigos', key: 'amigos', icon: '👥' },
-    { to: '/chats',  key: 'chats',  icon: '💬' },
-  ]},
-]
-
-// Colores por categoría de notificación/anuncio — distingue de un vistazo una
-// actualización del servidor de un anuncio de clase, tarea o mensaje.
-const NOTIF_CATEGORY_STYLE = {
-  actualizacion: 'bg-emerald-500/15 text-emerald-400',
-  general:       'bg-blue-500/15 text-blue-400',
-  actividad:     'bg-violet-500/15 text-violet-400',
-  recordatorio:  'bg-amber-500/15 text-amber-400',
-  evento:        'bg-rose-500/15 text-rose-400',
-  tarea:         'bg-amber-500/15 text-amber-400',
-  mensaje:       'bg-sky-500/15 text-sky-400',
-}
-
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function Sidebar({ tab, setTab, onClose }) {
-  const navigate      = useNavigate()
-  const { t, lang, setLang } = useI18n()
-  const session       = useAuthStore((s) => s.session)
-  const profile       = useAuthStore((s) => s.profile)
-  const signOut       = useAuthStore((s) => s.signOut)
-  const xp            = useLevelStore((s) => s.xp)
-  const { level }     = levelProgress(xp)
-  const announcements = useAnnouncementsStore((s) => s.announcements)
-  const displayName   = profile?.display_name ?? session?.user?.email?.split('@')[0] ?? 'Jugador'
-  const [notifsOpen, setNotifsOpen] = useState(false)
-  // Acordeón: solo una subcategoría abierta a la vez, para que no se amontone.
-  const [openSection, setOpenSection] = useState(null)
-  // El selector de idioma vive escondido bajo la mini-card del jugador, igual
-  // que en el AppTopBar (dropdown al abrir el botón con el nombre).
-  const [profileOpen, setProfileOpen] = useState(false)
-
-  const navTab = (t) => { setTab(t); onClose?.() }
-  const go     = (to) => { navigate(to); onClose?.() }
-
-  return (
-    <div className="flex h-full flex-col bg-surface border-r border-border overflow-y-auto">
-      {/* Logo */}
-      <div className="flex items-center gap-1.5 px-4 py-3 border-b border-border">
-        <Logo />
-        <span aria-hidden="true">🐱</span>
-      </div>
-
-      {/* User mini-card — abre el selector de idioma */}
-      <button
-        type="button"
-        onClick={() => setProfileOpen((o) => !o)}
-        className="mx-3 mt-2 mb-1 rounded-xl bg-surface-hover px-3 py-2 text-left transition-colors hover:bg-primary/10"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-text truncate">{displayName}</p>
-            <p className="text-[11px] text-text-muted">{t('dashboard.level')} {level} · {xp} XP</p>
-          </div>
-          <span className="shrink-0 text-[10px] text-text-muted">{profileOpen ? '▴' : '▾'}</span>
-        </div>
-      </button>
-      {profileOpen && (
-        <div className="mx-3 mb-1 flex items-center gap-2 rounded-xl border border-border bg-surface-hover px-3 py-2 text-sm text-text-muted">
-          <span>🌐 {t('nav.profile.language')}</span>
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-            className="ml-auto rounded-md border border-border/60 bg-surface px-1.5 py-0.5 text-xs text-text outline-none focus:border-primary"
-          >
-            {SUPPORTED_LANGUAGES.map((code) => (
-              <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Main tabs */}
-      <div className="px-2 pt-2 space-y-0.5">
-        {[
-          { id: 'inicio',    icon: '🏠' },
-          { id: 'escuelas',  icon: '📚' },
-          { id: 'progreso',  icon: '📊' },
-        ].map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navTab(item.id)}
-            className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === item.id
-                ? 'bg-primary/10 text-primary'
-                : 'text-text-muted hover:bg-surface-hover hover:text-text'
-            }`}
-          >
-            <span>{item.icon}</span>
-            {t(`dashboard.tabs.${item.id}`)}
-          </button>
-        ))}
-      </div>
-
-      {/* Secciones colapsables por subcategoría (acordeón) */}
-      <div className="px-2 pt-2 space-y-0.5">
-        {NAV_SECTIONS.map((section) => {
-          const isOpen = openSection === section.key
-          return (
-            <div key={section.key}>
-              <button
-                type="button"
-                onClick={() => setOpenSection(isOpen ? null : section.key)}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-text-muted/60 transition-colors hover:bg-surface-hover hover:text-text"
-              >
-                <span>{t(`nav.groups.${section.key}`)}</span>
-                <span className="text-[9px] transition-transform" style={{ transform: isOpen ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▸</span>
-              </button>
-              {isOpen && (
-                <div className="mb-1 space-y-0.5">
-                  {section.links.map((l) => (
-                    <button key={l.to} type="button" onClick={() => go(l.to)}
-                      className="flex w-full items-center gap-2 rounded-lg py-1.5 pl-6 pr-3 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-                      <span>{l.icon}</span>{t(`nav.items.${l.key}`)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
-
-        {/* Tienda (standalone, como en el AppTopBar) */}
-        <button type="button" onClick={() => go('/tienda')}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-          <span>🛒</span>{t('nav.items.tienda')}
-        </button>
-      </div>
-
-      {/* Notificaciones */}
-      {announcements.length > 0 && (
-        <div className="px-2 pt-2.5">
-          <button
-            type="button"
-            onClick={() => setNotifsOpen((o) => !o)}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text"
-          >
-            <span className="flex items-center gap-2.5">
-              <span>🔔</span>
-              <span>{t('dashboard.notifications')}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                {announcements.length}
-              </span>
-              <span className="text-[10px]">{notifsOpen ? '▴' : '▾'}</span>
-            </span>
-          </button>
-          {notifsOpen && (
-            <div className="mx-1 mb-1 rounded-xl border border-border bg-surface-hover p-2 space-y-1.5">
-              {announcements.slice(0, 4).map((a) => (
-                <div key={a.id} className="flex items-start gap-2 px-1">
-                  <span className="shrink-0 text-sm">{a.icon}</span>
-                  <div className="min-w-0">
-                    <span className={`mb-0.5 inline-block rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${NOTIF_CATEGORY_STYLE[a.category] ?? NOTIF_CATEGORY_STYLE.general}`}>
-                      {t(`announcements.categories.${a.category}`)}
-                    </span>
-                    <p className="text-xs font-semibold text-text line-clamp-1">{a.title}</p>
-                    {a.body && <p className="text-[11px] text-text-muted line-clamp-1">{a.body}</p>}
-                  </div>
-                </div>
-              ))}
-              <button type="button" onClick={() => go('/anuncios')}
-                className="w-full pt-0.5 text-center text-[11px] text-primary hover:underline">
-                {t('dashboard.seeAll')}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Bottom: settings + logout */}
-      <div className="mt-auto px-2 py-2 border-t border-border space-y-0.5">
-        <button type="button" onClick={() => go('/ajustes')}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text">
-          <span>⚙️</span>{t('nav.profile.settings')}
-        </button>
-        <button type="button"
-          onClick={async () => { await signOut(); navigate('/') }}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-red-400 transition-colors hover:bg-red-500/10">
-          <span>🚪</span>{t('nav.profile.signOut')}
-        </button>
-      </div>
-    </div>
-  )
-}
 
 // ── Course card (compact) ─────────────────────────────────────────────────────
 export function CourseCard({ course, pct, owned, accent, onClick }) {
@@ -827,15 +601,13 @@ export default function DashboardPage() {
   const license           = useAuthStore((s) => s.license)
   const profile           = useAuthStore((s) => s.profile)
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
-  const fetchAnnouncements = useAnnouncementsStore((s) => s.fetch)
   const tasks             = useTasksStore((s) => s.tasks)
   const fetchTasks        = useTasksStore((s) => s.fetchMyTasks)
 
   const [tab, setTab]               = useState(() => new URLSearchParams(window.location.search).get('tab') || 'inicio')
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  useEffect(() => { fetchAnnouncements(); fetchTasks() }, [fetchAnnouncements, fetchTasks])
+  useEffect(() => { fetchTasks() }, [fetchTasks])
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -859,75 +631,49 @@ export default function DashboardPage() {
   const tabProps = { categories, progressByCourse, hasAccessToCourse, handleSelect }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-text">
+    <div className="flex min-h-screen flex-col bg-background text-text">
       <PageVideoModal pageKey="dashboard" />
       {patchNotesOpen && <PatchNotesModal open onClose={() => setPatchNotesOpen(false)} />}
 
-      {/* ── Desktop sidebar (always visible ≥ md) ──────────────────── */}
-      <aside className="hidden md:flex md:w-56 md:flex-col flex-shrink-0 h-full">
-        <Sidebar tab={tab} setTab={setTab} />
-      </aside>
+      <AppTopBar />
 
-      {/* ── Mobile sidebar drawer ──────────────────────────────────── */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="w-56 h-full shadow-2xl">
-            <Sidebar tab={tab} setTab={setTab} onClose={() => setSidebarOpen(false)} />
-          </div>
-          <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-        </div>
-      )}
-
-      {/* ── Main area ─────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
-        {/* Mobile top bar */}
-        <header className="flex items-center gap-3 border-b border-border bg-surface px-4 py-3 md:hidden flex-shrink-0">
-          <button type="button" onClick={() => setSidebarOpen(true)}
-            className="text-xl text-text-muted">☰</button>
-          <div className="flex items-center gap-1.5">
-            <Logo />
-            <span aria-hidden="true">🐱</span>
-          </div>
-        </header>
-
-        {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-          {tab === 'inicio' && (
-            <InicioTab
-              profile={profile}
-              license={license}
-              tasks={tasks}
-              patchNotesOpen={patchNotesOpen}
-              setPatchNotesOpen={setPatchNotesOpen}
-              {...tabProps}
-            />
-          )}
-          {tab === 'escuelas' && <EscuelasTab {...tabProps} />}
-          {tab === 'progreso' && <ProgresoTab progressByCourse={progressByCourse} profile={profile} />}
-        </main>
-
-        {/* ── Mobile bottom tab bar ──────────────────────────────── */}
-        <nav className="flex md:hidden items-center justify-around border-t border-border bg-surface px-2 py-2 flex-shrink-0">
+      {/* Pestañas Inicio / Escuelas / Mi Progreso — mismo patrón de pill-tabs
+          que TasksPage/ProgresoTab, ya no un sidebar propio. */}
+      <div className="mx-auto w-full max-w-4xl px-4 pt-6">
+        <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
           {[
             { id: 'inicio',   icon: '🏠' },
             { id: 'escuelas', icon: '📚' },
             { id: 'progreso', icon: '📊' },
           ].map((item) => (
-            <button key={item.id} type="button" onClick={() => setTab(item.id)}
-              className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-colors ${
-                tab === item.id ? 'text-primary' : 'text-text-muted'
-              }`}>
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-[10px] font-semibold">{t(`dashboard.tabs.${item.id}`)}</span>
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition ${
+                tab === item.id ? 'bg-background text-text shadow-sm' : 'text-text-muted hover:text-text'
+              }`}
+            >
+              <span>{item.icon}</span>{t(`dashboard.tabs.${item.id}`)}
             </button>
           ))}
-          <button type="button" onClick={() => setSidebarOpen(true)}
-            className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl text-text-muted">
-            <span className="text-xl">☰</span>
-            <span className="text-[10px] font-semibold">{t('dashboard.more')}</span>
-          </button>
-        </nav>
+        </div>
       </div>
+
+      <main className="flex-1">
+        {tab === 'inicio' && (
+          <InicioTab
+            profile={profile}
+            license={license}
+            tasks={tasks}
+            patchNotesOpen={patchNotesOpen}
+            setPatchNotesOpen={setPatchNotesOpen}
+            {...tabProps}
+          />
+        )}
+        {tab === 'escuelas' && <EscuelasTab {...tabProps} />}
+        {tab === 'progreso' && <ProgresoTab progressByCourse={progressByCourse} profile={profile} />}
+      </main>
 
       <MascotCompanion />
     </div>
