@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { TASK_TYPES, taskTypeOf } from '../../data/taskTypes'
+import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
+import { COURSE_MISSIONS } from '../../data/courseMissionsRegistry'
+import courses from '../../data/courses.json'
+import { getCourseData, hasCourseData } from '../../data/courseRegistry'
+import { renderMarkdown } from '../../utils/markdown'
 import StudentCoursesPanel from './StudentCoursesPanel'
 
 const SUBJECTS = ['Matemáticas', 'Física', 'Historia', 'Biología', 'Química', 'Filosofía',
@@ -14,78 +20,21 @@ const STATUS_SECTIONS = [
   { key: 'revisada',  label: '✅ Calificadas',  cls: 'text-emerald-400 border-emerald-500/20' },
 ]
 
-function GradeModal({ task, onClose, onSave }) {
-  const [grade, setGrade] = useState(task.grade ?? '')
-  const [gradeMax, setGradeMax] = useState(task.grade_max ?? 10)
-  const [feedback, setFeedback] = useState(task.feedback ?? '')
-  const [busy, setBusy] = useState(false)
+// Lista plana de TODAS las misiones (globales + de curso) para el selector
+// "Adjuntar misión" — ambos registros usan exactamente el mismo shape.
+const ALL_MISSIONS = [...GLOBAL_MISSIONS, ...Object.values(COURSE_MISSIONS).flat()]
 
-  const handleSave = async () => {
-    if (grade === '' || isNaN(Number(grade))) return
-    setBusy(true)
-    await onSave(task.id, { grade: Number(grade), grade_max: Number(gradeMax), feedback })
-    setBusy(false)
-    onClose()
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl">
-        <h2 className="font-extrabold text-text">Calificar tarea</h2>
-        <p className="mt-0.5 text-sm text-text-muted truncate">{task.title}</p>
-
-        <div className="mt-4 space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-[10px] font-bold uppercase text-text-muted">Calificación</label>
-              <input
-                type="number"
-                min={0}
-                max={gradeMax}
-                step={0.5}
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-              />
-            </div>
-            <div className="w-20">
-              <label className="text-[10px] font-bold uppercase text-text-muted">De</label>
-              <input
-                type="number"
-                min={1}
-                value={gradeMax}
-                onChange={(e) => setGradeMax(e.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-[10px] font-bold uppercase text-text-muted">Comentarios (opcional)</label>
-            <textarea
-              rows={3}
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Escribe retroalimentación para el alumno…"
-              className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm text-text-muted hover:text-text">
-            Cancelar
-          </button>
-          <button type="button" onClick={handleSave} disabled={busy || grade === ''}
-            className="flex-1 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background disabled:opacity-50">
-            {busy ? 'Guardando…' : '💾 Guardar'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
+const emptyForm = () => ({
+  title: '', description: '', subject: '', due_date: '', type: 'tarea',
+  // Solo se usan los campos relevantes al tipo elegido (ver buildDetails).
+  time: '', duration_minutes: '', modality: 'Presencial', topics: '', deliverables: '',
+  linkedCourseId: '', linkedModuleId: '', linkedMissionId: '',
+  resources: [], newResourceLabel: '', newResourceUrl: '',
+  notesMd: '',
+})
 
 export default function AdminTasksPage() {
+  const navigate = useNavigate()
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const session = useAuthStore((s) => s.session)
 
@@ -95,18 +44,11 @@ export default function AdminTasksPage() {
   const fetchStudents = useTasksStore((s) => s.fetchStudents)
   const fetchAllTasks = useTasksStore((s) => s.fetchAllTasks)
   const createTask = useTasksStore((s) => s.createTask)
-  const gradeTask = useTasksStore((s) => s.gradeTask)
   const deleteTask = useTasksStore((s) => s.deleteTask)
-  const openTask = useTasksStore((s) => s.openTask)
 
   const [selectedStudent, setSelectedStudent] = useState(null)
-  const [grading, setGrading] = useState(null)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({
-    title: '', description: '', subject: '', due_date: '', type: 'tarea',
-    // Solo se usan los campos relevantes al tipo elegido (ver buildDetails).
-    time: '', duration_minutes: '', modality: 'Presencial', topics: '', deliverables: '',
-  })
+  const [form, setForm] = useState(emptyForm())
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -134,23 +76,55 @@ export default function AdminTasksPage() {
     setMsg('')
   }
 
+  const addResourceRow = () => {
+    if (!form.newResourceLabel.trim() || !form.newResourceUrl.trim()) return
+    setForm((f) => ({
+      ...f,
+      resources: [...f.resources, { label: f.newResourceLabel.trim(), url: f.newResourceUrl.trim() }],
+      newResourceLabel: '', newResourceUrl: '',
+    }))
+  }
+  const removeResourceRow = (idx) => setForm((f) => ({ ...f, resources: f.resources.filter((_, i) => i !== idx) }))
+
+  const linkedModuleOptions = form.linkedCourseId && hasCourseData(form.linkedCourseId)
+    ? [...getCourseData(form.linkedCourseId).modules].sort((a, b) => a.order - b.order)
+    : []
+
   // Cada tipo guarda solo los campos que le corresponden en `details` — la
   // tarea normal no lleva nada extra, el proyecto lleva sus entregables, el
-  // examen lleva hora/duración/modalidad/temario.
+  // examen lleva hora/duración/modalidad/temario. Recursos/markdown/clase/
+  // misión son adjuntos opcionales para CUALQUIER tipo.
   const buildDetails = () => {
+    const details = {}
     if (form.type === 'proyecto') {
       const deliverables = form.deliverables.split('\n').map((d) => d.trim()).filter(Boolean)
-      return deliverables.length ? { deliverables } : {}
+      if (deliverables.length) details.deliverables = deliverables
     }
     if (form.type === 'examen') {
-      const details = {}
       if (form.time) details.time = form.time
       if (form.duration_minutes) details.duration_minutes = Number(form.duration_minutes)
       if (form.modality) details.modality = form.modality
       if (form.topics.trim()) details.topics = form.topics.trim()
-      return details
     }
-    return {}
+    if (form.resources.length) details.resources = form.resources
+    if (form.notesMd.trim()) details.notesMd = form.notesMd.trim()
+    if (form.linkedCourseId && form.linkedModuleId) {
+      const courseMeta = courses.find((c) => c.id === form.linkedCourseId)
+      const moduleMeta = linkedModuleOptions.find((m) => String(m.id) === String(form.linkedModuleId))
+      if (moduleMeta) {
+        details.linkedLesson = {
+          courseId: form.linkedCourseId,
+          moduleId: moduleMeta.id,
+          courseTitle: courseMeta?.title ?? form.linkedCourseId,
+          moduleTitle: moduleMeta.title,
+        }
+      }
+    }
+    if (form.linkedMissionId) {
+      const mission = ALL_MISSIONS.find((m) => m.id === form.linkedMissionId)
+      if (mission) details.linkedMission = { missionId: mission.id, title: mission.title, icon: mission.icon }
+    }
+    return details
   }
 
   const handleCreate = async (e) => {
@@ -172,7 +146,7 @@ export default function AdminTasksPage() {
       setMsg(`❌ ${error.message}`)
     } else {
       setMsg(`✅ ${taskTypeOf(form.type).label} creada.`)
-      setForm({ title: '', description: '', subject: '', due_date: '', type: 'tarea', time: '', duration_minutes: '', modality: 'Presencial', topics: '', deliverables: '' })
+      setForm(emptyForm())
       setCreating(false)
       fetchAllTasks(selectedStudent.id)
     }
@@ -383,6 +357,99 @@ export default function AdminTasksPage() {
                     </div>
                   )}
 
+                  {/* Adjuntos opcionales — cualquier tipo de tarea puede llevarlos */}
+                  <div className="space-y-3 rounded-xl border border-border/60 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">Adjuntos (opcional)</p>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-text-muted">🎓 Clase del curso</label>
+                        <select
+                          value={form.linkedCourseId}
+                          onChange={(e) => setForm((f) => ({ ...f, linkedCourseId: e.target.value, linkedModuleId: '' }))}
+                          className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                        >
+                          <option value="">Sin clase adjunta</option>
+                          {courses.filter((c) => hasCourseData(c.id)).map((c) => (
+                            <option key={c.id} value={c.id}>{c.icon} {c.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-text-muted">Módulo</label>
+                        <select
+                          value={form.linkedModuleId}
+                          onChange={(e) => setForm((f) => ({ ...f, linkedModuleId: e.target.value }))}
+                          disabled={!form.linkedCourseId}
+                          className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-40"
+                        >
+                          <option value="">Elige un módulo</option>
+                          {linkedModuleOptions.map((m) => (
+                            <option key={m.id} value={m.id}>{m.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-text-muted">📜 Misión relacionada</label>
+                      <select
+                        value={form.linkedMissionId}
+                        onChange={(e) => setForm((f) => ({ ...f, linkedMissionId: e.target.value }))}
+                        className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                      >
+                        <option value="">Sin misión adjunta</option>
+                        {ALL_MISSIONS.map((m) => (
+                          <option key={m.id} value={m.id}>{m.icon} {m.title}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-text-muted">📎 Recursos (notas/links)</label>
+                      <div className="mt-1 space-y-1.5">
+                        {form.resources.map((r, i) => (
+                          <div key={i} className="flex items-center gap-2 rounded-lg border border-border/60 px-2 py-1.5 text-xs">
+                            <span className="flex-1 truncate text-text">{r.label} <span className="text-text-muted">— {r.url}</span></span>
+                            <button type="button" onClick={() => removeResourceRow(i)} className="text-danger hover:opacity-70">🗑️</button>
+                          </div>
+                        ))}
+                        <div className="flex flex-col gap-1.5 sm:flex-row">
+                          <input
+                            value={form.newResourceLabel}
+                            onChange={(e) => setForm((f) => ({ ...f, newResourceLabel: e.target.value }))}
+                            placeholder="Título del recurso"
+                            className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary"
+                          />
+                          <input
+                            value={form.newResourceUrl}
+                            onChange={(e) => setForm((f) => ({ ...f, newResourceUrl: e.target.value }))}
+                            placeholder="https://…"
+                            className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary"
+                          />
+                          <button type="button" onClick={addResourceRow} className="shrink-0 rounded-lg bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary">+ Agregar</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-text-muted">📝 Markdown embebido (mini-lección)</label>
+                      <textarea
+                        rows={3}
+                        value={form.notesMd}
+                        onChange={(e) => setForm((f) => ({ ...f, notesMd: e.target.value }))}
+                        className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary resize-none font-mono"
+                        placeholder={'## Contexto\n\nExplica aquí lo que el alumno necesita saber...'}
+                      />
+                      {form.notesMd.trim() && (
+                        <div
+                          className="mt-1.5 rounded-lg border border-border/60 bg-background px-3 py-2 text-xs text-text-muted [&_h1]:font-bold [&_h2]:font-bold [&_p]:mb-1.5"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(form.notesMd) }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex gap-2 pt-1">
                     <button type="button" onClick={() => setCreating(false)} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm text-text-muted hover:text-text">
                       Cancelar
@@ -424,7 +491,7 @@ export default function AdminTasksPage() {
                             return (
                               <div
                                 key={task.id}
-                                onClick={() => openTask(task.id)}
+                                onClick={() => navigate(`/mis-tareas/${task.id}`)}
                                 className="cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-border/80"
                                 style={{ borderLeft: `4px solid ${type.color}` }}
                               >
@@ -438,6 +505,8 @@ export default function AdminTasksPage() {
                                         {type.icon} {type.label}
                                       </span>
                                       {task.subject && <span className="text-xs text-text-muted">{task.subject}</span>}
+                                      {task.details?.linkedLesson && <span className="text-xs text-primary">🎓 clase</span>}
+                                      {task.details?.linkedMission && <span className="text-xs text-violet-400">📜 misión</span>}
                                     </div>
                                     {!selectedStudent && task.profiles && (
                                       <p className="text-xs font-bold text-primary mb-0.5">
@@ -469,33 +538,13 @@ export default function AdminTasksPage() {
                                     )}
                                   </div>
                                   <div className="flex flex-col items-end gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex gap-1">
-                                      {(task.status === 'entregada' || task.status === 'pendiente') && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setGrading(task)}
-                                          className="rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
-                                        >
-                                          📝 Calificar
-                                        </button>
-                                      )}
-                                      {task.status === 'revisada' && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setGrading(task)}
-                                          className="rounded-lg border border-border px-2 py-1 text-xs text-text-muted hover:text-text"
-                                        >
-                                          ✏️
-                                        </button>
-                                      )}
-                                      <button
-                                        type="button"
-                                        onClick={() => deleteTask(task.id)}
-                                        className="rounded-lg border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10"
-                                      >
-                                        🗑️
-                                      </button>
-                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteTask(task.id)}
+                                      className="rounded-lg border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10"
+                                    >
+                                      🗑️
+                                    </button>
                                   </div>
                                 </div>
                               </div>
@@ -511,14 +560,6 @@ export default function AdminTasksPage() {
           </div>
         </div>
       </main>
-
-      {grading && (
-        <GradeModal
-          task={grading}
-          onClose={() => setGrading(null)}
-          onSave={gradeTask}
-        />
-      )}
     </div>
   )
 }

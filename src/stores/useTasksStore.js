@@ -8,13 +8,6 @@ export const useTasksStore = create((set, get) => ({
   loading: false,
   error: null,
 
-  // Id de la tarea abierta en TaskDetailModal (null = cerrado). Store global
-  // en vez de estado local para poder abrirla desde cualquier página (p. ej.
-  // desde una notificación).
-  openTaskId: null,
-  openTask: (id) => set({ openTaskId: id }),
-  closeTask: () => set({ openTaskId: null }),
-
   fetchMyTasks: async () => {
     set({ loading: true, error: null })
     const { data, error } = await supabase
@@ -24,14 +17,76 @@ export const useTasksStore = create((set, get) => ({
     set({ tasks: data ?? [], loading: false, error: error?.message ?? null })
   },
 
-  submitTask: async (taskId) => {
+  // Trae una tarea por id sin filtrar por student_id — RLS decide si el
+  // usuario (dueño o admin) puede verla. Usado por TaskDetailPage.
+  fetchTask: async (id) => {
+    const { data, error } = await supabase
+      .from('student_tasks')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+    return { data, error }
+  },
+
+  // Sube el .md de entrega al bucket público 'task-submissions' (ruta
+  // {student_id}/{task_id}/{filename}, ver migration_011.sql) y marca la
+  // tarea como entregada en el mismo update. Reemplaza al antiguo submitTask
+  // que solo cambiaba el status sin capturar ninguna entrega real.
+  submitTaskFile: async (taskId, studentId, file) => {
+    const path = `${studentId}/${taskId}/${file.name}`
+    const { error: upErr } = await supabase.storage.from('task-submissions').upload(path, file, { upsert: true })
+    if (upErr) return { error: upErr }
+    const { data: pub } = supabase.storage.from('task-submissions').getPublicUrl(path)
+
     const { error } = await supabase
       .from('student_tasks')
-      .update({ status: 'entregada', updated_at: new Date().toISOString() })
+      .update({
+        status: 'entregada',
+        submission_url: pub.publicUrl,
+        submission_filename: file.name,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', taskId)
     if (!error) {
+      const patch = { status: 'entregada', submission_url: pub.publicUrl, submission_filename: file.name }
       set((s) => ({
-        tasks: s.tasks.map((t) => t.id === taskId ? { ...t, status: 'entregada' } : t),
+        tasks: s.tasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
+        allTasks: s.allTasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
+      }))
+    }
+    return { error }
+  },
+
+  // ── Preguntas por tarea ───────────────────────────────────────────────────
+  taskQuestions: [],
+
+  fetchTaskQuestions: async (taskId) => {
+    const { data } = await supabase
+      .from('task_questions')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true })
+    set({ taskQuestions: data ?? [] })
+  },
+
+  askTaskQuestion: async (taskId, studentId, question) => {
+    const { data, error } = await supabase
+      .from('task_questions')
+      .insert({ task_id: taskId, student_id: studentId, question })
+      .select()
+      .single()
+    if (!error) set((s) => ({ taskQuestions: [...s.taskQuestions, data] }))
+    return { error }
+  },
+
+  answerTaskQuestion: async (questionId, answer) => {
+    const { error } = await supabase
+      .from('task_questions')
+      .update({ answer, answered: true })
+      .eq('id', questionId)
+    if (!error) {
+      set((s) => ({
+        taskQuestions: s.taskQuestions.map((q) => q.id === questionId ? { ...q, answer, answered: true } : q),
       }))
     }
     return { error }

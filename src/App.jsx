@@ -33,7 +33,6 @@ import AchievementToast from './components/achievements/AchievementToast'
 import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import TextSelectionMenu from './components/shared/TextSelectionMenu'
 import PatchNotesModal from './components/shared/PatchNotesModal'
-import TaskDetailModal from './components/tasks/TaskDetailModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
@@ -71,6 +70,7 @@ const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
 const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
 const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
 const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
+const TaskDetailPage = lazy(() => import('./components/tasks/TaskDetailPage'))
 const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
 const ProjectsPage = lazy(() => import('./components/projects/ProjectsPage'))
 const ProjectDetailPage = lazy(() => import('./components/projects/ProjectDetailPage'))
@@ -138,7 +138,6 @@ export default function App() {
       <LevelUpAnnouncer />
       <TextSelectionMenu />
       <PatchNotesModal />
-      <TaskDetailModal />
       <DevToolsPanel />
       <AiCredentialsLoader />
       <SyncErrorBanner />
@@ -318,6 +317,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <TasksPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mis-tareas/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TaskDetailPage />
               </Suspense>
             </ProtectedRoute>
           }

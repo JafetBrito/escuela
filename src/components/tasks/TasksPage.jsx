@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useTasksStore } from '../../stores/useTasksStore'
@@ -122,9 +123,7 @@ function GpaRing({ value, max = 10 }) {
 }
 
 // ── Task card ──────────────────────────────────────────────────────────────────
-function TaskCard({ task, onSubmit, onOpen }) {
-  const [confirming, setConfirming] = useState(false)
-  const [busy, setBusy]             = useState(false)
+function TaskCard({ task, onOpen }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const subj    = subjectOf(task.subject)
@@ -132,13 +131,6 @@ function TaskCard({ task, onSubmit, onOpen }) {
   const due     = dueInfo(task.due_date, task.status)
   const hasGrade = task.grade != null
   const gradePct = hasGrade ? task.grade / (task.grade_max ?? 10) : null
-
-  const handleSubmit = async () => {
-    setBusy(true)
-    await onSubmit(task.id)
-    setBusy(false)
-    setConfirming(false)
-  }
 
   return (
     <div
@@ -247,27 +239,11 @@ function TaskCard({ task, onSubmit, onOpen }) {
                 💬 {feedbackOpen ? 'Ocultar' : 'Ver comentarios'}
               </button>
             )}
-            {task.status === 'pendiente' && !confirming && (
-              <button
-                type="button"
-                onClick={() => setConfirming(true)}
-                className="rounded-lg px-3 py-1.5 text-xs font-bold text-background transition"
-                style={{ backgroundColor: subj.color }}
-              >
-                Marcar entregada
-              </button>
-            )}
-            {task.status === 'pendiente' && confirming && (
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setConfirming(false)}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-muted hover:text-text">
-                  Cancelar
-                </button>
-                <button type="button" disabled={busy} onClick={handleSubmit}
-                  className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
-                  {busy ? 'Enviando…' : '✅ Confirmar'}
-                </button>
-              </div>
+            {task.status === 'pendiente' && (
+              <span className="rounded-lg px-3 py-1.5 text-xs font-bold text-background transition"
+                style={{ backgroundColor: subj.color }}>
+                Abrir para entregar →
+              </span>
             )}
           </div>
         </div>
@@ -416,11 +392,11 @@ function GradesView({ tasks }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function TasksPage() {
+  const navigate      = useNavigate()
   const tasks        = useTasksStore((s) => s.tasks)
   const loading      = useTasksStore((s) => s.loading)
   const fetchMyTasks = useTasksStore((s) => s.fetchMyTasks)
-  const submitTask   = useTasksStore((s) => s.submitTask)
-  const openTask     = useTasksStore((s) => s.openTask)
+  const openTask     = (id) => navigate(`/mis-tareas/${id}`)
 
   const [activeSubject, setActiveSubject] = useState('all')
   const [activeTab,     setActiveTab]     = useState('tasks')
@@ -630,7 +606,7 @@ export default function TasksPage() {
                         </div>
                         <div className="space-y-3">
                           {group.tasks.map((task) => (
-                            <TaskCard key={task.id} task={task} onSubmit={submitTask} onOpen={openTask} />
+                            <TaskCard key={task.id} task={task} onOpen={openTask} />
                           ))}
                         </div>
                       </section>
@@ -657,7 +633,7 @@ export default function TasksPage() {
                 ) : (
                   <div className="space-y-3">
                     {completedTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} onSubmit={submitTask} onOpen={openTask} />
+                      <TaskCard key={task.id} task={task} onOpen={openTask} />
                     ))}
                   </div>
                 )

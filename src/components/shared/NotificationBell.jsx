@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNotificationsStore } from '../../stores/useNotificationsStore'
-import { useTasksStore } from '../../stores/useTasksStore'
 
 // Campanita de notificaciones del alumno — hoy solo avisa cuando el profesor
 // califica una tarea, pero el store es genérico para crecer a otros eventos.
@@ -9,7 +8,6 @@ export default function NotificationBell() {
   const notifications = useNotificationsStore((s) => s.notifications)
   const fetchNotifications = useNotificationsStore((s) => s.fetchNotifications)
   const markAllRead = useNotificationsStore((s) => s.markAllRead)
-  const openTask = useTasksStore((s) => s.openTask)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -34,8 +32,7 @@ export default function NotificationBell() {
     if (n.project_id) {
       navigate(`/proyectos/${n.project_id}`)
     } else if (n.task_id) {
-      navigate('/mis-tareas')
-      openTask(n.task_id)
+      navigate(`/mis-tareas/${n.task_id}`)
     }
   }
 
