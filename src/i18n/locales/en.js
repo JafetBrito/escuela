@@ -27,6 +27,7 @@ export const en = {
       misiones: 'Missions',
       logros: 'Achievements',
       misTareas: 'My Tasks',
+      proyectos: 'Projects',
       vr: 'VR Campus',
       templo: 'Temple',
       anfiteatro: 'Amphitheater',

@@ -71,6 +71,7 @@ const NAV_GROUPS = [
       { to: '/admin-setup',         label: '⚙️ Admin Setup' },
       { to: '/admin/flipbook-test', label: '📖 Flipbook (test)' },
       { to: '/admin/tareas',        label: '📋 Gestión de Tareas' },
+      { to: '/admin/proyectos',     label: '📁 Gestión de Proyectos' },
       { to: '/admin/clases',        label: '🎓 Mis Clases (Admin)' },
     ],
   },

@@ -1,17 +1,12 @@
 import { useState } from 'react'
 import { useLiveClassStore } from '../../stores/useLiveClassStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import ResourceGallery from '../shared/ResourceGallery'
 
 const PING_KINDS = [
   { kind: 'mano', icon: '🖐️', label: 'Levantar la mano' },
   { kind: 'ping', icon: '👋', label: 'Enviar ping' },
 ]
-
-function resourceKind(r) {
-  if (r.type === 'pdf') return 'pdf'
-  if (r.type === 'image' || /\.(png|jpe?g|gif|webp)(\?|$)/i.test(r.url)) return 'image'
-  return 'link'
-}
 
 // Contenido del Hub (tema actual, agenda, recursos, misiones, preguntas) —
 // sin encabezado ni botón de unirse, para poder reutilizarlo tanto en
@@ -39,9 +34,6 @@ export default function HubContent({ activeClass }) {
   }
 
   const resources = activeClass.resources ?? []
-  const images = resources.filter((r) => resourceKind(r) === 'image')
-  const pdfs    = resources.filter((r) => resourceKind(r) === 'pdf')
-  const links   = resources.filter((r) => resourceKind(r) === 'link')
 
   return (
     <div className="space-y-4">
@@ -94,39 +86,10 @@ export default function HubContent({ activeClass }) {
         </div>
       )}
 
-      {(images.length > 0 || pdfs.length > 0 || links.length > 0) && (
+      {resources.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-4">
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">📎 Recursos</p>
-
-          {images.length > 0 && (
-            <div className="mb-3 grid grid-cols-3 gap-2">
-              {images.map((r, i) => (
-                <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="group block overflow-hidden rounded-lg border border-border">
-                  <img src={r.url} alt={r.label} className="h-20 w-full object-cover transition group-hover:opacity-80" />
-                </a>
-              ))}
-            </div>
-          )}
-
-          {pdfs.map((r, i) => (
-            <div key={i} className="mb-3 overflow-hidden rounded-xl border border-border last:mb-0">
-              <div className="flex items-center justify-between border-b border-border bg-surface-hover px-3 py-1.5">
-                <p className="text-xs font-semibold text-text">📄 {r.label}</p>
-                <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline">Abrir ↗</a>
-              </div>
-              <iframe src={r.url} title={r.label} className="h-56 w-full bg-white" />
-            </div>
-          ))}
-
-          {links.length > 0 && (
-            <div className="space-y-1.5">
-              {links.map((r, i) => (
-                <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm text-primary hover:bg-surface-hover">
-                  🔗 {r.label}
-                </a>
-              ))}
-            </div>
-          )}
+          <ResourceGallery resources={resources} />
         </div>
       )}
 

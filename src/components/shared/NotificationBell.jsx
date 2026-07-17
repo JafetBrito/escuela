@@ -31,7 +31,9 @@ export default function NotificationBell() {
 
   const handleClick = (n) => {
     setOpen(false)
-    if (n.task_id) {
+    if (n.project_id) {
+      navigate(`/proyectos/${n.project_id}`)
+    } else if (n.task_id) {
       navigate('/mis-tareas')
       openTask(n.task_id)
     }

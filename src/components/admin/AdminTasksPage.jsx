@@ -3,6 +3,7 @@ import AppTopBar from '../shared/AppTopBar'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { TASK_TYPES, taskTypeOf } from '../../data/taskTypes'
+import StudentCoursesPanel from './StudentCoursesPanel'
 
 const SUBJECTS = ['Matemáticas', 'Física', 'Historia', 'Biología', 'Química', 'Filosofía',
   'Psicología', 'Programación', 'Inglés', 'Música', 'Arte', 'General']
@@ -238,6 +239,12 @@ export default function AdminTasksPage() {
 
             {/* ── Main area ── */}
             <div>
+
+              {selectedStudent && (
+                <div className="mb-4">
+                  <StudentCoursesPanel student={selectedStudent} />
+                </div>
+              )}
 
               {/* Create task button */}
               {selectedStudent && !creating && (

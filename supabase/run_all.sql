@@ -512,6 +512,35 @@ end $$;
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 010 — Proyectos (student_projects)
+-- ════════════════════════════════════════════════════════════════════════
+
+create table if not exists public.student_projects (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid references auth.users(id) on delete cascade not null,
+  title text not null,
+  description text,
+  status text not null default 'en_progreso',
+  notes jsonb not null default '[]'::jsonb,
+  checklist jsonb not null default '[]'::jsonb,
+  resources jsonb not null default '[]'::jsonb,
+  assigned_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.student_projects enable row level security;
+
+drop policy if exists "projects: owner or admin" on public.student_projects;
+create policy "projects: owner or admin" on public.student_projects
+  for all using (auth.uid() = student_id or public.is_admin())
+  with check (auth.uid() = student_id or public.is_admin());
+
+alter table public.student_notifications
+  add column if not exists project_id uuid references public.student_projects(id) on delete cascade;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

@@ -72,6 +72,9 @@ const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
 const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
 const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
 const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
+const ProjectsPage = lazy(() => import('./components/projects/ProjectsPage'))
+const ProjectDetailPage = lazy(() => import('./components/projects/ProjectDetailPage'))
+const AdminProjectsPage = lazy(() => import('./components/admin/AdminProjectsPage'))
 const AdminLiveClassesPage = lazy(() => import('./components/admin/AdminLiveClassesPage'))
 const MyClassesPage = lazy(() => import('./components/liveclass/MyClassesPage'))
 const SchedulePage = lazy(() => import('./components/liveclass/SchedulePage'))
@@ -325,6 +328,36 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminTasksPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/proyectos"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <ProjectsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/proyectos/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <ProjectDetailPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/proyectos"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminProjectsPage />
               </Suspense>
             </ProtectedRoute>
           }

@@ -31,6 +31,7 @@ export const es = {
       misiones: 'Misiones',
       logros: 'Logros',
       misTareas: 'Mis Tareas',
+      proyectos: 'Proyectos',
       vr: 'Campus VR',
       templo: 'Templo',
       anfiteatro: 'Anfiteatro',

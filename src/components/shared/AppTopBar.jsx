@@ -37,6 +37,7 @@ const GROUPS = [
     icon: '🛡️',
     items: [
       { to: '/mis-tareas', key: 'misTareas', label: 'Mis Tareas', icon: '📋' },
+      { to: '/proyectos',  key: 'proyectos', label: 'Proyectos',  icon: '📁' },
       { to: '/logros',    key: 'logros',    label: 'Logros',    icon: '🏅' },
     ],
   },

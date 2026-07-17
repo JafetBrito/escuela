@@ -42,10 +42,13 @@ export const useTasksStore = create((set, get) => ({
   allTasks: [],
   adminLoading: false,
 
+  // `snapshot` se incluye para que el admin pueda ver, por alumno, en qué
+  // cursos tiene progreso (ver StudentCoursesPanel.jsx) — no existe una tabla
+  // de inscripción separada, el progreso vive en profiles.snapshot.progress.
   fetchStudents: async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, display_name, role')
+      .select('id, email, display_name, role, snapshot')
       .eq('role', 'student')
       .order('display_name')
     set({ students: data ?? [] })

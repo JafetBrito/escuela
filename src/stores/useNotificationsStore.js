@@ -35,4 +35,15 @@ export const useNotificationsStore = create((set, get) => ({
       body: `"${task.title}" · ${grade}/${gradeMax}`,
     })
   },
+
+  // Usado por useProjectsStore.createProject cuando un admin asigna un
+  // proyecto a un alumno (no cuando el alumno crea el suyo propio).
+  notifyProjectAssigned: async (project) => {
+    await supabase.from('student_notifications').insert({
+      student_id: project.student_id,
+      project_id: project.id,
+      title: 'Nuevo proyecto asignado',
+      body: `"${project.title}"`,
+    })
+  },
 }))
