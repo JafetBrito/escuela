@@ -590,6 +590,14 @@ create policy "task_questions: admin answers" on public.task_questions
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 012 — class_id en notificaciones
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.student_notifications
+  add column if not exists class_id uuid references public.live_classes(id) on delete cascade;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

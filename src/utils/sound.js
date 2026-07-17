@@ -38,6 +38,36 @@ export function playAchievementSound() {
   }
 }
 
+// Ping corto para la campanita de notificaciones — dos notas rápidas, mucho
+// más discreto que el logro/level-up ya que puede sonar varias veces seguidas.
+export function playNotificationSound() {
+  try {
+    const ctx = getContext()
+    if (!ctx) return
+    if (ctx.state === 'suspended') ctx.resume()
+
+    const notes = [784, 1046.5] // G5, C6
+    const now = ctx.currentTime
+
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const start = now + i * 0.08
+      gain.gain.setValueAtTime(0, start)
+      gain.gain.linearRampToValueAtTime(0.15, start + 0.015)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.25)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(start)
+      osc.stop(start + 0.25)
+    })
+  } catch {
+    // Audio is best-effort; ignore failures (e.g. autoplay restrictions).
+  }
+}
+
 // Bigger ascending fanfare for leveling up — same synth approach as the
 // achievement ding, just longer/brighter so it reads as a bigger deal.
 export function playLevelUpSound() {

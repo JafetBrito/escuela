@@ -141,7 +141,7 @@ export const useLiveClassStore = create((set, get) => ({
     }
     if (targets.length) {
       await supabase.from('student_notifications').insert(
-        targets.map((s) => ({ student_id: s.id, title: '¡Tu clase está en vivo!', body: cls?.title ?? 'Entra a Mis Clases' }))
+        targets.map((s) => ({ student_id: s.id, class_id: classId, title: '¡Tu clase está en vivo!', body: cls?.title ?? 'Entra a Mis Clases' }))
       )
     }
     return { error: null }

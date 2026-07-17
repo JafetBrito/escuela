@@ -392,6 +392,16 @@ export default function App() {
           }
         />
         <Route
+          path="/mis-clases/:classId"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <MyClassesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/horario"
           element={
             <ProtectedRoute>

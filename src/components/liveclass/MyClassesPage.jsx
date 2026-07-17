@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useLiveClassStore, canJoinClass, findClassByCode } from '../../stores/useLiveClassStore'
 import HubContent from './HubContent'
 
@@ -146,6 +146,7 @@ function ClassHub({ onBack }) {
 }
 
 export default function MyClassesPage() {
+  const { classId }  = useParams()
   const classes      = useLiveClassStore((s) => s.classes)
   const fetchClasses = useLiveClassStore((s) => s.fetchClasses)
   const openClass    = useLiveClassStore((s) => s.openClass)
@@ -156,6 +157,12 @@ export default function MyClassesPage() {
     fetchClasses()
     return () => closeClass()
   }, [fetchClasses, closeClass])
+
+  // Deep-link desde una notificación ("tu clase está en vivo") — abre la
+  // clase directo, sin esperar a elegirla de la lista.
+  useEffect(() => {
+    if (classId) openClass(classId)
+  }, [classId, openClass])
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">

@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNotificationsStore } from '../../stores/useNotificationsStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 
-// Campanita de notificaciones del alumno — hoy solo avisa cuando el profesor
-// califica una tarea, pero el store es genérico para crecer a otros eventos.
+// Campanita de notificaciones del alumno — avisa cuando el profesor califica
+// una tarea, asigna un proyecto, o inicia una clase en vivo. Se suscribe en
+// vivo (subscribeToNotifications) para que suene un ping y aparezca al
+// instante, sin esperar a que el usuario recargue o abra la campanita.
 export default function NotificationBell() {
   const notifications = useNotificationsStore((s) => s.notifications)
   const fetchNotifications = useNotificationsStore((s) => s.fetchNotifications)
+  const subscribeToNotifications = useNotificationsStore((s) => s.subscribeToNotifications)
+  const unsubscribeNotifications = useNotificationsStore((s) => s.unsubscribeNotifications)
   const markAllRead = useNotificationsStore((s) => s.markAllRead)
+  const userId = useAuthStore((s) => s.session?.user?.id)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -15,6 +21,12 @@ export default function NotificationBell() {
   const unread = notifications.filter((n) => !n.read_at).length
 
   useEffect(() => { fetchNotifications() }, [fetchNotifications])
+
+  useEffect(() => {
+    if (!userId) return
+    subscribeToNotifications(userId)
+    return () => unsubscribeNotifications()
+  }, [userId, subscribeToNotifications, unsubscribeNotifications])
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -29,7 +41,9 @@ export default function NotificationBell() {
 
   const handleClick = (n) => {
     setOpen(false)
-    if (n.project_id) {
+    if (n.class_id) {
+      navigate(`/mis-clases/${n.class_id}`)
+    } else if (n.project_id) {
       navigate(`/proyectos/${n.project_id}`)
     } else if (n.task_id) {
       navigate(`/mis-tareas/${n.task_id}`)

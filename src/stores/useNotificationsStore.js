@@ -1,12 +1,15 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
+import { playNotificationSound } from '../utils/sound'
 
-// Notificaciones privadas por alumno (student_notifications) — hoy solo se
-// usan para avisar que una tarea fue calificada, pero el shape es genérico
-// (title/body/task_id) para poder reutilizarse en el futuro.
+// Notificaciones privadas por alumno (student_notifications) — usadas para
+// tareas calificadas, proyectos asignados y clases en vivo. El shape es
+// genérico (title/body + task_id/project_id/class_id) para poder crecer a
+// otros eventos sin tocar el bell.
 export const useNotificationsStore = create((set, get) => ({
   notifications: [],
   loading: false,
+  _channel: null,
 
   fetchNotifications: async () => {
     set({ loading: true })
@@ -16,6 +19,28 @@ export const useNotificationsStore = create((set, get) => ({
       .order('created_at', { ascending: false })
       .limit(30)
     set({ notifications: data ?? [], loading: false })
+  },
+
+  // Suscripción en vivo por alumno — cuando llega una notificación nueva
+  // (ej. el admin inicia una clase) se agrega al instante y suena un ping,
+  // sin esperar a que el usuario abra/recargue la campanita.
+  subscribeToNotifications: (studentId) => {
+    if (!studentId || get()._channel) return
+    const channel = supabase
+      .channel(`student_notifications:${studentId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_notifications', filter: `student_id=eq.${studentId}` },
+        (payload) => {
+          set((s) => ({ notifications: [payload.new, ...s.notifications] }))
+          playNotificationSound()
+        })
+      .subscribe()
+    set({ _channel: channel })
+  },
+
+  unsubscribeNotifications: () => {
+    const channel = get()._channel
+    if (channel) supabase.removeChannel(channel)
+    set({ _channel: null })
   },
 
   markAllRead: async () => {
