@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveClassStore } from '../../stores/useLiveClassStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import ResourceGallery from '../shared/ResourceGallery'
@@ -13,13 +14,18 @@ const PING_KINDS = [
 // /mis-clases (teléfono) como al lado del video en /clases-disponibles
 // (computadora, modo "verlo aquí mismo") y en la vista previa del admin.
 export default function HubContent({ activeClass }) {
-  const questions   = useLiveClassStore((s) => s.questions)
-  const pings       = useLiveClassStore((s) => s.pings)
-  const askQuestion = useLiveClassStore((s) => s.askQuestion)
-  const sendPing    = useLiveClassStore((s) => s.sendPing)
+  const questions       = useLiveClassStore((s) => s.questions)
+  const pings           = useLiveClassStore((s) => s.pings)
+  const chatMessages     = useLiveClassStore((s) => s.chatMessages)
+  const askQuestion      = useLiveClassStore((s) => s.askQuestion)
+  const sendPing         = useLiveClassStore((s) => s.sendPing)
+  const sendClassChatMessage = useLiveClassStore((s) => s.sendClassChatMessage)
   const session     = useAuthStore((s) => s.session)
+  const profile     = useAuthStore((s) => s.profile)
   const [draft, setDraft] = useState('')
+  const [chatDraft, setChatDraft] = useState('')
   const [pingState, setPingState] = useState({}) // { [kind]: 'sent' | 'error' }
+  const chatEndRef = useRef(null)
 
   // Aviso visual cuando el profesor "llama la atención" — complementa el
   // sonido/voz de useLiveClassStore, se apaga solo tras unos segundos.
@@ -45,6 +51,18 @@ export default function HubContent({ activeClass }) {
     setPingState((s) => ({ ...s, [kind]: error ? 'error' : 'sent' }))
     setTimeout(() => setPingState((s) => ({ ...s, [kind]: null })), 2500)
   }
+
+  const handleSendChat = async (e) => {
+    e.preventDefault()
+    if (!chatDraft.trim()) return
+    const name = profile?.display_name || session?.user?.email || 'Alumno'
+    await sendClassChatMessage(activeClass.id, session?.user?.id, name, chatDraft)
+    setChatDraft('')
+  }
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages.length])
 
   const resources = activeClass.resources ?? []
 
@@ -79,6 +97,21 @@ export default function HubContent({ activeClass }) {
           )
         })}
       </div>
+
+      {activeClass.linked_mission && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/5 p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{activeClass.linked_mission.icon ?? '📜'}</span>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">Misión relacionada</p>
+              <p className="font-bold text-text">{activeClass.linked_mission.title}</p>
+            </div>
+          </div>
+          <Link to="/misiones" className="shrink-0 rounded-xl border border-violet-500/40 px-4 py-2 text-sm font-bold text-violet-400 hover:bg-violet-500/10">
+            Ver en Misiones →
+          </Link>
+        </div>
+      )}
 
       {activeClass.current_topic && (
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
@@ -148,6 +181,40 @@ export default function HubContent({ activeClass }) {
           <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Enviar</button>
         </form>
       </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">💬 Chat de la clase</p>
+        <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+          {chatMessages.length === 0 && <p className="text-sm text-text-muted">Aún no hay mensajes — sé el primero en escribir.</p>}
+          {chatMessages.map((m) => {
+            const mine = m.user_id === session?.user?.id
+            return (
+              <div key={m.id} className={`rounded-xl px-3 py-2 text-sm ${mine ? 'bg-primary/10 text-text' : 'bg-surface-hover text-text'}`}>
+                <p className="text-[11px] font-bold text-text-muted">{mine ? 'Tú' : m.display_name || 'Alumno'}</p>
+                <p>{m.message}</p>
+              </div>
+            )
+          })}
+          <div ref={chatEndRef} />
+        </div>
+        <form onSubmit={handleSendChat} className="mt-3 flex gap-2">
+          <input
+            value={chatDraft}
+            onChange={(e) => setChatDraft(e.target.value)}
+            placeholder="Escribe un mensaje…"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+          />
+          <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Enviar</button>
+        </form>
+        <p className="mt-2 text-[11px] text-text-muted">✈️ Este chat se borra al terminar la clase — descarga el resumen si quieres guardarlo.</p>
+      </div>
+
+      <Link
+        to={`/mis-clases/${activeClass.id}/resumen`}
+        className="block rounded-2xl border border-border bg-surface p-4 text-center text-sm font-bold text-primary hover:border-primary/40"
+      >
+        📄 Descargar resumen de la clase
+      </Link>
     </div>
   )
 }

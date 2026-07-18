@@ -73,6 +73,7 @@ const NAV_GROUPS = [
       { to: '/admin/tareas',        label: '📋 Gestión de Tareas' },
       { to: '/admin/proyectos',     label: '📁 Gestión de Proyectos' },
       { to: '/admin/clases',        label: '🎓 Mis Clases (Admin)' },
+      { to: '/admin/examenes',      label: '📝 Exámenes de graduación' },
     ],
   },
 ]

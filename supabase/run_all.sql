@@ -607,6 +607,237 @@ create policy "live_class_pings: admin sends" on public.live_class_pings
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 014 — nombre del alumno en la clase + chat temporal por clase
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.live_classes
+  add column if not exists student_name text;
+
+create table if not exists public.live_class_chat (
+  id uuid primary key default gen_random_uuid(),
+  live_class_id uuid references public.live_classes(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  display_name text,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.live_class_chat enable row level security;
+
+drop policy if exists "live_class_chat: participant select" on public.live_class_chat;
+create policy "live_class_chat: participant select" on public.live_class_chat
+  for select using (
+    public.is_admin() or
+    exists (select 1 from public.live_classes c where c.id = live_class_id and (c.student_id = auth.uid() or c.student_id is null))
+  );
+
+drop policy if exists "live_class_chat: participant insert" on public.live_class_chat;
+create policy "live_class_chat: participant insert" on public.live_class_chat
+  for insert with check (
+    auth.uid() = user_id and (
+      public.is_admin() or
+      exists (select 1 from public.live_classes c where c.id = live_class_id and (c.student_id = auth.uid() or c.student_id is null))
+    )
+  );
+
+drop policy if exists "live_class_chat: admin deletes" on public.live_class_chat;
+create policy "live_class_chat: admin deletes" on public.live_class_chat
+  for delete using (public.is_admin());
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'live_class_chat'
+  ) then
+    alter publication supabase_realtime add table public.live_class_chat;
+  end if;
+end $$;
+
+
+-- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 015 — recompensas XP/oro en tareas y clases, misión real
+-- adjunta a clases, y esqueleto de examen final por curso (graduación)
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.student_tasks
+  add column if not exists xp_reward int not null default 0,
+  add column if not exists gold_reward int not null default 0;
+
+alter table public.live_classes
+  add column if not exists xp_reward int not null default 0,
+  add column if not exists gold_reward int not null default 0,
+  add column if not exists linked_mission jsonb;
+
+alter table public.student_notifications
+  add column if not exists xp_reward int not null default 0,
+  add column if not exists gold_reward int not null default 0,
+  add column if not exists reward_claimed_at timestamptz;
+
+create table if not exists public.course_exams (
+  id uuid primary key default gen_random_uuid(),
+  course_id text not null unique,
+  title text not null default 'Examen final',
+  pass_score int not null default 70,
+  questions_to_show int not null default 15,
+  questions jsonb not null default '[]'::jsonb,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.course_exams enable row level security;
+
+drop policy if exists "course_exams: everyone reads" on public.course_exams;
+create policy "course_exams: everyone reads" on public.course_exams
+  for select using (auth.uid() is not null);
+
+drop policy if exists "course_exams: admin writes" on public.course_exams;
+create policy "course_exams: admin writes" on public.course_exams
+  for all using (public.is_admin()) with check (public.is_admin());
+
+create table if not exists public.student_exam_attempts (
+  id uuid primary key default gen_random_uuid(),
+  exam_id uuid references public.course_exams(id) on delete cascade not null,
+  student_id uuid references auth.users(id) on delete cascade not null,
+  course_id text not null,
+  shown_questions jsonb not null,
+  answers jsonb not null default '[]'::jsonb,
+  score numeric(5,2) not null default 0,
+  passed boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.student_exam_attempts enable row level security;
+
+drop policy if exists "exam_attempts: owner or admin select" on public.student_exam_attempts;
+create policy "exam_attempts: owner or admin select" on public.student_exam_attempts
+  for select using (auth.uid() = student_id or public.is_admin());
+
+drop policy if exists "exam_attempts: student submits own" on public.student_exam_attempts;
+create policy "exam_attempts: student submits own" on public.student_exam_attempts
+  for insert with check (auth.uid() = student_id);
+
+create table if not exists public.student_graduations (
+  student_id uuid references auth.users(id) on delete cascade not null,
+  course_id text not null,
+  graduated_at timestamptz not null default now(),
+  primary key (student_id, course_id)
+);
+
+alter table public.student_graduations enable row level security;
+
+drop policy if exists "graduations: owner or admin select" on public.student_graduations;
+create policy "graduations: owner or admin select" on public.student_graduations
+  for select using (auth.uid() = student_id or public.is_admin());
+
+drop policy if exists "graduations: student inserts own" on public.student_graduations;
+create policy "graduations: student inserts own" on public.student_graduations
+  for insert with check (auth.uid() = student_id);
+
+
+-- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 016 — ajedrez en línea: invitar por username, partidas con reloj
+-- ════════════════════════════════════════════════════════════════════════
+
+create or replace function public.search_profiles(query text)
+returns table (id uuid, display_name text, email text)
+language sql
+security definer
+stable
+as $$
+  select p.id, p.display_name, p.email
+  from public.profiles p
+  where p.id <> auth.uid()
+    and (p.display_name ilike '%' || query || '%' or p.email ilike '%' || query || '%')
+  order by p.display_name
+  limit 20
+$$;
+
+grant execute on function public.search_profiles(text) to authenticated;
+
+create table if not exists public.chess_invites (
+  id uuid primary key default gen_random_uuid(),
+  from_id uuid references auth.users(id) on delete cascade not null,
+  from_name text,
+  to_id uuid references auth.users(id) on delete cascade not null,
+  to_name text,
+  variant text not null default 'standard',
+  clock_minutes int not null default 10,
+  status text not null default 'pendiente',
+  game_id uuid,
+  created_at timestamptz not null default now()
+);
+
+alter table public.chess_invites enable row level security;
+
+drop policy if exists "chess_invites: participant select" on public.chess_invites;
+create policy "chess_invites: participant select" on public.chess_invites
+  for select using (auth.uid() in (from_id, to_id) or public.is_admin());
+
+drop policy if exists "chess_invites: sender inserts" on public.chess_invites;
+create policy "chess_invites: sender inserts" on public.chess_invites
+  for insert with check (auth.uid() = from_id);
+
+drop policy if exists "chess_invites: participant updates" on public.chess_invites;
+create policy "chess_invites: participant updates" on public.chess_invites
+  for update using (auth.uid() in (from_id, to_id));
+
+create table if not exists public.chess_games (
+  id uuid primary key default gen_random_uuid(),
+  white_id uuid references auth.users(id) on delete cascade not null,
+  white_name text,
+  black_id uuid references auth.users(id) on delete cascade not null,
+  black_name text,
+  variant text not null default 'standard',
+  fen text not null,
+  history jsonb not null default '[]'::jsonb,
+  status text not null default 'en_curso',
+  result text,
+  end_reason text,
+  clock_minutes int not null default 10,
+  white_ms int not null default 0,
+  black_ms int not null default 0,
+  turn_started_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.chess_games enable row level security;
+
+drop policy if exists "chess_games: participant select" on public.chess_games;
+create policy "chess_games: participant select" on public.chess_games
+  for select using (auth.uid() in (white_id, black_id) or public.is_admin());
+
+drop policy if exists "chess_games: participant inserts" on public.chess_games;
+create policy "chess_games: participant inserts" on public.chess_games
+  for insert with check (auth.uid() in (white_id, black_id));
+
+drop policy if exists "chess_games: participant updates" on public.chess_games;
+create policy "chess_games: participant updates" on public.chess_games
+  for update using (auth.uid() in (white_id, black_id));
+
+alter table public.student_notifications
+  add column if not exists chess_invite_id uuid references public.chess_invites(id) on delete cascade;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'chess_invites'
+  ) then
+    alter publication supabase_realtime add table public.chess_invites;
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'chess_games'
+  ) then
+    alter publication supabase_realtime add table public.chess_games;
+  end if;
+end $$;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

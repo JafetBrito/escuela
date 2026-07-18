@@ -132,22 +132,19 @@ export const useTasksStore = create((set, get) => ({
     return { data, error }
   },
 
-  gradeTask: async (taskId, { grade, grade_max, feedback }) => {
+  gradeTask: async (taskId, { grade, grade_max, feedback, xp_reward = 0, gold_reward = 0 }) => {
+    const patch = { grade, grade_max, feedback, xp_reward, gold_reward, status: 'revisada', updated_at: new Date().toISOString() }
     const { error } = await supabase
       .from('student_tasks')
-      .update({ grade, grade_max, feedback, status: 'revisada', updated_at: new Date().toISOString() })
+      .update(patch)
       .eq('id', taskId)
     if (!error) {
       set((s) => ({
-        allTasks: s.allTasks.map((t) =>
-          t.id === taskId ? { ...t, grade, grade_max, feedback, status: 'revisada' } : t
-        ),
-        tasks: s.tasks.map((t) =>
-          t.id === taskId ? { ...t, grade, grade_max, feedback, status: 'revisada' } : t
-        ),
+        allTasks: s.allTasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
+        tasks: s.tasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
       }))
       const task = get().allTasks.find((t) => t.id === taskId)
-      if (task) useNotificationsStore.getState().notifyTaskGraded(task, grade, grade_max)
+      if (task) useNotificationsStore.getState().notifyTaskGraded(task, grade, grade_max, xp_reward, gold_reward)
     }
     return { error }
   },

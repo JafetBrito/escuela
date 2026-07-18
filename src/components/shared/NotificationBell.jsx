@@ -41,7 +41,9 @@ export default function NotificationBell() {
 
   const handleClick = (n) => {
     setOpen(false)
-    if (n.class_id) {
+    if (n.chess_invite_id) {
+      navigate('/games/mishi-jedrez')
+    } else if (n.class_id) {
       navigate(`/mis-clases/${n.class_id}`)
     } else if (n.project_id) {
       navigate(`/proyectos/${n.project_id}`)

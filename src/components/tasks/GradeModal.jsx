@@ -7,12 +7,17 @@ export default function GradeModal({ task, onClose, onSave }) {
   const [grade, setGrade] = useState(task.grade ?? '')
   const [gradeMax, setGradeMax] = useState(task.grade_max ?? 10)
   const [feedback, setFeedback] = useState(task.feedback ?? '')
+  const [xpReward, setXpReward] = useState(task.xp_reward ?? 0)
+  const [goldReward, setGoldReward] = useState(task.gold_reward ?? 0)
   const [busy, setBusy] = useState(false)
 
   const handleSave = async () => {
     if (grade === '' || isNaN(Number(grade))) return
     setBusy(true)
-    await onSave(task.id, { grade: Number(grade), grade_max: Number(gradeMax), feedback })
+    await onSave(task.id, {
+      grade: Number(grade), grade_max: Number(gradeMax), feedback,
+      xp_reward: Number(xpReward) || 0, gold_reward: Number(goldReward) || 0,
+    })
     setBusy(false)
     onClose()
   }
@@ -44,6 +49,28 @@ export default function GradeModal({ task, onClose, onSave }) {
                 min={1}
                 value={gradeMax}
                 onChange={(e) => setGradeMax(e.target.value)}
+                className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-[10px] font-bold uppercase text-text-muted">✨ XP</label>
+              <input
+                type="number"
+                min={0}
+                value={xpReward}
+                onChange={(e) => setXpReward(e.target.value)}
+                className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[10px] font-bold uppercase text-text-muted">🪙 Monedas</label>
+              <input
+                type="number"
+                min={0}
+                value={goldReward}
+                onChange={(e) => setGoldReward(e.target.value)}
                 className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
               />
             </div>

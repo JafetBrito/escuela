@@ -3,6 +3,13 @@ import AppTopBar from '../shared/AppTopBar'
 import { useLiveClassStore, canJoinClass, makeJitsiUrl, classShortCode } from '../../stores/useLiveClassStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import HubContent from '../liveclass/HubContent'
+import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
+import { COURSE_MISSIONS } from '../../data/courseMissionsRegistry'
+
+// Misma lista plana que usa AdminTasksPage.jsx para "adjuntar misión" —
+// una clase también puede enlazar una misión REAL del registro (no solo las
+// entradas manuales de texto libre que ya vive en activeClass.missions).
+const ALL_MISSIONS = [...GLOBAL_MISSIONS, ...Object.values(COURSE_MISSIONS).flat()]
 
 const STATUS_META = {
   programada: { label: 'Programada', cls: 'bg-amber-500/20 text-amber-400' },
@@ -197,11 +204,17 @@ function ControlPanel({ classId, students, onClose }) {
   const [uploading, setUploading] = useState(false)
   const [missionTitle, setMissionTitle] = useState('')
   const [missionDesc, setMissionDesc] = useState('')
+  const [linkedMissionId, setLinkedMissionId] = useState('')
   const [answerDrafts, setAnswerDrafts] = useState({})
+  const [xpDraft, setXpDraft] = useState('')
+  const [goldDraft, setGoldDraft] = useState('')
 
   useEffect(() => { openClass(classId) }, [classId, openClass])
   useEffect(() => { setTopicDraft(activeClass?.current_topic ?? '') }, [activeClass?.current_topic])
   useEffect(() => { setVideoDraft(activeClass?.demo_video_id ?? '') }, [activeClass?.demo_video_id])
+  useEffect(() => { setLinkedMissionId(activeClass?.linked_mission?.missionId ?? '') }, [activeClass?.linked_mission])
+  useEffect(() => { setXpDraft(String(activeClass?.xp_reward ?? 0)) }, [activeClass?.xp_reward])
+  useEffect(() => { setGoldDraft(String(activeClass?.gold_reward ?? 0)) }, [activeClass?.gold_reward])
 
   if (!activeClass) return <p className="text-sm text-text-muted">Cargando…</p>
   const meta = STATUS_META[activeClass.status] ?? STATUS_META.programada
@@ -236,6 +249,17 @@ function ControlPanel({ classId, students, onClose }) {
     addMission(classId, { title: missionTitle.trim(), description: missionDesc.trim() || null })
     setMissionTitle('')
     setMissionDesc('')
+  }
+
+  const handleLinkMission = (missionId) => {
+    setLinkedMissionId(missionId)
+    if (!missionId) { updateClass(classId, { linked_mission: null }); return }
+    const mission = ALL_MISSIONS.find((m) => m.id === missionId)
+    if (mission) updateClass(classId, { linked_mission: { missionId: mission.id, title: mission.title, icon: mission.icon } })
+  }
+
+  const handleSaveReward = () => {
+    updateClass(classId, { xp_reward: Number(xpDraft) || 0, gold_reward: Number(goldDraft) || 0 })
   }
 
   // Ping dirigido al alumno (no una respuesta a su mano/ping) — le suena y
@@ -284,7 +308,7 @@ function ControlPanel({ classId, students, onClose }) {
           <span className="text-xs font-bold uppercase tracking-wide text-amber-400">Actividad en vivo</span>
           {pings.slice(0, 6).map((p) => (
             <span key={p.id} className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-300">
-              {p.kind === 'mano' ? '🖐️' : '👋'} hace {Math.max(0, Math.round((Date.now() - new Date(p.created_at)) / 1000))}s
+              {p.kind === 'entro' ? `🚪 ${activeClass.student_name || 'Alumno'} entró` : p.kind === 'mano' ? '🖐️' : '👋'} hace {Math.max(0, Math.round((Date.now() - new Date(p.created_at)) / 1000))}s
             </span>
           ))}
         </div>
@@ -317,6 +341,24 @@ function ControlPanel({ classId, students, onClose }) {
               <input value={videoDraft} onChange={(e) => setVideoDraft(e.target.value)} placeholder="ID de YouTube, ej: aqz-KE-bpKQ"
                 className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
               <button onClick={() => updateClass(classId, { demo_video_id: videoDraft.trim() || null })} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background">Guardar</button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wide text-text-muted">🎁 Recompensa al finalizar la clase</p>
+            <p className="mb-2 text-[11px] text-text-muted">Se entrega cuando le das "Finalizar clase" — a este alumno, o a todos los que hayan entrado si la clase es para "Todos los alumnos".</p>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-[10px] font-bold uppercase text-text-muted">✨ XP</label>
+                <input type="number" min={0} value={xpDraft} onChange={(e) => setXpDraft(e.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] font-bold uppercase text-text-muted">🪙 Monedas</label>
+                <input type="number" min={0} value={goldDraft} onChange={(e) => setGoldDraft(e.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+              </div>
+              <button onClick={handleSaveReward} className="self-end rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background">Guardar</button>
             </div>
           </div>
 
@@ -368,6 +410,16 @@ function ControlPanel({ classId, students, onClose }) {
       )}
 
       {tab === 'misiones' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">📜 Misión del registro (real, con seguimiento)</p>
+            <select value={linkedMissionId} onChange={(e) => handleLinkMission(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary">
+              <option value="">Sin misión adjunta</option>
+              {ALL_MISSIONS.map((m) => <option key={m.id} value={m.id}>{m.icon} {m.title}</option>)}
+            </select>
+            <p className="mt-1 text-[11px] text-text-muted">A diferencia de las misiones manuales de abajo, esta enlaza a una misión real del sistema — el alumno ve un botón "Ver en Misiones →" en su Hub.</p>
+          </div>
         <div className="rounded-2xl border border-border bg-surface p-4">
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">Misiones de esta clase</p>
           <div className="mb-3 space-y-2">
@@ -389,6 +441,7 @@ function ControlPanel({ classId, students, onClose }) {
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
             <button onClick={handleAddMission} className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text hover:bg-surface-hover">+ Agregar misión</button>
           </div>
+        </div>
         </div>
       )}
 
