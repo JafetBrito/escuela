@@ -879,6 +879,15 @@ alter table public.course_exams
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 020 — recompensa de graduación (XP/oro) por curso
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.course_exams
+  add column if not exists graduation_xp int not null default 1000,
+  add column if not exists graduation_gold int not null default 20000;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

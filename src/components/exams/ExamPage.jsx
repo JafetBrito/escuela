@@ -5,6 +5,7 @@ import { useExamsStore, localizeExam } from '../../stores/useExamsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useI18n } from '../../i18n'
 import courses from '../../data/courses.json'
+import { buildDiplomaHtml, downloadDiploma } from '../../utils/diploma'
 
 function formatTime(ms) {
   if (ms == null) return '--:--'
@@ -14,9 +15,19 @@ function formatTime(ms) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+const RETRY_COOLDOWN_MS = 5 * 60 * 60 * 1000
+
+function formatRemaining(ms) {
+  const totalMin = Math.max(0, Math.ceil(ms / 60000))
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
 export default function ExamPage() {
   const { courseId } = useParams()
   const session = useAuthStore((s) => s.session)
+  const profile = useAuthStore((s) => s.profile)
   const { lang } = useI18n()
 
   const rawExam     = useExamsStore((s) => s.exam)
@@ -40,6 +51,19 @@ export default function ExamPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [deadline, setDeadline] = useState(null)
   const [remainingMs, setRemainingMs] = useState(null)
+  const [now, setNow] = useState(Date.now())
+
+  // Solo se usa para refrescar el mensaje de bloqueo de reintento (cada
+  // minuto es más que suficiente, no hace falta la precisión del cronómetro
+  // del examen en curso).
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const lastAttempt = attempts[0]
+  const retryUnlockAt = lastAttempt && !lastAttempt.passed ? new Date(lastAttempt.created_at).getTime() + RETRY_COOLDOWN_MS : null
+  const inCooldown = !!retryUnlockAt && now < retryUnlockAt
 
   // El timer sigue corriendo en un intervalo aparte del ciclo de render — se
   // guardan refs de las respuestas/preguntas para que el auto-entrego al
@@ -114,6 +138,16 @@ export default function ExamPage() {
   const currentQuestion = shown[currentIndex]
   const isLastQuestion = currentIndex === shown.length - 1
 
+  const handleDownloadDiploma = () => {
+    const studentName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Alumno'
+    const html = buildDiplomaHtml({
+      studentName,
+      courseTitle: courseMeta?.title ?? courseId,
+      date: graduation?.graduated_at ? new Date(graduation.graduated_at) : new Date(),
+    })
+    downloadDiploma(html, `diploma-${courseId}.html`)
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
@@ -139,6 +173,9 @@ export default function ExamPage() {
               <p className="text-3xl">🎓</p>
               <p className="mt-1 font-bold text-emerald-400">¡Ya te graduaste de este curso!</p>
               <p className="text-xs text-text-muted">{new Date(graduation.graduated_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <button type="button" onClick={handleDownloadDiploma} className="mt-4 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-background hover:opacity-90">
+                📜 Descargar diploma
+              </button>
             </div>
           )}
 
@@ -159,9 +196,13 @@ export default function ExamPage() {
               {attempts.length > 0 && (
                 <p className="mt-2 text-xs text-text-muted">Tu mejor intento: {Math.max(...attempts.map((a) => a.score))}%</p>
               )}
-              <button type="button" onClick={handleStart} className="mt-4 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-background hover:opacity-90">
-                🚀 Comenzar examen
-              </button>
+              {inCooldown ? (
+                <p className="mt-4 text-sm font-bold text-danger">🔒 Reprobaste tu último intento — podrás volver a intentarlo en {formatRemaining(retryUnlockAt - now)}.</p>
+              ) : (
+                <button type="button" onClick={handleStart} className="mt-4 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-background hover:opacity-90">
+                  🚀 Comenzar examen
+                </button>
+              )}
             </div>
           )}
 
@@ -227,7 +268,12 @@ export default function ExamPage() {
               <p className={`mt-1 text-xl font-extrabold ${result.passed ? 'text-emerald-400' : 'text-danger'}`}>{result.score}%</p>
               {result.passed ? (
                 graduation ? (
-                  <p className="text-sm text-text-muted">¡Aprobaste! Ya estás certificado en este curso. 🎓</p>
+                  <div className="text-sm text-text-muted">
+                    <p>¡Aprobaste! Ya estás certificado en este curso. 🎓</p>
+                    <button type="button" onClick={handleDownloadDiploma} className="mt-4 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-background hover:opacity-90">
+                      📜 Descargar diploma
+                    </button>
+                  </div>
                 ) : (
                   <div className="text-sm text-text-muted">
                     <p>¡Aprobaste el examen! Para certificarte todavía falta que califiquen estas tareas:</p>
@@ -240,9 +286,13 @@ export default function ExamPage() {
                 <p className="text-sm text-text-muted">Necesitabas {exam.pass_score}% para aprobar.</p>
               )}
               {!result.passed && (
-                <button type="button" onClick={handleStart} className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-bold text-text hover:bg-surface-hover">
-                  Intentar de nuevo
-                </button>
+                inCooldown ? (
+                  <p className="mt-4 text-sm font-bold text-danger">🔒 Podrás volver a intentarlo en {formatRemaining(retryUnlockAt - now)}.</p>
+                ) : (
+                  <button type="button" onClick={handleStart} className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-bold text-text hover:bg-surface-hover">
+                    Intentar de nuevo
+                  </button>
+                )
               )}
             </div>
           )}

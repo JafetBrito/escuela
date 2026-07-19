@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
+import { useLevelStore } from './useLevelStore'
+import { useCurrencyStore } from './useCurrencyStore'
+import { useAchievementsStore } from './useAchievementsStore'
+import { getGraduationAchievement } from '../data/achievementsRegistry'
+import { playAchievementSound } from '../utils/sound'
+import courses from '../data/courses.json'
 
 // Baraja un array (Fisher-Yates) sin mutar el original — usado para elegir
 // una muestra al azar del banco de preguntas en cada intento.
@@ -21,6 +27,21 @@ export function localizeExam(exam, lang) {
   const override = exam.translations?.[lang]
   if (!override) return exam
   return { ...exam, title: override.title ?? exam.title, questions: override.questions ?? exam.questions }
+}
+
+// Se llama una sola vez, en el instante exacto en que se crea la fila de
+// graduación (ver maybeCertify) — entrega XP/oro configurados por el admin
+// para este examen y desbloquea la medalla de graduación del curso (toast +
+// sonido, mismo mecanismo manual que 'pionero-28' en AchievementWatcher.jsx).
+// El ítem coleccionable de graduación queda pendiente (el usuario todavía no
+// define cuál) — no se otorga nada aquí para eso todavía.
+function grantGraduationRewards(courseId, exam) {
+  if (exam?.graduation_xp > 0) useLevelStore.getState().addXp(exam.graduation_xp)
+  if (exam?.graduation_gold > 0) useCurrencyStore.getState().earnCoins(exam.graduation_gold)
+  const courseMeta = courses.find((c) => c.id === courseId)
+  const achievement = getGraduationAchievement({ courseId, title: courseMeta?.title ?? courseId })
+  const isNew = useAchievementsStore.getState().unlock(achievement)
+  if (isNew) playAchievementSound()
 }
 
 // Esqueleto del examen final por curso: un banco de preguntas de opción
@@ -146,7 +167,7 @@ export const useExamsStore = create((set, get) => ({
   // tras aprobar un intento, y también al cargar ExamPage por si el profesor
   // calificó las tareas pendientes después de que ya se había aprobado.
   maybeCertify: async (courseId, studentId) => {
-    const { attempts, eligibility, graduation } = get()
+    const { attempts, eligibility, graduation, exam } = get()
     if (graduation) return graduation
     const hasPassed = attempts.some((a) => a.passed)
     if (!hasPassed || !eligibility?.eligible) return null
@@ -156,6 +177,7 @@ export const useExamsStore = create((set, get) => ({
       .select()
       .single()
     set({ graduation: grad ?? null })
+    if (grad) grantGraduationRewards(courseId, exam)
     return grad ?? null
   },
 }))

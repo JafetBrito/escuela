@@ -26,6 +26,8 @@ export default function AdminExamsPage() {
   const [passScore, setPassScore] = useState(70)
   const [questionsToShow, setQuestionsToShow] = useState(15)
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(30)
+  const [graduationXp, setGraduationXp] = useState(1000)
+  const [graduationGold, setGraduationGold] = useState(20000)
   const [questions, setQuestions] = useState([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
@@ -46,6 +48,8 @@ export default function AdminExamsPage() {
     setPassScore(exam?.pass_score ?? 70)
     setQuestionsToShow(exam?.questions_to_show ?? 15)
     setTimeLimitMinutes(exam?.time_limit_minutes ?? 30)
+    setGraduationXp(exam?.graduation_xp ?? 1000)
+    setGraduationGold(exam?.graduation_gold ?? 20000)
     setQuestions((lang === 'es' ? exam?.questions : override?.questions)?.length ? (lang === 'es' ? exam.questions : override.questions) : [])
     setMsg('')
   }, [exam, courseId, lang])
@@ -75,6 +79,8 @@ export default function AdminExamsPage() {
       pass_score: Number(passScore) || 70,
       questions_to_show: Number(questionsToShow) || 15,
       time_limit_minutes: Number(timeLimitMinutes) || 30,
+      graduation_xp: Number(graduationXp) || 0,
+      graduation_gold: Number(graduationGold) || 0,
       questions: cleanQuestions,
       createdBy: session?.user?.id,
     })
@@ -137,6 +143,16 @@ export default function AdminExamsPage() {
                 <div>
                   <label className="text-[10px] font-bold uppercase text-text-muted">Límite de tiempo (min)</label>
                   <input type="number" min={1} value={timeLimitMinutes} disabled={lang !== 'es'} onChange={(e) => setTimeLimitMinutes(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-text-muted">XP al graduarse</label>
+                  <input type="number" min={0} value={graduationXp} disabled={lang !== 'es'} onChange={(e) => setGraduationXp(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-text-muted">Oro al graduarse (cobre)</label>
+                  <input type="number" min={0} value={graduationGold} disabled={lang !== 'es'} onChange={(e) => setGraduationGold(e.target.value)}
                     className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
                 </div>
               </div>

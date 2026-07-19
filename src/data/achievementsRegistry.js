@@ -28,6 +28,22 @@ export function isCourseCompleted(course, moduleProgress) {
   )
 }
 
+// Medalla de graduación (aprobar el examen final + tareas calificadas) —
+// distinta de getCourseAchievement (que solo pide ver todos los módulos).
+// No lleva `check`: se desbloquea manualmente desde useExamsStore.js
+// (maybeCertify) en el momento exacto de la graduación, no por un escaneo
+// reactivo — AchievementWatcher.jsx le asigna un check() que siempre da
+// false para cualquier id que no empiece con "course-".
+export function getGraduationAchievement(course) {
+  return {
+    id: `graduated-${course.courseId}`,
+    category: 'progreso',
+    name: `Diploma: ${course.title}`,
+    icon: '🎓',
+    description: `Te graduaste de "${course.title}": aprobaste el examen final y calificaron tus tareas.`,
+  }
+}
+
 // Static catalog. `check(state)` receives the snapshot built by
 // useAchievementsStore's checker and returns true once the achievement is
 // earned. Includes a handful of very easy ones for quick testing.
@@ -408,5 +424,6 @@ export const STATIC_ACHIEVEMENTS = [
 // item carrying a `category` field.
 export function getAllAchievements(courses) {
   const courseAchievements = courses.map(getCourseAchievement)
-  return [...courseAchievements, ...STATIC_ACHIEVEMENTS]
+  const graduationAchievements = courses.map(getGraduationAchievement)
+  return [...courseAchievements, ...graduationAchievements, ...STATIC_ACHIEVEMENTS]
 }
