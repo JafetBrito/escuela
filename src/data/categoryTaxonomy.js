@@ -14,7 +14,9 @@ export const MAIN_CATEGORIES = [
     accent: '#38bdf8',
     subcategories: [
       { name: 'Matemáticas', topics: ['Álgebra', 'Cálculo', 'Geometría', 'Probabilidad y Estadística', 'Topología'], schoolCategories: ['Matemáticas'] },
-      { name: 'Ciencias de la Computación', topics: ['Arquitectura de Sistemas', 'Inteligencia Artificial', 'Ciberseguridad', 'Desarrollo de Software', 'Bases de Datos'], schoolCategories: ['Programación', 'Inteligencia Artificial'] },
+      { name: 'Ciencias de la Computación', topics: ['Arquitectura de Sistemas', 'Desarrollo de Software', 'Bases de Datos'], schoolCategories: ['Programación'] },
+      { name: 'Inteligencia Artificial', topics: ['Modelos de Lenguaje', 'Prompt Engineering', 'Automatización con IA'], schoolCategories: ['Inteligencia Artificial'] },
+      { name: 'Ciberseguridad', topics: ['Ethical Hacking', 'Criptografía', 'Seguridad de Redes', 'Seguridad Ofensiva y Defensiva'], schoolCategories: ['Ciberseguridad'] },
       { name: 'Lógica', topics: ['Lógica Clásica', 'Lógica Matemática', 'Lógica Computacional'], schoolCategories: ['Lógica'] },
     ],
   },

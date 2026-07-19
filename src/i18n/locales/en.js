@@ -21,6 +21,8 @@ export const en = {
       herramientas: 'Tools',
       anuncios: 'Announcements',
       cerebro: 'Second Brain',
+      academiaIdiomas: 'Language Academy',
+      academiaCiberseguridad: 'Cybersecurity Academy',
       buscar: 'Search',
       mascota: 'My Team',
       arbol: 'Skill Tree',
@@ -102,6 +104,49 @@ export const en = {
       achievementsDesc: 'Your unlocked medals and secrets',
       missionsDesc: 'Active and completed objectives',
       teamDesc: 'Avatar, mascot, equipment',
+    },
+  },
+  languageAcademy: {
+    title: '🌍 Language Academy',
+    subtitle: 'Everyone learns best from their own language — these courses are explained from {l1}.',
+    courseTitle: 'Learn {lang}',
+    courseDescription: 'From zero to advanced, {lang} explained step by step from {l1}.',
+    tabsCourses: 'Courses',
+    tabsAcademy: '🌍 Language Academy',
+    pickLanguage: 'Which language do you want to learn?',
+    backToLanguages: '← Pick another language',
+    soon: '🔒 Coming soon',
+    groups: {
+      mundiales: 'World languages',
+      mexico: 'Indigenous languages of Mexico',
+      eeuu: 'Indigenous languages of the U.S.',
+      canada: 'Indigenous languages of Canada',
+    },
+    levels: {
+      a1: {
+        title: 'A1 · Beginner',
+        description: 'First steps in {lang}: greetings, introducing yourself, numbers, everyday vocabulary, and basic phrases to survive a simple conversation.',
+      },
+      a2: {
+        title: 'A2 · Elementary',
+        description: 'You expand your vocabulary and form fuller sentences: routines, simple past tense, and asking for or giving simple information in {lang}.',
+      },
+      b1: {
+        title: 'B1 · Intermediate',
+        description: 'You can hold a conversation on familiar topics, share experiences, and give opinions with more elaborate sentences in {lang}.',
+      },
+      b2: {
+        title: 'B2 · Upper Intermediate',
+        description: 'You understand complex texts and ideas and get by fluently in most everyday and work situations in {lang}.',
+      },
+      c1: {
+        title: 'C1 · Advanced',
+        description: 'You express yourself fluently and precisely, understand subtle nuances, and use {lang} in demanding academic and professional settings.',
+      },
+      c2: {
+        title: 'C2 · Mastery',
+        description: 'You understand virtually everything you read or hear and express yourself in {lang} with the ease of a native speaker.',
+      },
     },
   },
   learning: {

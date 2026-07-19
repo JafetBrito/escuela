@@ -20,6 +20,8 @@ import LoginPage from './components/auth/LoginPage'
 import PortalPage from './components/portal/PortalPage'
 import DashboardPage from './components/dashboard/DashboardPage'
 import SchoolPage from './components/dashboard/SchoolPage'
+import LanguageSyllabusPage from './components/dashboard/LanguageSyllabusPage'
+import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
 import ShopPage from './components/shop/ShopPage'
 import SettingsPage from './components/settings/SettingsPage'
@@ -201,6 +203,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SchoolPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academia-idiomas"
+          element={
+            <ProtectedRoute>
+              <AcademiaIdiomasPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academia-idiomas/:l2"
+          element={
+            <ProtectedRoute>
+              <LanguageSyllabusPage />
             </ProtectedRoute>
           }
         />
@@ -668,6 +686,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/__dev_learn/:courseId" element={<Suspense fallback={<RouteFallback />}><LearningInterface /></Suspense>} />
         <Route
           path="/cerebro"
           element={

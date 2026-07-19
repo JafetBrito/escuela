@@ -82,9 +82,13 @@ export default function MainCategoryPage() {
 
         <div className="mx-auto max-w-4xl px-4 py-6">
           {sections.map((sub) => {
+            const subAccent = CATEGORY_META[sub.schoolCategories[0]]?.accent ?? mainCategory.accent
+            const subIcon = CATEGORY_META[sub.schoolCategories[0]]?.icon
             return (
-              <section key={sub.name} className="mb-8">
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-text-muted">{sub.name}</h2>
+              <section key={sub.name} className="mb-8 rounded-2xl border-l-4 pl-4" style={{ borderColor: subAccent }}>
+                <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider" style={{ color: subAccent }}>
+                  {subIcon && <span className="text-base normal-case">{subIcon}</span>} {sub.name}
+                </h2>
 
                 {sub.courses.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border bg-surface p-4">

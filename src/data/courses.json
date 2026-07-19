@@ -401,5 +401,45 @@
     "color": "#38bdf8",
     "category": "Comunicación y Medios",
     "locked": true
+  },
+  {
+    "id": "course-ciberseguridad",
+    "title": "Fundamentos de Ciberseguridad",
+    "description": "Los conceptos esenciales para proteger sistemas y datos: amenazas comunes, criptografía básica, seguridad de redes y buenas prácticas que todo desarrollador debería conocer. Próximamente.",
+    "icon": "🔐",
+    "color": "#2dd4bf",
+    "category": "Ciberseguridad",
+    "subcategory": "Fundamentos",
+    "locked": true
+  },
+  {
+    "id": "course-ethical-hacking",
+    "title": "Ethical Hacking desde Cero",
+    "description": "Piensa como un atacante para defender mejor: reconocimiento, vulnerabilidades comunes y cómo reportar hallazgos de forma responsable, siempre dentro de un marco ético y legal. Próximamente.",
+    "icon": "🕵️",
+    "color": "#0f766e",
+    "category": "Ciberseguridad",
+    "subcategory": "Seguridad Ofensiva",
+    "locked": true
+  },
+  {
+    "id": "course-open-claw",
+    "title": "Open Claw",
+    "description": "Explora un proyecto de código abierto de principio a fin: cómo está estructurado, cómo se contribuye y qué puedes aprender leyendo el código de otros. Próximamente.",
+    "icon": "🦾",
+    "color": "#f97316",
+    "category": "Programación",
+    "subcategory": "Código Abierto",
+    "locked": true
+  },
+  {
+    "id": "course-fuentes-abiertas",
+    "title": "Fuentes Abiertas",
+    "description": "Qué es el software de código abierto, por qué importa, y cómo empezar a contribuir a proyectos reales: licencias, pull requests, y la cultura detrás del open source. Próximamente.",
+    "icon": "📖",
+    "color": "#84cc16",
+    "category": "Programación",
+    "subcategory": "Código Abierto",
+    "locked": true
   }
 ]

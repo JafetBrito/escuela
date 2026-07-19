@@ -25,6 +25,8 @@ export const es = {
       herramientas: 'Herramientas',
       anuncios: 'Anuncios',
       cerebro: 'Segundo Cerebro',
+      academiaIdiomas: 'Academia de Idiomas',
+      academiaCiberseguridad: 'Academia de Ciberseguridad',
       buscar: 'Buscar',
       mascota: 'Mi Equipo',
       arbol: 'Árbol',
@@ -106,6 +108,49 @@ export const es = {
       achievementsDesc: 'Tus medallas y secretos desbloqueados',
       missionsDesc: 'Objetivos activos y completados',
       teamDesc: 'Avatar, mascota, equipamiento',
+    },
+  },
+  languageAcademy: {
+    title: '🌍 Academia de Idiomas',
+    subtitle: 'Cada quien aprende mejor desde su propio idioma — estos cursos están explicados desde {l1}.',
+    courseTitle: 'Aprende {lang}',
+    courseDescription: 'De cero a avanzado, {lang} explicado paso a paso desde {l1}.',
+    tabsCourses: 'Cursos',
+    tabsAcademy: '🌍 Academia de Idiomas',
+    pickLanguage: '¿Qué idioma quieres aprender?',
+    backToLanguages: '← Elegir otro idioma',
+    soon: '🔒 Próximamente',
+    groups: {
+      mundiales: 'Idiomas del mundo',
+      mexico: 'Lenguas indígenas de México',
+      eeuu: 'Lenguas indígenas de EE. UU.',
+      canada: 'Lenguas indígenas de Canadá',
+    },
+    levels: {
+      a1: {
+        title: 'A1 · Principiante',
+        description: 'Primeros pasos en {lang}: saludos, presentarte, números, vocabulario cotidiano y frases básicas para sobrevivir una conversación simple.',
+      },
+      a2: {
+        title: 'A2 · Elemental',
+        description: 'Amplías tu vocabulario y formas oraciones más completas: rutinas, pasado simple, y pedir o dar información sencilla en {lang}.',
+      },
+      b1: {
+        title: 'B1 · Intermedio',
+        description: 'Mantienes una conversación sobre temas conocidos, cuentas experiencias y das tu opinión con oraciones más elaboradas en {lang}.',
+      },
+      b2: {
+        title: 'B2 · Intermedio alto',
+        description: 'Entiendes textos e ideas complejas y te desenvuelves con fluidez en la mayoría de situaciones cotidianas y de trabajo en {lang}.',
+      },
+      c1: {
+        title: 'C1 · Avanzado',
+        description: 'Te expresas con soltura y precisión, entiendes matices sutiles y usas {lang} en contextos académicos y profesionales exigentes.',
+      },
+      c2: {
+        title: 'C2 · Dominio',
+        description: 'Comprendes prácticamente todo lo que lees o escuchas y te expresas en {lang} con la naturalidad de alguien nativo.',
+      },
     },
   },
   learning: {

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { supabase } from '../../services/supabase/client'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useI18n } from '../../i18n'
+import { localizeExam } from '../../stores/useExamsStore'
 import courses from '../../data/courses.json'
 
 // Lista de cursos que tienen examen final configurado (ver AdminExamsPage) —
@@ -12,6 +14,7 @@ import courses from '../../data/courses.json'
 // detalle por tarea).
 export default function ExamsPage() {
   const session = useAuthStore((s) => s.session)
+  const { lang } = useI18n()
   const [exams, setExams] = useState([])
   const [graduations, setGraduations] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,7 +22,7 @@ export default function ExamsPage() {
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      supabase.from('course_exams').select('course_id, title, questions'),
+      supabase.from('course_exams').select('course_id, title, questions, translations'),
       supabase.from('student_graduations').select('course_id').eq('student_id', session?.user?.id),
     ]).then(([{ data: e }, { data: g }]) => {
       if (cancelled) return
@@ -47,7 +50,8 @@ export default function ExamsPage() {
                 <p className="text-text-muted text-sm">Todavía no hay exámenes configurados en ningún curso.</p>
               </div>
             )}
-            {exams.map((e) => {
+            {exams.map((raw) => {
+              const e = localizeExam(raw, lang)
               const courseMeta = courses.find((c) => c.id === e.course_id)
               const graduated = graduations.includes(e.course_id)
               return (

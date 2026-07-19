@@ -838,6 +838,14 @@ end $$;
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 017 — exámenes multi-idioma (course_exams.translations)
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.course_exams
+  add column if not exists translations jsonb not null default '{}'::jsonb;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

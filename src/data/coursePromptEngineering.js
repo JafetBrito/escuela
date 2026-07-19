@@ -12,6 +12,17 @@ export default {
   aiInstructions: 'Eres Oliver, tutor experto en ingeniería de prompts. Cuando el alumno comparta un prompt, analízalo con detalle: ¿qué técnica usa?, ¿qué mejorarías?, ¿qué no especifica? Haz roleplay de ser una IA recibiendo el prompt si te lo piden. Compara versiones de prompts (bueno vs malo). Siempre motiva a practicar en la sección de herramientas. Puedes generar prompts de ejemplo para cualquier caso de uso que mencionen.',
 
   modules: [
+    // ── VIDEO DE PRESENTACIÓN — videoId de prueba (ver aviso): reemplazar
+    // por el video real de presentación del curso cuando esté listo.
+    {
+      id: 0, order: 0, videoId: 'aqz-KE-bpKQ',
+      title: 'Presentación del curso',
+      description: '🧪 Video de prueba — aquí va la presentación real del curso: de qué trata, qué vas a lograr al terminarlo y cómo está organizado.',
+      exercises: [],
+      resources: [],
+      quiz: { question: '¿Qué vas a aprender en este curso?', options: ['A programar en Python', 'A diseñar prompts efectivos para modelos de IA', 'A entrenar modelos de IA desde cero', 'A usar hojas de cálculo'], correctIndex: 1 },
+      comments: [],
+    },
     {
       id: 1,
       title: '¿Qué es la Ingeniería de Prompts?',
@@ -367,7 +378,7 @@ FORMATO DE RESPUESTA DESEADO: [cómo debe responder]</code></pre></div><h2>Autom
 TAREA: Clasificar emails de soporte en: urgente, normal, bajo.
 CRITERIO: El prompt debe ser determinista, rápido y evitar clasificaciones erróneas.
 
-Para cada variación: el prompt completo y explica su enfoque.</code></pre></div><div class='tip'>💡 <strong>El loop de mejora:</strong> Prompt v1 → ejecutar → identificar fallo → meta-prompt para mejorar → Prompt v2 → ejecutar → ¿es mejor? → si no, volver. Este loop es exactamente cómo los equipos de IA en producción optimizan sus sistemas.</div>`),
+Para cada variación: el prompt completo y explica su enfoque.</code></pre></div><div class='tip'>💡 <strong>El loop de mejora:</strong> Prompt v1 → ejecutar → identificar fallo → meta-prompt para mejorar → Prompt v2 → ejecutar → ¿es mejor? → si no, volver. Este loop es exactamente cómo los equipos de IA en producción optimizan sus sistemas.</div><h2>🧪 Herramienta: Generador de Prompts</h2><p>Practica lo que acabas de aprender con esta herramienta hecha para crear y mejorar prompts.</p><div style='position:relative;padding-top:65%;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.15)'><iframe src='https://ideas.jafetbrito.com/' title='Generador de Prompts' style='position:absolute;top:0;left:0;width:100%;height:100%;border:0' loading='lazy'></iframe></div><p><a href='https://ideas.jafetbrito.com/' target='_blank' rel='noopener noreferrer' style='color:var(--color-primary);text-decoration:underline'>Abrir en una pestaña nueva ↗</a></p>`),
       exercises: [{ id: 'pe-16-1', type: 'challenge', prompt: 'Toma uno de tus prompts favoritos de este curso que no funcionó exactamente como querías. Usa el prompt de "mejorar un prompt existente" de este módulo para que Oliver te ayude a mejorarlo. Compara la versión original vs la mejorada.', solution: '' }],
       resources: [{ label: 'Automatic Prompt Engineer (APE) — paper', url: 'https://arxiv.org/abs/2211.01910', type: 'link' }],
       quiz: { question: '¿Qué es el meta-prompting?', options: ['Usar prompts muy largos', 'Usar una IA para diseñar o mejorar prompts para otra IA', 'Crear prompts para metaverso', 'Técnica para usar menos tokens'], correctIndex: 1 },
@@ -514,6 +525,20 @@ close-up shot,
         { label: 'Anthropic Prompt Library', url: 'https://docs.anthropic.com/es/prompt-library', type: 'link' },
       ],
       quiz: { question: '¿Cuál de estas NO es una buena práctica para un portafolio de prompts?', options: ['Versionar cada prompt como si fuera código', 'Incluir ejemplos reales de output', 'Documentar para qué modelo fue optimizado', 'Mantenerlo en secreto y nunca compartirlo'], correctIndex: 3 },
+      comments: [],
+    },
+    // ── EXAMEN FINAL — no es una clase con contenido, es la puerta de
+    // entrada al examen de graduación (ver /examenes/course-003, AdminExamsPage.jsx).
+    {
+      id: 21,
+      title: '🎓 Examen Final de Graduación',
+      order: 21,
+      type: 'text',
+      description: 'El último paso para graduarte de este curso: aprueba el examen final.',
+      content: c(`<h2>🎓 ¡Llegaste al final del curso!</h2><p>Ya viste las 20 clases de Ingeniería de Prompts. El último paso para graduarte es aprobar el <strong>examen final</strong>: 15 preguntas de opción múltiple sorteadas de un banco más grande, necesitas 70% para aprobar.</p><div class='tip'>💡 <strong>Requisito:</strong> antes de poder presentarlo, las tareas que tu profesor te asignó para este curso deben estar calificadas (revisadas). Si el botón de abajo te dice que aún te faltan tareas, pídele a tu profesor que las revise en <em>Gestión de Tareas</em>.</div><p style='text-align:center;margin-top:1.5rem'><a href='/examenes/course-003' style='display:inline-block;padding:0.75rem 1.5rem;border-radius:0.75rem;background:var(--color-primary);color:var(--color-background);font-weight:bold;text-decoration:none'>🚀 Ir al examen final →</a></p>`),
+      exercises: [],
+      resources: [],
+      quiz: { question: '¿Qué necesitas para graduarte de este curso?', options: ['Solo ver todos los videos', 'Tener tus tareas calificadas y aprobar el examen final', 'Nada, ya te graduaste automáticamente', 'Pagar una cuota extra'], correctIndex: 1 },
       comments: [],
     },
   ],

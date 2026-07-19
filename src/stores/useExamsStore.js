@@ -12,6 +12,17 @@ function shuffle(arr) {
   return a
 }
 
+// Aplica la traducción de `lang` sobre el examen base (español) — mismo
+// criterio de "cae a español si falta" que el resto del sistema i18n (ver
+// src/i18n/index.js). Reemplaza el banco completo, no mergea pregunta por
+// pregunta: una traducción nueva reescribe title+questions enteros.
+export function localizeExam(exam, lang) {
+  if (!exam) return exam
+  const override = exam.translations?.[lang]
+  if (!override) return exam
+  return { ...exam, title: override.title ?? exam.title, questions: override.questions ?? exam.questions }
+}
+
 // Esqueleto del examen final por curso: un banco de preguntas de opción
 // múltiple (el admin escribe el banco completo, ver AdminExamsPage.jsx), del
 // que se sortean `questions_to_show` en cada intento (ver startAttempt). Un
@@ -32,10 +43,28 @@ export const useExamsStore = create((set, get) => ({
   },
 
   // Usado por AdminExamsPage — crea o actualiza el examen de un curso.
-  saveExam: async (courseId, { title, pass_score, questions_to_show, questions, createdBy }) => {
+  // lang='es' escribe el banco base (title/questions); cualquier otro
+  // idioma se guarda como override dentro de `translations`, sin tocar
+  // pass_score/questions_to_show (son propiedades del examen, no del
+  // idioma) — requiere que el examen base ya exista.
+  saveExam: async (courseId, { lang = 'es', title, pass_score, questions_to_show, questions, createdBy }) => {
+    if (lang === 'es') {
+      const { data, error } = await supabase
+        .from('course_exams')
+        .upsert({ course_id: courseId, title, pass_score, questions_to_show, questions, created_by: createdBy, updated_at: new Date().toISOString() }, { onConflict: 'course_id' })
+        .select()
+        .single()
+      if (!error) set({ exam: data })
+      return { data, error }
+    }
+
+    const current = get().exam
+    if (!current) return { data: null, error: new Error('Guarda primero el examen en español.') }
+    const translations = { ...(current.translations ?? {}), [lang]: { title, questions } }
     const { data, error } = await supabase
       .from('course_exams')
-      .upsert({ course_id: courseId, title, pass_score, questions_to_show, questions, created_by: createdBy, updated_at: new Date().toISOString() }, { onConflict: 'course_id' })
+      .update({ translations, updated_at: new Date().toISOString() })
+      .eq('course_id', courseId)
       .select()
       .single()
     if (!error) set({ exam: data })

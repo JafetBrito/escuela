@@ -15,6 +15,11 @@ import { CourseCard } from './DashboardPage'
 // categoría por subcategoría (course.subcategory); la mitad derecha es el
 // "profesor" 3D de la escuela + un chat para preguntarle sobre los cursos,
 // inspirado en el catálogo de Platzi pero con un maestro en vez de un video.
+//
+// La Academia de Idiomas (aprende inglés/francés/etc. según el idioma del
+// sitio) vive aparte, en su propia página de navbar (/academia-idiomas,
+// AcademiaIdiomasPage.jsx) — no como pestaña aquí, para que sea claramente
+// visible y no quede escondida dentro de la Escuela de Idiomas.
 export default function SchoolPage() {
   const { slug } = useParams()
   const navigate = useNavigate()

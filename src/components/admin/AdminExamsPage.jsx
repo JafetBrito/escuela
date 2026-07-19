@@ -2,9 +2,16 @@ import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import { useExamsStore } from '../../stores/useExamsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { LANGUAGE_NAMES } from '../../i18n'
 import courses from '../../data/courses.json'
 
 const emptyQuestion = () => ({ id: crypto.randomUUID(), question: '', options: ['', '', '', ''], correct: 0 })
+
+// Idiomas en los que se puede escribir el examen — 'es' es siempre la base
+// (obligatoria); el resto son overrides opcionales guardados en
+// course_exams.translations (ver useExamsStore.js). Agregar un idioma nuevo
+// aquí = poder escribirlo para cualquier curso, no hace falta tocar nada más.
+const EXAM_LANGS = ['es', 'en']
 
 export default function AdminExamsPage() {
   const isAdmin = useAuthStore((s) => s.isAdmin)
@@ -14,6 +21,7 @@ export default function AdminExamsPage() {
   const saveExam = useExamsStore((s) => s.saveExam)
 
   const [courseId, setCourseId] = useState('')
+  const [lang, setLang] = useState('es')
   const [title, setTitle] = useState('Examen final')
   const [passScore, setPassScore] = useState(70)
   const [questionsToShow, setQuestionsToShow] = useState(15)
@@ -23,17 +31,22 @@ export default function AdminExamsPage() {
 
   useEffect(() => {
     if (!courseId) return
+    setLang('es')
     fetchExam(courseId)
   }, [courseId, fetchExam])
 
+  // pass_score/questions_to_show son propiedades del examen (no del idioma)
+  // así que siempre reflejan el valor base, sin importar qué pestaña de
+  // idioma esté abierta — solo title/questions cambian con `lang`.
   useEffect(() => {
     if (!courseId) return
-    setTitle(exam?.title ?? 'Examen final')
+    const override = lang === 'es' ? null : exam?.translations?.[lang]
+    setTitle((lang === 'es' ? exam?.title : override?.title) ?? 'Examen final')
     setPassScore(exam?.pass_score ?? 70)
     setQuestionsToShow(exam?.questions_to_show ?? 15)
-    setQuestions(exam?.questions?.length ? exam.questions : [])
+    setQuestions((lang === 'es' ? exam?.questions : override?.questions)?.length ? (lang === 'es' ? exam.questions : override.questions) : [])
     setMsg('')
-  }, [exam, courseId])
+  }, [exam, courseId, lang])
 
   if (!isAdmin?.()) {
     return (
@@ -55,6 +68,7 @@ export default function AdminExamsPage() {
     setBusy(true)
     const cleanQuestions = questions.filter((q) => q.question.trim() && q.options.every((o) => o.trim()))
     const { error } = await saveExam(courseId, {
+      lang,
       title: title.trim() || 'Examen final',
       pass_score: Number(passScore) || 70,
       questions_to_show: Number(questionsToShow) || 15,
@@ -88,6 +102,19 @@ export default function AdminExamsPage() {
 
           {courseId && (
             <div className="mt-4 space-y-4">
+              <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
+                {EXAM_LANGS.map((code) => (
+                  <button key={code} type="button" onClick={() => setLang(code)}
+                    className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${lang === code ? 'bg-primary text-background' : 'text-text-muted hover:bg-surface-hover'}`}>
+                    {LANGUAGE_NAMES[code] ?? code}
+                    {code !== 'es' && !exam?.translations?.[code] && <span className="ml-1 text-[10px] opacity-70">(sin traducir)</span>}
+                  </button>
+                ))}
+              </div>
+              {lang !== 'es' && (
+                <p className="text-xs text-text-muted">Traduciendo desde el examen base (Español) — el puntaje para aprobar y las preguntas por intento son los mismos para todos los idiomas.</p>
+              )}
+
               <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border bg-surface p-4">
                 <div className="col-span-3 sm:col-span-1">
                   <label className="text-[10px] font-bold uppercase text-text-muted">Título</label>
@@ -96,13 +123,13 @@ export default function AdminExamsPage() {
                 </div>
                 <div>
                   <label className="text-[10px] font-bold uppercase text-text-muted">Puntaje para aprobar (%)</label>
-                  <input type="number" min={1} max={100} value={passScore} onChange={(e) => setPassScore(e.target.value)}
-                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+                  <input type="number" min={1} max={100} value={passScore} disabled={lang !== 'es'} onChange={(e) => setPassScore(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold uppercase text-text-muted">Preguntas por intento</label>
-                  <input type="number" min={1} value={questionsToShow} onChange={(e) => setQuestionsToShow(e.target.value)}
-                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+                  <input type="number" min={1} value={questionsToShow} disabled={lang !== 'es'} onChange={(e) => setQuestionsToShow(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
                 </div>
               </div>
 

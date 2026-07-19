@@ -277,7 +277,7 @@ DESIRED RESPONSE FORMAT: [how it should respond]</code></pre></div><h2>Automatic
 TASK: Classify support emails as: urgent, normal, low.
 CRITERION: The prompt must be deterministic, fast and avoid misclassifications.
 
-For each variation: the full prompt and an explanation of its approach.</code></pre></div><div class='tip'>💡 <strong>The improvement loop:</strong> Prompt v1 → run it → identify a failure → meta-prompt to improve → Prompt v2 → run it → is it better? → if not, go back. This loop is exactly how production AI teams optimize their systems.</div>`),
+For each variation: the full prompt and an explanation of its approach.</code></pre></div><div class='tip'>💡 <strong>The improvement loop:</strong> Prompt v1 → run it → identify a failure → meta-prompt to improve → Prompt v2 → run it → is it better? → if not, go back. This loop is exactly how production AI teams optimize their systems.</div><h2>🧪 Tool: Prompt Generator</h2><p>Practice what you just learned with this tool made for creating and improving prompts.</p><div style='position:relative;padding-top:65%;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.15)'><iframe src='https://ideas.jafetbrito.com/' title='Prompt Generator' style='position:absolute;top:0;left:0;width:100%;height:100%;border:0' loading='lazy'></iframe></div><p><a href='https://ideas.jafetbrito.com/' target='_blank' rel='noopener noreferrer' style='color:var(--color-primary);text-decoration:underline'>Open in a new tab ↗</a></p>`),
       exercises: [{ id: 'pe-16-1', prompt: 'Take one of your favorite prompts from this course that didn’t work exactly as you wanted. Use this module’s "improve an existing prompt" prompt to have Oliver help you improve it. Compare the original vs the improved version.' }],
       resources: [{ label: 'Automatic Prompt Engineer (APE) — paper' }],
       quiz: { question: 'What is meta-prompting?', options: ['Using very long prompts', 'Using an AI to design or improve prompts for another AI', 'Creating prompts for the metaverse', 'A technique to use fewer tokens'] } },
@@ -396,5 +396,13 @@ close-up shot,
         { label: 'Anthropic Prompt Library' },
       ],
       quiz: { question: 'Which of these is NOT a good practice for a prompt portfolio?', options: ['Versioning each prompt like code', 'Including real output examples', 'Documenting which model it was optimized for', 'Keeping it secret and never sharing it'] } },
+    {
+      id: 21,
+      title: '🎓 Final Graduation Exam',
+      description: 'The last step to graduate from this course: pass the final exam.',
+      content: c(`<h2>🎓 You made it to the end of the course!</h2><p>You've seen all 20 Prompt Engineering classes. The last step to graduate is passing the <strong>final exam</strong>: 15 multiple-choice questions drawn from a larger bank, you need 70% to pass.</p><div class='tip'>💡 <strong>Requirement:</strong> before you can take it, the tasks your teacher assigned for this course must be graded. If the button below tells you tasks are still pending, ask your teacher to review them in <em>Task Management</em>.</div><p style='text-align:center;margin-top:1.5rem'><a href='/examenes/course-003' style='display:inline-block;padding:0.75rem 1.5rem;border-radius:0.75rem;background:var(--color-primary);color:var(--color-background);font-weight:bold;text-decoration:none'>🚀 Go to the final exam →</a></p>`),
+      exercises: [],
+      resources: [],
+      quiz: { question: 'What do you need to graduate from this course?', options: ['Just watch all the videos', 'Have your tasks graded and pass the final exam', 'Nothing, you already graduated automatically', 'Pay an extra fee'] } },
   ],
 }

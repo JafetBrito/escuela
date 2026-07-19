@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
-import { useExamsStore } from '../../stores/useExamsStore'
+import { useExamsStore, localizeExam } from '../../stores/useExamsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useI18n } from '../../i18n'
 import courses from '../../data/courses.json'
 
 export default function ExamPage() {
   const { courseId } = useParams()
   const session = useAuthStore((s) => s.session)
+  const { lang } = useI18n()
 
-  const exam        = useExamsStore((s) => s.exam)
+  const rawExam     = useExamsStore((s) => s.exam)
+  const exam        = useMemo(() => localizeExam(rawExam, lang), [rawExam, lang])
   const eligibility  = useExamsStore((s) => s.eligibility)
   const attempts     = useExamsStore((s) => s.attempts)
   const graduation   = useExamsStore((s) => s.graduation)

@@ -173,6 +173,32 @@ export default function AppTopBar({ variant = 'full' }) {
           🏠 Dashboard
         </Link>
 
+        {/* Academia de Idiomas — link directo, área propia (no escondida en un dropdown) */}
+        <Link
+          to="/academia-idiomas"
+          onClick={closeAll}
+          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+            location.pathname.startsWith('/academia-idiomas')
+              ? 'bg-primary/10 text-primary'
+              : 'text-text-muted hover:text-text'
+          }`}
+        >
+          🌍 {t('nav.items.academiaIdiomas')}
+        </Link>
+
+        {/* Academia de Ciberseguridad — mismo trato: link directo, no escondido */}
+        <Link
+          to="/escuela/ciberseguridad"
+          onClick={closeAll}
+          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+            location.pathname === '/escuela/ciberseguridad'
+              ? 'bg-primary/10 text-primary'
+              : 'text-text-muted hover:text-text'
+          }`}
+        >
+          🔐 {t('nav.items.academiaCiberseguridad')}
+        </Link>
+
         {/* Dropdown groups */}
         {GROUPS.map((group) => {
           const active = isGroupActive(group)
@@ -349,6 +375,26 @@ export default function AppTopBar({ variant = 'full' }) {
             }`}
           >
             🏠 Dashboard
+          </Link>
+
+          <Link
+            to="/academia-idiomas"
+            onClick={closeAll}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              location.pathname.startsWith('/academia-idiomas') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            🌍 {t('nav.items.academiaIdiomas')}
+          </Link>
+
+          <Link
+            to="/escuela/ciberseguridad"
+            onClick={closeAll}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              location.pathname === '/escuela/ciberseguridad' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            🔐 {t('nav.items.academiaCiberseguridad')}
           </Link>
 
           {GROUPS.map((group) => (
