@@ -2,8 +2,21 @@ import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
 import { playNotificationSound } from '../utils/sound'
 import { speak } from '../utils/tts'
+import { showSystemNotification } from '../utils/pushNotify'
 import { useLevelStore } from './useLevelStore'
 import { useCurrencyStore } from './useCurrencyStore'
+
+// Mismo destino que NotificationBell.jsx.handleClick — centralizado aquí
+// para que la notificación de sistema (showSystemNotification) abra
+// exactamente el mismo enlace que la campanita, incluida la clase en vivo
+// si ya está disponible.
+function notificationUrl(n) {
+  if (n.chess_invite_id) return '/games/mishi-jedrez'
+  if (n.class_id) return `/mis-clases/${n.class_id}`
+  if (n.project_id) return `/proyectos/${n.project_id}`
+  if (n.task_id) return `/mis-tareas/${n.task_id}`
+  return null
+}
 
 // Le entrega al store local (XP/monedas) la recompensa de una notificación
 // no reclamada todavía, y marca reward_claimed_at para que no se repita si
@@ -54,6 +67,7 @@ export const useNotificationsStore = create((set, get) => ({
           set((s) => ({ notifications: [payload.new, ...s.notifications] }))
           playNotificationSound()
           speak([payload.new.title, payload.new.body].filter(Boolean).join('. '))
+          showSystemNotification({ title: payload.new.title, body: payload.new.body, url: notificationUrl(payload.new) })
           claimReward(payload.new)
         })
       .subscribe()

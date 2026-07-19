@@ -216,6 +216,14 @@ export default function TextSelectionMenu() {
     ? (isCoarsePointer() ? sel.bottom + TOUCH_MENU_OFFSET : sel.top + 30)
     : sel.top - 6
 
+  // En móvil el menú horizontal no cabe completo (6 botones + separadores) y
+  // termina cortado — se apila vertical, un botón por fila, con texto
+  // completo siempre visible.
+  const vertical = isCoarsePointer()
+  const Divider = () => vertical
+    ? <div className="my-0.5 h-px w-full bg-white/10" />
+    : <div className="mx-0.5 h-4 w-px bg-white/10" />
+
   return (
     <div
       ref={menuRef}
@@ -231,7 +239,9 @@ export default function TextSelectionMenu() {
       )}
 
       {/* ── Main toolbar ── */}
-      <div className="flex items-center gap-0.5 rounded-2xl border border-white/10 bg-zinc-900/96 px-1.5 py-1.5 shadow-2xl backdrop-blur-md">
+      <div className={`flex rounded-2xl border border-white/10 bg-zinc-900/96 shadow-2xl backdrop-blur-md ${
+        vertical ? 'w-48 flex-col gap-0.5 p-1.5' : 'items-center gap-0.5 px-1.5 py-1.5'
+      }`}>
 
         {/* Leer en voz alta */}
         <button
@@ -240,6 +250,7 @@ export default function TextSelectionMenu() {
           onClick={speak}
           title={reading ? 'Detener lectura' : `Leer en voz alta (${LANGS[langIdx].name})`}
           className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all
+            ${vertical ? 'w-full' : ''}
             ${reading
               ? 'animate-pulse bg-amber-500/20 text-amber-400'
               : 'text-zinc-300 hover:bg-white/10 hover:text-white'
@@ -255,12 +266,12 @@ export default function TextSelectionMenu() {
           onMouseDown={(e) => e.preventDefault()}
           onClick={cycleLang}
           title={`Idioma: ${LANGS[langIdx].name} — clic para cambiar`}
-          className="min-w-[2rem] rounded-xl border border-white/10 bg-white/5 px-2 py-1.5 text-[10px] font-black text-zinc-400 transition-all hover:bg-white/10 hover:text-white"
+          className={`min-w-[2rem] rounded-xl border border-white/10 bg-white/5 px-2 py-1.5 text-[10px] font-black text-zinc-400 transition-all hover:bg-white/10 hover:text-white ${vertical ? 'w-full text-left' : ''}`}
         >
-          {LANGS[langIdx].label}
+          {vertical ? `Idioma: ${LANGS[langIdx].name}` : LANGS[langIdx].label}
         </button>
 
-        <div className="mx-0.5 h-4 w-px bg-white/10" />
+        <Divider />
 
         {/* Guardar en notas */}
         <button
@@ -269,6 +280,7 @@ export default function TextSelectionMenu() {
           onClick={saveNote}
           title="Guardar en mis notas"
           className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all
+            ${vertical ? 'w-full' : ''}
             ${saved
               ? 'bg-green-500/20 text-green-400'
               : 'text-zinc-300 hover:bg-white/10 hover:text-white'
@@ -278,7 +290,7 @@ export default function TextSelectionMenu() {
           <span>{saved ? '¡Guardado!' : 'Notas'}</span>
         </button>
 
-        <div className="mx-0.5 h-4 w-px bg-white/10" />
+        <Divider />
 
         {/* Pregúntale a tu mascota */}
         <button
@@ -286,13 +298,13 @@ export default function TextSelectionMenu() {
           onMouseDown={(e) => e.preventDefault()}
           onClick={askMascot}
           title="Pregúntale a tu mascota"
-          className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-zinc-300 transition-all hover:bg-white/10 hover:text-white"
+          className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-zinc-300 transition-all hover:bg-white/10 hover:text-white ${vertical ? 'w-full' : ''}`}
         >
           <span className="text-sm">🐾</span>
           <span>Tu mascota</span>
         </button>
 
-        <div className="mx-0.5 h-4 w-px bg-white/10" />
+        <Divider />
 
         {/* Traducir */}
         <button
@@ -301,6 +313,7 @@ export default function TextSelectionMenu() {
           onClick={translate}
           title={`Traducir al ${LANGS[langIdx].name}`}
           className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all
+            ${vertical ? 'w-full' : ''}
             ${translating
               ? 'animate-pulse text-sky-400'
               : translation
@@ -312,7 +325,7 @@ export default function TextSelectionMenu() {
           <span>Traducir</span>
         </button>
 
-        <div className="mx-0.5 h-4 w-px bg-white/10" />
+        <Divider />
 
         {/* Copiar */}
         <button
@@ -321,9 +334,11 @@ export default function TextSelectionMenu() {
           onClick={copy}
           title="Copiar al portapapeles"
           className={`flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs transition-all
+            ${vertical ? 'w-full' : ''}
             ${copied ? 'text-primary' : 'text-zinc-400 hover:bg-white/10 hover:text-white'}`}
         >
           <span className="text-sm">{copied ? '✓' : '📋'}</span>
+          {vertical && <span>{copied ? '¡Copiado!' : 'Copiar'}</span>}
         </button>
 
         {/* Buscar en Google */}
@@ -332,12 +347,13 @@ export default function TextSelectionMenu() {
           onMouseDown={(e) => e.preventDefault()}
           onClick={search}
           title="Buscar en Google"
-          className="rounded-xl px-2 py-1.5 text-xs text-zinc-400 transition-all hover:bg-white/10 hover:text-white"
+          className={`flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs text-zinc-400 transition-all hover:bg-white/10 hover:text-white ${vertical ? 'w-full' : ''}`}
         >
           <span className="text-sm">🔍</span>
+          {vertical && <span>Buscar en Google</span>}
         </button>
 
-        <div className="mx-0.5 h-4 w-px bg-white/10" />
+        <Divider />
 
         {/* Cerrar */}
         <button
@@ -345,9 +361,10 @@ export default function TextSelectionMenu() {
           onMouseDown={(e) => e.preventDefault()}
           onClick={hide}
           title="Cerrar (Esc)"
-          className="rounded-xl px-2 py-1.5 text-xs text-zinc-600 transition-all hover:bg-white/10 hover:text-zinc-400"
+          className={`flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs text-zinc-600 transition-all hover:bg-white/10 hover:text-zinc-400 ${vertical ? 'w-full' : ''}`}
         >
-          ✕
+          <span>✕</span>
+          {vertical && <span>Cerrar</span>}
         </button>
       </div>
 

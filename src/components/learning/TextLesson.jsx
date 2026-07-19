@@ -18,7 +18,10 @@ const TTS_LANG_MAP = { es: 'es-ES', en: 'en-US', fr: 'fr-FR', it: 'it-IT', ca: '
 // algunos navegadores imponen a utterances muy largos.
 function getReadableChunks(html) {
   const div = document.createElement('div')
-  div.innerHTML = html
+  // Un espacio tras cada bloque ANTES de parsear — si no, textContent pega
+  // "TítuloPárrafo" sin separación al saltar de un </h2> a un <p>, porque el
+  // DOM no inserta espacio en los límites de elementos por su cuenta.
+  div.innerHTML = html.replace(/<\/(h1|h2|h3|h4|p|li|div|blockquote|tr|td|th)>/gi, '</$1> ')
   div.querySelectorAll('pre, code').forEach((el) => el.remove())
   const text = (div.textContent || '').replace(/\s+/g, ' ').trim()
   if (!text) return []
@@ -46,28 +49,44 @@ export default function TextLesson({ content, className = '' }) {
   const hideTimer = useRef(null)
   const chunksRef = useRef([])
   const chunkIndexRef = useRef(0)
+  // Incrementa en cada start/stop/cambio de contenido — cualquier callback
+  // onend/onerror que dispare para una sesión vieja se descarta en vez de
+  // seguir la cola. Sin esto, si el alumno da clic en "Leer" más de una vez
+  // seguida (o cambia de clase a medio leer), los onend de la lectura
+  // anterior seguían llamando a speakNextChunk() con el índice/chunks YA
+  // reemplazados por la lectura nueva — la voz terminaba leyendo una mezcla
+  // de ambas, empezando de cualquier punto menos el principio.
+  const sessionRef = useRef(0)
 
   // Si el alumno cambia de clase (o sale de la página) a media lectura, la
   // voz no debe seguir hablando del contenido anterior.
   useEffect(() => {
-    return () => window.speechSynthesis?.cancel()
+    sessionRef.current += 1
+    window.speechSynthesis?.cancel()
+    setReading(false)
   }, [content])
 
   if (!content) return null
 
   const stopReading = () => {
+    sessionRef.current += 1
     window.speechSynthesis?.cancel()
     setReading(false)
   }
 
-  const speakNextChunk = () => {
+  const speakChunk = (session) => {
+    if (session !== sessionRef.current) return
     const chunks = chunksRef.current
     const i = chunkIndexRef.current
     if (i >= chunks.length) { setReading(false); return }
     const utt = new SpeechSynthesisUtterance(chunks[i])
     utt.lang = TTS_LANG_MAP[lang] ?? 'es-ES'
     utt.rate = 0.95
-    const advance = () => { chunkIndexRef.current += 1; speakNextChunk() }
+    const advance = () => {
+      if (session !== sessionRef.current) return
+      chunkIndexRef.current += 1
+      speakChunk(session)
+    }
     utt.onend = advance
     utt.onerror = advance
     window.speechSynthesis.speak(utt)
@@ -75,12 +94,21 @@ export default function TextLesson({ content, className = '' }) {
 
   const startReading = () => {
     if (!window.speechSynthesis) return
-    window.speechSynthesis.cancel()
+    sessionRef.current += 1
+    const session = sessionRef.current
     chunksRef.current = getReadableChunks(content)
     chunkIndexRef.current = 0
     if (chunksRef.current.length === 0) return
     setReading(true)
-    speakNextChunk()
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      // Ya había algo hablando (sesión anterior) — cancel()+speak() en el
+      // mismo tick es una carrera conocida en Chrome/Android (mismo problema
+      // documentado en utils/tts.js), así que se le da un respiro al motor.
+      window.speechSynthesis.cancel()
+      setTimeout(() => speakChunk(session), 60)
+    } else {
+      speakChunk(session)
+    }
   }
 
   const toggleReading = () => (reading ? stopReading() : startReading())

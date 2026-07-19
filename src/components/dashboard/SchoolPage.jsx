@@ -66,11 +66,16 @@ export default function SchoolPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background text-text">
+    // En móvil la página se deja crecer y scrollear de forma normal (una sola
+    // barra de scroll) — el layout de dos paneles con altura fija (h-screen +
+    // overflow-y-auto en cada mitad) solo aplica desde lg hacia arriba, porque
+    // en pantallas chicas eso encogía la lista de cursos a menos de la mitad
+    // de la pantalla con su propio scroll interno diminuto.
+    <div className="flex min-h-screen flex-col bg-background text-text lg:h-screen">
       <AppTopBar />
-      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="flex flex-1 flex-col lg:flex-row lg:overflow-hidden">
         {/* ── Mitad izquierda: cursos por subcategoría ─────────────────── */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 lg:overflow-y-auto">
           <div className={`bg-gradient-to-r ${meta.gradient} px-6 py-8`}>
             <p className="text-5xl drop-shadow-sm">{meta.icon}</p>
             <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">Escuela de {category}</h1>
@@ -103,9 +108,9 @@ export default function SchoolPage() {
         </div>
 
         {/* ── Mitad derecha: profesor 3D + chat ─────────────────────────── */}
-        <div className="flex w-full flex-col border-t border-border lg:w-[420px] lg:border-l lg:border-t-0">
+        <div className="flex w-full flex-col border-t border-border lg:w-[420px] lg:overflow-y-auto lg:border-l lg:border-t-0">
           <SchoolTeacherViewport mascotId={meta.teacherMascotId} className="h-64 shrink-0 lg:h-80" />
-          <div className="flex flex-1 flex-col gap-2 overflow-y-auto border-t border-border p-4">
+          <div className="flex flex-1 flex-col gap-2 border-t border-border p-4">
             <p className="text-sm font-bold text-text">
               {meta.teacherName} · Profesor de {category}
             </p>

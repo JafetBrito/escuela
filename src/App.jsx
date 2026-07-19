@@ -23,6 +23,7 @@ import SchoolPage from './components/dashboard/SchoolPage'
 import LanguageSyllabusPage from './components/dashboard/LanguageSyllabusPage'
 import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
+import AcademiasPage from './components/dashboard/AcademiasPage'
 import ShopPage from './components/shop/ShopPage'
 import SettingsPage from './components/settings/SettingsPage'
 import GamesPage from './components/games/GamesPage'
@@ -34,7 +35,6 @@ import AchievementWatcher from './components/achievements/AchievementWatcher'
 import AchievementToast from './components/achievements/AchievementToast'
 import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import TextSelectionMenu from './components/shared/TextSelectionMenu'
-import PatchNotesModal from './components/shared/PatchNotesModal'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
@@ -145,7 +145,6 @@ export default function App() {
       <AchievementToast />
       <LevelUpAnnouncer />
       <TextSelectionMenu />
-      <PatchNotesModal />
       <DevToolsPanel />
       <AiCredentialsLoader />
       <SyncErrorBanner />
@@ -232,6 +231,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/academias"
+          element={
+            <ProtectedRoute>
+              <AcademiasPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/mascota"
@@ -261,7 +268,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/amigos"
           element={
@@ -525,7 +532,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/arena"
           element={

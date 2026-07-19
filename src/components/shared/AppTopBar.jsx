@@ -174,30 +174,17 @@ export default function AppTopBar({ variant = 'full' }) {
           🏠 Dashboard
         </Link>
 
-        {/* Academia de Idiomas — link directo, área propia (no escondida en un dropdown) */}
+        {/* Academias — Escuelas + Academia de Idiomas + Ciberseguridad, unificadas en un solo link */}
         <Link
-          to="/academia-idiomas"
+          to="/academias"
           onClick={closeAll}
           className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-            location.pathname.startsWith('/academia-idiomas')
+            location.pathname.startsWith('/academia') || location.pathname.startsWith('/escuela')
               ? 'bg-primary/10 text-primary'
               : 'text-text-muted hover:text-text'
           }`}
         >
-          🌍 {t('nav.items.academiaIdiomas')}
-        </Link>
-
-        {/* Academia de Ciberseguridad — mismo trato: link directo, no escondido */}
-        <Link
-          to="/escuela/ciberseguridad"
-          onClick={closeAll}
-          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-            location.pathname === '/escuela/ciberseguridad'
-              ? 'bg-primary/10 text-primary'
-              : 'text-text-muted hover:text-text'
-          }`}
-        >
-          🔐 {t('nav.items.academiaCiberseguridad')}
+          🏫 {t('nav.items.academias')}
         </Link>
 
         {/* Dropdown groups */}
@@ -354,6 +341,12 @@ export default function AppTopBar({ variant = 'full' }) {
         )}
       </div>
 
+      {/* ── Notificaciones (móvil, siempre visible junto al hamburguesa —
+          nunca escondidas dentro del menú desplegable) ─────────────────── */}
+      <div className="md:hidden">
+        <NotificationBell />
+      </div>
+
       {/* ── Mobile hamburger ────────────────────────────────── */}
       <button
         type="button"
@@ -379,23 +372,13 @@ export default function AppTopBar({ variant = 'full' }) {
           </Link>
 
           <Link
-            to="/academia-idiomas"
+            to="/academias"
             onClick={closeAll}
             className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              location.pathname.startsWith('/academia-idiomas') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+              location.pathname.startsWith('/academia') || location.pathname.startsWith('/escuela') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
             }`}
           >
-            🌍 {t('nav.items.academiaIdiomas')}
-          </Link>
-
-          <Link
-            to="/escuela/ciberseguridad"
-            onClick={closeAll}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              location.pathname === '/escuela/ciberseguridad' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-            }`}
-          >
-            🔐 {t('nav.items.academiaCiberseguridad')}
+            🏫 {t('nav.items.academias')}
           </Link>
 
           {GROUPS.map((group) => (

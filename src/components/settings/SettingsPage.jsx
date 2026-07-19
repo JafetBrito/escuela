@@ -16,6 +16,7 @@ import { useSettingsStore, AI_TONES, AI_VERBOSITY, AGENT_MODES, AI_TOOLS } from 
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { useShopStore } from '../../stores/useShopStore'
 import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
+import { useThemeStore, THEMES } from '../../stores/useThemeStore'
 import { SHOP_ITEMS } from '../../data/shopRegistry'
 import { getMascotById } from '../../data/mascotRegistry'
 import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
@@ -31,6 +32,7 @@ const ROLE_LABELS = {
 
 const CATEGORIES = [
   { id: 'cuenta', label: '👤 Cuenta' },
+  { id: 'apariencia', label: '🎨 Apariencia' },
   { id: 'nucleo', label: '🧠 Núcleo' },
   { id: 'identidad', label: '✨ Identidad y Alma' },
   { id: 'personalidad', label: '🎭 Personalidad' },
@@ -63,6 +65,8 @@ export default function SettingsPage() {
   const popupPositions = usePopupPositionStore((s) => s.positions)
   const setPopupScale = usePopupPositionStore((s) => s.setScale)
   const resetPopups = usePopupPositionStore((s) => s.resetAll)
+  const theme = useThemeStore((s) => s.theme)
+  const setTheme = useThemeStore((s) => s.setTheme)
   const popupScales = Object.fromEntries(
     Object.entries(popupPositions).map(([id, pos]) => [id, pos?.scale ?? 1]),
   )
@@ -286,6 +290,29 @@ export default function SettingsPage() {
                       placeholder={mascot.name}
                       className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
                     />
+                  </div>
+                </section>
+              )}
+
+              {category === 'apariencia' && (
+                <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🎨 Apariencia</p>
+                  <p className="text-sm text-text-muted">Elige el tema visual de toda la plataforma. Se guarda en tu cuenta — te acompaña a cualquier dispositivo donde inicies sesión.</p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {THEMES.map((th) => (
+                      <button
+                        key={th.id}
+                        type="button"
+                        onClick={() => setTheme(th.id)}
+                        className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-colors ${
+                          theme === th.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
+                        }`}
+                      >
+                        <span className="text-3xl">{th.icon}</span>
+                        <span className="text-sm font-semibold text-text">{th.label}</span>
+                        {theme === th.id && <span className="text-xs font-bold text-primary">✓ Activo</span>}
+                      </button>
+                    ))}
                   </div>
                 </section>
               )}

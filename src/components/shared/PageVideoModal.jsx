@@ -43,7 +43,7 @@ export default function PageVideoModal({ pageKey: _pageKey, title = '👋 ¡Bien
             onClick={close}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background hover:bg-primary-hover"
           >
-            Entendido, ¡vamos!
+            🚫 Dejar de mostrar
           </button>
         </div>
       </div>

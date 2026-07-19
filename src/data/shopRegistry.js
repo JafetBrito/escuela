@@ -170,17 +170,6 @@ export const SHOP_ITEMS = [
     kind: 'book-popup',
   },
   {
-    id: 'tema-claro',
-    name: 'Cristal de Luz',
-    icon: '💎',
-    rarity: 'epic',
-    category: 'objetos',
-    price: 18000,
-    description: 'Activa un tema claro para toda la plataforma.',
-    interactive: true,
-    kind: 'light-theme',
-  },
-  {
     id: 'radio',
     name: 'Radio de OLIVER SCHOOL',
     icon: '📻',

@@ -17,7 +17,7 @@ const RARITY_COLOR = { common: '#9ca3af', rare: '#3b82f6', epic: '#a855f7', lege
 // ThemeController, NefertitiOverlay, ChatPanel…). No depende de la categoría
 // de tienda: Reina Nefertiti es 'cosmeticos' pero sí se activa.
 const ACTIVATABLE_IDS = new Set([
-  'camara', 'radio', 'tema-claro', 'reina-nefertiti',
+  'camara', 'radio', 'reina-nefertiti',
   'caja-tdah', 'libro', 'calculadora', 'linterna', 'lente-resumen',
 ])
 

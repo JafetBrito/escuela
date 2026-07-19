@@ -1,31 +1,28 @@
 import { useEffect } from 'react'
-import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useAdminThemeStore } from '../../stores/useAdminThemeStore'
+import { useThemeStore, THEMES } from '../../stores/useThemeStore'
 import NefertitiOverlay from './NefertitiOverlay'
 
-// Applies the "Reina Nefertiti" desert theme to the whole document while the
-// objeto is active, plus a floating emoji overlay/banner. Admin accounts get
-// a "hacker" theme that overrides everything else — a visible, DB-driven
-// proof that `profiles.role === 'admin'` loaded correctly on this device.
-// The admin can turn this passive theme off from DevToolsPanel — it's their
-// own device preference, so it's gated by useAdminThemeStore on top of the
-// role check, not just the role check alone.
+// Aplica el tema elegido por el alumno en Ajustes → Apariencia (Oscuro/Claro/
+// Desierto, ver useThemeStore.js). Admin accounts get a "hacker" theme that
+// overrides everything else — a visible, DB-driven proof that
+// `profiles.role === 'admin'` loaded correctly on this device. The admin can
+// turn this passive theme off from DevToolsPanel — it's their own device
+// preference, so it's gated by useAdminThemeStore on top of the role check.
 export default function ThemeController() {
-  const nefertitiActive = useItemEffectsStore((s) => !!s.activeItems['reina-nefertiti'])
-  const lightThemeActive = useItemEffectsStore((s) => !!s.activeItems['tema-claro'])
+  const theme = useThemeStore((s) => s.theme)
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const hackerThemeEnabled = useAdminThemeStore((s) => s.enabled)
   const adminActive = (isAdmin?.() ?? false) && hackerThemeEnabled
 
   useEffect(() => {
-    // Un tema activado explícitamente por el jugador (objeto) gana sobre el
-    // tema 'hacker' pasivo de admin — si no, un admin nunca vería cambiar el
-    // color al activar Tema Claro / Reina Nefertiti.
-    if (nefertitiActive) {
-      document.documentElement.dataset.theme = 'desert'
-    } else if (lightThemeActive) {
-      document.documentElement.dataset.theme = 'light'
+    // Un tema elegido explícitamente gana sobre el tema 'hacker' pasivo de
+    // admin — si no, un admin nunca vería cambiar el color al elegir Claro/
+    // Desierto en Ajustes.
+    const explicitTheme = THEMES.find((t) => t.id === theme)?.dataTheme
+    if (explicitTheme) {
+      document.documentElement.dataset.theme = explicitTheme
     } else if (adminActive) {
       document.documentElement.dataset.theme = 'hacker'
     } else {
@@ -34,7 +31,7 @@ export default function ThemeController() {
     return () => {
       document.documentElement.dataset.theme = ''
     }
-  }, [adminActive, nefertitiActive, lightThemeActive])
+  }, [adminActive, theme])
 
   return (
     <>

@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useAnnouncementsStore } from '../../stores/useAnnouncementsStore'
-import { useNotificationsStore } from '../../stores/useNotificationsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useTasksStore } from '../../stores/useTasksStore'
-import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 
 // color + icon por categoría; la etiqueta viene de i18n (announcements.categories.<key>).
@@ -166,84 +163,6 @@ function AnnouncementCard({ a, isAdmin, onDelete, onTogglePin }) {
   )
 }
 
-// ── Buzón personal (mensajes dirigidos solo a este alumno: tareas
-// calificadas, clases que empezaron, etc. — separado del tablón porque no es
-// lo mismo que un anuncio que ve todo el mundo). ──────────────────────────
-function timeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const min = Math.floor(diff / 60_000)
-  if (min < 1) return 'ahora'
-  if (min < 60) return `hace ${min} min`
-  const h = Math.floor(min / 60)
-  if (h < 24) return `hace ${h} h`
-  const d = Math.floor(h / 24)
-  return `hace ${d} d`
-}
-
-function MailboxTab() {
-  const notifications    = useNotificationsStore((s) => s.notifications)
-  const loading          = useNotificationsStore((s) => s.loading)
-  const fetchNotifications = useNotificationsStore((s) => s.fetchNotifications)
-  const markAllRead      = useNotificationsStore((s) => s.markAllRead)
-  const openTask         = useTasksStore((s) => s.openTask)
-  const navigate          = useNavigate()
-
-  useEffect(() => { fetchNotifications() }, [fetchNotifications])
-
-  const unreadCount = notifications.filter((n) => !n.read_at).length
-
-  const handleClick = (n) => {
-    if (n.task_id) { navigate('/mis-tareas'); openTask(n.task_id) }
-  }
-
-  return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-text-muted">
-          {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todo leído'}
-        </p>
-        {unreadCount > 0 && (
-          <button type="button" onClick={markAllRead} className="text-xs font-semibold text-primary hover:underline">
-            Marcar todo como leído
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <p className="py-12 text-center text-sm text-text-muted">Cargando…</p>
-      ) : notifications.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-surface py-12 text-center">
-          <p className="text-3xl">📭</p>
-          <p className="mt-2 text-sm text-text-muted">No tienes mensajes todavía.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {notifications.map((n) => (
-            <button
-              key={n.id}
-              type="button"
-              onClick={() => handleClick(n)}
-              className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition ${
-                n.read_at ? 'border-border bg-surface' : 'border-primary/40 bg-primary/5'
-              } ${n.task_id ? 'cursor-pointer hover:border-primary/60' : 'cursor-default'}`}
-            >
-              <span className="mt-0.5 text-xl">{n.task_id ? '📋' : '🔔'}</span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-text">{n.title}</p>
-                  {!n.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                </div>
-                {n.body && <p className="mt-0.5 text-sm text-text-muted">{n.body}</p>}
-                <p className="mt-1 text-[11px] text-text-muted/60">{timeAgo(n.created_at)}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function BoardTab() {
   const { t } = useI18n()
   const announcements = useAnnouncementsStore((s) => s.announcements)
@@ -320,9 +239,6 @@ function BoardTab() {
 
 export default function AnnouncementsPage() {
   const { t } = useI18n()
-  const unreadCount = useNotificationsStore((s) => s.notifications.filter((n) => !n.read_at).length)
-  const [pageTab, setPageTab] = useState('board')
-
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
@@ -338,27 +254,11 @@ export default function AnnouncementsPage() {
             </p>
           </div>
 
-          {/* Tablón vs Buzón — lo que ve todo el mundo vs. lo que es solo tuyo */}
-          <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
-            {[
-              { key: 'board', label: '📢 Tablón' },
-              { key: 'buzon', label: `📬 Buzón${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setPageTab(key)}
-                className={`flex-1 rounded-lg px-4 py-2 text-sm font-bold transition ${
-                  pageTab === key ? 'bg-background text-text shadow-sm' : 'text-text-muted hover:text-text'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4">
-            {pageTab === 'board' ? <BoardTab /> : <MailboxTab />}
+          {/* Solo el tablón general — las notificaciones personales (tareas
+              calificadas, clases asignadas, etc.) viven aparte, en la
+              campanita del header (NotificationBell.jsx), no aquí. */}
+          <div className="mt-6">
+            <BoardTab />
           </div>
         </div>
       </main>

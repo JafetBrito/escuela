@@ -20,6 +20,8 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useQuestsStore } from '../../stores/useQuestsStore'
+import { useSeenStore } from '../../stores/useSeenStore'
+import { useThemeStore } from '../../stores/useThemeStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
 import { supabase, isSupabaseConfigured } from '../supabase/client'
@@ -48,6 +50,12 @@ const STORES = [
   useGameStore,
   useDailyRewardsStore,
   useQuestsStore,
+  // Sin esto, cerrar el video de bienvenida o las notas de versión solo
+  // cambia estado local — nunca dispara el autosave, así que la preferencia
+  // nunca llega a Supabase y el popup vuelve a aparecer en la siguiente
+  // sesión (el bug real detrás de "veo el video todo el tiempo").
+  useSeenStore,
+  useThemeStore,
 ]
 
 // Restores the user's account (license, progress, coins, settings, chat

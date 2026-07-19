@@ -25,6 +25,7 @@ export const en = {
       examenes: 'Exams',
       academiaIdiomas: 'Language Academy',
       academiaCiberseguridad: 'Cybersecurity Academy',
+      academias: 'Academies',
       buscar: 'Search',
       mascota: 'My Team',
       arbol: 'Skill Tree',

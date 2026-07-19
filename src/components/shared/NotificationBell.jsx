@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNotificationsStore } from '../../stores/useNotificationsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { requestPushPermission } from '../../utils/pushNotify'
 
 // Campanita de notificaciones del alumno — avisa cuando el profesor califica
 // una tarea, asigna un proyecto, o inicia una clase en vivo. Se suscribe en
@@ -37,6 +38,10 @@ export default function NotificationBell() {
   const handleToggle = () => {
     setOpen((v) => !v)
     if (!open && unread > 0) markAllRead()
+    // Pedir permiso de notificaciones del sistema justo aquí (un clic real
+    // del usuario) — algunos navegadores bloquean la solicitud si se dispara
+    // sola al cargar la página sin ningún gesto de por medio.
+    if (!open) requestPushPermission()
   }
 
   const handleClick = (n) => {

@@ -29,6 +29,7 @@ export const es = {
       examenes: 'Exámenes',
       academiaIdiomas: 'Academia de Idiomas',
       academiaCiberseguridad: 'Academia de Ciberseguridad',
+      academias: 'Academias',
       buscar: 'Buscar',
       mascota: 'Mi Equipo',
       arbol: 'Árbol',
