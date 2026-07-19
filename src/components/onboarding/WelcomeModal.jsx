@@ -133,6 +133,8 @@ export default function WelcomeModal({ courseId }) {
     setStep((s) => s + 1)
   }
 
+  const handleSkip = () => completeOnboarding(courseId)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="flex h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-surface">
@@ -336,7 +338,13 @@ export default function WelcomeModal({ courseId }) {
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border p-4 sm:p-6">
+        <div className="flex justify-between gap-2 border-t border-border p-4 sm:p-6">
+          <button
+            onClick={handleSkip}
+            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-text-muted hover:text-text"
+          >
+            Omitir
+          </button>
           <button
             onClick={handleNext}
             disabled={!canAdvance}
