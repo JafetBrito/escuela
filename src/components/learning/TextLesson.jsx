@@ -1,6 +1,37 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getGlossaryEntry } from '../../data/glossaryRegistry'
+import { useI18n } from '../../i18n'
 import WikiPopover from './WikiPopover'
+
+// Mismo mapeo de idioma → voz que TextSelectionMenu.jsx (leer texto
+// seleccionado) — aquí se deriva automáticamente del idioma actual del sitio
+// en vez de tener su propio selector, porque el contenido de la clase ya
+// viene traducido a ese idioma (ver courseTranslations.js).
+const TTS_LANG_MAP = { es: 'es-ES', en: 'en-US', fr: 'fr-FR', it: 'it-IT', ca: 'ca-ES', de: 'de-DE', ja: 'ja-JP', hi: 'hi-IN' }
+
+// El HTML de una clase mezcla párrafos, listas y cajas .tip/.warn/.example
+// con bloques <pre><code> de código — se descarta el código (nadie quiere
+// escuchar una snippet leída letra por letra) y el resto se aplana a texto
+// plano, después se corta en oraciones de ~200 caracteres para encolar
+// utterances cortas: así "Detener" corta casi al instante en vez de esperar
+// a que termine un solo utterance gigante, y evita el límite silencioso que
+// algunos navegadores imponen a utterances muy largos.
+function getReadableChunks(html) {
+  const div = document.createElement('div')
+  div.innerHTML = html
+  div.querySelectorAll('pre, code').forEach((el) => el.remove())
+  const text = (div.textContent || '').replace(/\s+/g, ' ').trim()
+  if (!text) return []
+  const sentences = text.match(/[^.!?]+[.!?]+|\S+$/g) || [text]
+  const chunks = []
+  let current = ''
+  for (const s of sentences) {
+    if (current && (current + s).length > 200) { chunks.push(current.trim()); current = '' }
+    current += s
+  }
+  if (current.trim()) chunks.push(current.trim())
+  return chunks
+}
 
 // Renders a rich-text lesson from dangerouslySetInnerHTML.
 // Content is written by us (trusted), never from user input.
@@ -9,10 +40,50 @@ import WikiPopover from './WikiPopover'
 // la entrada del "segundo cerebro" sin salir del curso — event delegation
 // sobre el contenedor porque el HTML es dangerouslySetInnerHTML, no JSX.
 export default function TextLesson({ content, className = '' }) {
+  const { lang } = useI18n()
   const [hover, setHover] = useState(null) // { entry, rect }
+  const [reading, setReading] = useState(false)
   const hideTimer = useRef(null)
+  const chunksRef = useRef([])
+  const chunkIndexRef = useRef(0)
+
+  // Si el alumno cambia de clase (o sale de la página) a media lectura, la
+  // voz no debe seguir hablando del contenido anterior.
+  useEffect(() => {
+    return () => window.speechSynthesis?.cancel()
+  }, [content])
 
   if (!content) return null
+
+  const stopReading = () => {
+    window.speechSynthesis?.cancel()
+    setReading(false)
+  }
+
+  const speakNextChunk = () => {
+    const chunks = chunksRef.current
+    const i = chunkIndexRef.current
+    if (i >= chunks.length) { setReading(false); return }
+    const utt = new SpeechSynthesisUtterance(chunks[i])
+    utt.lang = TTS_LANG_MAP[lang] ?? 'es-ES'
+    utt.rate = 0.95
+    const advance = () => { chunkIndexRef.current += 1; speakNextChunk() }
+    utt.onend = advance
+    utt.onerror = advance
+    window.speechSynthesis.speak(utt)
+  }
+
+  const startReading = () => {
+    if (!window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    chunksRef.current = getReadableChunks(content)
+    chunkIndexRef.current = 0
+    if (chunksRef.current.length === 0) return
+    setReading(true)
+    speakNextChunk()
+  }
+
+  const toggleReading = () => (reading ? stopReading() : startReading())
 
   const cancelHide = () => clearTimeout(hideTimer.current)
   const scheduleHide = () => {
@@ -35,6 +106,18 @@ export default function TextLesson({ content, className = '' }) {
 
   return (
     <div onMouseOver={handleMouseOver} onMouseOut={handleMouseOut}>
+      <button
+        type="button"
+        onClick={toggleReading}
+        className={`mb-3 flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all
+          ${reading
+            ? 'animate-pulse border-amber-500/40 bg-amber-500/10 text-amber-400'
+            : 'border-border bg-surface text-text hover:border-primary/40 hover:text-primary'
+          }`}
+      >
+        <span className="text-base">{reading ? '⏹' : '🔊'}</span>
+        <span>{reading ? 'Detener lectura' : 'Leer esta clase en voz alta'}</span>
+      </button>
       <div
         className={`rounded-xl border border-border bg-surface px-6 py-5 text-text
           [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary first:[&_h2]:mt-0

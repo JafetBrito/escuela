@@ -15,6 +15,18 @@ function getSavedLangIdx() {
   try { return parseInt(localStorage.getItem('selMenuLang') ?? '0', 10) || 0 } catch { return 0 }
 }
 
+// En Android, seleccionar texto (mantener presionado) dispara la barra
+// flotante NATIVA del navegador (Copiar/Compartir/Buscar con Google) — es UI
+// del sistema, no del DOM, así que ningún z-index de la página puede taparla
+// ni ocultarla. La única forma práctica de convivir con ella es no competir
+// por el mismo espacio: esa barra nativa siempre aparece pegada A LA
+// SELECCIÓN (arriba o, si no cabe, abajo pegada), así que en pantallas
+// táctiles forzamos nuestro menú bastante más abajo, fuera de esa zona.
+const isCoarsePointer = () => {
+  try { return window.matchMedia('(pointer: coarse)').matches } catch { return false }
+}
+const TOUCH_MENU_OFFSET = 56
+
 export default function TextSelectionMenu() {
   const addItem = useInventoryStore((s) => s.addItem)
   const setOpen = useMascotCompanionStore((s) => s.setOpen)
@@ -40,10 +52,12 @@ export default function TextSelectionMenu() {
     setSel(null)
   }, [])
 
-  // Shared logic: given text + screen-absolute position, show the menu
-  const showForSelection = useCallback((text, x, y) => {
+  // Shared logic: given text + screen-absolute position (top Y del texto
+  // seleccionado y bottom Y), muestra el menú. `bottom` se usa para calcular
+  // dónde cae la barra nativa de Android y esquivarla (ver render, abajo).
+  const showForSelection = useCallback((text, x, top, bottom) => {
     if (!text || text.length < 2) { hide(); return }
-    setSel({ text, x, y })
+    setSel({ text, x, top, bottom })
     setSaved(false)
     setCopied(false)
     setTranslation(null)
@@ -52,19 +66,27 @@ export default function TextSelectionMenu() {
 
   // ── Main document listener ──────────────────────────────────────────────
   useEffect(() => {
-    const onMouseUp = (e) => {
-      if (menuRef.current?.contains(e.target)) return
+    const readSelectionAndShow = (target) => {
+      if (menuRef.current?.contains(target)) return
       const selection = window.getSelection()
       if (!selection || selection.isCollapsed || selection.rangeCount === 0) { hide(); return }
       const text = selection.toString().trim()
       const rect = selection.getRangeAt(0).getBoundingClientRect()
-      showForSelection(text, rect.left + rect.width / 2, rect.top)
+      showForSelection(text, rect.left + rect.width / 2, rect.top, rect.bottom)
     }
+    const onMouseUp = (e) => readSelectionAndShow(e.target)
+    // En Android, la selección por mantener-presionado (o arrastrar los
+    // "handles") a veces se termina de asentar unos milisegundos después del
+    // touchend — sin este pequeño delay, window.getSelection() puede llegar
+    // vacía y el menú nunca aparece.
+    const onTouchEnd = (e) => setTimeout(() => readSelectionAndShow(e.target), 60)
     const onKeyDown = (e) => { if (e.key === 'Escape') hide() }
     document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('touchend', onTouchEnd)
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('touchend', onTouchEnd)
       document.removeEventListener('keydown', onKeyDown)
     }
   }, [hide, showForSelection])
@@ -80,7 +102,7 @@ export default function TextSelectionMenu() {
           if (!doc || doc.__selMenuAttached) return
           doc.__selMenuAttached = true
 
-          doc.addEventListener('mouseup', () => {
+          const readFrameSelectionAndShow = () => {
             const selection = doc.getSelection()
             if (!selection || selection.isCollapsed || selection.rangeCount === 0) { hide(); return }
             const text = selection.toString().trim()
@@ -90,8 +112,11 @@ export default function TextSelectionMenu() {
               text,
               frameRect.left + selRect.left + selRect.width / 2,
               frameRect.top + selRect.top,
+              frameRect.top + selRect.bottom,
             )
-          })
+          }
+          doc.addEventListener('mouseup', readFrameSelectionAndShow)
+          doc.addEventListener('touchend', () => setTimeout(readFrameSelectionAndShow, 60))
           doc.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide() })
         } catch {
           // Cross-origin iframe (e.g. native PDF viewer) — skip silently
@@ -183,8 +208,13 @@ export default function TextSelectionMenu() {
 
   if (!sel) return null
 
-  const menuBelow = sel.y < 72
-  const top = menuBelow ? sel.y + 30 : sel.y - 6
+  // En táctil, siempre abajo y con más margen — la barra nativa de Android
+  // se dibuja pegada a (usualmente encima de) el texto seleccionado, así que
+  // "arriba" es justo la zona que hay que evitar en un teléfono.
+  const menuBelow = isCoarsePointer() ? true : sel.top < 72
+  const top = menuBelow
+    ? (isCoarsePointer() ? sel.bottom + TOUCH_MENU_OFFSET : sel.top + 30)
+    : sel.top - 6
 
   return (
     <div
