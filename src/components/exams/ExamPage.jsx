@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useExamsStore, localizeExam } from '../../stores/useExamsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useI18n } from '../../i18n'
 import courses from '../../data/courses.json'
+
+function formatTime(ms) {
+  if (ms == null) return '--:--'
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 export default function ExamPage() {
   const { courseId } = useParams()
@@ -29,6 +37,19 @@ export default function ExamPage() {
   const [shown, setShown] = useState([])
   const [answers, setAnswers] = useState([])
   const [result, setResult] = useState(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [deadline, setDeadline] = useState(null)
+  const [remainingMs, setRemainingMs] = useState(null)
+
+  // El timer sigue corriendo en un intervalo aparte del ciclo de render — se
+  // guardan refs de las respuestas/preguntas para que el auto-entrego al
+  // agotarse el tiempo siempre lea el estado más reciente, no el que había
+  // al momento de armar el intervalo.
+  const answersRef = useRef(answers)
+  useEffect(() => { answersRef.current = answers }, [answers])
+  const shownRef = useRef(shown)
+  useEffect(() => { shownRef.current = shown }, [shown])
+  const autoSubmittedRef = useRef(false)
 
   const courseMeta = courses.find((c) => c.id === courseId)
 
@@ -57,18 +78,41 @@ export default function ExamPage() {
     setShown(qs)
     setAnswers(new Array(qs.length).fill(null))
     setResult(null)
+    setCurrentIndex(0)
+    autoSubmittedRef.current = false
+    setDeadline(Date.now() + (exam.time_limit_minutes || 30) * 60 * 1000)
     setPhase('taking')
   }
 
   const handleSubmit = async () => {
     const { score, passed } = await submitAttempt({
-      examId: exam.id, studentId: session.user.id, courseId, shownQuestions: shown, answers, passScore: exam.pass_score,
+      examId: exam.id, studentId: session.user.id, courseId, shownQuestions: shownRef.current, answers: answersRef.current, passScore: exam.pass_score,
     })
     setResult({ score, passed })
     setPhase('result')
   }
 
-  const allAnswered = answers.length > 0 && answers.every((a) => a !== null)
+  // Cuenta regresiva independiente del render: si se acaba el tiempo,
+  // entrega el examen automáticamente con lo que ya esté contestado
+  // (las preguntas sin responder cuentan como incorrectas, igual que antes).
+  useEffect(() => {
+    if (phase !== 'taking' || !deadline) return
+    const tick = () => {
+      const remaining = deadline - Date.now()
+      setRemainingMs(remaining)
+      if (remaining <= 0 && !autoSubmittedRef.current) {
+        autoSubmittedRef.current = true
+        handleSubmit()
+      }
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, deadline])
+
+  const currentQuestion = shown[currentIndex]
+  const isLastQuestion = currentIndex === shown.length - 1
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -110,7 +154,8 @@ export default function ExamPage() {
 
           {!loading && exam && !graduation && phase === 'idle' && (
             <div className="mt-6 rounded-2xl border border-border bg-surface p-6 text-center">
-              <p className="text-sm text-text-muted">{exam.questions_to_show} preguntas de opción múltiple, necesitas {exam.pass_score}% para aprobar.</p>
+              <p className="text-sm text-text-muted">{exam.questions_to_show} preguntas de opción múltiple, una a la vez, necesitas {exam.pass_score}% para aprobar.</p>
+              <p className="mt-1 text-sm font-bold text-amber-400">⏱️ Tienes {exam.time_limit_minutes || 30} minutos una vez que empieces — el examen se entrega solo si se acaba el tiempo.</p>
               {attempts.length > 0 && (
                 <p className="mt-2 text-xs text-text-muted">Tu mejor intento: {Math.max(...attempts.map((a) => a.score))}%</p>
               )}
@@ -120,26 +165,59 @@ export default function ExamPage() {
             </div>
           )}
 
-          {phase === 'taking' && (
-            <div className="mt-6 space-y-3">
-              {shown.map((q, qi) => (
-                <div key={q.id} className="rounded-2xl border border-border bg-surface p-4">
-                  <p className="font-semibold text-text">{qi + 1}. {q.question}</p>
-                  <div className="mt-2 space-y-1.5">
-                    {q.options.map((opt, oi) => (
-                      <label key={oi} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer ${answers[qi] === oi ? 'border-primary bg-primary/10 text-primary' : 'border-border/60 text-text hover:bg-surface-hover'}`}>
-                        <input type="radio" name={`q-${qi}`} checked={answers[qi] === oi}
-                          onChange={() => setAnswers((a) => a.map((v, i) => i === qi ? oi : v))} />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
+          {phase === 'taking' && currentQuestion && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-bold text-text-muted">Pregunta {currentIndex + 1} de {shown.length}</span>
+                <span className={`font-mono font-bold ${remainingMs !== null && remainingMs < 2 * 60 * 1000 ? 'text-danger' : 'text-text-muted'}`}>
+                  ⏱️ {formatTime(remainingMs)}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border/40">
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((currentIndex + 1) / shown.length) * 100}%` }} />
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-border bg-surface p-6">
+                <p className="text-lg font-bold text-text">{currentQuestion.question}</p>
+                {currentQuestion.image && (
+                  <img src={currentQuestion.image} alt="" className="mt-3 max-h-64 w-full rounded-xl object-contain" />
+                )}
+                <div className="mt-4 space-y-2">
+                  {currentQuestion.options.map((opt, oi) => (
+                    <button
+                      key={oi}
+                      type="button"
+                      onClick={() => setAnswers((a) => a.map((v, i) => i === currentIndex ? oi : v))}
+                      className={`block w-full rounded-xl border px-4 py-3 text-left text-sm transition ${
+                        answers[currentIndex] === oi ? 'border-primary bg-primary/10 font-semibold text-primary' : 'border-border/60 text-text hover:bg-surface-hover'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
                 </div>
-              ))}
-              <button type="button" onClick={handleSubmit} disabled={!allAnswered}
-                className="w-full rounded-lg bg-primary px-5 py-3 text-sm font-bold text-background disabled:opacity-50">
-                Entregar examen
-              </button>
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                {currentIndex > 0 && (
+                  <button type="button" onClick={() => setCurrentIndex((i) => i - 1)}
+                    className="rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-text hover:bg-surface-hover">
+                    ← Anterior
+                  </button>
+                )}
+                <div className="flex-1" />
+                {!isLastQuestion ? (
+                  <button type="button" disabled={answers[currentIndex] === null} onClick={() => setCurrentIndex((i) => i + 1)}
+                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-background disabled:opacity-50">
+                    Siguiente →
+                  </button>
+                ) : (
+                  <button type="button" disabled={answers[currentIndex] === null} onClick={handleSubmit}
+                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-background disabled:opacity-50">
+                    Entregar examen
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

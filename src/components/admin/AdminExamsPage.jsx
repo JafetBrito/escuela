@@ -5,7 +5,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { LANGUAGE_NAMES } from '../../i18n'
 import courses from '../../data/courses.json'
 
-const emptyQuestion = () => ({ id: crypto.randomUUID(), question: '', options: ['', '', '', ''], correct: 0 })
+const emptyQuestion = () => ({ id: crypto.randomUUID(), question: '', options: ['', '', '', ''], correct: 0, image: '' })
 
 // Idiomas en los que se puede escribir el examen — 'es' es siempre la base
 // (obligatoria); el resto son overrides opcionales guardados en
@@ -25,6 +25,7 @@ export default function AdminExamsPage() {
   const [title, setTitle] = useState('Examen final')
   const [passScore, setPassScore] = useState(70)
   const [questionsToShow, setQuestionsToShow] = useState(15)
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(30)
   const [questions, setQuestions] = useState([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
@@ -44,6 +45,7 @@ export default function AdminExamsPage() {
     setTitle((lang === 'es' ? exam?.title : override?.title) ?? 'Examen final')
     setPassScore(exam?.pass_score ?? 70)
     setQuestionsToShow(exam?.questions_to_show ?? 15)
+    setTimeLimitMinutes(exam?.time_limit_minutes ?? 30)
     setQuestions((lang === 'es' ? exam?.questions : override?.questions)?.length ? (lang === 'es' ? exam.questions : override.questions) : [])
     setMsg('')
   }, [exam, courseId, lang])
@@ -72,6 +74,7 @@ export default function AdminExamsPage() {
       title: title.trim() || 'Examen final',
       pass_score: Number(passScore) || 70,
       questions_to_show: Number(questionsToShow) || 15,
+      time_limit_minutes: Number(timeLimitMinutes) || 30,
       questions: cleanQuestions,
       createdBy: session?.user?.id,
     })
@@ -115,8 +118,8 @@ export default function AdminExamsPage() {
                 <p className="text-xs text-text-muted">Traduciendo desde el examen base (Español) — el puntaje para aprobar y las preguntas por intento son los mismos para todos los idiomas.</p>
               )}
 
-              <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border bg-surface p-4">
-                <div className="col-span-3 sm:col-span-1">
+              <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-surface p-4 sm:grid-cols-4">
+                <div className="col-span-2 sm:col-span-1">
                   <label className="text-[10px] font-bold uppercase text-text-muted">Título</label>
                   <input value={title} onChange={(e) => setTitle(e.target.value)}
                     className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
@@ -129,6 +132,11 @@ export default function AdminExamsPage() {
                 <div>
                   <label className="text-[10px] font-bold uppercase text-text-muted">Preguntas por intento</label>
                   <input type="number" min={1} value={questionsToShow} disabled={lang !== 'es'} onChange={(e) => setQuestionsToShow(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-text-muted">Límite de tiempo (min)</label>
+                  <input type="number" min={1} value={timeLimitMinutes} disabled={lang !== 'es'} onChange={(e) => setTimeLimitMinutes(e.target.value)}
                     className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary disabled:opacity-50" />
                 </div>
               </div>
@@ -147,6 +155,12 @@ export default function AdminExamsPage() {
                           placeholder="Escribe la pregunta…"
                           className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
                         <button type="button" onClick={() => removeQuestion(q.id)} className="mt-1 shrink-0 text-danger hover:opacity-70">🗑️</button>
+                      </div>
+                      <div className="mt-2 pl-5">
+                        <input value={q.image ?? ''} onChange={(e) => updateQuestion(q.id, { image: e.target.value })}
+                          placeholder="URL de imagen (opcional)"
+                          className="w-full rounded-lg border border-border/60 bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary" />
+                        {q.image && <img src={q.image} alt="" className="mt-1.5 max-h-24 rounded-lg object-contain" />}
                       </div>
                       <div className="mt-2 grid grid-cols-1 gap-1.5 pl-5 sm:grid-cols-2">
                         {q.options.map((opt, oi) => (

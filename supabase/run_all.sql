@@ -871,6 +871,14 @@ create policy "podcasts: admin writes" on public.podcasts
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 019 — límite de tiempo por examen (course_exams.time_limit_minutes)
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.course_exams
+  add column if not exists time_limit_minutes int not null default 30;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

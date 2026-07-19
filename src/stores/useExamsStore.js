@@ -47,11 +47,11 @@ export const useExamsStore = create((set, get) => ({
   // idioma se guarda como override dentro de `translations`, sin tocar
   // pass_score/questions_to_show (son propiedades del examen, no del
   // idioma) — requiere que el examen base ya exista.
-  saveExam: async (courseId, { lang = 'es', title, pass_score, questions_to_show, questions, createdBy }) => {
+  saveExam: async (courseId, { lang = 'es', title, pass_score, questions_to_show, time_limit_minutes, questions, createdBy }) => {
     if (lang === 'es') {
       const { data, error } = await supabase
         .from('course_exams')
-        .upsert({ course_id: courseId, title, pass_score, questions_to_show, questions, created_by: createdBy, updated_at: new Date().toISOString() }, { onConflict: 'course_id' })
+        .upsert({ course_id: courseId, title, pass_score, questions_to_show, time_limit_minutes, questions, created_by: createdBy, updated_at: new Date().toISOString() }, { onConflict: 'course_id' })
         .select()
         .single()
       if (!error) set({ exam: data })
