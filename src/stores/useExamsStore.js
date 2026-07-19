@@ -135,15 +135,27 @@ export const useExamsStore = create((set, get) => ({
       .single()
     if (!error) {
       set((s) => ({ attempts: [data, ...s.attempts] }))
-      if (passed) {
-        const { data: grad } = await supabase
-          .from('student_graduations')
-          .upsert({ student_id: studentId, course_id: courseId }, { onConflict: 'student_id,course_id' })
-          .select()
-          .single()
-        set({ graduation: grad ?? { student_id: studentId, course_id: courseId, graduated_at: new Date().toISOString() } })
-      }
+      if (passed) await get().maybeCertify(courseId, studentId)
     }
     return { data, error, score, passed }
+  },
+
+  // El examen se puede presentar en cualquier momento — el requisito de
+  // tareas calificadas (fetchEligibility) solo aplica para la CERTIFICACIÓN
+  // final (student_graduations), no para poder intentar el examen. Se llama
+  // tras aprobar un intento, y también al cargar ExamPage por si el profesor
+  // calificó las tareas pendientes después de que ya se había aprobado.
+  maybeCertify: async (courseId, studentId) => {
+    const { attempts, eligibility, graduation } = get()
+    if (graduation) return graduation
+    const hasPassed = attempts.some((a) => a.passed)
+    if (!hasPassed || !eligibility?.eligible) return null
+    const { data: grad } = await supabase
+      .from('student_graduations')
+      .upsert({ student_id: studentId, course_id: courseId }, { onConflict: 'student_id,course_id' })
+      .select()
+      .single()
+    set({ graduation: grad ?? null })
+    return grad ?? null
   },
 }))

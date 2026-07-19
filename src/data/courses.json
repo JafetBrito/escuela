@@ -79,6 +79,15 @@
     "locked": true
   },
   {
+    "id": "course-nahuatl-a1",
+    "title": "Náhuatl desde Cero (A1)",
+    "description": "Tu primer curso de náhuatl: alfabeto y pronunciación, saludos, pronombres, números, familia y tus primeras frases completas. Un curso de lectura.",
+    "icon": "🌵",
+    "color": "#38bdf8",
+    "category": "Idiomas",
+    "locked": false
+  },
+  {
     "id": "course-009",
     "title": "Lógica de programación",
     "description": "Aprende a pensar como programador resolviendo problemas paso a paso, antes de preocuparte por la sintaxis de ningún lenguaje. Diagramas de flujo, pseudocódigo y los patrones que se repiten en casi cualquier problema. Próximamente.",

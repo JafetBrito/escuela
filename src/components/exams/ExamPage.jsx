@@ -22,6 +22,7 @@ export default function ExamPage() {
   const fetchGraduation  = useExamsStore((s) => s.fetchGraduation)
   const startAttempt     = useExamsStore((s) => s.startAttempt)
   const submitAttempt    = useExamsStore((s) => s.submitAttempt)
+  const maybeCertify     = useExamsStore((s) => s.maybeCertify)
 
   const [loading, setLoading] = useState(true)
   const [phase, setPhase] = useState('idle') // idle | taking | result
@@ -41,9 +42,15 @@ export default function ExamPage() {
       fetchEligibility(courseId, studentId),
       fetchAttempts(courseId, studentId),
       fetchGraduation(courseId, studentId),
-    ]).then(() => { if (!cancelled) setLoading(false) })
+    ]).then(() => {
+      if (cancelled) return
+      setLoading(false)
+      // Si ya había aprobado el examen y el profesor apenas calificó la
+      // última tarea pendiente, esto lo certifica sin que tenga que reintentar.
+      maybeCertify(courseId, studentId)
+    })
     return () => { cancelled = true }
-  }, [courseId, session?.user?.id, fetchExam, fetchEligibility, fetchAttempts, fetchGraduation])
+  }, [courseId, session?.user?.id, fetchExam, fetchEligibility, fetchAttempts, fetchGraduation, maybeCertify])
 
   const handleStart = () => {
     const qs = startAttempt(exam)
@@ -91,19 +98,19 @@ export default function ExamPage() {
             </div>
           )}
 
-          {!loading && exam && !graduation && eligibility && !eligibility.eligible && (
+          {!loading && exam && !graduation && eligibility && !eligibility.eligible && eligibility.total > 0 && (
             <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
-              <p className="font-bold text-amber-400">🔒 Todavía no puedes presentar el examen</p>
-              <p className="mt-1 text-sm text-text-muted">Te faltan {eligibility.total - eligibility.done} de {eligibility.total} tareas de este curso por calificar:</p>
+              <p className="font-bold text-amber-400">📋 Puedes presentar el examen ya mismo</p>
+              <p className="mt-1 text-sm text-text-muted">Pero para certificarte (graduarte) también necesitas que tu profesor califique estas {eligibility.total - eligibility.done} tareas del curso:</p>
               <ul className="mt-2 space-y-1">
                 {eligibility.pending.map((t) => <li key={t.id} className="text-sm text-text">• {t.title} <span className="text-text-muted">({t.status})</span></li>)}
               </ul>
             </div>
           )}
 
-          {!loading && exam && !graduation && eligibility?.eligible && phase === 'idle' && (
+          {!loading && exam && !graduation && phase === 'idle' && (
             <div className="mt-6 rounded-2xl border border-border bg-surface p-6 text-center">
-              <p className="text-sm text-text-muted">✅ Ya puedes presentar el examen — {exam.questions_to_show} preguntas de opción múltiple, necesitas {exam.pass_score}% para aprobar.</p>
+              <p className="text-sm text-text-muted">{exam.questions_to_show} preguntas de opción múltiple, necesitas {exam.pass_score}% para aprobar.</p>
               {attempts.length > 0 && (
                 <p className="mt-2 text-xs text-text-muted">Tu mejor intento: {Math.max(...attempts.map((a) => a.score))}%</p>
               )}
@@ -140,7 +147,20 @@ export default function ExamPage() {
             <div className={`mt-6 rounded-2xl border p-6 text-center ${result.passed ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-danger/30 bg-danger/5'}`}>
               <p className="text-3xl">{result.passed ? '🎉' : '😕'}</p>
               <p className={`mt-1 text-xl font-extrabold ${result.passed ? 'text-emerald-400' : 'text-danger'}`}>{result.score}%</p>
-              <p className="text-sm text-text-muted">{result.passed ? '¡Aprobaste! Ya te graduaste de este curso.' : `Necesitabas ${exam.pass_score}% para aprobar.`}</p>
+              {result.passed ? (
+                graduation ? (
+                  <p className="text-sm text-text-muted">¡Aprobaste! Ya estás certificado en este curso. 🎓</p>
+                ) : (
+                  <div className="text-sm text-text-muted">
+                    <p>¡Aprobaste el examen! Para certificarte todavía falta que califiquen estas tareas:</p>
+                    <ul className="mt-2 space-y-1">
+                      {(eligibility?.pending ?? []).map((t) => <li key={t.id} className="text-text">• {t.title}</li>)}
+                    </ul>
+                  </div>
+                )
+              ) : (
+                <p className="text-sm text-text-muted">Necesitabas {exam.pass_score}% para aprobar.</p>
+              )}
               {!result.passed && (
                 <button type="button" onClick={handleStart} className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-bold text-text hover:bg-surface-hover">
                   Intentar de nuevo

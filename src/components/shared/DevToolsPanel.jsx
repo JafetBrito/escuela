@@ -74,6 +74,7 @@ const NAV_GROUPS = [
       { to: '/admin/proyectos',     label: '📁 Gestión de Proyectos' },
       { to: '/admin/clases',        label: '🎓 Mis Clases (Admin)' },
       { to: '/admin/examenes',      label: '📝 Exámenes de graduación' },
+      { to: '/admin/podcasts',      label: '🎙️ Gestión de Podcasts' },
     ],
   },
 ]

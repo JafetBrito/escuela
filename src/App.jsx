@@ -83,6 +83,8 @@ const ClassSummaryPage = lazy(() => import('./components/liveclass/ClassSummaryP
 const AdminExamsPage = lazy(() => import('./components/admin/AdminExamsPage'))
 const ExamsPage = lazy(() => import('./components/exams/ExamsPage'))
 const ExamPage = lazy(() => import('./components/exams/ExamPage'))
+const PodcastsPage = lazy(() => import('./components/podcasts/PodcastsPage'))
+const AdminPodcastsPage = lazy(() => import('./components/admin/AdminPodcastsPage'))
 const SchedulePage = lazy(() => import('./components/liveclass/SchedulePage'))
 const AvailableClassesPage = lazy(() => import('./components/liveclass/AvailableClassesPage'))
 const OnlineClassPage = lazy(() => import('./components/onlineclass/OnlineClassPage'))
@@ -454,6 +456,26 @@ export default function App() {
           }
         />
         <Route
+          path="/podcasts"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <PodcastsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/podcasts"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminPodcastsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/mis-clases/:classId/resumen"
           element={
             <ProtectedRoute>
@@ -686,7 +708,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/__dev_learn/:courseId" element={<Suspense fallback={<RouteFallback />}><LearningInterface /></Suspense>} />
         <Route
           path="/cerebro"
           element={

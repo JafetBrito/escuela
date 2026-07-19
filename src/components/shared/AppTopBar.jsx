@@ -28,6 +28,7 @@ const GROUPS = [
       { to: '/herramientas', key: 'herramientas', label: 'Herramientas', icon: '🔧' },
       { to: '/anuncios',     key: 'anuncios',     label: 'Anuncios',     icon: '📋' },
       { to: '/cerebro',      key: 'cerebro',      label: 'Segundo Cerebro', icon: '🧠' },
+      { to: '/podcasts',     key: 'podcasts',     label: 'Podcasts',     icon: '🎙️' },
     ],
   },
   {

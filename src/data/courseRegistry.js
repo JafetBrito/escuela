@@ -17,6 +17,7 @@ import courseDerechosMexico from './courseDerechosMexico.js'
 import courseDerechosCanada from './courseDerechosCanada.js'
 import courseMujeresHistoria from './courseMujeresHistoria.js'
 import courseDesarrolloMujeres from './courseDesarrolloMujeres.js'
+import courseNahuatl from './courseNahuatl.js'
 
 // Maps a courseId (from courses.json / license / route param) to its full
 // content (modules, quizzes, resources). Add new courses here as they ship.
@@ -39,6 +40,7 @@ export const COURSES_DATA = {
   [courseDerechosCanada.courseId]: courseDerechosCanada,
   [courseMujeresHistoria.courseId]: courseMujeresHistoria,
   [courseDesarrolloMujeres.courseId]: courseDesarrolloMujeres,
+  [courseNahuatl.courseId]: courseNahuatl,
 }
 
 // `lang` defaults to 'es' (the base, authored language) so every existing

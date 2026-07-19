@@ -25,6 +25,8 @@ export const es = {
       herramientas: 'Herramientas',
       anuncios: 'Anuncios',
       cerebro: 'Segundo Cerebro',
+      podcasts: 'Podcasts',
+      examenes: 'Exámenes',
       academiaIdiomas: 'Academia de Idiomas',
       academiaCiberseguridad: 'Academia de Ciberseguridad',
       buscar: 'Buscar',
