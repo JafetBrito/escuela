@@ -9,6 +9,27 @@ const PING_KINDS = [
   { kind: 'ping', icon: '👋', label: 'Enviar ping' },
 ]
 
+const SECTION_TONE = {
+  primary: 'bg-primary/15 text-primary',
+  violet: 'bg-violet-500/15 text-violet-400',
+  amber: 'bg-amber-500/15 text-amber-400',
+  sky: 'bg-sky-500/15 text-sky-400',
+}
+
+// Encabezado compartido de cada tarjeta del Hub — icono en círculo de color +
+// título + contador opcional, en vez del texto plano en mayúsculas de antes.
+function SectionHeader({ icon, title, count, tone = 'primary' }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${SECTION_TONE[tone] ?? SECTION_TONE.primary}`}>{icon}</span>
+      <p className="text-xs font-black uppercase tracking-wide text-text-muted">{title}</p>
+      {count != null && count > 0 && (
+        <span className="ml-auto rounded-full bg-surface-hover px-2 py-0.5 text-[10px] font-bold text-text-muted">{count}</span>
+      )}
+    </div>
+  )
+}
+
 // Contenido del Hub (tema actual, agenda, recursos, misiones, preguntas) —
 // sin encabezado ni botón de unirse, para poder reutilizarlo tanto en
 // /mis-clases (teléfono) como al lado del video en /clases-disponibles
@@ -65,6 +86,7 @@ export default function HubContent({ activeClass }) {
   }, [chatMessages.length])
 
   const resources = activeClass.resources ?? []
+  const currentIdx = activeClass.agenda?.findIndex((a) => a.label === activeClass.current_topic) ?? -1
 
   return (
     <div className="space-y-4">
@@ -88,10 +110,12 @@ export default function HubContent({ activeClass }) {
                   ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                   : state === 'error'
                   ? 'border-danger/40 bg-danger/10 text-danger'
-                  : 'border-border bg-surface text-text hover:border-primary/40'
+                  : 'border-border bg-surface text-text hover:border-primary/40 hover:bg-primary/5'
               }`}
             >
-              <span className="text-base">{p.icon}</span>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base ${state === 'sent' ? 'bg-emerald-500/15' : 'bg-surface-hover'}`}>
+                {p.icon}
+              </span>
               {state === 'sent' ? '¡Enviado!' : state === 'error' ? 'No se pudo enviar' : p.label}
             </button>
           )
@@ -115,22 +139,35 @@ export default function HubContent({ activeClass }) {
 
       {activeClass.current_topic && (
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-primary/70">📍 En este momento</p>
+          <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary/70">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" /> En este momento
+          </p>
           <p className="mt-0.5 text-lg font-bold text-text">{activeClass.current_topic}</p>
         </div>
       )}
 
       {activeClass.agenda?.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">🗒️ Agenda</p>
-          <ul className="space-y-1.5">
-            {activeClass.agenda.map((item, i) => {
+          <SectionHeader icon="🗒️" title="Agenda" />
+          <ul>
+            {activeClass.agenda.map((item, i, arr) => {
+              const isLast = i === arr.length - 1
               const isCurrent = item.label === activeClass.current_topic
-              const currentIdx = activeClass.agenda.findIndex((a) => a.label === activeClass.current_topic)
               const isPast = currentIdx > -1 && i < currentIdx
+              const dotCls = isCurrent
+                ? 'border-primary bg-primary'
+                : isPast
+                ? 'border-emerald-400 bg-emerald-400'
+                : 'border-border bg-surface'
               return (
-                <li key={i} className={`flex items-center gap-2 text-sm ${isCurrent ? 'font-bold text-primary' : isPast ? 'text-text-muted line-through' : 'text-text-muted'}`}>
-                  <span>{isCurrent ? '▶️' : isPast ? '✅' : '▫️'}</span> {item.label}
+                <li key={i} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 ${dotCls}`} />
+                    {!isLast && <span className="w-px flex-1 bg-border" />}
+                  </div>
+                  <p className={`pb-3 text-sm ${isCurrent ? 'font-bold text-primary' : isPast ? 'text-text-muted line-through' : 'text-text-muted'}`}>
+                    {item.label}
+                  </p>
                 </li>
               )
             })}
@@ -140,14 +177,14 @@ export default function HubContent({ activeClass }) {
 
       {resources.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">📎 Recursos</p>
+          <SectionHeader icon="📎" title="Recursos" count={resources.length} tone="sky" />
           <ResourceGallery resources={resources} />
         </div>
       )}
 
       {activeClass.missions?.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">🎯 Misiones de la clase</p>
+          <SectionHeader icon="🎯" title="Misiones de la clase" count={activeClass.missions.length} tone="violet" />
           <div className="space-y-2">
             {activeClass.missions.map((m, i) => (
               <div key={i} className="rounded-xl bg-surface-hover px-3 py-2">
@@ -160,14 +197,19 @@ export default function HubContent({ activeClass }) {
       )}
 
       <div className="rounded-2xl border border-border bg-surface p-4">
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">❓ Preguntas</p>
+        <SectionHeader icon="❓" title="Preguntas" count={questions.length} tone="amber" />
         <div className="space-y-2">
           {questions.length === 0 && <p className="text-sm text-text-muted">Aún no has hecho preguntas en esta clase.</p>}
           {questions.map((q) => (
-            <div key={q.id} className="rounded-xl bg-surface-hover px-3 py-2">
-              <p className="text-sm text-text">❓ {q.question}</p>
-              {q.answered && <p className="mt-1 text-sm text-emerald-400">💬 {q.answer}</p>}
-              {!q.answered && <p className="mt-1 text-xs text-text-muted">Esperando respuesta…</p>}
+            <div key={q.id} className="rounded-xl bg-surface-hover px-3 py-2.5">
+              <p className="text-sm text-text">{q.question}</p>
+              {q.answered ? (
+                <div className="mt-2 rounded-lg bg-emerald-500/10 px-2.5 py-2">
+                  <p className="text-sm text-emerald-400">💬 {q.answer}</p>
+                </div>
+              ) : (
+                <p className="mt-1.5 text-xs text-text-muted">⏳ Esperando respuesta…</p>
+              )}
             </div>
           ))}
         </div>
@@ -183,15 +225,26 @@ export default function HubContent({ activeClass }) {
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-4">
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">💬 Chat de la clase</p>
-        <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+        <SectionHeader icon="💬" title="Chat de la clase" count={chatMessages.length} />
+        <div className="max-h-64 space-y-2.5 overflow-y-auto pr-1">
           {chatMessages.length === 0 && <p className="text-sm text-text-muted">Aún no hay mensajes — sé el primero en escribir.</p>}
           {chatMessages.map((m) => {
             const mine = m.user_id === session?.user?.id
+            const name = mine ? 'Tú' : (m.display_name || 'Alumno')
+            const initial = name.trim().charAt(0).toUpperCase() || '?'
+            const time = m.created_at
+              ? new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+              : ''
             return (
-              <div key={m.id} className={`rounded-xl px-3 py-2 text-sm ${mine ? 'bg-primary/10 text-text' : 'bg-surface-hover text-text'}`}>
-                <p className="text-[11px] font-bold text-text-muted">{mine ? 'Tú' : m.display_name || 'Alumno'}</p>
-                <p>{m.message}</p>
+              <div key={m.id} className={`flex items-end gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${mine ? 'bg-primary text-background' : 'bg-surface-hover text-text-muted'}`}>
+                  {initial}
+                </span>
+                <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-primary/15 text-text' : 'rounded-bl-sm bg-surface-hover text-text'}`}>
+                  {!mine && <p className="text-[11px] font-bold text-text-muted">{name}</p>}
+                  <p>{m.message}</p>
+                  {time && <p className="mt-0.5 text-[10px] text-text-muted/60">{time}</p>}
+                </div>
               </div>
             )
           })}

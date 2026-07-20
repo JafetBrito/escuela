@@ -127,17 +127,17 @@ export default function AppTopBar({ variant = 'full' }) {
 
   if (variant === 'course') {
     return (
-      <header className="flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-2.5 md:px-6">
-        <div className="flex shrink-0 items-center gap-2">
-          <Link to="/dashboard" className="flex items-center gap-1.5">
-            <Logo />
-            <span aria-hidden="true">🐱</span>
+      <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 md:gap-4 md:px-6 md:py-2.5">
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-1">
+            <Logo className="text-base sm:text-xl" />
+            <span aria-hidden="true" className="hidden sm:inline">🐱</span>
           </Link>
           <VersionBadge />
         </div>
         <Link
           to="/dashboard"
-          className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:text-text"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:text-text sm:px-3 sm:py-1.5 sm:text-sm"
         >
           {t('nav.backToDashboard')}
         </Link>
