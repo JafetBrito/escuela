@@ -75,6 +75,7 @@ const NAV_GROUPS = [
       { to: '/admin/clases',        label: '🎓 Mis Clases (Admin)' },
       { to: '/admin/examenes',      label: '📝 Exámenes de graduación' },
       { to: '/admin/podcasts',      label: '🎙️ Gestión de Podcasts' },
+      { to: '/admin/perfiles-edad', label: '🧒 Perfiles de Edad' },
     ],
   },
 ]

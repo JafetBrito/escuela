@@ -888,6 +888,21 @@ alter table public.course_exams
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 021 — perfil de edad por cuenta (niños / normal / abuelos)
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.profiles
+  add column if not exists age_profile text not null default 'normal';
+
+do $$ begin
+  alter table public.profiles
+    add constraint profiles_age_profile_check
+    check (age_profile in ('kids', 'normal', 'seniors'));
+exception when duplicate_object then null;
+end $$;
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

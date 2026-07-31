@@ -10,18 +10,28 @@ import NefertitiOverlay from './NefertitiOverlay'
 // `profiles.role === 'admin'` loaded correctly on this device. The admin can
 // turn this passive theme off from DevToolsPanel — it's their own device
 // preference, so it's gated by useAdminThemeStore on top of the role check.
+//
+// El perfil de edad (profiles.age_profile, asignado por el admin — ver
+// AdminAgeProfilesPage.jsx) gana sobre TODO lo demás, incluyendo el tema que
+// el propio alumno haya elegido: es un control parental/administrativo, no
+// una preferencia, así que un niño no puede simplemente volver al tema
+// normal desde Ajustes.
 export default function ThemeController() {
   const theme = useThemeStore((s) => s.theme)
   const isAdmin = useAuthStore((s) => s.isAdmin)
+  const ageProfile = useAuthStore((s) => s.profile?.age_profile)
   const hackerThemeEnabled = useAdminThemeStore((s) => s.enabled)
   const adminActive = (isAdmin?.() ?? false) && hackerThemeEnabled
+  const forcedAgeTheme = ageProfile === 'kids' || ageProfile === 'seniors' ? ageProfile : null
 
   useEffect(() => {
     // Un tema elegido explícitamente gana sobre el tema 'hacker' pasivo de
     // admin — si no, un admin nunca vería cambiar el color al elegir Claro/
-    // Desierto en Ajustes.
+    // Desierto en Ajustes. El tema de perfil de edad gana sobre todo lo demás.
     const explicitTheme = THEMES.find((t) => t.id === theme)?.dataTheme
-    if (explicitTheme) {
+    if (forcedAgeTheme) {
+      document.documentElement.dataset.theme = forcedAgeTheme
+    } else if (explicitTheme) {
       document.documentElement.dataset.theme = explicitTheme
     } else if (adminActive) {
       document.documentElement.dataset.theme = 'hacker'
@@ -31,7 +41,7 @@ export default function ThemeController() {
     return () => {
       document.documentElement.dataset.theme = ''
     }
-  }, [adminActive, theme])
+  }, [adminActive, theme, forcedAgeTheme])
 
   return (
     <>

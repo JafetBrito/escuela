@@ -49,15 +49,15 @@ const GROUPS = [
     label: 'Campus',
     icon: '🌍',
     items: [
-      { to: '/vr',     key: 'vr',       label: 'VR',         icon: '🕶️' },
-      { to: '/mascota',   key: 'mascota',   label: 'Mi Equipo', icon: '⚔️' },
-      { to: '/arbol',     key: 'arbol',     label: 'Árbol',     icon: '🌳' },
-      { to: '/misiones',  key: 'misiones',  label: 'Misiones',  icon: '📜' },
-      { to: '/mundo',  key: 'mundo',    label: 'Mundo 2D',   icon: '📱' },
-      { to: '/rol',    key: 'rol',      label: 'Mundo ROL',  icon: '🎲' },
-      { to: '/vr/graffiti', key: 'graffiti', label: 'Calle Graffiti', icon: '🎨' },
-      { to: '/games',  key: 'games',    label: 'Games',      icon: '🎮' },
-      { to: '/arena',  key: 'arena',    label: 'Arena',      icon: '⚔️' },
+      { to: '/vr',     key: 'vr',       label: 'VR',         icon: '🕶️', hideFor: ['kids', 'seniors'] },
+      { to: '/mascota',   key: 'mascota',   label: 'Mi Equipo', icon: '⚔️', hideFor: ['kids', 'seniors'] },
+      { to: '/arbol',     key: 'arbol',     label: 'Árbol',     icon: '🌳', hideFor: ['kids', 'seniors'] },
+      { to: '/misiones',  key: 'misiones',  label: 'Misiones',  icon: '📜', hideFor: ['kids', 'seniors'] },
+      { to: '/mundo',  key: 'mundo',    label: 'Mundo 2D',   icon: '📱', hideFor: ['kids', 'seniors'] },
+      { to: '/rol',    key: 'rol',      label: 'Mundo ROL',  icon: '🎲', hideFor: ['kids', 'seniors'] },
+      { to: '/vr/graffiti', key: 'graffiti', label: 'Calle Graffiti', icon: '🎨', hideFor: ['kids', 'seniors'] },
+      { to: '/games',  key: 'games',    label: 'Games',      icon: '🎮', hideFor: ['seniors'] },
+      { to: '/arena',  key: 'arena',    label: 'Arena',      icon: '⚔️', hideFor: ['kids', 'seniors'] },
     ],
   },
   {
@@ -66,11 +66,22 @@ const GROUPS = [
     label: 'Comunidad',
     icon: '💬',
     items: [
-      { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥' },
-      { to: '/chats',  key: 'chats',  label: 'Chats',  icon: '💬' },
+      { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥', hideFor: ['kids'] },
+      { to: '/chats',  key: 'chats',  label: 'Chats',  icon: '💬', hideFor: ['kids'] },
     ],
   },
 ]
+
+// Filtra los items de un GROUPS por perfil de edad (profiles.age_profile,
+// asignado por el admin) — un item con hideFor:['kids'] desaparece para esa
+// cuenta, tanto del menú de escritorio como del de móvil (mismo array, dos
+// sitios de render). Si un grupo se queda sin items visibles, se omite todo
+// el grupo entero (evita un submenú vacío, ej. "Comunidad" para niños).
+function visibleGroupsFor(ageProfile) {
+  return GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((item) => !item.hideFor?.includes(ageProfile)) }))
+    .filter((g) => g.items.length > 0)
+}
 
 const MASCOT_EMOJI = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
 
@@ -85,6 +96,11 @@ export default function AppTopBar({ variant = 'full' }) {
   const signOut = useAuthStore((s) => s.signOut)
   const mascotId = useMascotStore((s) => s.mascot)
   const { t, lang, setLang } = useI18n()
+  const visibleGroups = visibleGroupsFor(profile?.age_profile)
+  // "Script Kiddies" bajo el logo cuando el admin asignó el perfil de edad
+  // "niños" (profiles.age_profile) — puramente decorativo, pedido así por el
+  // usuario.
+  const logoTagline = profile?.age_profile === 'kids' ? 'Script Kiddies' : null
 
   const [openMenu, setOpenMenu] = useState(null) // null | group.id | 'profile'
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -130,7 +146,7 @@ export default function AppTopBar({ variant = 'full' }) {
       <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 md:gap-4 md:px-6 md:py-2.5">
         <div className="flex min-w-0 shrink-0 items-center gap-1.5">
           <Link to="/dashboard" className="flex min-w-0 items-center gap-1">
-            <Logo className="text-base sm:text-xl" />
+            <Logo className="text-base sm:text-xl" tagline={logoTagline} />
             <span aria-hidden="true" className="hidden sm:inline">🐱</span>
           </Link>
           <VersionBadge />
@@ -153,7 +169,7 @@ export default function AppTopBar({ variant = 'full' }) {
       {/* Logo */}
       <div className="flex shrink-0 items-center gap-2">
         <Link to="/dashboard" onClick={closeAll} className="flex items-center gap-1.5">
-          <Logo />
+          <Logo tagline={logoTagline} />
           <span aria-hidden="true">🐱</span>
         </Link>
         <VersionBadge />
@@ -188,7 +204,7 @@ export default function AppTopBar({ variant = 'full' }) {
         </Link>
 
         {/* Dropdown groups */}
-        {GROUPS.map((group) => {
+        {visibleGroups.map((group) => {
           const active = isGroupActive(group)
           const isOpen = openMenu === group.id
           return (
@@ -381,7 +397,7 @@ export default function AppTopBar({ variant = 'full' }) {
             🏫 {t('nav.items.academias')}
           </Link>
 
-          {GROUPS.map((group) => (
+          {visibleGroups.map((group) => (
             <div key={group.id} className="mt-1">
               <div className="px-3 pb-0.5 pt-1 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
                 {group.icon} {t(`nav.groups.${group.key}`)}

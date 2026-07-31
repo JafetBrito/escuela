@@ -50,6 +50,10 @@ export const GAMES = [
     type: 'component',
     component: 'chess',
     reward: 300,
+    // El modo multijugador invita a otros alumnos por username — oculto para
+    // el perfil de edad "niños" (ver profiles.age_profile), no interactuar
+    // con desconocidos ahí.
+    hideFor: ['kids'],
   },
   {
     id: 'idiomas',

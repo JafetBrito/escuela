@@ -4,11 +4,12 @@ import { useGameStore } from '../../stores/useGameStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import GlobalItemEffects from './GlobalItemEffects'
 
-export default function ProtectedRoute({ children, requireTutorial = false }) {
+export default function ProtectedRoute({ children, requireTutorial = false, blockAgeProfiles = [] }) {
   const authReady  = useAuthStore((s) => s.authReady)
   const session    = useAuthStore((s) => s.session)
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
   const isAdmin    = useAuthStore((s) => s.isAdmin)
+  const ageProfile = useAuthStore((s) => s.profile?.age_profile)
   const oliverClass = useGameStore((s) => s.oliver.class)
 
   if (!authReady) {
@@ -26,6 +27,15 @@ export default function ProtectedRoute({ children, requireTutorial = false }) {
   }
 
   const adminBypass = isAdmin?.() ?? false
+
+  // Perfil de edad (profiles.age_profile, asignado por el admin) — bloquea
+  // por URL directa lo mismo que ya está escondido del nav en AppTopBar.jsx,
+  // para que un alumno no se salte el ocultamiento tecleando la ruta. Va
+  // ANTES del chequeo de requireTutorial: si no, a un niño sin oliverClass
+  // se lo mandaría a /vr-templo (crear personaje VR) en vez de bloquearlo.
+  if (blockAgeProfiles.includes(ageProfile) && !adminBypass) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   // Solo las rutas del mundo VR piden mascota+clase de Oliver — el resto de
   // la plataforma (dashboard, cursos, tienda...) solo requiere estar logueado.

@@ -43,3 +43,16 @@ export function speak(text) {
     // Best-effort — degrada en silencio si el navegador lo bloquea/no lo soporta.
   }
 }
+
+// Vacía esta cola (notificaciones/pings/mascota) Y cancela lo que el
+// navegador tenga en curso. Cualquier otro lector que también llame
+// speechSynthesis.speak() directamente (ej. TextLesson.jsx leyendo una
+// clase) DEBE llamar esto antes de empezar — si no, el `advance()` de esta
+// cola puede disparar processQueue() justo después del cancel() y volver a
+// encolar un anuncio viejo delante de lo nuevo, sonando como si la lectura
+// "empezara en otra parte" en vez del principio.
+export function stopAll() {
+  queue.length = 0
+  speaking = false
+  try { window.speechSynthesis?.cancel() } catch { /* best-effort */ }
+}

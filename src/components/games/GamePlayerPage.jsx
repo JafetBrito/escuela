@@ -1,8 +1,9 @@
 import { useState, lazy, Suspense } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { getGameById } from '../../data/gamesRegistry'
 import { useGamesStore } from '../../stores/useGamesStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 
 const COMPONENT_MAP = {
   chess: lazy(() => import('./chess/ChessGame')),
@@ -24,11 +25,20 @@ export default function GamePlayerPage() {
   const { gameId } = useParams()
   const navigate = useNavigate()
   const game = getGameById(gameId)
+  const ageProfile = useAuthStore((s) => s.profile?.age_profile)
   const canClaim = useGamesStore((s) => s.canClaim(gameId))
   const claimReward = useGamesStore((s) => s.claimReward)
   const [claimed, setClaimed] = useState(false)
 
   const GameComponent = game?.type === 'component' ? COMPONENT_MAP[game.component] : null
+
+  // Protege contra entrar directo por URL a un juego oculto para el perfil
+  // de edad de esta cuenta (ej. Ajedrez para niños) — la tarjeta ya no
+  // aparece en GamesPage, pero la ruta dinámica no se presta al prop
+  // blockAgeProfiles de ProtectedRoute (ese solo bloquea /games entero).
+  if (game?.hideFor?.includes(ageProfile)) {
+    return <Navigate to="/games" replace />
+  }
 
   if (!game || (!game.file && !GameComponent)) {
     return (

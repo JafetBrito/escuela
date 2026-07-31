@@ -24,10 +24,10 @@ import { formatCurrency } from '../../utils/currency'
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 // Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
 const CAMPUS_LINKS = [
-  { to: '/vr',    key: 'vr',    label: 'Campus VR',  icon: '🕶️' },
-  { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱' },
-  { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲' },
-  { to: '/games', key: 'games', label: 'Games',      icon: '🎮' },
+  { to: '/vr',    key: 'vr',    label: 'Campus VR',  icon: '🕶️', hideFor: ['kids', 'seniors'] },
+  { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱', hideFor: ['kids', 'seniors'] },
+  { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲', hideFor: ['kids', 'seniors'] },
+  { to: '/games', key: 'games', label: 'Games',      icon: '🎮', hideFor: ['seniors'] },
 ]
 
 // ── Course card (compact) ─────────────────────────────────────────────────────
@@ -97,12 +97,18 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   [progressByCourse])
 
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
+  const visibleCampusLinks = CAMPUS_LINKS.filter((l) => !l.hideFor?.includes(profile?.age_profile))
   const hasOliver = useGameStore((s) => Boolean(s.oliver.class))
+  // Perfil de edad "niños"/"abuelos" (profiles.age_profile) no ve el mundo VR
+  // en absoluto — /vr y /vr-templo ya están bloqueados a nivel de ruta
+  // (ProtectedRoute blockAgeProfiles), así que tampoco tiene sentido
+  // ofrecerle estos dos accesos directos desde el Dashboard.
+  const vrAllowed = !['kids', 'seniors'].includes(profile?.age_profile)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
 
-      {!hasOliver && (
+      {!hasOliver && vrAllowed && (
         <Link to="/vr-templo" className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 transition hover:bg-primary/15">
           <div>
             <p className="text-sm font-bold text-text">🐾 ¿Quieres tu mascota y el mundo VR?</p>
@@ -184,9 +190,11 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
               ? `#${BUILD_INFO.number}${BUILD_INFO.hash ? ` · ${BUILD_INFO.hash}` : ''}`
               : `v${LATEST_VERSION}`}
           </span>
-          <Link to="/vr" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/30">
-            {t('dashboard.goVR')}
-          </Link>
+          {vrAllowed && (
+            <Link to="/vr" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/30">
+              {t('dashboard.goVR')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -291,11 +299,13 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         </div>
       )}
 
-      {/* Campus quick access */}
+      {/* Campus quick access — oculto por perfil de edad (profiles.age_profile,
+          asignado por el admin), mismo criterio que el nav de AppTopBar.jsx */}
+      {visibleCampusLinks.length > 0 && (
       <section>
         <h2 className="text-base font-extrabold text-text mb-3">🌍 {t('dashboard.sections.campus')}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {CAMPUS_LINKS.map((l) => (
+          {visibleCampusLinks.map((l) => (
             <Link key={l.to} to={l.to}
               className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary hover:bg-surface-hover">
               <span className="text-3xl">{l.icon}</span>
@@ -304,6 +314,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
           ))}
         </div>
       </section>
+      )}
     </div>
   )
 }

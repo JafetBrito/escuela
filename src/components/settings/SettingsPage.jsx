@@ -59,6 +59,10 @@ export default function SettingsPage() {
   const lock = useAuthStore((s) => s.lock)
   const session = useAuthStore((s) => s.session)
   const profile = useAuthStore((s) => s.profile)
+  // Perfil de edad "niños" (profiles.age_profile, asignado por el admin) no
+  // ve la configuración de API keys/proveedor de IA — no tiene sentido que
+  // un niño la vea ni la toque.
+  const visibleCategories = CATEGORIES.filter((c) => !(c.id === 'nucleo' && profile?.age_profile === 'kids'))
   const signOut = useAuthStore((s) => s.signOut)
   const updatePassword = useAuthStore((s) => s.updatePassword)
   const coins = useCurrencyStore((s) => s.coins)
@@ -191,7 +195,7 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-6 md:flex-row">
             {/* Category rail */}
             <nav className="flex shrink-0 gap-1.5 overflow-x-auto md:w-48 md:flex-col md:overflow-visible">
-              {CATEGORIES.map((c) => (
+              {visibleCategories.map((c) => (
                 <button
                   key={c.id}
                   type="button"

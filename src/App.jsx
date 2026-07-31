@@ -74,6 +74,7 @@ const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
 const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
 const TaskDetailPage = lazy(() => import('./components/tasks/TaskDetailPage'))
 const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
+const AdminAgeProfilesPage = lazy(() => import('./components/admin/AdminAgeProfilesPage'))
 const ProjectsPage = lazy(() => import('./components/projects/ProjectsPage'))
 const ProjectDetailPage = lazy(() => import('./components/projects/ProjectDetailPage'))
 const AdminProjectsPage = lazy(() => import('./components/admin/AdminProjectsPage'))
@@ -243,7 +244,7 @@ export default function App() {
         <Route
           path="/mascota"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <MascotHomePage />
               </Suspense>
@@ -272,7 +273,7 @@ export default function App() {
         <Route
           path="/amigos"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids']}>
               <Suspense fallback={<RouteFallback />}>
                 <FriendsPage />
               </Suspense>
@@ -283,7 +284,7 @@ export default function App() {
         <Route
           path="/chats"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids']}>
               <ChatsPage />
             </ProtectedRoute>
           }
@@ -314,7 +315,7 @@ export default function App() {
         <Route
           path="/misiones"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <MissionsBoardPage />
               </Suspense>
@@ -368,6 +369,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminTasksPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/perfiles-edad"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminAgeProfilesPage />
               </Suspense>
             </ProtectedRoute>
           }
@@ -536,7 +547,7 @@ export default function App() {
         <Route
           path="/arena"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <ArenaPage />
               </Suspense>
@@ -547,7 +558,7 @@ export default function App() {
         <Route
           path="/mundo"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <World2dPage />
               </Suspense>
@@ -558,7 +569,7 @@ export default function App() {
         <Route
           path="/rol"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <RolLobbyPage />
               </Suspense>
@@ -568,7 +579,7 @@ export default function App() {
         <Route
           path="/rol/:roomId"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <RolGamePage />
               </Suspense>
@@ -601,7 +612,7 @@ export default function App() {
         <Route
           path="/vr-templo"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VrArbol />
               </Suspense>
@@ -611,7 +622,7 @@ export default function App() {
         <Route
           path="/vr"
           element={
-            <ProtectedRoute requireTutorial>
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage />
               </Suspense>
@@ -621,7 +632,7 @@ export default function App() {
         <Route
           path="/vr/room"
           element={
-            <ProtectedRoute requireTutorial>
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage roomMode />
               </Suspense>
@@ -631,7 +642,7 @@ export default function App() {
         <Route
           path="/vr/anfiteatro"
           element={
-            <ProtectedRoute requireTutorial>
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage anfiteatroMode />
               </Suspense>
@@ -641,7 +652,7 @@ export default function App() {
         <Route
           path="/vr/graffiti"
           element={
-            <ProtectedRoute requireTutorial>
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage graffitiMode />
               </Suspense>
@@ -651,7 +662,7 @@ export default function App() {
         <Route
           path="/vr/pruebas"
           element={
-            <ProtectedRoute requireTutorial>
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage testMode />
               </Suspense>
@@ -662,7 +673,7 @@ export default function App() {
         <Route
           path="/vr/cueva-platon"
           element={
-            <ProtectedRoute requireTutorial>
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VrCueva />
               </Suspense>
@@ -674,7 +685,7 @@ export default function App() {
         <Route
           path="/games"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['seniors']}>
               <GamesPage />
             </ProtectedRoute>
           }
@@ -682,7 +693,7 @@ export default function App() {
         <Route
           path="/games/:gameId"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['seniors']}>
               <GamePlayerPage />
             </ProtectedRoute>
           }
@@ -690,7 +701,7 @@ export default function App() {
         <Route
           path="/arbol"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <SkillTreePage />
               </Suspense>

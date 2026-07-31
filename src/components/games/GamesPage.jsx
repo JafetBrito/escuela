@@ -4,6 +4,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import { GAMES } from '../../data/gamesRegistry'
 import { useI18n } from '../../i18n'
+import { useAuthStore } from '../../stores/useAuthStore'
 
 const CATEGORY_GRADIENTS = {
   Otros: 'from-cyan-500 to-blue-600',
@@ -15,9 +16,11 @@ const DEFAULT_GRADIENT = 'from-primary to-emerald-500'
 
 export default function GamesPage() {
   const { t } = useI18n()
-  const categories = [...new Set(GAMES.map((g) => g.category ?? 'Otros'))]
+  const ageProfile = useAuthStore((s) => s.profile?.age_profile)
+  const games = GAMES.filter((g) => !g.hideFor?.includes(ageProfile))
+  const categories = [...new Set(games.map((g) => g.category ?? 'Otros'))]
   const isAvailable = (g) => Boolean(g.file) || g.type === 'component'
-  const availableCount = GAMES.filter(isAvailable).length
+  const availableCount = games.filter(isAvailable).length
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -33,7 +36,7 @@ export default function GamesPage() {
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
-                🕹️ {availableCount}/{GAMES.length} disponibles
+                🕹️ {availableCount}/{games.length} disponibles
               </span>
               {categories.map((cat) => (
                 <span
@@ -127,7 +130,7 @@ export default function GamesPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {GAMES.map((game) => {
+            {games.map((game) => {
               const available = isAvailable(game)
               const gradient = CATEGORY_GRADIENTS[game.category] ?? DEFAULT_GRADIENT
 

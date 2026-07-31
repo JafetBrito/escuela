@@ -89,6 +89,40 @@ body {
   --color-danger: #dc2626;
 }
 
+/* Perfil de edad "niños" — forzado por el admin vía profiles.age_profile,
+   nunca elegido por el propio alumno (ver ThemeController.jsx). Paleta
+   cálida y lúdica, pensada para verse amigable, no para ser "seria". */
+:root[data-theme='kids'] {
+  --color-background: #fff7ed;
+  --color-surface: #ffffff;
+  --color-surface-hover: #ffedd5;
+  --color-border: #fdba74;
+  --color-primary: #f97316;
+  --color-primary-hover: #ea580c;
+  --color-text: #7c2d12;
+  --color-text-muted: #c2703d;
+  --color-danger: #dc2626;
+  --font-sans: "Comic Sans MS", "Comic Sans", "Baloo 2", "Inter", system-ui, sans-serif;
+}
+
+/* Perfil de edad "abuelos" — forzado por el admin. Alto contraste + texto
+   más grande en toda la app (accesibilidad), sin colores llamativos. */
+:root[data-theme='seniors'] {
+  --color-background: #ffffff;
+  --color-surface: #f8f8f8;
+  --color-surface-hover: #ececec;
+  --color-border: #4b5563;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-text: #111827;
+  --color-text-muted: #374151;
+  --color-danger: #b91c1c;
+}
+
+:root[data-theme='seniors'] body {
+  font-size: 1.15rem;
+}
+
 /* Floating Egyptian symbols overlay shown while Reina Nefertiti is active. */
 @keyframes nefertiti-drift {
   0% {

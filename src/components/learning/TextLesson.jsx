@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getGlossaryEntry } from '../../data/glossaryRegistry'
 import { useI18n } from '../../i18n'
+import { stopAll as stopSharedTts } from '../../utils/tts'
 import WikiPopover from './WikiPopover'
 
 // Mismo mapeo de idioma → voz que TextSelectionMenu.jsx (leer texto
@@ -62,7 +63,7 @@ export default function TextLesson({ content, className = '' }) {
   // voz no debe seguir hablando del contenido anterior.
   useEffect(() => {
     sessionRef.current += 1
-    window.speechSynthesis?.cancel()
+    stopSharedTts()
     setReading(false)
   }, [content])
 
@@ -70,7 +71,7 @@ export default function TextLesson({ content, className = '' }) {
 
   const stopReading = () => {
     sessionRef.current += 1
-    window.speechSynthesis?.cancel()
+    stopSharedTts()
     setReading(false)
   }
 
@@ -100,11 +101,19 @@ export default function TextLesson({ content, className = '' }) {
     chunkIndexRef.current = 0
     if (chunksRef.current.length === 0) return
     setReading(true)
-    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-      // Ya había algo hablando (sesión anterior) — cancel()+speak() en el
-      // mismo tick es una carrera conocida en Chrome/Android (mismo problema
-      // documentado en utils/tts.js), así que se le da un respiro al motor.
-      window.speechSynthesis.cancel()
+    // Siempre se limpia la cola COMPARTIDA (utils/tts.js — notificaciones,
+    // pings, mascota) antes de hablar, no solo cuando este componente cree
+    // que algo está sonando: esa cola tiene su propio estado interno
+    // (`speaking`) que este componente no puede ver, y si queda un anuncio
+    // pendiente ahí, el navegador lo reproduce ANTES que el primer chunk de
+    // la clase — sonando como si la lectura "empezara en otra parte" en vez
+    // de por el encabezado.
+    const wasBusy = window.speechSynthesis.speaking || window.speechSynthesis.pending
+    stopSharedTts()
+    if (wasBusy) {
+      // cancel()+speak() en el mismo tick es una carrera conocida en
+      // Chrome/Android (mismo problema documentado en utils/tts.js), así que
+      // se le da un respiro al motor.
       setTimeout(() => speakChunk(session), 60)
     } else {
       speakChunk(session)
@@ -155,9 +164,13 @@ export default function TextLesson({ content, className = '' }) {
           [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:text-sm [&_ol]:text-text-muted
           [&_li]:leading-relaxed
           [&_strong]:font-semibold [&_strong]:text-text
-          [&_code]:rounded [&_code]:bg-black/40 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-emerald-400
+          [&_code]:break-words [&_code]:rounded [&_code]:bg-black/40 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-emerald-400
           [&_pre]:mb-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-emerald-900/40 [&_pre]:bg-black/60 [&_pre]:p-4
           [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-sm [&_pre_code]:text-emerald-300
+          [&_a]:break-words
+          [&_table]:mb-4 [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_table]:whitespace-nowrap [&_table]:rounded-xl [&_table]:border [&_table]:border-border [&_table]:text-sm
+          [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-hover [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-text
+          [&_td]:border-b [&_td]:border-border/60 [&_td]:px-3 [&_td]:py-2 [&_td]:text-text-muted
           [&_blockquote]:mb-3 [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:text-sm [&_blockquote]:italic [&_blockquote]:text-text-muted
           [&_.tip]:mb-3 [&_.tip]:rounded-xl [&_.tip]:border [&_.tip]:border-blue-500/30 [&_.tip]:bg-blue-900/20 [&_.tip]:p-4 [&_.tip]:text-sm [&_.tip]:text-blue-300
           [&_.warn]:mb-3 [&_.warn]:rounded-xl [&_.warn]:border [&_.warn]:border-yellow-500/30 [&_.warn]:bg-yellow-900/20 [&_.warn]:p-4 [&_.warn]:text-sm [&_.warn]:text-yellow-300
