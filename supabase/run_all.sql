@@ -903,6 +903,58 @@ end $$;
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 022 — cuentas de niños pendientes de aprobación del admin
+-- + cierre de un hueco de RLS en profiles
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.profiles
+  add column if not exists account_status text not null default 'active';
+
+do $$ begin
+  alter table public.profiles
+    add constraint profiles_account_status_check
+    check (account_status in ('active', 'pending'));
+exception when duplicate_object then null;
+end $$;
+
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, display_name, avatar_url, account_status)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'full_name', new.email),
+    new.raw_user_meta_data ->> 'avatar_url',
+    case when (new.raw_user_meta_data ->> 'is_child_signup')::boolean is true then 'pending' else 'active' end
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create or replace function public.protect_admin_only_columns()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    new.role := old.role;
+    new.age_profile := old.age_profile;
+    new.account_status := old.account_status;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_admin_only_columns_trigger on public.profiles;
+create trigger protect_admin_only_columns_trigger
+  before update on public.profiles
+  for each row execute function public.protect_admin_only_columns();
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════

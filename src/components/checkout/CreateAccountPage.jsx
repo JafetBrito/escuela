@@ -38,6 +38,7 @@ export default function CreateAccountPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
+  const [isChildSignup, setIsChildSignup] = useState(false)
 
   const supabaseReady   = isSupabaseConfigured()
   const googleButtonRef = useRef(null)
@@ -63,7 +64,7 @@ export default function CreateAccountPage() {
     e.preventDefault()
     setError(''); setStatus('processing')
     try {
-      const data = await signUpWithEmail(email, password, nickname || email.split('@')[0])
+      const data = await signUpWithEmail(email, password, nickname || email.split('@')[0], { isChildSignup })
       // Supabase's default "Confirm email" returns no session until the link
       // is clicked. Without a session nothing can reach the cloud, so we stop
       // here and tell the user. Disable "Confirm email" in the Supabase
@@ -200,6 +201,18 @@ export default function CreateAccountPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo 6 caracteres"
                         className="rounded-xl border border-border bg-background px-4 py-3 text-text outline-none transition focus:border-primary" />
+                    </label>
+
+                    <label className="flex items-start gap-2.5 rounded-xl border border-border bg-background px-4 py-3 text-sm text-text-muted">
+                      <input
+                        type="checkbox"
+                        checked={isChildSignup}
+                        onChange={(e) => setIsChildSignup(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                      />
+                      <span>
+                        Esta cuenta es para mi hijo/a <span className="text-text-muted/70">(la aprobará un administrador antes de poder usarse)</span>
+                      </span>
                     </label>
 
                     {session ? (

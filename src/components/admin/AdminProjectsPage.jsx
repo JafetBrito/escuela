@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
-import { useTasksStore } from '../../stores/useTasksStore'
+import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 import { useProjectsStore } from '../../stores/useProjectsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import StudentCoursesPanel from './StudentCoursesPanel'
@@ -9,11 +9,12 @@ import ProjectCard from '../projects/ProjectCard'
 
 export default function AdminProjectsPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const session = useAuthStore((s) => s.session)
 
-  const students = useTasksStore((s) => s.students)
-  const fetchStudents = useTasksStore((s) => s.fetchStudents)
+  const students = useAdminUsersStore((s) => s.students)
+  const fetchStudents = useAdminUsersStore((s) => s.fetchStudents)
 
   const allProjects = useProjectsStore((s) => s.allProjects)
   const adminLoading = useProjectsStore((s) => s.adminLoading)
@@ -31,6 +32,19 @@ export default function AdminProjectsPage() {
     fetchStudents()
     fetchAllProjects()
   }, [fetchStudents, fetchAllProjects, isAdmin])
+
+  // Deep-link desde /admin/alumnos/:id ("📁 Asignar proyecto") — preselecciona
+  // al alumno una vez que la lista ya cargó. No llama a handleSelectStudent
+  // (declarada más abajo) para no depender de su orden de declaración.
+  useEffect(() => {
+    if (!isAdmin?.()) return
+    const studentId = searchParams.get('student')
+    if (!studentId || selectedStudent) return
+    const match = students.find((s) => s.id === studentId)
+    if (!match) return
+    setSelectedStudent(match)
+    fetchAllProjects(match.id)
+  }, [searchParams, students, selectedStudent, isAdmin, fetchAllProjects])
 
   if (!isAdmin?.()) {
     return (

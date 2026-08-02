@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useLiveClassStore, canJoinClass, makeJitsiUrl, classShortCode } from '../../stores/useLiveClassStore'
+import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import HubContent from '../liveclass/HubContent'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
@@ -25,9 +27,9 @@ function todayISO(offsetDays = 0) {
   return d.toISOString().slice(0, 10)
 }
 
-function CreateForm({ students, onCreate }) {
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ title: '', description: '', studentId: '', date: todayISO(), time: '' })
+function CreateForm({ students, onCreate, defaultStudentId = '' }) {
+  const [open, setOpen] = useState(!!defaultStudentId)
+  const [form, setForm] = useState({ title: '', description: '', studentId: defaultStudentId, date: todayISO(), time: '' })
   const [busy, setBusy] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -490,12 +492,14 @@ function ControlPanel({ classId, students, onClose }) {
 }
 
 export default function AdminLiveClassesPage() {
+  const [searchParams] = useSearchParams()
+  const deepLinkStudentId = searchParams.get('student') ?? ''
   const isAdmin       = useAuthStore((s) => s.isAdmin)
   const session       = useAuthStore((s) => s.session)
   const classes       = useLiveClassStore((s) => s.classes)
-  const students      = useLiveClassStore((s) => s.students)
+  const students      = useAdminUsersStore((s) => s.students)
   const fetchClasses  = useLiveClassStore((s) => s.fetchClasses)
-  const fetchStudents = useLiveClassStore((s) => s.fetchStudents)
+  const fetchStudents = useAdminUsersStore((s) => s.fetchStudents)
   const createClass   = useLiveClassStore((s) => s.createClass)
   const startClass    = useLiveClassStore((s) => s.startClass)
   const deleteClass   = useLiveClassStore((s) => s.deleteClass)
@@ -552,7 +556,7 @@ export default function AdminLiveClassesPage() {
             ) : (
               <>
                 <div className="flex flex-wrap items-start gap-2">
-                  <CreateForm students={students} onCreate={handleCreate} />
+                  <CreateForm students={students} onCreate={handleCreate} defaultStudentId={deepLinkStudentId} />
                   <QuickStartForm students={students} onQuickStart={handleQuickStart} />
                 </div>
                 <div className="space-y-3">

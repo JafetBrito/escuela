@@ -51,6 +51,10 @@ export default function AdminSetupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background text-text p-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-2xl">
 
+        <button type="button" onClick={() => navigate('/admin')} className="mb-4 text-sm text-text-muted hover:text-primary">
+          ← Volver al Panel Admin
+        </button>
+
         {/* Header */}
         <div className="mb-6 text-center">
           <p className="text-5xl mb-2">🛡️</p>

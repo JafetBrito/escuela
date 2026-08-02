@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useTasksStore } from '../../stores/useTasksStore'
+import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { TASK_TYPES, taskTypeOf } from '../../data/taskTypes'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
@@ -35,13 +36,14 @@ const emptyForm = () => ({
 
 export default function AdminTasksPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const session = useAuthStore((s) => s.session)
 
-  const students = useTasksStore((s) => s.students)
+  const students = useAdminUsersStore((s) => s.students)
+  const fetchStudents = useAdminUsersStore((s) => s.fetchStudents)
   const allTasks = useTasksStore((s) => s.allTasks)
   const adminLoading = useTasksStore((s) => s.adminLoading)
-  const fetchStudents = useTasksStore((s) => s.fetchStudents)
   const fetchAllTasks = useTasksStore((s) => s.fetchAllTasks)
   const createTask = useTasksStore((s) => s.createTask)
   const deleteTask = useTasksStore((s) => s.deleteTask)
@@ -57,6 +59,19 @@ export default function AdminTasksPage() {
     fetchStudents()
     fetchAllTasks()
   }, [fetchStudents, fetchAllTasks, isAdmin])
+
+  // Deep-link desde /admin/alumnos/:id ("📋 Asignar tarea") — preselecciona
+  // al alumno una vez que la lista ya cargó. No llama a handleSelectStudent
+  // (declarada más abajo) para no depender de su orden de declaración.
+  useEffect(() => {
+    if (!isAdmin?.()) return
+    const studentId = searchParams.get('student')
+    if (!studentId || selectedStudent) return
+    const match = students.find((s) => s.id === studentId)
+    if (!match) return
+    setSelectedStudent(match)
+    fetchAllTasks(match.id)
+  }, [searchParams, students, selectedStudent, isAdmin, fetchAllTasks])
 
   if (!isAdmin?.()) {
     return (

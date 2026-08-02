@@ -62,7 +62,6 @@ export const useLiveClassStore = create((set, get) => ({
   questions: [],
   pings: [],
   chatMessages: [],
-  students: [],
   _channel: null,
 
   fetchClasses: async () => {

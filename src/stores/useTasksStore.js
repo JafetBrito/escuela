@@ -93,21 +93,11 @@ export const useTasksStore = create((set, get) => ({
   },
 
   // ── Admin view ────────────────────────────────────────────────────────────
-  students: [],
+  // La lista de alumnos vive en useAdminUsersStore.js (fuente única
+  // compartida con AdminProjectsPage/AdminLiveClassesPage) — este store ya
+  // no tiene su propio students/fetchStudents.
   allTasks: [],
   adminLoading: false,
-
-  // `snapshot` se incluye para que el admin pueda ver, por alumno, en qué
-  // cursos tiene progreso (ver StudentCoursesPanel.jsx) — no existe una tabla
-  // de inscripción separada, el progreso vive en profiles.snapshot.progress.
-  fetchStudents: async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, email, display_name, role, snapshot')
-      .eq('role', 'student')
-      .order('display_name')
-    set({ students: data ?? [] })
-  },
 
   fetchAllTasks: async (studentId = null) => {
     set({ adminLoading: true })

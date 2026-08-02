@@ -3,6 +3,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import GlobalItemEffects from './GlobalItemEffects'
+import PendingApprovalScreen from './PendingApprovalScreen'
 
 export default function ProtectedRoute({ children, requireTutorial = false, blockAgeProfiles = [] }) {
   const authReady  = useAuthStore((s) => s.authReady)
@@ -10,6 +11,7 @@ export default function ProtectedRoute({ children, requireTutorial = false, bloc
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
   const isAdmin    = useAuthStore((s) => s.isAdmin)
   const ageProfile = useAuthStore((s) => s.profile?.age_profile)
+  const accountStatus = useAuthStore((s) => s.profile?.account_status)
   const oliverClass = useGameStore((s) => s.oliver.class)
 
   if (!authReady) {
@@ -27,6 +29,14 @@ export default function ProtectedRoute({ children, requireTutorial = false, bloc
   }
 
   const adminBypass = isAdmin?.() ?? false
+
+  // Cuenta pendiente de aprobación (profiles.account_status — hoy solo pasa
+  // con cuentas de niños creadas por un padre/tutor, ver migration_022.sql)
+  // — bloquea CUALQUIER ruta protegida, va antes que todo lo demás porque no
+  // hay ningún lugar de la plataforma al que tenga sentido dejarla entrar.
+  if (accountStatus === 'pending' && !adminBypass) {
+    return <PendingApprovalScreen />
+  }
 
   // Perfil de edad (profiles.age_profile, asignado por el admin) — bloquea
   // por URL directa lo mismo que ya está escondido del nav en AppTopBar.jsx,

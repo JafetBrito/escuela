@@ -68,6 +68,7 @@ const NAV_GROUPS = [
   {
     label: 'Admin',
     links: [
+      { to: '/admin',               label: '🏫 Panel Admin' },
       { to: '/admin-setup',         label: '⚙️ Admin Setup' },
       { to: '/admin/flipbook-test', label: '📖 Flipbook (test)' },
       { to: '/admin/tareas',        label: '📋 Gestión de Tareas' },

@@ -88,12 +88,17 @@ export const useAuthStore = create((set, get) => ({
     set({ profile: profile ?? null, license: profile?.license ?? null })
   },
 
-  signUpWithEmail: async (email, password, displayName) => {
+  // `isChildSignup` viaja como metadata del signup (options.data) para que
+  // el trigger handle_new_user() (ver migration_022.sql) pueda leerlo al
+  // insertar la fila de profiles y arrancarla en account_status='pending' —
+  // cuentas de niños las crea un padre/tutor, pero las aprueba el admin
+  // desde /admin antes de que tengan acceso a la plataforma.
+  signUpWithEmail: async (email, password, displayName, { isChildSignup = false } = {}) => {
     if (!supabase) throw new Error('Supabase no está configurado todavía.')
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name: displayName } },
+      options: { data: { name: displayName, is_child_signup: isChildSignup } },
     })
     if (error) throw error
     if (data.session) await get()._applySession(data.session)

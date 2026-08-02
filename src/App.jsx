@@ -75,6 +75,9 @@ const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
 const TaskDetailPage = lazy(() => import('./components/tasks/TaskDetailPage'))
 const AdminTasksPage = lazy(() => import('./components/admin/AdminTasksPage'))
 const AdminAgeProfilesPage = lazy(() => import('./components/admin/AdminAgeProfilesPage'))
+const AdminDashboardPage = lazy(() => import('./components/admin/AdminDashboardPage'))
+const AdminStudentDetailPage = lazy(() => import('./components/admin/AdminStudentDetailPage'))
+const AdminCommandsPage = lazy(() => import('./components/admin/AdminCommandsPage'))
 const ProjectsPage = lazy(() => import('./components/projects/ProjectsPage'))
 const ProjectDetailPage = lazy(() => import('./components/projects/ProjectDetailPage'))
 const AdminProjectsPage = lazy(() => import('./components/admin/AdminProjectsPage'))
@@ -379,6 +382,36 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminAgeProfilesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminDashboardPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/alumnos/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminStudentDetailPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/comandos"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminCommandsPage />
               </Suspense>
             </ProtectedRoute>
           }
