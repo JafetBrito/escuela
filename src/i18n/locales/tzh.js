@@ -30,7 +30,6 @@ export const tzh = {
       cueva: 'Sch\'en Platón',
       mundo: '2D Balumilal',
       rol: 'Rol Balumilal',
-      graffiti: 'Be Graffiti',
       games: 'Ta Ajnel',
       arena: 'Arena',
       amigos: 'Kamigotak',

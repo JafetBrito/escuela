@@ -30,7 +30,6 @@ export const fr = {
       cueva: 'Caverne de Platon',
       mundo: 'Monde 2D',
       rol: 'Monde JDR',
-      graffiti: 'Rue Graffiti',
       games: 'Jeux',
       arena: 'Arène',
       amigos: 'Amis',

@@ -28,7 +28,6 @@ export const tzo = {
       cueva: 'Sch\'en Platón',
       mundo: '2D Balumil',
       rol: 'Rol Balumil',
-      graffiti: 'Be Graffiti',
       games: 'Ta Tajimol',
       arena: 'Arena',
       amigos: 'Kamigotak',

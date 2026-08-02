@@ -60,7 +60,6 @@ const NAV_GROUPS = [
       { to: '/vr',              label: '🥽 Campus' },
       { to: '/vr/room',         label: '🥽 Mi Room' },
       { to: '/vr/anfiteatro',   label: '🥽 Anfiteatro' },
-      { to: '/vr/graffiti',     label: '🥽 Graffiti' },
       { to: '/vr/cueva-platon', label: '🥽 Cueva de Platón' },
       { to: '/vr/pruebas',      label: '🧪 Mapa de Pruebas' },
     ],

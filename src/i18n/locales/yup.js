@@ -28,7 +28,6 @@ export const yup = {
       cueva: 'Platón-am Iini',
       mundo: '2D Nuna',
       rol: 'Rol Nuna',
-      graffiti: 'Tumyaraq Graffiti',
       games: 'Anguyagcuun',
       arena: 'Arena',
       amigos: 'Ilaqaat',

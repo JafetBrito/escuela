@@ -31,7 +31,6 @@ export const nv = {
       cueva: 'Platón Bitséé',
       mundo: '2D Nahasdzáán',
       rol: 'Rol Nahasdzáán',
-      graffiti: 'Atiin Graffiti',
       games: 'Naʼádląʼ',
       arena: 'Arena',
       amigos: 'Shikʼis',

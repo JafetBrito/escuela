@@ -29,7 +29,6 @@ export const den = {
       cueva: 'Platón Betłʼa',
       mundo: '2D Nde',
       rol: 'Rol Nde',
-      graffiti: 'Tinéh Graffiti',
       games: 'Nadagoré',
       arena: 'Arena',
       amigos: 'Sekʼédi',

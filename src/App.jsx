@@ -683,16 +683,6 @@ export default function App() {
           }
         />
         <Route
-          path="/vr/graffiti"
-          element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
-              <Suspense fallback={<RouteFallback />}>
-                <VRPage graffitiMode />
-              </Suspense>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/vr/pruebas"
           element={
             <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>

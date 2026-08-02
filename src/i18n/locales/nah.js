@@ -32,7 +32,6 @@ export const nah = {
       cueva: 'Ioztoc Platón',
       mundo: '2D Cemanahuac',
       rol: 'Nehtotiliztli Cemanahuac',
-      graffiti: 'Ohtli Ihcuiloliztli',
       games: 'Ahuiltiliztli',
       arena: 'Nehnamiquiliztli',
       amigos: 'Icniuhtin',

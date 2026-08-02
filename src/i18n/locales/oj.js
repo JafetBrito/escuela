@@ -27,7 +27,6 @@ export const oj = {
       cueva: 'Platón odaawang',
       mundo: '2D Aki',
       rol: 'Rol Aki',
-      graffiti: 'Miikana Graffiti',
       games: 'Odaminowin',
       arena: 'Arena',
       amigos: 'Niijikiwenyag',

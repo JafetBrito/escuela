@@ -31,7 +31,6 @@ export const antiguo = {
       cueva: 'Cueva del Filósofo Platón',
       mundo: 'Mundo de Dos Dimensiones',
       rol: 'Mundo de Papeles',
-      graffiti: 'Calleja de Pinturas',
       games: 'Solaces y Pasatiempos',
       arena: 'Palenque',
       amigos: 'Amigos y Cofrades',

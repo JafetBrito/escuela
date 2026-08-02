@@ -30,7 +30,6 @@ export const apa = {
       cueva: 'Platón Bikin',
       mundo: '2D Kéyah',
       rol: 'Rol Kéyah',
-      graffiti: 'Atiin Graffiti',
       games: 'Naʼadą',
       arena: 'Arena',
       amigos: 'Shikʼis',

@@ -91,7 +91,7 @@
  *                            Player.jsx cae para siempre (no hay collider
  *                            real contra qué chocar). Cualquier mundo nuevo
  *                            con useImportedGlbGround necesita lo mismo
- *                            (mismo patrón que Campus/Graffiti en VRPage.jsx).
+ *                            (mismo patrón que Campus en VRPage.jsx).
  *   MovementTracker         — distancia real caminada, para practice_basics.
  *   FallRescueTracker       — mismo rescate por caída que VRPage.jsx
  *                            (Campus), pero sin la animación del gato — solo
@@ -340,7 +340,7 @@ function ArbolScene({ model, jafetMascot, oliverMascot, nearNpcId, activeSpeaker
       {/* Without a real physics collider here, Rapier's character controller
           (which Player.jsx switches to as soon as its own capsule collider
           exists) finds no ground at all and the player falls forever — the
-          same fix Campus/Graffiti already use for their imported .glb maps.
+          same fix Campus already uses for its imported .glb map.
           "trimesh" shapes the collider to the model's own geometry, so the
           temple's interior floor/stairs/columns are all solid, not just a
           flat plane at y=0. */}

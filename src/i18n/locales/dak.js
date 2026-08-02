@@ -28,7 +28,6 @@ export const dak = {
       cueva: 'Platón Owakpa',
       mundo: '2D Makȟóčhe',
       rol: 'Rol Makȟóčhe',
-      graffiti: 'Čhaŋkú Graffiti',
       games: 'Škáte',
       arena: 'Arena',
       amigos: 'Kolapi',

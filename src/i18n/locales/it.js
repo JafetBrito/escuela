@@ -29,7 +29,6 @@ export const it = {
       cueva: 'Caverna di Platone',
       mundo: 'Mondo 2D',
       rol: 'Mondo GDR',
-      graffiti: 'Via dei Graffiti',
       games: 'Giochi',
       arena: 'Arena',
       amigos: 'Amici',

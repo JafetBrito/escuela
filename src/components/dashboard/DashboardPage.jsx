@@ -27,7 +27,6 @@ const CAMPUS_LINKS = [
   { to: '/vr',    key: 'vr',    label: 'Campus VR',  icon: '🕶️', hideFor: ['kids', 'seniors'] },
   { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱', hideFor: ['kids', 'seniors'] },
   { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲', hideFor: ['kids', 'seniors'] },
-  { to: '/games', key: 'games', label: 'Games',      icon: '🎮', hideFor: ['seniors'] },
 ]
 
 // ── Course card (compact) ─────────────────────────────────────────────────────

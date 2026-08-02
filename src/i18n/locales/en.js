@@ -7,6 +7,7 @@ export const en = {
       academia: 'Academy',
       progreso: 'Progress',
       campus: 'Campus',
+      juegos: 'Games',
       comunidad: 'Community',
     },
     items: {
@@ -39,7 +40,6 @@ export const en = {
       cueva: "Plato's Cave",
       mundo: '2D World',
       rol: 'RPG World',
-      graffiti: 'Graffiti Street',
       games: 'Games',
       arena: 'Arena',
       amigos: 'Friends',

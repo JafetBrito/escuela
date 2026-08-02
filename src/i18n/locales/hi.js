@@ -28,7 +28,6 @@ export const hi = {
       cueva: 'प्लेटो की गुफा',
       mundo: '2D दुनिया',
       rol: 'रोल-प्ले दुनिया',
-      graffiti: 'ग्रैफिटी स्ट्रीट',
       games: 'खेल',
       arena: 'अखाड़ा',
       amigos: 'दोस्त',

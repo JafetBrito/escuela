@@ -258,10 +258,6 @@ function useSceneryModel() {
   }, [scene])
 }
 
-function useGraffitiGround() {
-  return useImportedGlbGround('/MODELOS 3D/VR/st.glb')
-}
-
 function useCampusGlbGround() {
   const result = useImportedGlbGround('/MODELOS 3D/VR/campus.glb')
   if (sessionStorage.getItem('logCampusLandmarks') === '1') {
@@ -347,54 +343,6 @@ function TestGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
         authorName={authorName}
         playerId={playerId}
         spawnAt={[0, 0, 10]}
-      />
-    </>
-  )
-}
-
-// Test world for the GLB-import experiment: loads /st.glb through the same
-// hybrid pipeline as CityWorld, then adds the shared Player and an exit
-// portal back to /vr — proving a fully imported map works end-to-end with
-// our shared engine. NPC/video screen are deliberately left out until
-// walking on the imported floor itself is confirmed working.
-function GraffitiWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
-  const { model, groundRayHeight, footprintX, footprintZ } = useGraffitiGround()
-
-  // Keep every placed object proportional to the model's own footprint
-  // instead of fixed coordinates, so it lands inside the map no matter how
-  // big or small the imported scene turns out to be.
-  const halfX = footprintX / 2
-  const halfZ = footprintZ / 2
-  const portalPos = [0, 0, halfZ * 0.6]
-
-  return (
-    <>
-      {/* A flat collider only covers the outer footprint — this is an
-          interior (a tunnel/street with walls and a roof), so instead we
-          let Rapier build a collider matching the model's own geometry
-          exactly ("trimesh"), the same fix as the Campus world. */}
-      <RigidBody type="fixed" colliders="trimesh">
-        <primitive object={model} />
-      </RigidBody>
-      <Player
-        mascot={mascot}
-        skin={skin}
-        scenery={model}
-        groundRayHeight={groundRayHeight}
-        keysRef={keysRef}
-        cameraRef={cameraRef}
-        playerPositionRef={playerPositionRef}
-        playerRotationRef={playerRotationRef}
-        authorName={authorName}
-        playerId={playerId}
-        spawnAt={[0, 0, 0]}
-      />
-      <Portal
-        position={portalPos}
-        color="#ff2fb0"
-        label="🌀 Volver al Campus"
-        playerPositionRef={playerPositionRef}
-        onNearbyChange={onNearPortalChange}
       />
     </>
   )
@@ -1861,7 +1809,6 @@ function World({
   roomMode,
   anfiteatroMode,
   worldTreeMode,
-  graffitiMode,
   testMode,
 }) {
   if (testMode) {
@@ -1889,22 +1836,6 @@ function World({
         <MobField />
         <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
       </>
-    )
-  }
-
-  if (graffitiMode) {
-    return (
-      <GraffitiWorld
-        mascot={mascot}
-        skin={skin}
-        keysRef={keysRef}
-        cameraRef={cameraRef}
-        playerPositionRef={playerPositionRef}
-        playerRotationRef={playerRotationRef}
-        authorName={authorName}
-        playerId={playerId}
-        onNearPortalChange={onNearPortalChange}
-      />
     )
   }
 
@@ -2819,8 +2750,8 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // CharSwitcherHud (cambio Avatar ↔ Mascota) se movió a ./CharSwitcherHud.jsx
 // para compartirlo con el Templo tutorial (VrArbol).
 
-// roomMode / anfiteatroMode / worldTreeMode / graffitiMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, graffitiMode = false, testMode = false }) {
+// roomMode / anfiteatroMode / worldTreeMode come from the route.
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false }) {
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -2845,7 +2776,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || graffitiMode || testMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
   // Admin's hour/season/weather (DevToolsPanel) is mirrored to every
   // connected player via VR presence — see useVrMultiplayer's worldState
@@ -3185,8 +3116,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   }, [showHint])
 
   // Lighting themes per world mode
-  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : graffitiMode ? '#181420' : '#90c8e8'
-  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : graffitiMode ? ['#181420', 18, 60] : ['#d4c8b0', 45, 150]
+  const bgColor = anfiteatroMode ? '#0a0810' : roomMode ? '#3d2a1c' : worldTreeMode ? '#05120a' : '#90c8e8'
+  const fogArgs = anfiteatroMode ? ['#0a0810', 20, 90] : roomMode ? ['#3d2a1c', 12, 36] : worldTreeMode ? ['#05120a', 35, 100] : ['#d4c8b0', 45, 150]
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
@@ -3217,29 +3148,27 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <color attach="background" args={[bgColor]} />
           <fog attach="fog" args={fogArgs} />
           <SceneEffects
-            bloomIntensity={anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : graffitiMode ? 0.45 : 0.22}
+            bloomIntensity={anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : 0.22}
             vignetteDarkness={0.38}
             multisampling={0}
           />
           {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color */}
-          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !graffitiMode} />
+          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode} />
           {flashlightOn && flashlightPurchased && (
             <FlashlightSpot playerPositionRef={playerPositionRef} cameraRef={cameraRef} />
           )}
           {/* Non-campus modes: static lighting (intensity 0 in campus so they don't stack) */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : graffitiMode ? 0.5 : 0}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : graffitiMode ? '#aa88ff' : '#000000'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#000000'}
           />
           <directionalLight
             position={[20, 30, 10]}
-            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : graffitiMode ? 0.5 : 0}
-            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : graffitiMode ? '#ffccee' : '#000000'}
+            intensity={anfiteatroMode ? 0.6 : roomMode ? 0.4 : worldTreeMode ? 1.0 : 0}
+            color={anfiteatroMode ? '#ffffff' : roomMode ? '#ffaa44' : worldTreeMode ? '#ccffe8' : '#000000'}
           />
           {roomMode && <directionalLight position={[0, 2, -8]} intensity={0.7} color="#ff7722" />}
           {anfiteatroMode && <directionalLight position={[0, ANFI_H - 1, ANFI_STAGE_Z]} intensity={1.2} color="#fff5cc" />}
-          {graffitiMode && <pointLight position={[0, 6, -8]} intensity={2.2} color="#ff2fb0" distance={30} />}
-          {graffitiMode && <pointLight position={[6, 5, 2]} intensity={1.6} color="#2fdfff" distance={26} />}
           {anfiteatroMode && <pointLight position={[0, ANFI_H * 0.7, 0]} intensity={0.5} color="#9060ff" distance={80} />}
           {worldTreeMode && <hemisphereLight args={['#44ffaa', '#0d2a0a', 1.2]} />}
           {worldTreeMode && <pointLight position={[0, 6, 0]} intensity={6.0} color="#88ffaa" distance={60} decay={1.5} />}
@@ -3271,7 +3200,6 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               worldTreeMode={worldTreeMode}
               roomMode={roomMode}
               anfiteatroMode={anfiteatroMode}
-              graffitiMode={graffitiMode}
               testMode={testMode}
             />
             {/* Parked companion mesh when follow mode is off */}
@@ -3565,7 +3493,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={worldTreeMode ? 'Árbol del Mundo' : anfiteatroMode ? 'Anfiteatro' : roomMode ? 'Mi Room' : graffitiMode ? 'Calle Graffiti' : 'Campus VR'}
+            worldName={worldTreeMode ? 'Árbol del Mundo' : anfiteatroMode ? 'Anfiteatro' : roomMode ? 'Mi Room' : 'Campus VR'}
           />
         )}
 

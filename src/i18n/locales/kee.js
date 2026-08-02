@@ -32,7 +32,6 @@ export const kee = {
       cueva: 'Platón Yaaka',
       mundo: '2D Hanoh',
       rol: 'Rol Hanoh',
-      graffiti: 'Graffiti',
       games: 'Ho\'oshka',
       arena: 'Arena',
       amigos: 'Amigos',

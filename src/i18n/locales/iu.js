@@ -29,7 +29,6 @@ export const iu = {
       cueva: 'Platón-up Puvvinga',
       mundo: '2D Nuna',
       rol: 'Rol Nuna',
-      graffiti: 'Aqqusiq Graffiti',
       games: 'Pinnguaqtaujut',
       arena: 'Arena',
       amigos: 'Ilagiit',

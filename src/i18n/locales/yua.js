@@ -29,7 +29,6 @@ export const yua = {
       cueva: 'U Aktun Platón',
       mundo: '2D Yóokʼol Kaab',
       rol: 'Rol Yóokʼol Kaab',
-      graffiti: 'Bej Graffiti',
       games: 'Báaxal',
       arena: 'Arena',
       amigos: 'Amigoʼob',

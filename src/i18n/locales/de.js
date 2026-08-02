@@ -28,7 +28,6 @@ export const de = {
       cueva: 'Platons Höhle',
       mundo: '2D-Welt',
       rol: 'Rollenspielwelt',
-      graffiti: 'Graffiti-Straße',
       games: 'Spiele',
       arena: 'Arena',
       amigos: 'Freunde',

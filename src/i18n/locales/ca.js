@@ -29,7 +29,6 @@ export const ca = {
       cueva: 'Cova de Plató',
       mundo: 'Món 2D',
       rol: 'Món de Rol',
-      graffiti: 'Carrer de Grafits',
       games: 'Jocs',
       arena: 'Arena',
       amigos: 'Amics',

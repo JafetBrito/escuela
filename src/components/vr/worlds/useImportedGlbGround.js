@@ -4,9 +4,9 @@ import * as THREE from 'three'
 
 // Shared hybrid loader for any plain imported .glb map: scales/recenters it
 // so it works with the shared engine's raycasts, regardless of how big or
-// small the source asset is. Used by every GLB-imported world (graffiti,
-// campus, the Árbol/temple tutorial world) so the floor/scale fixes only
-// live in one place.
+// small the source asset is. Used by every GLB-imported world (campus, the
+// Árbol/temple tutorial world) so the floor/scale fixes only live in one
+// place.
 export function useImportedGlbGround(url) {
   const { scene } = useGLTF(url)
 

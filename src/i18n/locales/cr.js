@@ -29,7 +29,6 @@ export const cr = {
       cueva: 'Platón Wâskahikanis',
       mundo: '2D Askiy',
       rol: 'Rol Askiy',
-      graffiti: 'Mêskanaw Graffiti',
       games: 'Mêtawêwina',
       arena: 'Arena',
       amigos: 'Niwîcêwâkanak',

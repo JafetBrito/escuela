@@ -29,7 +29,6 @@ export const zh = {
       cueva: '柏拉图的洞穴',
       mundo: '2D 世界',
       rol: '角色扮演世界',
-      graffiti: '涂鸦街',
       games: '游戏',
       arena: '竞技场',
       amigos: '好友',

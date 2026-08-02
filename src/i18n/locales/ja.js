@@ -28,7 +28,6 @@ export const ja = {
       cueva: 'プラトンの洞窟',
       mundo: '2Dワールド',
       rol: 'ロールプレイワールド',
-      graffiti: 'グラフィティストリート',
       games: 'ゲーム',
       arena: 'アリーナ',
       amigos: 'フレンド',

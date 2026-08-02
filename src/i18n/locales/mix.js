@@ -30,7 +30,6 @@ export const mix = {
       cueva: 'Yavi Platón',
       mundo: '2D Ñuʼú',
       rol: 'Rol Ñuʼú',
-      graffiti: 'Yuu Graffiti',
       games: 'Yuku',
       arena: 'Arena',
       amigos: 'Amigos',

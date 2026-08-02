@@ -31,7 +31,6 @@ export const pirata = {
       cueva: 'Cueva del Filósofo Platón',
       mundo: 'Isla 2D',
       rol: 'Mundo de Roles',
-      graffiti: 'Callejón de Grafitis',
       games: 'Juegos de Taberna',
       arena: 'Arena de Duelos',
       amigos: 'Compañía de a Bordo',
