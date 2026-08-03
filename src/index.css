@@ -19,6 +19,16 @@
   color: inherit;
 }
 
+html {
+  /* Sin esto, Chrome/Android "infla" el texto en columnas angostas
+     (font boosting) para que se lea sin necesidad de zoom — pero en una
+     app con muchas columnas/paneles angostos eso hace que el texto salga
+     gigante y desalineado al cargar, obligando al usuario a hacer pellizco
+     para "encoger" la página a su tamaño real. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background-color: var(--color-background);

@@ -112,6 +112,11 @@ export default function AppTopBar({ variant = 'full' }) {
 
   const [openMenu, setOpenMenu] = useState(null) // null | group.id | 'profile'
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Menú móvil como acordeón — antes mostraba los 5 grupos siempre
+  // desplegados (~30 filas de golpe, "demasiados elementos" según feedback
+  // del usuario). Ahora solo un grupo puede estar abierto a la vez; al abrir
+  // el menú, se auto-expande el grupo de la página donde ya estás.
+  const [expandedGroupId, setExpandedGroupId] = useState(null)
   const closeTimer = useRef(null)
   const navRef = useRef(null)
 
@@ -148,6 +153,14 @@ export default function AppTopBar({ variant = 'full' }) {
   }
 
   const isGroupActive = (group) => group.items.some((item) => location.pathname === item.to)
+
+  // Al abrir el menú móvil, auto-expande el grupo de la página actual (si
+  // hay uno) en vez de dejar todo cerrado o todo abierto.
+  useEffect(() => {
+    if (!mobileOpen) return
+    setExpandedGroupId(visibleGroups.find((g) => isGroupActive(g))?.id ?? null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobileOpen])
 
   if (variant === 'course') {
     return (
@@ -392,29 +405,50 @@ export default function AppTopBar({ variant = 'full' }) {
             🏫 {t('nav.items.academias')}
           </Link>
 
-          {visibleGroups.map((group) => (
-            <div key={group.id} className="mt-1">
-              <div className="px-3 pb-0.5 pt-1 text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
-                {group.icon} {t(`nav.groups.${group.key}`)}
-              </div>
-              {group.items.map((item) => {
-                const active = location.pathname === item.to
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={closeAll}
-                    className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
-                      active ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-                    }`}
+          {visibleGroups.map((group) => {
+            const isExpanded = expandedGroupId === group.id
+            const groupActive = isGroupActive(group)
+            return (
+              <div key={group.id} className="mt-0.5 border-t border-border/30 first:border-t-0 first:mt-1">
+                <button
+                  type="button"
+                  onClick={() => setExpandedGroupId((id) => (id === group.id ? null : group.id))}
+                  aria-expanded={isExpanded}
+                  className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors ${
+                    groupActive ? 'text-primary' : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">{group.icon} {t(`nav.groups.${group.key}`)}</span>
+                  <span
+                    className="text-[10px] transition-transform duration-150"
+                    style={{ display: 'inline-block', transform: isExpanded ? 'rotate(180deg)' : 'none' }}
                   >
-                    <span>{item.icon}</span>
-                    {t(`nav.items.${item.key}`)}
-                  </Link>
-                )
-              })}
-            </div>
-          ))}
+                    ▾
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="flex flex-col gap-0.5 pb-1.5">
+                    {group.items.map((item) => {
+                      const active = location.pathname === item.to
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          onClick={closeAll}
+                          className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-colors ${
+                            active ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+                          }`}
+                        >
+                          <span>{item.icon}</span>
+                          {t(`nav.items.${item.key}`)}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
 
           <Link
             to="/buscar"

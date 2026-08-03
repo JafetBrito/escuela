@@ -65,6 +65,14 @@ export default function TextLesson({ content, className = '' }) {
     sessionRef.current += 1
     stopSharedTts()
     setReading(false)
+    // Cleanup de DESMONTAJE — sin esto, si el alumno sale del curso por
+    // completo (no solo cambia de clase) la lectura seguía sonando de fondo
+    // en cualquier otra parte de la Academia, porque este efecto solo corría
+    // de nuevo cuando `content` cambiaba, nunca al desmontar el componente.
+    return () => {
+      sessionRef.current += 1
+      stopSharedTts()
+    }
   }, [content])
 
   if (!content) return null

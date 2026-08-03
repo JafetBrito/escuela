@@ -107,7 +107,15 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="nav-dropdown absolute right-0 top-full z-50 mt-1.5 w-[min(20rem,calc(100vw-5rem))] overflow-hidden rounded-2xl border border-border/60 bg-surface/95 shadow-2xl backdrop-blur-md">
+        // En móvil, anclarlo "right-0" respecto a la campanita y calcular el
+        // ancho como una fracción del viewport es frágil — la campanita no
+        // vive en el borde real de la pantalla (hay hamburguesa + padding de
+        // por medio), así que cualquier cálculo en vw termina desbordando
+        // por UN lado o el otro según cuánto se acerque la estimación.
+        // Más simple y a prueba de esto: en móvil es un panel fijo con
+        // márgenes simétricos al viewport real (nunca al botón); en
+        // escritorio (sm+) sigue siendo el dropdown anclado de siempre.
+        <div className="nav-dropdown fixed inset-x-3 top-14 z-50 overflow-hidden rounded-2xl border border-border/60 bg-surface/95 shadow-2xl backdrop-blur-md sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-1.5 sm:w-80">
           <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3.5 py-2.5">
             <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
               Notificaciones {notifications.length > 0 && <span className="text-text-muted/60">· {notifications.length}</span>}
