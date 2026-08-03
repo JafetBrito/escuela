@@ -9,15 +9,23 @@ import { supabase } from '../services/supabase/client'
 export const useAdminUsersStore = create((set) => ({
   students: [],
   loading: false,
+  error: null,
 
+  // Antes solo desestructuraba `data` — si la consulta fallaba (ej. una
+  // migración con columnas nuevas en profiles, como age_profile/
+  // account_status de migration_021/022, todavía no corrida en Supabase)
+  // el error se tragaba en silencio y el panel mostraba "0 alumnos" sin
+  // ninguna pista de por qué. Ahora se captura y se expone en `error` para
+  // que AdminDashboardPage pueda mostrarlo en vez de una lista vacía muda.
   fetchStudents: async () => {
-    set({ loading: true })
-    const { data } = await supabase
+    set({ loading: true, error: null })
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, email, display_name, role, age_profile, account_status, snapshot')
       .eq('role', 'student')
       .order('display_name')
-    set({ students: data ?? [], loading: false })
+    if (error) console.error('[useAdminUsersStore.fetchStudents]', error)
+    set({ students: data ?? [], loading: false, error: error?.message ?? null })
   },
 
   setAgeProfile: async (studentId, ageProfile) => {

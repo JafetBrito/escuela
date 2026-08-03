@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 import { useProjectsStore } from '../../stores/useProjectsStore'
@@ -97,6 +97,7 @@ export default function AdminProjectsPage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-5xl">
 
+          <Link to="/admin" className="mb-3 inline-block text-sm text-text-muted hover:text-primary">← Volver al Panel Admin</Link>
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-white">📁 Gestión de Proyectos</h1>
             <p className="mt-1 text-sm font-medium text-white/85">

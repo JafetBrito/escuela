@@ -219,7 +219,11 @@ export default function ExamPage() {
               </div>
 
               <div className="mt-4 rounded-2xl border border-border bg-surface p-6">
-                <p className="text-lg font-bold text-text">{currentQuestion.question}</p>
+                {currentQuestion.type === 'codigo' ? (
+                  <pre className="whitespace-pre-wrap rounded-xl bg-background p-3 font-mono text-sm text-text">{currentQuestion.question}</pre>
+                ) : (
+                  <p className="text-lg font-bold text-text">{currentQuestion.question}</p>
+                )}
                 {currentQuestion.image && (
                   <img src={currentQuestion.image} alt="" className="mt-3 max-h-64 w-full rounded-xl object-contain" />
                 )}

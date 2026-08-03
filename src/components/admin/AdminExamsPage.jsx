@@ -6,7 +6,25 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { LANGUAGE_NAMES } from '../../i18n'
 import courses from '../../data/courses.json'
 
-const emptyQuestion = () => ({ id: crypto.randomUUID(), question: '', options: ['', '', '', ''], correct: 0, image: '' })
+// Tipo de pregunta — puramente de autoría/presentación, la calificación
+// (submitAttempt en useExamsStore.js) sigue siendo siempre "el índice de
+// options que coincide con correct", sin importar el tipo. 'codigo' solo
+// cambia cómo se ve la pregunta (fuente monoespaciada, ver ExamPage.jsx),
+// sigue siendo opción múltiple por debajo (ej. "¿qué imprime este código?").
+const QUESTION_TYPES = [
+  { id: 'opcion_multiple', label: '🔘 Opción múltiple' },
+  { id: 'verdadero_falso', label: '✅ Verdadero o Falso' },
+  { id: 'codigo', label: '💻 Código' },
+]
+
+const emptyQuestion = (type = 'opcion_multiple') => ({
+  id: crypto.randomUUID(),
+  type,
+  question: '',
+  options: type === 'verdadero_falso' ? ['Verdadero', 'Falso'] : ['', ''],
+  correct: 0,
+  image: '',
+})
 
 // Idiomas en los que se puede escribir el examen — 'es' es siempre la base
 // (obligatoria); el resto son overrides opcionales guardados en
@@ -51,7 +69,12 @@ export default function AdminExamsPage() {
     setTimeLimitMinutes(exam?.time_limit_minutes ?? 30)
     setGraduationXp(exam?.graduation_xp ?? 1000)
     setGraduationGold(exam?.graduation_gold ?? 20000)
-    setQuestions((lang === 'es' ? exam?.questions : override?.questions)?.length ? (lang === 'es' ? exam.questions : override.questions) : [])
+    const rawQuestions = (lang === 'es' ? exam?.questions : override?.questions)?.length
+      ? (lang === 'es' ? exam.questions : override.questions)
+      : []
+    // Preguntas guardadas antes de que existiera `type` (opción múltiple de
+    // 4 fijas) siguen abriendo bien — solo les falta la etiqueta del tipo.
+    setQuestions(rawQuestions.map((q) => ({ type: 'opcion_multiple', ...q })))
     setMsg('')
   }, [exam, courseId, lang])
 
@@ -70,6 +93,27 @@ export default function AdminExamsPage() {
   const removeQuestion = (id) => setQuestions((qs) => qs.filter((q) => q.id !== id))
   const updateQuestion = (id, patch) => setQuestions((qs) => qs.map((q) => q.id === id ? { ...q, ...patch } : q))
   const updateOption = (id, idx, value) => setQuestions((qs) => qs.map((q) => q.id === id ? { ...q, options: q.options.map((o, i) => i === idx ? value : o) } : q))
+
+  // Cambiar el tipo reconstruye las opciones: Verdadero/Falso siempre son
+  // esas 2 fijas; salir de V/F hacia otro tipo las deja vacías para
+  // escribirlas de cero (no tendría sentido conservar "Verdadero"/"Falso"
+  // como opciones de una pregunta de opción múltiple normal).
+  const updateQuestionType = (id, type) => setQuestions((qs) => qs.map((q) => {
+    if (q.id !== id) return q
+    if (type === 'verdadero_falso') return { ...q, type, options: ['Verdadero', 'Falso'], correct: 0 }
+    if (q.type === 'verdadero_falso') return { ...q, type, options: ['', ''], correct: 0 }
+    return { ...q, type }
+  }))
+
+  const addOption = (id) => setQuestions((qs) => qs.map((q) =>
+    q.id === id && q.options.length < 6 ? { ...q, options: [...q.options, ''] } : q,
+  ))
+  const removeOption = (id, idx) => setQuestions((qs) => qs.map((q) => {
+    if (q.id !== id || q.options.length <= 2) return q
+    const options = q.options.filter((_, i) => i !== idx)
+    const correct = q.correct === idx ? 0 : q.correct > idx ? q.correct - 1 : q.correct
+    return { ...q, options, correct }
+  }))
 
   const handleSave = async () => {
     setBusy(true)
@@ -167,12 +211,19 @@ export default function AdminExamsPage() {
                 <div className="space-y-3">
                   {questions.map((q, qi) => (
                     <div key={q.id} className="rounded-xl border border-border/60 p-3">
-                      <div className="flex items-start gap-2">
-                        <span className="mt-2 text-xs font-bold text-text-muted">{qi + 1}.</span>
-                        <textarea rows={2} value={q.question} onChange={(e) => updateQuestion(q.id, { question: e.target.value })}
-                          placeholder="Escribe la pregunta…"
-                          className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
-                        <button type="button" onClick={() => removeQuestion(q.id)} className="mt-1 shrink-0 text-danger hover:opacity-70">🗑️</button>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-text-muted">{qi + 1}.</span>
+                        <select value={q.type ?? 'opcion_multiple'} onChange={(e) => updateQuestionType(q.id, e.target.value)}
+                          className="rounded-lg border border-border bg-background px-2 py-1 text-xs font-semibold text-text outline-none focus:border-primary">
+                          {QUESTION_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                        </select>
+                        <div className="flex-1" />
+                        <button type="button" onClick={() => removeQuestion(q.id)} className="shrink-0 text-danger hover:opacity-70">🗑️</button>
+                      </div>
+                      <div className="mt-2 flex items-start gap-2 pl-5">
+                        <textarea rows={q.type === 'codigo' ? 4 : 2} value={q.question} onChange={(e) => updateQuestion(q.id, { question: e.target.value })}
+                          placeholder={q.type === 'codigo' ? 'Pega el código y escribe la pregunta sobre él…' : 'Escribe la pregunta…'}
+                          className={`flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary ${q.type === 'codigo' ? 'font-mono whitespace-pre' : ''}`} />
                       </div>
                       <div className="mt-2 pl-5">
                         <input value={q.image ?? ''} onChange={(e) => updateQuestion(q.id, { image: e.target.value })}
@@ -186,10 +237,19 @@ export default function AdminExamsPage() {
                             <input type="radio" name={`correct-${q.id}`} checked={q.correct === oi} onChange={() => updateQuestion(q.id, { correct: oi })} />
                             <input value={opt} onChange={(e) => updateOption(q.id, oi, e.target.value)}
                               placeholder={`Opción ${oi + 1}`}
-                              className="flex-1 bg-transparent text-sm text-text outline-none" />
+                              disabled={q.type === 'verdadero_falso'}
+                              className="flex-1 bg-transparent text-sm text-text outline-none disabled:opacity-70" />
+                            {q.type !== 'verdadero_falso' && q.options.length > 2 && (
+                              <button type="button" onClick={() => removeOption(q.id, oi)} className="shrink-0 text-xs text-text-muted hover:text-danger">✕</button>
+                            )}
                           </label>
                         ))}
                       </div>
+                      {q.type !== 'verdadero_falso' && q.options.length < 6 && (
+                        <button type="button" onClick={() => addOption(q.id)} className="ml-5 mt-1.5 text-xs font-bold text-primary hover:opacity-80">
+                          + Opción
+                        </button>
+                      )}
                     </div>
                   ))}
                   {questions.length === 0 && <p className="text-sm text-text-muted">Sin preguntas todavía — agrega al menos {questionsToShow} para que el examen tenga variedad.</p>}

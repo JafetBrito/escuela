@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useLiveClassStore, canJoinClass, makeJitsiUrl, classShortCode } from '../../stores/useLiveClassStore'
 import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
@@ -545,6 +545,7 @@ export default function AdminLiveClassesPage() {
       <AppTopBar />
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-3xl">
+          <Link to="/admin" className="mb-3 inline-block text-sm text-text-muted hover:text-primary">← Volver al Panel Admin</Link>
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-white">🎓 Mis Clases (Admin)</h1>
             <p className="mt-1 text-sm font-medium text-white/85">Programa clases en vivo y controla el Hub mientras enseñas por Jitsi Meet.</p>
