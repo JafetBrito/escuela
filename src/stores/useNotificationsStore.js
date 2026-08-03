@@ -88,6 +88,21 @@ export const useNotificationsStore = create((set, get) => ({
     await supabase.from('student_notifications').update({ read_at: now }).in('id', unreadIds)
   },
 
+  // Borra una notificación puntual (botón × por fila) — requiere la política
+  // RLS "notifications: student deletes own" (migración 023).
+  deleteNotification: async (id) => {
+    set((s) => ({ notifications: s.notifications.filter((n) => n.id !== id) }))
+    await supabase.from('student_notifications').delete().eq('id', id)
+  },
+
+  // "Borrar todo" del header del bell.
+  clearAllNotifications: async () => {
+    const ids = get().notifications.map((n) => n.id)
+    if (ids.length === 0) return
+    set({ notifications: [] })
+    await supabase.from('student_notifications').delete().in('id', ids)
+  },
+
   // Usado por el admin al calificar una tarea — notifica al alumno dueño y
   // le entrega la recompensa (si el admin puso XP/monedas) por esta misma vía.
   notifyTaskGraded: async (task, grade, gradeMax, xpReward = 0, goldReward = 0) => {

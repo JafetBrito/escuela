@@ -65,6 +65,7 @@ const GROUPS = [
       { to: '/misiones', key: 'misiones', label: 'Misiones',  icon: '📜', hideFor: ['kids', 'seniors'] },
       { to: '/games',    key: 'games',    label: 'Games',     icon: '🎮', hideFor: ['seniors'] },
       { to: '/arena',    key: 'arena',    label: 'Arena',     icon: '⚔️', hideFor: ['kids', 'seniors'] },
+      { to: '/tienda',   key: 'tienda',   label: 'Tienda',    icon: '🛒' },
     ],
   },
   {
@@ -269,19 +270,6 @@ export default function AppTopBar({ variant = 'full' }) {
           )
         })}
 
-        {/* Tienda — direct link */}
-        <Link
-          to="/tienda"
-          onClick={closeAll}
-          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-            location.pathname === '/tienda'
-              ? 'bg-primary/10 text-primary'
-              : 'text-text-muted hover:text-text'
-          }`}
-        >
-          🛒 {t('nav.items.tienda')}
-        </Link>
-
         {/* Buscar — direct link */}
         <Link
           to="/buscar"
@@ -428,15 +416,6 @@ export default function AppTopBar({ variant = 'full' }) {
             </div>
           ))}
 
-          <Link
-            to="/tienda"
-            onClick={closeAll}
-            className={`mt-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              location.pathname === '/tienda' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-            }`}
-          >
-            🛒 {t('nav.items.tienda')}
-          </Link>
           <Link
             to="/buscar"
             onClick={closeAll}

@@ -955,6 +955,15 @@ create trigger protect_admin_only_columns_trigger
 
 
 -- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 023 — el alumno puede borrar sus propias notificaciones
+-- ════════════════════════════════════════════════════════════════════════
+
+drop policy if exists "notifications: student deletes own" on public.student_notifications;
+create policy "notifications: student deletes own" on public.student_notifications
+  for delete using (auth.uid() = student_id);
+
+
+-- ════════════════════════════════════════════════════════════════════════
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- /mis-clases y /clases-disponibles
 -- ════════════════════════════════════════════════════════════════════════
