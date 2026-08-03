@@ -36,7 +36,17 @@ export default function AcademiasPage() {
           </div>
 
           {/* Academias con casa propia */}
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <Link
+              to="/academia-ia"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-lime-600/20 to-emerald-500/10 p-5 transition hover:border-emerald-500/40"
+            >
+              <span className="text-4xl">🧠</span>
+              <div>
+                <p className="font-extrabold text-text">{t('nav.items.academiaIA')}</p>
+                <p className="text-xs text-text-muted">Herramientas de IA y Prompt Engineering, por niveles</p>
+              </div>
+            </Link>
             <Link
               to="/academia-idiomas"
               className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-sky-600/20 to-blue-500/10 p-5 transition hover:border-sky-500/40"

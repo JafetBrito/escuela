@@ -22,6 +22,7 @@ import DashboardPage from './components/dashboard/DashboardPage'
 import SchoolPage from './components/dashboard/SchoolPage'
 import LanguageSyllabusPage from './components/dashboard/LanguageSyllabusPage'
 import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
+import AcademiaIAPage from './components/dashboard/AcademiaIAPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
 import AcademiasPage from './components/dashboard/AcademiasPage'
 import ShopPage from './components/shop/ShopPage'
@@ -224,6 +225,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <LanguageSyllabusPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academia-ia"
+          element={
+            <ProtectedRoute>
+              <AcademiaIAPage />
             </ProtectedRoute>
           }
         />
