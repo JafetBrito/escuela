@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useGameStore } from '../../stores/useGameStore'
+import { useCourseContentStore } from '../../stores/useCourseContentStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import GlobalItemEffects from './GlobalItemEffects'
 import PendingApprovalScreen from './PendingApprovalScreen'
@@ -13,8 +14,23 @@ export default function ProtectedRoute({ children, requireTutorial = false, bloc
   const ageProfile = useAuthStore((s) => s.profile?.age_profile)
   const accountStatus = useAuthStore((s) => s.profile?.account_status)
   const oliverClass = useGameStore((s) => s.oliver.class)
+  const coursesLoaded = useCourseContentStore((s) => s.loaded)
 
   if (!authReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-text-muted">
+        Cargando…
+      </div>
+    )
+  }
+
+  // El contenido de los cursos vive en Supabase (tabla `courses`, ver
+  // migration_024.sql) — courseRegistry.js expone getCourseData/
+  // hasCourseData/COURSES_DATA como si fueran síncronos (para que los
+  // ~20 componentes que ya los usan no tengan que cambiar), lo que solo
+  // funciona si el fetch ya resolvió antes de que cualquiera de ellos monte
+  // por primera vez. Este gate hace justo eso, igual que el de authReady.
+  if (!coursesLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-text-muted">
         Cargando…

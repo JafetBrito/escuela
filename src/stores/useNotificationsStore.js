@@ -12,6 +12,7 @@ import { useCurrencyStore } from './useCurrencyStore'
 // si ya está disponible.
 function notificationUrl(n) {
   if (n.chess_invite_id) return '/games/mishi-jedrez'
+  if (n.trivia_invite_id) return `/games/quiz-rapido?invite=${n.trivia_invite_id}`
   if (n.class_id) return `/mis-clases/${n.class_id}`
   if (n.project_id) return `/proyectos/${n.project_id}`
   if (n.task_id) return `/mis-tareas/${n.task_id}`

@@ -42,6 +42,7 @@ import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
 import { useHolidayStore } from './stores/useHolidayStore'
 import { useDayNightStore } from './stores/useDayNightStore'
+import { useCourseContentStore } from './stores/useCourseContentStore'
 import { useEffect } from 'react'
 
 /**
@@ -86,6 +87,8 @@ const AdminLiveClassesPage = lazy(() => import('./components/admin/AdminLiveClas
 const MyClassesPage = lazy(() => import('./components/liveclass/MyClassesPage'))
 const ClassSummaryPage = lazy(() => import('./components/liveclass/ClassSummaryPage'))
 const AdminExamsPage = lazy(() => import('./components/admin/AdminExamsPage'))
+const AdminCoursesPage = lazy(() => import('./components/admin/AdminCoursesPage'))
+const AdminTriviaPage = lazy(() => import('./components/admin/AdminTriviaPage'))
 const ExamsPage = lazy(() => import('./components/exams/ExamsPage'))
 const ExamPage = lazy(() => import('./components/exams/ExamPage'))
 const PodcastsPage = lazy(() => import('./components/podcasts/PodcastsPage'))
@@ -136,6 +139,7 @@ export default function App() {
   useEffect(() => {
     useHolidayStore.getState().load()
     useDayNightStore.getState().load()
+    useCourseContentStore.getState().fetchAll()
   }, [])
 
   return (
@@ -491,6 +495,26 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminExamsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/cursos"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminCoursesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/trivia"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminTriviaPage />
               </Suspense>
             </ProtectedRoute>
           }

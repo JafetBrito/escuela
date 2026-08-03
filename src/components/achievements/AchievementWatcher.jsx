@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { COURSES_DATA } from '../../data/courseRegistry'
+import { getAllCourses } from '../../data/courseRegistry'
+import { useCourseContentStore } from '../../stores/useCourseContentStore'
 import { getAllAchievements, isCourseCompleted } from '../../data/achievementsRegistry'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
 import { useProgressStore } from '../../stores/useProgressStore'
@@ -18,8 +19,34 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { playAchievementSound } from '../../utils/sound'
 import { supabase } from '../../services/supabase/client'
 
-const COURSES = Object.values(COURSES_DATA)
-const ALL_ACHIEVEMENTS = getAllAchievements(COURSES)
+// COURSES/ALL_ACHIEVEMENTS antes se computaban aquí mismo, al importar el
+// módulo — eso corría en el instante en que este archivo se cargaba, mucho
+// antes de que useCourseContentStore hubiera hecho su primer fetch a
+// Supabase, dejando los logros de "completar curso" sin ninguna condición
+// real para siempre (COURSES quedaba congelado en un array vacío, sin
+// ningún error visible). Se construyen una sola vez, la primera vez que se
+// necesitan, después de confirmar que el store de cursos ya cargó — ver
+// ensureAchievementsBuilt() y el useEffect de más abajo.
+let COURSES = []
+let ALL_ACHIEVEMENTS = []
+let achievementsBuilt = false
+
+function ensureAchievementsBuilt() {
+  if (achievementsBuilt) return
+  COURSES = getAllCourses()
+  ALL_ACHIEVEMENTS = getAllAchievements(COURSES)
+  for (const achievement of ALL_ACHIEVEMENTS) {
+    if (achievement.check) continue
+    const courseId = achievement.id.replace(/^course-/, '')
+    const course = COURSES.find((c) => c.courseId === courseId)
+    achievement.check = () => {
+      if (!course) return false
+      const mp = useProgressStore.getState().progress[courseId]?.moduleProgress ?? []
+      return isCourseCompleted(course, mp)
+    }
+  }
+  achievementsBuilt = true
+}
 
 // "Pionero del Sistema" lives server-side (first 100 accounts to reach
 // level 28, see level28_race in schema.sql) — module-level flag so a single
@@ -131,20 +158,6 @@ function runSilentCatchUp() {
   }
 }
 
-// Achievement medals need a `check(state)` — course medals don't define one
-// in the registry (their progress is computed from `progress` directly), so
-// wrap them here with the same isCourseCompleted logic.
-for (const achievement of ALL_ACHIEVEMENTS) {
-  if (achievement.check) continue
-  const courseId = achievement.id.replace(/^course-/, '')
-  const course = COURSES.find((c) => c.courseId === courseId)
-  achievement.check = () => {
-    if (!course) return false
-    const mp = useProgressStore.getState().progress[courseId]?.moduleProgress ?? []
-    return isCourseCompleted(course, mp)
-  }
-}
-
 // Mounted once near the root of the app. Has no UI — it subscribes to every
 // store that feeds achievement conditions and unlocks medals as soon as the
 // player meets them, queuing a toast (AchievementToast) + sound.
@@ -157,19 +170,35 @@ export default function AchievementWatcher() {
     }
 
     const startWatching = () => {
+      ensureAchievementsBuilt()
       runSilentCatchUp()
       initialSyncDone = true
     }
 
-    // Wait for auth (and any cloud snapshot applied during init) to settle
-    // before treating already-true conditions as "new" unlocks.
+    // Espera curso-content (para poder construir ALL_ACHIEVEMENTS con los
+    // medallas de curso reales) además de auth (y cualquier snapshot de la
+    // nube aplicado durante el init) antes de tratar condiciones ya-true
+    // como "nuevos" desbloqueos.
+    const startWhenCoursesReady = () => {
+      if (useCourseContentStore.getState().loaded) {
+        startWatching()
+      } else {
+        const unsubCourses = useCourseContentStore.subscribe((s) => {
+          if (s.loaded) {
+            unsubCourses()
+            startWatching()
+          }
+        })
+      }
+    }
+
     if (useAuthStore.getState().authReady) {
-      startWatching()
+      startWhenCoursesReady()
     } else {
       const unsubAuth = useAuthStore.subscribe((s) => {
         if (s.authReady) {
           unsubAuth()
-          startWatching()
+          startWhenCoursesReady()
         }
       })
     }

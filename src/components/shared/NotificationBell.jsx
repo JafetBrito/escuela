@@ -8,6 +8,7 @@ import { requestPushPermission } from '../../utils/pushNotify'
 // "a qué corresponde" que ya usa handleClick para navegar.
 function notificationMeta(n) {
   if (n.chess_invite_id) return { icon: '♟️', ring: 'bg-indigo-500/15 text-indigo-400' }
+  if (n.trivia_invite_id) return { icon: '🎯', ring: 'bg-fuchsia-500/15 text-fuchsia-400' }
   if (n.class_id) return { icon: '🎓', ring: 'bg-sky-500/15 text-sky-400' }
   if (n.project_id) return { icon: '📁', ring: 'bg-amber-500/15 text-amber-400' }
   if (n.task_id) return { icon: '📋', ring: 'bg-emerald-500/15 text-emerald-400' }
@@ -71,6 +72,8 @@ export default function NotificationBell() {
     setOpen(false)
     if (n.chess_invite_id) {
       navigate('/games/mishi-jedrez')
+    } else if (n.trivia_invite_id) {
+      navigate(`/games/quiz-rapido?invite=${n.trivia_invite_id}`)
     } else if (n.class_id) {
       navigate(`/mis-clases/${n.class_id}`)
     } else if (n.project_id) {

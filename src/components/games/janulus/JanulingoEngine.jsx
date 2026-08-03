@@ -11,6 +11,13 @@ const C = {
   vocab: { filled: 'border-purple-400/50 border-b-purple-600/80 bg-purple-500/15 text-purple-100',    dot: '🟣', label: 'Objeto' },
 }
 
+// Answer chips in blocks-mode used to be colored by `C[type]` too — since
+// each type maps to exactly one slot, the chip's color alone gave away
+// which slot it belongs in, no reading required. Neutral until placed;
+// `C[type]` still applies once a chip lands in its slot (confirmation, not
+// a hint before the fact).
+const NEUTRAL_CHIP = 'border-border/60 border-b-border bg-surface/60 text-text hover:border-primary/40'
+
 const SPEEDS = [
   { rate: 0.5,  icon: '🐌', label: '0.5×' },
   { rate: 0.75, icon: '🚶', label: '0.75×' },
@@ -28,10 +35,30 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)] }
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 function norm(s) { return s.trim().toLowerCase().replace(/[''`]/g, "'") }
 
+// Picking base/verb/vocab as 3 fully independent random draws produces
+// grammatically-valid but meaningless sentences ("Mi piace cercare una
+// mela" — "I like to search an apple"), because nothing checked whether a
+// verb and an object are ever actually used together. Every verb already
+// ships hand-written `examples` sentences pairing it with a real object —
+// reuse that instead of hand-authoring a separate compatibility list: a
+// vocab word only pairs with a verb if it shows up in one of that verb's
+// example sentences. `stem` drops the final vowel so singular/plural forms
+// still match ("chiave"/"chiavi", "libro"/"libri").
+function stem(word) {
+  const w = word.toLowerCase()
+  return w.length > 3 ? w.slice(0, -1) : w
+}
+
+function compatibleVocab(verb, vocabList) {
+  const exampleText = (verb.examples ?? []).map((e) => e.s.toLowerCase()).join(' | ')
+  const matches = vocabList.filter((v) => exampleText.includes(stem(v.keyword ?? v.text)))
+  return matches.length > 0 ? matches : vocabList
+}
+
 function freshRS(ld) {
   const base  = pick(ld.bases)
   const verb  = pick(ld.verbs)
-  const vocab = pick(ld.vocab)
+  const vocab = pick(compatibleVocab(verb, ld.vocab))
   const blocks = shuffle([
     { type: 'base',  ...base  },
     { type: 'verb',  ...verb  },
@@ -1157,15 +1184,12 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             {buildResult === 'wrong'   && <p className="text-sm font-bold text-red-400">❌ Orden incorrecto</p>}
 
             <div className="flex flex-wrap justify-center gap-2">
-              {available.map((b) => {
-                const c = C[b.type]
-                return (
-                  <button key={`av_${b.type}_${b.id}`} type="button" onClick={() => handleSelect(b)}
-                    className={`rounded-xl border-2 border-b-4 px-4 py-2.5 text-sm font-bold transition-all active:translate-y-1 active:border-b-2 ${c.filled}`}>
-                    {b.emoji ? `${b.emoji} ` : ''}{b.text}
-                  </button>
-                )
-              })}
+              {available.map((b) => (
+                <button key={`av_${b.type}_${b.id}`} type="button" onClick={() => handleSelect(b)}
+                  className={`rounded-xl border-2 border-b-4 px-4 py-2.5 text-sm font-bold transition-all active:translate-y-1 active:border-b-2 ${NEUTRAL_CHIP}`}>
+                  {b.emoji ? `${b.emoji} ` : ''}{b.text}
+                </button>
+              ))}
             </div>
 
             <button type="button" onClick={handleBuildHint} disabled={!!buildResult}

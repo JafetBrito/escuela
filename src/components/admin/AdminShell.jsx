@@ -9,10 +9,12 @@ import AppTopBar from '../shared/AppTopBar'
 // se hace ahora para no arriesgar 6 páginas ya funcionando.
 const SECTIONS = [
   { to: '/admin', icon: '🏠', label: 'Resumen', end: true },
+  { to: '/admin/cursos', icon: '📚', label: 'Cursos' },
   { to: '/admin/tareas', icon: '📋', label: 'Tareas' },
   { to: '/admin/proyectos', icon: '📁', label: 'Proyectos' },
   { to: '/admin/clases', icon: '🎓', label: 'Clases en vivo' },
   { to: '/admin/examenes', icon: '📝', label: 'Exámenes' },
+  { to: '/admin/trivia', icon: '🎯', label: 'Trivia' },
   { to: '/admin/podcasts', icon: '🎙️', label: 'Podcasts' },
   { to: '/admin/comandos', icon: '🕹️', label: 'Comandos' },
   { to: '/admin-setup', icon: '⚙️', label: 'Configuración' },

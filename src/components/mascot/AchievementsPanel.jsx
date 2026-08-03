@@ -1,12 +1,18 @@
-import { COURSES_DATA } from '../../data/courseRegistry'
+import { useMemo } from 'react'
+import { getAllCourses } from '../../data/courseRegistry'
+import { useCourseContentStore } from '../../stores/useCourseContentStore'
 import { ACHIEVEMENT_CATEGORIES, getAllAchievements } from '../../data/achievementsRegistry'
 import { useAchievementsStore } from '../../stores/useAchievementsStore'
 
-const COURSES = Object.values(COURSES_DATA)
-const ALL_ACHIEVEMENTS = getAllAchievements(COURSES)
-
 export default function AchievementsPanel({ className = '' }) {
   const unlocked = useAchievementsStore((s) => s.unlocked)
+  // Antes esto se computaba una sola vez al importar el módulo, con
+  // COURSES_DATA todavía vacío (el fetch a Supabase ni había arrancado) —
+  // las medallas de curso quedaban fuera de la lista para siempre, en
+  // silencio. Suscrito a `loaded` para recalcular en cuanto el store de
+  // cursos termine de cargar.
+  const coursesLoaded = useCourseContentStore((s) => s.loaded)
+  const ALL_ACHIEVEMENTS = useMemo(() => getAllAchievements(getAllCourses()), [coursesLoaded])
   const total = ALL_ACHIEVEMENTS.length
   const unlockedCount = unlocked.length
 

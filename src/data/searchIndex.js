@@ -29,12 +29,17 @@ function buildIndex() {
   return items
 }
 
-const INDEX = buildIndex()
-
+// Antes el índice se construía una sola vez al importar este módulo — con
+// COURSES_DATA todavía vacío en ese instante (el fetch a Supabase recién
+// arranca al montar la app), las "Clase" quedaban fuera del índice para
+// siempre, en silencio. searchAll solo corre cuando el usuario efectivamente
+// busca, mucho después de que el store de cursos ya haya cargado, así que
+// reconstruir aquí (en vez de en un constante de módulo) es barato y
+// siempre está al día.
 export function searchAll(query, limit = 30) {
   const q = query.trim().toLowerCase()
   if (!q) return []
-  return INDEX
+  return buildIndex()
     .filter((it) => it.title.toLowerCase().includes(q) || it.subtitle?.toLowerCase().includes(q))
     .slice(0, limit)
 }
