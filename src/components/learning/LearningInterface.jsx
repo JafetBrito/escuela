@@ -176,7 +176,12 @@ export default function LearningInterface() {
         <div className="grid flex-1 gap-4 p-4 pb-24 md:grid-cols-[1fr_260px]">
           
           {/* COLUMNA IZQUIERDA: Área de Aprendizaje */}
-          <div className="flex flex-col gap-4">
+          {/* min-w-0: sin esto, un <pre> de código con una línea larga (o
+              cualquier hijo ancho) hace que este renglón del grid/flex crezca
+              para "abrazar" ese contenido en vez de dejar que su propio
+              overflow-x-auto se encargue — eso es lo que inflaba TODA la
+              página a ~800px de ancho en un viewport de celular. */}
+          <div className="flex min-w-0 flex-col gap-4">
             
             {/* 🎬 REPRODUCTOR / LAUNCHER */}
             {currentModule.type === 'vr' ? (

@@ -41,9 +41,26 @@ export default function TextSelectionMenu() {
   const [copied, setCopied] = useState(false)
   const [translation, setTranslation] = useState(null)
   const [translating, setTranslating] = useState(false)
+  // `hide` es un useCallback estable (deps []), así que no puede leer el
+  // `reading` de su propio render — se espeja en un ref para que sepa, en
+  // cualquier momento, si la lectura EN CURSO es la suya propia.
+  const readingRef = useRef(false)
+  useEffect(() => { readingRef.current = reading }, [reading])
 
+  // Este menú vive montado UNA vez en toda la app y escucha touchend/mouseup
+  // en `document` — es decir, se dispara en CADA tap y en CADA gesto de
+  // scroll táctil (el touchend al soltar el dedo), no solo cuando de verdad
+  // hay una selección. Antes `hide()` cancelaba speechSynthesis
+  // incondicionalmente, así que cualquier otro lector en la página (ej. "Leer
+  // esta clase en voz alta" de TextLesson.jsx) se cortaba en seco apenas el
+  // alumno tocaba el botón de leer o hacía scroll mientras escuchaba — el
+  // onend/onerror de la utterance cancelada disparaba el avance a la
+  // siguiente oración, dando la impresión de "empieza a leer desde otra
+  // parte" o "se detiene y lee otro párrafo" al hacer scroll. Ahora solo
+  // cancela si la lectura activa es la de ESTE menú (botón "Leer" del texto
+  // seleccionado), no la de cualquier otro componente.
   const hide = useCallback(() => {
-    window.speechSynthesis?.cancel()
+    if (readingRef.current) window.speechSynthesis?.cancel()
     setReading(false)
     setSaved(false)
     setCopied(false)
@@ -141,8 +158,6 @@ export default function TextSelectionMenu() {
     observer.observe(document.body, { childList: true, subtree: true })
     return () => observer.disconnect()
   }, [hide, showForSelection])
-
-  useEffect(() => { if (!sel) window.speechSynthesis?.cancel() }, [sel])
 
   const speak = () => {
     const synth = window.speechSynthesis

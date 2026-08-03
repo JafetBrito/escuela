@@ -107,7 +107,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="nav-dropdown absolute right-0 top-full z-50 mt-1.5 w-80 overflow-hidden rounded-2xl border border-border/60 bg-surface/95 shadow-2xl backdrop-blur-md">
+        <div className="nav-dropdown absolute right-0 top-full z-50 mt-1.5 w-[min(20rem,calc(100vw-5rem))] overflow-hidden rounded-2xl border border-border/60 bg-surface/95 shadow-2xl backdrop-blur-md">
           <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3.5 py-2.5">
             <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
               Notificaciones {notifications.length > 0 && <span className="text-text-muted/60">· {notifications.length}</span>}
