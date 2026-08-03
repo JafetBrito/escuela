@@ -896,6 +896,11 @@ export default function VrArbol() {
   const sendChatMessage = (text) =>
     useWorldChatStore.getState().sendMessage(chatAuthor, text, { authorId: chatPlayerId })
 
+  // Panel de misiones: en móvil arranca colapsado (solo la misión activa, en
+  // una línea) porque expandido tapaba la barra de habilidades — en
+  // escritorio siempre se muestra completo (ver clases `md:` abajo).
+  const [missionsExpanded, setMissionsExpanded] = useState(false)
+
   // Detect which mission is currently active (first not done)
   const activeMission = TUTORIAL_MISSIONS.find(m => !done.includes(m.id)) ?? null
   const tutorialDone = activeMission === null
@@ -1223,21 +1228,34 @@ export default function VrArbol() {
         </div>
       )}
 
-      {/* ── Panel de misiones del tutorial (derecha, bajo el minimapa; no
-          choca con el retrato del HUD ni tapa la pantalla en móvil) ── */}
+      {/* ── Panel de misiones del tutorial (derecha, bajo el minimapa).
+          En móvil arranca COLAPSADO (solo un chip "Tutorial ▼") — expandido
+          por defecto tapaba media pantalla y la barra de habilidades, sobre
+          todo con la descripción de la misión activa envolviendo palabra
+          por palabra en una columna angosta (46vw). En escritorio (md+)
+          siempre se ve expandido, como antes. ── */}
       {phase === 'play' && hudVisible && (
-        <div className="absolute right-2 top-28 z-20 w-52 max-w-[46vw] md:top-36">
-          <div className="max-h-[55vh] overflow-y-auto rounded-2xl border border-border bg-black/70 p-2.5 backdrop-blur-sm">
-            <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-primary">Tutorial</p>
-            <div className="flex flex-col gap-1.5">
-              {TUTORIAL_MISSIONS.map((m) => (
-                <MissionRow
-                  key={m.id}
-                  mission={m}
-                  done={done.includes(m.id)}
-                  active={activeMission?.id === m.id}
-                />
-              ))}
+        <div className="absolute right-2 top-28 z-20 md:top-36" style={{ WebkitTextSizeAdjust: '100%', textSizeAdjust: '100%' }}>
+          <button
+            type="button"
+            onClick={() => setMissionsExpanded((v) => !v)}
+            className="ml-auto flex items-center gap-1 rounded-xl border border-border bg-black/70 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-primary backdrop-blur-sm md:hidden"
+          >
+            Tutorial {missionsExpanded ? '▲' : '▼'}
+          </button>
+          <div className={`${missionsExpanded ? 'mt-1.5 block' : 'hidden'} w-[70vw] max-w-72 md:mt-0 md:block md:w-52`}>
+            <div className="max-h-[45vh] overflow-y-auto rounded-2xl border border-border bg-black/70 p-2.5 backdrop-blur-sm md:max-h-[55vh]">
+              <p className="mb-2 hidden text-[10px] font-black uppercase tracking-wider text-primary md:block">Tutorial</p>
+              <div className="flex flex-col gap-1.5">
+                {TUTORIAL_MISSIONS.map((m) => (
+                  <MissionRow
+                    key={m.id}
+                    mission={m}
+                    done={done.includes(m.id)}
+                    active={activeMission?.id === m.id}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1256,7 +1274,7 @@ export default function VrArbol() {
       )}
       {phase === 'play' && nearNpcId !== activeSpeakerId && !showDialogue && !openOverlayId && !tutorialDone && (
         <div className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-2xl border border-border bg-black/60 px-4 py-2 text-xs text-text-muted backdrop-blur-sm">
-          🚶 Camina (WASD) hacia {NPCS[activeSpeakerId].emoji} {NPCS[activeSpeakerId].name}, dentro del templo
+          🚶 Camina<span className="hidden sm:inline"> (WASD)</span> hacia {NPCS[activeSpeakerId].emoji} {NPCS[activeSpeakerId].name}, dentro del templo
         </div>
       )}
 

@@ -38,6 +38,7 @@ import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import TextSelectionMenu from './components/shared/TextSelectionMenu'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
+import __DevArbolMobileTest from './components/vr/__DevArbolMobileTest'
 import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
 import { useHolidayStore } from './stores/useHolidayStore'
@@ -651,6 +652,17 @@ export default function App() {
         />
 
         {/* === RUTAS DE REALIDAD VIRTUAL (Heavy 3D Load) === */}
+        <Route
+          path="/__dev_arbol_mobile_test"
+          element={
+            <>
+              <__DevArbolMobileTest />
+              <Suspense fallback={<RouteFallback />}>
+                <VrArbol />
+              </Suspense>
+            </>
+          }
+        />
         <Route
           path="/vr-templo"
           element={
