@@ -92,13 +92,33 @@
   },
   {
     "id": "course-009",
-    "title": "Lógica de programación",
-    "description": "Aprende a pensar como programador resolviendo problemas paso a paso, antes de preocuparte por la sintaxis de ningún lenguaje. Diagramas de flujo, pseudocódigo y los patrones que se repiten en casi cualquier problema. Próximamente.",
+    "title": "Fundamentos de Programación",
+    "description": "Aprende a pensar como programador: variables, control de flujo, funciones y estructuras de datos — la base que necesitas antes de aprender cualquier lenguaje.",
     "icon": "🧩",
     "color": "#fb923c",
     "category": "Programación",
     "subcategory": "Fundamentos",
-    "locked": true
+    "locked": false
+  },
+  {
+    "id": "course-solid",
+    "title": "Principios SOLID",
+    "description": "Los cinco principios de diseño que hacen que el código sea más fácil de mantener, extender y probar — mini curso con ejemplos reales, no solo teoría.",
+    "icon": "🧱",
+    "color": "#6366f1",
+    "category": "Programación",
+    "subcategory": "Fundamentos",
+    "locked": false
+  },
+  {
+    "id": "course-paradigma-react",
+    "title": "El Paradigma de Oliver Academy: React y Programación Declarativa",
+    "description": "Cómo está construida esta misma plataforma: componentes, JSX, estado, hooks y programación funcional — explicado con ejemplos reales de su propio código.",
+    "icon": "⚛️",
+    "color": "#61dafb",
+    "category": "Programación",
+    "subcategory": "Frontend Moderno",
+    "locked": false
   },
   {
     "id": "course-010",
