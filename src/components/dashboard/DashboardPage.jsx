@@ -16,10 +16,15 @@ import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
 import { useI18n } from '../../i18n'
 import { useTasksStore } from '../../stores/useTasksStore'
-import { useAchievementsStore } from '../../stores/useAchievementsStore'
-import { getAllAchievements, ACHIEVEMENT_CATEGORIES } from '../../data/achievementsRegistry'
+import { useProjectsStore } from '../../stores/useProjectsStore'
+import { useExamsStore } from '../../stores/useExamsStore'
+import { useQuestsStore } from '../../stores/useQuestsStore'
+import { getQuestById } from '../../data/questsRegistry'
+import { useNotificationsStore } from '../../stores/useNotificationsStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { formatCurrency } from '../../utils/currency'
+import { buildPendingActions } from '../../utils/pendingActions'
+import AchievementsPanel from '../mascot/AchievementsPanel'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 // Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
@@ -79,7 +84,7 @@ export function CourseCard({ course, pct, owned, accent, onClick }) {
 }
 
 // ── Tab: Inicio ───────────────────────────────────────────────────────────────
-function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, tasks, patchNotesOpen, setPatchNotesOpen }) {
+function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, tasks, projects, pendingExams, patchNotesOpen, setPatchNotesOpen }) {
   const { t }    = useI18n()
   const latest   = PATCH_NOTES[0]
   const xp       = useLevelStore((s) => s.xp)
@@ -104,6 +109,24 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   // ofrecerle estos dos accesos directos desde el Dashboard.
   const vrAllowed = !['kids', 'seniors'].includes(profile?.age_profile)
 
+  const playerTP = useGameStore((s) => s.player.talentPoints)
+  const oliverTP = useGameStore((s) => s.oliver.talentPoints)
+  const totalTP = (playerTP ?? 0) + (oliverTP ?? 0)
+
+  const pendingActions = useMemo(
+    () => buildPendingActions({ tasks, projects, exams: pendingExams, hasAccessToCourse, courses }),
+    [tasks, projects, pendingExams, hasAccessToCourse]
+  )
+
+  const activeQuestMap = useQuestsStore((s) => s.active)
+  const activeQuests = useMemo(
+    () => Object.entries(activeQuestMap).map(([id, step]) => ({ quest: getQuestById(id), step })).filter((q) => q.quest),
+    [activeQuestMap]
+  )
+
+  const notifications = useNotificationsStore((s) => s.notifications)
+  const recentActivity = notifications.slice(0, 5)
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
 
@@ -114,6 +137,16 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
             <p className="text-xs text-text-muted">Es opcional — puedes seguir tomando cursos sin esto. Cuando quieras, crea tu personaje aquí.</p>
           </div>
           <span className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Crear →</span>
+        </Link>
+      )}
+
+      {vrAllowed && totalTP > 0 && (
+        <Link to="/arbol" className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 transition hover:bg-amber-500/15">
+          <div>
+            <p className="text-sm font-bold text-text">🌳 Tienes {totalTP} punto{totalTP === 1 ? '' : 's'} de talento sin gastar</p>
+            <p className="text-xs text-text-muted">Úsalos en el Árbol para desbloquear habilidades.</p>
+          </div>
+          <span className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">Ir al Árbol →</span>
         </Link>
       )}
 
@@ -270,32 +303,83 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         </div>
       )}
 
-      {/* Tareas pendientes — anuncios y mensajes viven ahora en /anuncios
-          (tablón + buzón), para no repetir el mismo contenido aquí. */}
-      {tasks.some((task) => task.status === 'pendiente') && (
+      {/* Pendientes unificados — tareas + proyectos + exámenes en una sola
+          lista (buildPendingActions, src/utils/pendingActions.js), en vez
+          de solo tareas. Anuncios y mensajes viven en /anuncios (tablón +
+          buzón), para no repetir el mismo contenido aquí. */}
+      {pendingActions.length > 0 && (
         <div className="overflow-hidden rounded-2xl border border-amber-500/30 bg-surface">
           <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
             <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
-              <span>📋</span>{t('dashboard.myTasks')}
+              <span>✅</span>{t('dashboard.myTasks')}
             </h3>
             <Link to="/mis-tareas" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
           </div>
           <div className="divide-y divide-border/60">
-            {tasks.filter((task) => task.status === 'pendiente').slice(0, 4).map((task) => (
-              <div key={task.id} className="flex items-start gap-3 px-4 py-2.5">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+            {pendingActions.slice(0, 5).map((action) => (
+              <Link key={action.id} to={action.href} className="flex items-start gap-3 px-4 py-2.5 hover:bg-surface-hover">
+                <span className="mt-0.5 shrink-0 text-sm">{action.icon}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-text line-clamp-1">{task.title}</p>
-                  {task.due_date && (
-                    <p className="text-[11px] text-text-muted">
-                      📅 {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short' })}
-                    </p>
-                  )}
+                  <p className="text-xs font-semibold text-text line-clamp-1">{action.title}</p>
+                  <p className="text-[11px] text-text-muted">
+                    {action.subtitle ?? { task: 'Tarea', project: 'Proyecto', exam: 'Examen' }[action.kind]}
+                    {action.dueDate && ` · 📅 ${new Date(action.dueDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`}
+                  </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
+      )}
+
+      {/* Misiones activas — invisibles en el dashboard hasta ahora, solo
+          se veían entrando manualmente a /misiones. */}
+      {vrAllowed && activeQuests.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-extrabold text-text">📜 Misiones activas</h2>
+            <Link to="/misiones" className="text-xs text-primary hover:underline">Ver todas</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeQuests.map(({ quest, step }) => (
+              <Link key={quest.id} to="/misiones"
+                className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-3 hover:border-primary">
+                <span className="text-xl">{quest.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-text line-clamp-1">{quest.title}</p>
+                  <p className="text-xs text-text-muted">Paso {step + 1}/{quest.steps.length}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Actividad reciente — reusa las notificaciones que NotificationBell
+          ya carga (fetchNotifications/subscribeToNotifications se llaman
+          desde AppTopBar, sin fetch propio aquí). No incluye recompensas de
+          misiones ni de graduación de examen: esas otorgan XP/oro directo
+          (useQuestsStore.claimReward, grantGraduationRewards en
+          useExamsStore.js) sin insertar una fila en student_notifications. */}
+      {recentActivity.length > 0 && (
+        <section>
+          <h2 className="text-base font-extrabold text-text mb-3">🔔 Actividad reciente</h2>
+          <div className="divide-y divide-border rounded-2xl border border-border bg-surface">
+            {recentActivity.map((n) => (
+              <div key={n.id} className="flex items-start justify-between gap-3 px-4 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-text line-clamp-1">{n.title}</p>
+                  {n.body && <p className="text-[11px] text-text-muted line-clamp-1">{n.body}</p>}
+                </div>
+                {(n.xp_reward > 0 || n.gold_reward > 0) && (
+                  <span className="shrink-0 text-[11px] font-bold text-primary">
+                    {n.xp_reward > 0 && `+${n.xp_reward} XP`}{n.xp_reward > 0 && n.gold_reward > 0 ? ' · ' : ''}{n.gold_reward > 0 && `+${n.gold_reward} 🪙`}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Campus quick access — oculto por perfil de edad (profiles.age_profile,
@@ -384,7 +468,6 @@ function ProgresoTab({ progressByCourse, profile }) {
   const xp               = useLevelStore((s) => s.xp)
   const coins            = useCurrencyStore((s) => s.coins)
   const tasks            = useTasksStore((s) => s.tasks)
-  const unlocked         = useAchievementsStore((s) => s.unlocked)
   const mascotId         = useMascotStore((s) => s.mascot)
   const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
   const [activeSection, setActiveSection] = useState('cursos')
@@ -402,13 +485,6 @@ function ProgresoTab({ progressByCourse, profile }) {
   const avgGrade     = graded.length > 0
     ? Math.round(graded.reduce((acc, t) => acc + (t.grade / t.grade_max) * 100, 0) / graded.length)
     : null
-
-  const achievementCatalog = useMemo(() => getAllAchievements(courses), [])
-  const unlockedAchievements = useMemo(
-    () => unlocked.map((id) => achievementCatalog.find((a) => a.id === id)).filter(Boolean).reverse(),
-    [unlocked, achievementCatalog]
-  )
-  const categoryLabel = (id) => ACHIEVEMENT_CATEGORIES.find((c) => c.id === id)?.label ?? id
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -508,22 +584,10 @@ function ProgresoTab({ progressByCourse, profile }) {
             </>
           )}
 
-          {/* Logros */}
-          {activeSection === 'logros' && (
-            <>
-              <DataTable columns={['Logro', 'Categoría']} empty={unlockedAchievements.length === 0 ? 'Aún no desbloqueas ningún logro.' : null}>
-                {unlockedAchievements.map((a) => (
-                  <tr key={a.id}>
-                    <td className="flex items-center gap-2 px-4 py-3 font-medium text-text"><span>{a.icon}</span>{a.name}</td>
-                    <td className="px-4 py-3 text-text-muted">{categoryLabel(a.category)}</td>
-                  </tr>
-                ))}
-              </DataTable>
-              <Link to="/logros" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
-                Ver panel completo de logros →
-              </Link>
-            </>
-          )}
+          {/* Logros — reusa AchievementsPanel (la misma que /logros) en vez
+              de reimplementar la tabla acá, para no mantener dos vistas del
+              mismo dato desincronizadas. */}
+          {activeSection === 'logros' && <AchievementsPanel className="mt-2" />}
 
           {/* Economía */}
           {activeSection === 'economia' && (
@@ -553,11 +617,17 @@ export default function DashboardPage() {
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
   const tasks             = useTasksStore((s) => s.tasks)
   const fetchTasks        = useTasksStore((s) => s.fetchMyTasks)
+  const projects          = useProjectsStore((s) => s.projects)
+  const fetchProjects     = useProjectsStore((s) => s.fetchMyProjects)
+  const pendingExams      = useExamsStore((s) => s.pendingExams)
+  const fetchPendingExams = useExamsStore((s) => s.fetchPendingExams)
+  const session           = useAuthStore((s) => s.session)
 
   const [tab, setTab]               = useState(() => new URLSearchParams(window.location.search).get('tab') || 'inicio')
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
 
-  useEffect(() => { fetchTasks() }, [fetchTasks])
+  useEffect(() => { fetchTasks(); fetchProjects() }, [fetchTasks, fetchProjects])
+  useEffect(() => { if (session?.user?.id) fetchPendingExams(session.user.id) }, [session?.user?.id, fetchPendingExams])
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -616,6 +686,8 @@ export default function DashboardPage() {
             profile={profile}
             license={license}
             tasks={tasks}
+            projects={projects}
+            pendingExams={pendingExams}
             patchNotesOpen={patchNotesOpen}
             setPatchNotesOpen={setPatchNotesOpen}
             {...tabProps}

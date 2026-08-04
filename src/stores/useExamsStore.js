@@ -56,6 +56,20 @@ export const useExamsStore = create((set, get) => ({
   attempts: [],
   graduation: null,
   loading: false,
+  pendingExams: [],
+
+  // Usado por el dashboard unificado — mismas dos consultas que
+  // ExamsPage.jsx ya corría inline, movidas aquí para reutilizarlas.
+  fetchPendingExams: async (studentId) => {
+    const [{ data: exams }, { data: grads }] = await Promise.all([
+      supabase.from('course_exams').select('course_id, title'),
+      supabase.from('student_graduations').select('course_id').eq('student_id', studentId),
+    ])
+    const graduatedIds = new Set((grads ?? []).map((g) => g.course_id))
+    const pendingExams = (exams ?? []).map((e) => ({ ...e, graduated: graduatedIds.has(e.course_id) }))
+    set({ pendingExams })
+    return pendingExams
+  },
 
   fetchExam: async (courseId) => {
     const { data } = await supabase.from('course_exams').select('*').eq('course_id', courseId).maybeSingle()
