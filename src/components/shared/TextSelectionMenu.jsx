@@ -27,6 +27,34 @@ const isCoarsePointer = () => {
 }
 const TOUCH_MENU_OFFSET = 56
 
+// Doble clic nativo del navegador solo selecciona UNA palabra — el botón
+// "Leer" lee fielmente lo que esté seleccionado, así que con doble clic
+// siempre leía una palabra sola. Para leer el párrafo completo con un doble
+// clic, se busca el bloque de texto que lo contiene (p/li/h2/celda/etc) y se
+// usa su texto completo en vez de la selección nativa de una palabra —
+// también se re-selecciona visualmente ese bloque para que lo resaltado
+// coincida con lo que se va a leer. Tope de 4000 caracteres: si el bloque
+// más cercano resulta ser un contenedor gigante (ej. sin un <p> intermedio,
+// en alguna página fuera de las clases), se descarta y se deja la selección
+// nativa de una palabra tal cual, en vez de intentar leer medio documento.
+const READ_BLOCK_SELECTOR = 'p, li, blockquote, td, th, dd, dt, figcaption, h1, h2, h3, h4, h5, h6, .tip, .warn, .example, .bad'
+function expandToBlock(target) {
+  const block = target?.closest?.(READ_BLOCK_SELECTOR)
+  if (!block) return null
+  const text = (block.textContent || '').replace(/\s+/g, ' ').trim()
+  if (!text || text.length > 4000) return null
+  try {
+    const doc = block.ownerDocument
+    const win = doc.defaultView
+    const range = doc.createRange()
+    range.selectNodeContents(block)
+    const selection = win.getSelection()
+    selection.removeAllRanges()
+    selection.addRange(range)
+  } catch { /* resaltado visual es best-effort, no bloquea la lectura */ }
+  return { text, rect: block.getBoundingClientRect() }
+}
+
 export default function TextSelectionMenu() {
   const addItem = useInventoryStore((s) => s.addItem)
   const setOpen = useMascotCompanionStore((s) => s.setOpen)
@@ -98,13 +126,24 @@ export default function TextSelectionMenu() {
     // vacía y el menú nunca aparece.
     const onTouchEnd = (e) => setTimeout(() => readSelectionAndShow(e.target), 60)
     const onKeyDown = (e) => { if (e.key === 'Escape') hide() }
+    // dblclick llega DESPUÉS del mouseup del segundo clic (que ya mostró el
+    // menú con la palabra sola vía selección nativa) — acá se sobreescribe
+    // con el párrafo completo si se encuentra un bloque contenedor.
+    const onDblClick = (e) => {
+      if (menuRef.current?.contains(e.target)) return
+      const expanded = expandToBlock(e.target)
+      if (!expanded) return
+      showForSelection(expanded.text, e.clientX, expanded.rect.top, expanded.rect.bottom)
+    }
     document.addEventListener('mouseup', onMouseUp)
     document.addEventListener('touchend', onTouchEnd)
     document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('dblclick', onDblClick)
     return () => {
       document.removeEventListener('mouseup', onMouseUp)
       document.removeEventListener('touchend', onTouchEnd)
       document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('dblclick', onDblClick)
     }
   }, [hide, showForSelection])
 
@@ -135,6 +174,17 @@ export default function TextSelectionMenu() {
           doc.addEventListener('mouseup', readFrameSelectionAndShow)
           doc.addEventListener('touchend', () => setTimeout(readFrameSelectionAndShow, 60))
           doc.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide() })
+          doc.addEventListener('dblclick', (e) => {
+            const expanded = expandToBlock(e.target)
+            if (!expanded) return
+            const frameRect = frame.getBoundingClientRect()
+            showForSelection(
+              expanded.text,
+              frameRect.left + e.clientX,
+              frameRect.top + expanded.rect.top,
+              frameRect.top + expanded.rect.bottom,
+            )
+          })
         } catch {
           // Cross-origin iframe (e.g. native PDF viewer) — skip silently
         }
