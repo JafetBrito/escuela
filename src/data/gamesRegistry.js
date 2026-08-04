@@ -23,7 +23,7 @@ export const GAMES = [
   },
   {
     id: 'quiz-rapido',
-    title: 'Quiz Rápido',
+    title: 'NZT48',
     icon: '🧠',
     category: 'Pruebas',
     description: 'Trivia 1v1 en línea: invita a alguien por username, elige categoría y compitan por turnos.',

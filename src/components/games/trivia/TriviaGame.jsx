@@ -117,7 +117,7 @@ export default function TriviaGame() {
     return (
       <div className="flex h-full flex-col bg-background text-text">
         <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2">
-          <span className="text-sm font-bold">🎯 Trivia en línea</span>
+          <span className="text-sm font-bold">🎯 NZT48</span>
           <button type="button" onClick={refreshLobby} className="rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-text-muted hover:bg-surface-hover">🔄</button>
         </div>
 
