@@ -40,6 +40,7 @@ import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
 import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
+import { useSwUpdateStore } from './stores/useSwUpdateStore'
 import { useHolidayStore } from './stores/useHolidayStore'
 import { useDayNightStore } from './stores/useDayNightStore'
 import { useCourseContentStore } from './stores/useCourseContentStore'
@@ -131,6 +132,19 @@ function SyncErrorBanner() {
   )
 }
 
+// El service worker acaba de detectar una versión nueva y está a punto de
+// recargar la página solo para aplicarla (ver onNeedRefresh en main.jsx) —
+// antes eso pasaba en silencio, sin ningún aviso.
+function UpdatingBanner() {
+  const updating = useSwUpdateStore((s) => s.updating)
+  if (!updating) return null
+  return (
+    <div className="fixed bottom-3 left-1/2 z-[999] -translate-x-1/2 rounded-lg border border-primary/40 bg-primary/15 px-3 py-1.5 text-xs text-primary shadow-lg">
+      🔄 Nueva versión disponible, actualizando…
+    </div>
+  )
+}
+
 export default function App() {
   const openBookId = useLibraryStore((s) => s.openBookId)
   // Load holiday theme + world hour/season/weather from Supabase so both are
@@ -157,6 +171,7 @@ export default function App() {
       <DevToolsPanel />
       <AiCredentialsLoader />
       <SyncErrorBanner />
+      <UpdatingBanner />
 
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 

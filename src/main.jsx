@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { hydrateFromLocalStorage, startAutoSave, pushSnapshotToCloud } from './services/persistence/autoSave'
 import { useAuthStore } from './stores/useAuthStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
+import { useSwUpdateStore } from './stores/useSwUpdateStore'
 import { isSupabaseConfigured } from './services/supabase/client'
 
 hydrateFromLocalStorage()
@@ -35,7 +36,12 @@ if (import.meta.env.PROD) {
         setInterval(() => registration.update(), 60 * 1000)
       },
       onNeedRefresh() {
-        updateSW(true)
+        // Antes esto recargaba en silencio — el alumno no tenía forma de
+        // saber por qué la página se reinició sola. Ahora avisa (ver
+        // UpdatingBanner en App.jsx) y le da un momento a ese aviso para
+        // pintar antes de recargar.
+        useSwUpdateStore.getState().setUpdating(true)
+        setTimeout(() => updateSW(true), 1500)
       },
     })
   })
