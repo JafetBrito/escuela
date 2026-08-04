@@ -51,12 +51,13 @@ export const useChessStore = create((set, get) => ({
     }).select().single()
     if (!error) {
       set((s) => ({ invitesOut: [data, ...s.invitesOut] }))
-      await supabase.from('student_notifications').insert({
+      const { error: notifError } = await supabase.from('student_notifications').insert({
         student_id: toId,
         chess_invite_id: data.id,
         title: '♟️ Te invitó a jugar ajedrez',
         body: fromName,
       })
+      if (notifError) console.error('[useChessStore.sendInvite] notificación no se pudo crear', notifError)
     }
     return { data, error }
   },
@@ -90,12 +91,13 @@ export const useChessStore = create((set, get) => ({
     if (!error) {
       await supabase.from('chess_invites').update({ status: 'aceptada', game_id: game.id }).eq('id', invite.id)
       set((s) => ({ invitesIn: s.invitesIn.filter((i) => i.id !== invite.id), myGames: [game, ...s.myGames] }))
-      await supabase.from('student_notifications').insert({
+      const { error: notifError } = await supabase.from('student_notifications').insert({
         student_id: invite.from_id,
         chess_invite_id: invite.id,
         title: '♟️ Aceptó tu invitación',
         body: invite.to_name,
       })
+      if (notifError) console.error('[useChessStore.respondInvite] notificación no se pudo crear', notifError)
     }
     return { data: game, error }
   },
