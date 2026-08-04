@@ -16,6 +16,14 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# .env.production SÍ se commitea a propósito — solo valores públicos por
+# diseño (VITE_SUPABASE_URL/ANON_KEY, protegidos por RLS, no son secretos).
+# Ver comentario en ese archivo. Hostinger no estaba pasando las variables
+# de entorno configuradas en su panel al proceso de build (confirmado
+# comparando el bundle servido antes/después de guardarlas ahí — nunca
+# cambió), así que esto garantiza que Vite las vea sin depender de esa
+# función de su panel.
+!.env.production
 
 # Editor directories and files
 .vscode/*
