@@ -184,6 +184,34 @@ export const useAuthStore = create((set, get) => ({
     })
   },
 
+  // ponytail: acceso fantasma SOLO para revisar la app en local (dev) sin
+  // depender de Supabase — no crea una sesión real, así que cualquier
+  // pantalla que lea datos reales de Supabase (tareas, proyectos, monedas
+  // guardadas...) se ve vacía; el catálogo de cursos y las clases sí
+  // funcionan completo porque esos son de lectura pública. Nunca puede
+  // activarse en producción: gateado por import.meta.env.DEV en
+  // LoginPage.jsx, y ese flag es `false` en cualquier `vite build`. Borrar
+  // este bloque + el atajo en LoginPage.jsx cuando ya no haga falta.
+  enterGhostMode: () => {
+    const id = 'ghost-meow-local'
+    set({
+      session: { user: { id, email: 'meow@meow.com' } },
+      user: { id, email: 'meow@meow.com' },
+      profile: {
+        id,
+        email: 'meow@meow.com',
+        display_name: 'Meow (prueba local)',
+        role: 'student',
+        account_status: 'active',
+        age_profile: null,
+        license: null,
+        voice_enabled: false,
+      },
+      license: null,
+      isUnlocked: true,
+    })
+  },
+
   isAdmin: () => get().profile?.role === 'admin',
 
   // Live voice (mic dictation in VR chat): admins always have it; everyone

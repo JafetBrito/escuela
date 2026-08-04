@@ -39,6 +39,14 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    // ponytail: atajo SOLO en dev (import.meta.env.DEV es siempre false en
+    // un build de producción) para entrar a revisar la app sin depender de
+    // Supabase — no crea sesión real, ver enterGhostMode en useAuthStore.js.
+    if (import.meta.env.DEV && email === 'meow@meow.com' && password === '199728') {
+      useAuthStore.getState().enterGhostMode()
+      navigate('/dashboard')
+      return
+    }
     setStatus('processing')
     try {
       await signInWithEmail(email, password)
@@ -142,6 +150,12 @@ export default function LoginPage() {
             <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
               {error}
             </div>
+          )}
+
+          {import.meta.env.DEV && (
+            <p className="mt-4 text-center text-[11px] text-text-muted">
+              🐱 Dev: <code>meow@meow.com</code> / <code>199728</code> entra sin Supabase (solo local)
+            </p>
           )}
 
           <p className="mt-4 text-center text-xs text-text-muted">
