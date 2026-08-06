@@ -6,11 +6,13 @@ import Logo from '../shared/Logo'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/googleAuth'
+import { useI18n } from '../../i18n'
 
 const FACEBOOK_ENABLED = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const signInWithEmail = useAuthStore((s) => s.signInWithEmail)
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth)
   const registerWithGoogle = useAuthStore((s) => s.registerWithGoogle)
@@ -74,23 +76,20 @@ export default function LoginPage() {
           <Logo />
         </Link>
         <Link to="/crear-cuenta" className="text-sm text-text-muted hover:text-text">
-          Crear cuenta →
+          {t('login.headerCreateAccount')}
         </Link>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-6 py-12">
         <Card className="w-full max-w-md">
-          <h1 className="mb-1 text-2xl font-bold">Inicia sesión</h1>
-          <p className="mb-6 text-sm text-text-muted">
-            Accede a tu cuenta de oliver.escuela: tu mascota, tu progreso, tus chats y tu llave
-            te están esperando.
-          </p>
+          <h1 className="mb-1 text-2xl font-bold">{t('login.title')}</h1>
+          <p className="mb-6 text-sm text-text-muted">{t('login.subtitle')}</p>
 
           {supabaseReady ? (
             <>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <label className="flex flex-col gap-1 text-sm">
-                  Correo
+                  {t('login.email')}
                   <input
                     type="email"
                     required
@@ -100,7 +99,7 @@ export default function LoginPage() {
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  Contraseña
+                  {t('login.password')}
                   <input
                     type="password"
                     required
@@ -110,38 +109,33 @@ export default function LoginPage() {
                   />
                 </label>
                 <Button type="submit" disabled={status === 'processing'} className="mt-1">
-                  {status === 'processing' ? 'Entrando…' : 'Iniciar sesión'}
+                  {status === 'processing' ? t('login.submitting') : t('login.submit')}
                 </Button>
               </form>
 
               <div className="my-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs uppercase tracking-wide text-text-muted">o continúa con</span>
+                <span className="text-xs uppercase tracking-wide text-text-muted">{t('login.orContinueWith')}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
 
               <div className="flex flex-col gap-2">
                 <Button variant="secondary" onClick={() => handleOAuth('google')}>
-                  🟢 Continuar con Google
+                  {t('login.continueGoogle')}
                 </Button>
                 {FACEBOOK_ENABLED && (
                   <Button variant="secondary" onClick={() => handleOAuth('facebook')}>
-                    🔵 Continuar con Facebook
+                    {t('login.continueFacebook')}
                   </Button>
                 )}
               </div>
             </>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <p className="text-center text-sm text-text-muted">
-                Las cuentas en la nube aún no están configuradas en este sitio. Puedes entrar
-                con Google para probar el modo local.
-              </p>
+              <p className="text-center text-sm text-text-muted">{t('login.localModeNote')}</p>
               <div ref={googleButtonRef} />
               {!isGoogleAuthConfigured() && (
-                <p className="text-center text-xs text-text-muted">
-                  El registro con Google tampoco está configurado todavía.
-                </p>
+                <p className="text-center text-xs text-text-muted">{t('login.googleNotConfigured')}</p>
               )}
             </div>
           )}
@@ -159,15 +153,15 @@ export default function LoginPage() {
           )}
 
           <p className="mt-4 text-center text-xs text-text-muted">
-            ¿No tienes cuenta?{' '}
+            {t('login.noAccount')}{' '}
             <Link to="/crear-cuenta" className="text-primary underline">
-              Crea una gratis
+              {t('login.createFree')}
             </Link>
           </p>
           <p className="mt-1 text-center text-xs text-text-muted">
-            ¿Ya tienes una llave?{' '}
+            {t('login.haveKey')}{' '}
             <Link to="/unlock" className="text-primary underline">
-              Canjéala aquí
+              {t('login.redeemHere')}
             </Link>
           </p>
         </Card>

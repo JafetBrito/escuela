@@ -33,6 +33,16 @@
     "locked": false
   },
   {
+    "id": "course-prompt-practico",
+    "title": "Prompt Engineering Práctico: De la Teoría a Proyectos Reales",
+    "description": "El complemento práctico de \"Prompt Engineering desde cero\": menos teoría, más ejercicios reales — depurar prompts que fallan, extraer datos, trabajar con código y encadenar tareas.",
+    "icon": "🛠️",
+    "color": "#c084fc",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Prompt Engineering",
+    "locked": false
+  },
+  {
     "id": "course-004",
     "title": "Gestión del tiempo para estudiantes",
     "description": "Técnicas probadas como Pomodoro, time-blocking y la matriz de Eisenhower, adaptadas a la vida real de un estudiante con tareas, exámenes y vida fuera de la escuela. Aprenderás a identificar por qué procrastinas y a construir un sistema que sí sostengas. Próximamente.",
@@ -121,6 +131,76 @@
     "locked": false
   },
   {
+    "id": "course-react",
+    "title": "React: De Cero a Aplicaciones Reales",
+    "description": "Componentes, props, estado, efectos, listas y formularios — un curso completo y autocontenido de React, la librería con la que está construida esta misma plataforma.",
+    "icon": "⚛️",
+    "color": "#61dafb",
+    "category": "Programación",
+    "subcategory": "Frontend Moderno",
+    "locked": false
+  },
+  {
+    "id": "course-vue",
+    "title": "Vue.js: De Cero a Aplicaciones Reales",
+    "description": "Reactividad, directivas, componentes y Composition API — un curso completo de Vue.js, el otro gran framework de interfaces reactivas, con comparaciones directas a React.",
+    "icon": "💚",
+    "color": "#42b883",
+    "category": "Programación",
+    "subcategory": "Frontend Moderno",
+    "locked": false
+  },
+  {
+    "id": "course-poo",
+    "title": "Introducción a la Programación Orientada a Objetos",
+    "description": "Clases, objetos, encapsulamiento, herencia y polimorfismo — el paradigma que organiza el código como \"cosas\" con propiedades y comportamiento.",
+    "icon": "🧬",
+    "color": "#f472b6",
+    "category": "Programación",
+    "subcategory": "Paradigmas",
+    "locked": false
+  },
+  {
+    "id": "course-paradigmas-programacion",
+    "title": "Paradigmas de la Programación: Imperativo, POO, Funcional y Más",
+    "description": "Un recorrido comparativo por los grandes estilos de programación — para entender POR QUÉ existen distintas formas de escribir código, no solo memorizar sintaxis.",
+    "icon": "🎭",
+    "color": "#fb7185",
+    "category": "Programación",
+    "subcategory": "Paradigmas",
+    "locked": false
+  },
+  {
+    "id": "course-bases-datos",
+    "title": "Introducción a Bases de Datos",
+    "description": "Qué es una base de datos, cómo se organizan en tablas, SQL básico, relaciones entre tablas y cuándo elegir SQL vs. NoSQL.",
+    "icon": "🗄️",
+    "color": "#0ea5e9",
+    "category": "Programación",
+    "subcategory": "Bases de Datos",
+    "locked": false
+  },
+  {
+    "id": "course-lenguajes-programacion",
+    "title": "Introducción a los Lenguajes de Programación",
+    "description": "Compilados vs. interpretados, tipado, paradigmas y niveles de abstracción: cómo elegir y entender cualquier lenguaje de programación.",
+    "icon": "📖",
+    "color": "#a855f7",
+    "category": "Programación",
+    "subcategory": "Lenguajes de Programación",
+    "locked": false
+  },
+  {
+    "id": "course-historia-programacion",
+    "title": "Historia de la Programación: De Ada Lovelace a la IA",
+    "description": "Un recorrido cronológico completo: desde el primer algoritmo publicado en 1843 hasta la inteligencia artificial generativa de hoy.",
+    "icon": "🕰️",
+    "color": "#f59e0b",
+    "category": "Programación",
+    "subcategory": "Historia de la Programación",
+    "locked": false
+  },
+  {
     "id": "course-010",
     "title": "Introducción a Python",
     "description": "Tu primer lenguaje de programación, explicado de forma simple y práctica: variables, condicionales, ciclos y funciones, con ejercicios pequeños que puedes correr y ver funcionar de inmediato. Próximamente.",
@@ -195,6 +275,26 @@
     "locked": false
   },
   {
+    "id": "course-psicologia-desarrollo",
+    "title": "Psicología del Desarrollo Humano",
+    "description": "Cómo cambiamos física, cognitiva y emocionalmente desde la infancia hasta la vejez — un recorrido completo por las etapas de la vida.",
+    "icon": "🌱",
+    "color": "#a78bfa",
+    "category": "Ciencias Sociales",
+    "subcategory": "Psicología del Desarrollo",
+    "locked": false
+  },
+  {
+    "id": "course-psicologia-salud-mental",
+    "title": "Salud Mental y Trastornos Psicológicos Comunes",
+    "description": "Ansiedad, depresión y estrés explicados sin estigma: qué son realmente, cómo reconocerlos, y cuándo/cómo buscar ayuda profesional.",
+    "icon": "🧠",
+    "color": "#38bdf8",
+    "category": "Ciencias Sociales",
+    "subcategory": "Salud Mental",
+    "locked": false
+  },
+  {
     "id": "course-historia",
     "title": "Historia del Mundo",
     "description": "Un viaje desde las primeras civilizaciones hasta el mundo moderno: guerras, imperios, revoluciones y los personajes que cambiaron el rumbo de la historia. No memorizarás fechas sueltas — conectarás causas y consecuencias. Próximamente.",
@@ -239,6 +339,46 @@
     "icon": "🩺",
     "color": "#34d399",
     "category": "Medicina",
+    "locked": false
+  },
+  {
+    "id": "course-medicina-anatomia",
+    "title": "Anatomía y Fisiología Humana",
+    "description": "Cómo está construido y cómo funciona tu cuerpo, sistema por sistema: esqueleto, corazón, pulmones, cerebro y digestión, explicado desde cero.",
+    "icon": "🫀",
+    "color": "#34d399",
+    "category": "Medicina",
+    "subcategory": "Anatomía y Fisiología",
+    "locked": false
+  },
+  {
+    "id": "course-medicina-patologia",
+    "title": "Patología General: Cómo y Por Qué Enfermamos",
+    "description": "Qué es una enfermedad, cómo actúan las infecciones, qué es la inflamación y cómo un médico llega a un diagnóstico — divulgación médica seria y accesible.",
+    "icon": "🔬",
+    "color": "#f87171",
+    "category": "Medicina",
+    "subcategory": "Patología",
+    "locked": false
+  },
+  {
+    "id": "course-medicina-farmacologia",
+    "title": "Farmacología Básica: Cómo Funcionan los Medicamentos",
+    "description": "Qué es un medicamento, cómo actúa en tu cuerpo, por qué la dosis importa tanto, y por qué la resistencia a los antibióticos es un problema de todos.",
+    "icon": "💊",
+    "color": "#60a5fa",
+    "category": "Medicina",
+    "subcategory": "Farmacología",
+    "locked": false
+  },
+  {
+    "id": "course-primeros-auxilios",
+    "title": "Primeros Auxilios: Guía Práctica para Salvar Vidas",
+    "description": "RCP, atragantamiento, heridas, quemaduras, fracturas y emergencias comunes — qué hacer en los primeros minutos, antes de que llegue ayuda profesional.",
+    "icon": "🚑",
+    "color": "#ef4444",
+    "category": "Medicina",
+    "subcategory": "Primeros Auxilios",
     "locked": false
   },
   {
@@ -383,11 +523,11 @@
   {
     "id": "course-logica",
     "title": "Introducción a la Lógica",
-    "description": "Lógica clásica, lógica matemática y lógica computacional: cómo razonar de forma válida y detectar falacias. Próximamente.",
+    "description": "Lógica clásica, lógica matemática y sus falacias: cómo razonar de forma válida y detectar argumentos que solo PARECEN correctos.",
     "icon": "🔣",
     "color": "#818cf8",
     "category": "Lógica",
-    "locked": true
+    "locked": false
   },
   {
     "id": "course-artes-escenicas",
@@ -399,13 +539,54 @@
     "locked": true
   },
   {
-    "id": "course-ingenieria",
-    "title": "Introducción a la Ingeniería",
-    "description": "Ingeniería civil, mecánica, electrónica y de sistemas computacionales — cómo se diseña y construye el mundo físico. Próximamente.",
-    "icon": "⚙️",
+    "id": "course-ing-civil",
+    "title": "Fundamentos de Ingeniería Civil",
+    "description": "Cómo se diseña y construye el mundo físico que nos rodea: materiales, fuerzas, cimentaciones e infraestructura, explicado desde cero.",
+    "icon": "🏗️",
     "color": "#f97316",
     "category": "Ingeniería",
-    "locked": true
+    "subcategory": "Civil",
+    "locked": false
+  },
+  {
+    "id": "course-ing-mecanica",
+    "title": "Fundamentos de Ingeniería Mecánica",
+    "description": "Cómo se diseñan las máquinas: fuerzas, movimiento, energía y los mecanismos que convierten una cosa en otra.",
+    "icon": "⚙️",
+    "color": "#64748b",
+    "category": "Ingeniería",
+    "subcategory": "Mecánica",
+    "locked": false
+  },
+  {
+    "id": "course-ing-electrica",
+    "title": "Fundamentos de Ingeniería Eléctrica y Electrónica",
+    "description": "Voltaje, corriente, circuitos y los componentes que hacen posible desde un foco hasta un microchip — explicado desde cero.",
+    "icon": "🔌",
+    "color": "#eab308",
+    "category": "Ingeniería",
+    "subcategory": "Eléctrica y Electrónica",
+    "locked": false
+  },
+  {
+    "id": "course-ing-industrial",
+    "title": "Fundamentos de Ingeniería Industrial",
+    "description": "Cómo se optimizan procesos, calidad y personas: de la línea de producción a la cadena de suministro global.",
+    "icon": "🏭",
+    "color": "#0ea5e9",
+    "category": "Ingeniería",
+    "subcategory": "Industrial",
+    "locked": false
+  },
+  {
+    "id": "course-ing-software",
+    "title": "Fundamentos de Ingeniería de Software",
+    "description": "La diferencia entre \"programar\" y construir software real: ciclo de vida, metodologías, control de versiones y calidad.",
+    "icon": "🖥️",
+    "color": "#22c55e",
+    "category": "Ingeniería",
+    "subcategory": "Software y Sistemas",
+    "locked": false
   },
   {
     "id": "course-educacion",
