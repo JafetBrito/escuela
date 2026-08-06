@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Videos generados con Remotion (remotion/) — se quedan solo en tu compu,
+# los .mp4 no deben vivir en el repositorio.
+videos-output/
+
 # Environment variables (Google OAuth client ID, etc.)
 .env
 .env.*
