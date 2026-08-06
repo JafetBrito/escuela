@@ -121,8 +121,15 @@ export default defineConfig({
             options: { cacheName: 'images-v1' },
           },
           {
-            // Supabase API — network first, fall back to cache for offline reads
-            urlPattern: /supabase\.co/i,
+            // Supabase API — network first, fall back to cache for offline reads.
+            // Excludes /auth/v1/* on purpose: letting the service worker intercept
+            // auth calls (token exchange, session-from-URL after Google login) is
+            // what broke "Failed to execute 'fetch': String contains non
+            // ISO-8859-1 code point" in production only (workbox wraps the
+            // request/response and chokes on it) — never reproduced in dev,
+            // where this SW is disabled. Auth traffic also shouldn't sit in
+            // Cache Storage regardless, so this is a fix and a hardening at once.
+            urlPattern: ({ url }) => url.hostname.endsWith('supabase.co') && !url.pathname.startsWith('/auth/'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-v1',
