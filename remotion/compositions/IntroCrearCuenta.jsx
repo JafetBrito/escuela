@@ -1,4 +1,18 @@
-import { AbsoluteFill, Sequence, useCurrentFrame, interpolate, spring, useVideoConfig } from 'remotion'
+import { AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate, spring, useVideoConfig } from 'remotion'
+
+// Duración real de cada línea de narración (medida de los .wav generados
+// con TTS), + un pequeño colchón para que no se corte justo al terminar.
+// Si vuelves a generar el audio con otro texto/voz, actualiza estos números
+// (duración del wav en segundos * 30fps + ~15 frames de colchón).
+const SCENE_FRAMES = {
+  scene1: 222, // 6.87s
+  scene2: 241, // 7.53s
+  scene3: 335, // 10.65s
+  scene4: 170, // 5.14s
+  scene5: 392, // 12.58s
+  scene6: 350, // 11.18s
+  scene7: 155, // 4.48s
+}
 
 // Colores y textos reales de Oliver Academy (src/index.css, src/i18n/locales/es.js,
 // src/components/shared/Logo.jsx) — no es un mockup genérico, es la marca real.
@@ -64,6 +78,7 @@ function Scene({ children }) {
 function SceneIntro() {
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene1.wav')} />
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
         <FadeIn durationInFrames={25}>
           <div style={{ textAlign: 'center' }}>
@@ -82,6 +97,7 @@ function SceneIntro() {
 function SceneLanding() {
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene2.wav')} />
       <AbsoluteFill style={{ padding: 80, justifyContent: 'center' }}>
         <FadeIn>
           <div
@@ -149,6 +165,7 @@ function SceneCreateAccount() {
   const step = Math.min(3, Math.floor(frame / 75))
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene3.wav')} />
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
         <FadeIn>
           <div
@@ -194,6 +211,7 @@ function SceneConfirm() {
   const scale = spring({ frame, fps, config: { damping: 10 } })
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene4.wav')} />
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', transform: `scale(${scale})` }}>
           <div
@@ -224,6 +242,7 @@ function SceneLogin() {
   const step = Math.min(2, Math.floor(frame / 75))
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene5.wav')} />
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
         <FadeIn>
           <div style={{ backgroundColor: CARD_BG, borderRadius: 20, padding: 48, width: 580 }}>
@@ -279,6 +298,7 @@ function CourseCard({ icon, title }) {
 function SceneDashboard() {
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene6.wav')} />
       <AbsoluteFill style={{ padding: 64 }}>
         <FadeIn>
           <div style={{ fontSize: 40, fontWeight: 800, color: TEXT }}>Hola 👋</div>
@@ -325,6 +345,7 @@ function SceneDashboard() {
 function SceneClosing() {
   return (
     <Scene>
+      <Audio src={staticFile('audio/scene7.wav')} />
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
         <FadeIn durationInFrames={15}>
           <Logo size={70} />
@@ -335,29 +356,42 @@ function SceneClosing() {
 }
 
 export function IntroCrearCuenta() {
+  // Offsets acumulados a partir de SCENE_FRAMES (duración real de cada
+  // línea de audio) — cada escena empieza justo donde termina la anterior.
+  let cursor = 0
+  const from1 = cursor; cursor += SCENE_FRAMES.scene1
+  const from2 = cursor; cursor += SCENE_FRAMES.scene2
+  const from3 = cursor; cursor += SCENE_FRAMES.scene3
+  const from4 = cursor; cursor += SCENE_FRAMES.scene4
+  const from5 = cursor; cursor += SCENE_FRAMES.scene5
+  const from6 = cursor; cursor += SCENE_FRAMES.scene6
+  const from7 = cursor; cursor += SCENE_FRAMES.scene7
+
   return (
     <>
-      <Sequence from={0} durationInFrames={210}>
+      <Sequence from={from1} durationInFrames={SCENE_FRAMES.scene1}>
         <SceneIntro />
       </Sequence>
-      <Sequence from={210} durationInFrames={270}>
+      <Sequence from={from2} durationInFrames={SCENE_FRAMES.scene2}>
         <SceneLanding />
       </Sequence>
-      <Sequence from={480} durationInFrames={360}>
+      <Sequence from={from3} durationInFrames={SCENE_FRAMES.scene3}>
         <SceneCreateAccount />
       </Sequence>
-      <Sequence from={840} durationInFrames={240}>
+      <Sequence from={from4} durationInFrames={SCENE_FRAMES.scene4}>
         <SceneConfirm />
       </Sequence>
-      <Sequence from={1080} durationInFrames={300}>
+      <Sequence from={from5} durationInFrames={SCENE_FRAMES.scene5}>
         <SceneLogin />
       </Sequence>
-      <Sequence from={1380} durationInFrames={360}>
+      <Sequence from={from6} durationInFrames={SCENE_FRAMES.scene6}>
         <SceneDashboard />
       </Sequence>
-      <Sequence from={1740} durationInFrames={60}>
+      <Sequence from={from7} durationInFrames={SCENE_FRAMES.scene7}>
         <SceneClosing />
       </Sequence>
     </>
   )
 }
+
+export const INTRO_CREAR_CUENTA_TOTAL_FRAMES = Object.values(SCENE_FRAMES).reduce((a, b) => a + b, 0)
