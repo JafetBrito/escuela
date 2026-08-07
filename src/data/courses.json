@@ -654,5 +654,38 @@
     "category": "Programación",
     "subcategory": "Código Abierto",
     "locked": true
+  },
+  {
+    "id": "course-consola-basica",
+    "title": "Consola de Comandos: Primeros Pasos",
+    "description": "La introducción más sencilla posible a la terminal: qué es, cómo se abre y los comandos básicos para moverte sin miedo. Pensado para quien nunca ha escrito un comando en su vida.",
+    "icon": "⌨️",
+    "color": "#38bdf8",
+    "category": "Programación",
+    "subcategory": "Terminal y Sistemas",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-aprender-a-aprender",
+    "title": "Aprende a Aprender: Domina Temas Difíciles",
+    "description": "Técnicas simples y reales (no magia) para entender cosas complicadas más rápido: dividir en partes, la técnica Feynman, repetición espaciada y práctica activa. Para cualquier tema, no solo estudios.",
+    "icon": "🧭",
+    "color": "#34d399",
+    "category": "Productividad",
+    "subcategory": "Aprendizaje",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-informatica-basica",
+    "title": "Primeros Pasos con la Computadora",
+    "description": "El curso más básico posible: qué es cada parte de la computadora, cómo usar el mouse y el teclado, carpetas, internet y seguridad simple. Para quien casi no ha usado una computadora antes.",
+    "icon": "🌱",
+    "color": "#60a5fa",
+    "category": "Alfabetización Digital",
+    "subcategory": "Fundamentos",
+    "difficulty": "principiante",
+    "locked": false
   }
 ]
