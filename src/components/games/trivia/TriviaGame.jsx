@@ -6,11 +6,18 @@ import { useTriviaStore } from '../../../stores/useTriviaStore'
 import { TRIVIA_CATEGORIES } from '../../../data/triviaCategories'
 import { supabase } from '../../../services/supabase/client'
 
-// Juego de trivia en línea 1v1 — invita por username (calca
-// ChessGame.jsx/useChessStore.js), elige categoría, y juega por turnos un
-// banco de preguntas sorteado de trivia_questions. Sin modo vs-IA/local en
-// este pase — solo en línea, ya que el objetivo es probar el sistema de
-// invitaciones/notificaciones/partidas, no ofrecer variantes de juego.
+// Trivia con dos modos:
+//  - Online 1v1: invita por username (calca ChessGame.jsx/useChessStore.js),
+//    elige categoría, y juega por turnos un banco de preguntas sorteado de
+//    trivia_questions vía Realtime.
+//  - Solo/offline: sin rival ni invitación. Descarga el banco de la
+//    categoría UNA vez (fetchQuestionBank, ya usado por AdminTriviaPage) y
+//    lo cachea en localStorage — las partidas siguientes de esa categoría
+//    corren 100% en el cliente, sin ningún round-trip a Supabase, así que
+//    funcionan sin conexión mientras el caché siga ahí.
+const SOLO_CACHE_KEY = (category) => `oliver_trivia_offline_${category}`
+const SOLO_QUESTIONS_PER_ROUND = 10
+
 export default function TriviaGame() {
   const session = useAuthStore((s) => s.session)
   const profile = useAuthStore((s) => s.profile)
@@ -32,13 +39,73 @@ export default function TriviaGame() {
   const openMatch       = useTriviaStore((s) => s.openMatch)
   const closeMatch      = useTriviaStore((s) => s.closeMatch)
   const answerQuestion  = useTriviaStore((s) => s.answerQuestion)
+  const fetchQuestionBank = useTriviaStore((s) => s.fetchQuestionBank)
 
-  // mode: 'lobby' | 'match'
+  // mode: 'lobby' | 'match' | 'solo'
   const [mode, setMode] = useState('lobby')
   const [searchQuery, setSearchQuery] = useState('')
   const [inviteCategory, setInviteCategory] = useState(TRIVIA_CATEGORIES[0])
+  const [soloCategory, setSoloCategory] = useState(TRIVIA_CATEGORIES[0])
   const [answerError, setAnswerError] = useState(null)
   const [lastPick, setLastPick] = useState(null)
+
+  // ── Solo/offline ──
+  const [soloLoading, setSoloLoading] = useState(false)
+  const [soloError, setSoloError] = useState(null)
+  const [soloPool, setSoloPool] = useState(null) // banco completo cacheado de la categoría activa
+  const [soloQuestions, setSoloQuestions] = useState([])
+  const [soloIndex, setSoloIndex] = useState(0)
+  const [soloScore, setSoloScore] = useState(0)
+  const [soloPick, setSoloPick] = useState(null)
+
+  const startSoloRound = useCallback((pool) => {
+    const shuffled = [...pool]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    setSoloQuestions(shuffled.slice(0, Math.min(SOLO_QUESTIONS_PER_ROUND, shuffled.length)))
+    setSoloIndex(0)
+    setSoloScore(0)
+    setSoloPick(null)
+  }, [])
+
+  const handleStartSolo = async (category) => {
+    setSoloLoading(true)
+    setSoloError(null)
+    let pool = null
+    try {
+      const bank = await fetchQuestionBank(category)
+      pool = bank?.questions ?? null
+      if (pool?.length) localStorage.setItem(SOLO_CACHE_KEY(category), JSON.stringify(pool))
+    } catch {
+      // sin conexión — se resuelve abajo con lo que haya en caché
+    }
+    if (!pool?.length) {
+      try { pool = JSON.parse(localStorage.getItem(SOLO_CACHE_KEY(category)) || 'null') } catch { pool = null }
+    }
+    setSoloLoading(false)
+    if (!pool?.length) {
+      setSoloError('Sin conexión y sin preguntas guardadas para esta categoría todavía. Conéctate una vez para descargarla y podrás jugarla offline después.')
+      return
+    }
+    setSoloPool(pool)
+    startSoloRound(pool)
+    setMode('solo')
+  }
+
+  const handleSoloAnswer = (choiceIndex) => {
+    if (soloPick !== null) return
+    setSoloPick(choiceIndex)
+    const correct = choiceIndex === soloQuestions[soloIndex].correct
+    if (correct) setSoloScore((s) => s + 1)
+    setTimeout(() => {
+      setSoloIndex((i) => i + 1)
+      setSoloPick(null)
+    }, 900)
+  }
+
+  const exitSolo = () => setMode('lobby')
 
   const myId = session?.user?.id
   const myName = profile?.display_name || session?.user?.email || 'Jugador'
@@ -179,6 +246,24 @@ export default function TriviaGame() {
               </div>
             )}
 
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3">
+              <p className="mb-1 text-xs font-bold uppercase text-text-muted">🧩 Practicar solo</p>
+              <p className="mb-2 text-[11px] text-text-muted">Sin rival, a tu ritmo — la primera vez necesita conexión; después puedes repetir esa categoría sin internet.</p>
+              {soloError && (
+                <div className="mb-2 rounded-lg border border-danger/40 bg-danger/10 p-2 text-xs text-danger">{soloError}</div>
+              )}
+              <div className="flex gap-2">
+                <select value={soloCategory} onChange={(e) => setSoloCategory(e.target.value)}
+                  className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary">
+                  {TRIVIA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button type="button" onClick={() => handleStartSolo(soloCategory)} disabled={soloLoading}
+                  className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background disabled:opacity-50">
+                  {soloLoading ? 'Cargando…' : 'Jugar solo'}
+                </button>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-border bg-surface p-3">
               <p className="mb-2 text-xs font-bold uppercase text-text-muted">Invitar a alguien</p>
 
@@ -219,6 +304,63 @@ export default function TriviaGame() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Solo/offline ──
+  if (mode === 'solo') {
+    const soloOver = soloIndex >= soloQuestions.length
+    const sq = !soloOver ? soloQuestions[soloIndex] : null
+    return (
+      <div className="flex h-full flex-col bg-background text-text">
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2">
+          <span className="text-sm font-bold">🧩 {soloCategory} · solo</span>
+          <button type="button" onClick={exitSolo} className="rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-text-muted hover:bg-surface-hover hover:text-text">← Lobby</button>
+        </div>
+        <div className="flex flex-1 flex-col items-center overflow-y-auto p-4">
+          <div className="w-full max-w-xl">
+            {soloOver ? (
+              <div className="rounded-2xl border border-border bg-surface p-8 text-center">
+                <p className="mb-2 text-3xl font-black">🏁 {soloScore} / {soloQuestions.length}</p>
+                <p className="mb-4 text-sm text-text-muted">
+                  {soloScore === soloQuestions.length ? '¡Perfecto!' : soloScore >= soloQuestions.length * 0.6 ? '¡Buen trabajo!' : 'Sigue practicando.'}
+                </p>
+                <div className="flex justify-center gap-2">
+                  <button type="button" onClick={() => startSoloRound(soloPool)} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background">Jugar de nuevo</button>
+                  <button type="button" onClick={exitSolo} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:text-text">Volver al lobby</button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-surface p-5">
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-text-muted/60">
+                  Pregunta {soloIndex + 1} de {soloQuestions.length} · {soloScore} correctas
+                </p>
+                {sq.image && <img src={sq.image} alt="" className="mb-3 max-h-48 w-full rounded-lg object-contain" />}
+                <p className="mb-4 text-lg font-bold text-text">{sq.question}</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {sq.options.map((opt, i) => {
+                    const picked = soloPick === i
+                    const revealed = soloPick !== null
+                    const isCorrect = i === sq.correct
+                    const style = !revealed
+                      ? 'border-border hover:border-primary hover:bg-primary/5'
+                      : isCorrect ? 'border-emerald-500 bg-emerald-500/15 text-emerald-400'
+                      : picked ? 'border-danger bg-danger/15 text-danger'
+                      : 'border-border opacity-50'
+                    return (
+                      <button key={i} type="button" disabled={revealed}
+                        onClick={() => handleSoloAnswer(i)}
+                        className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors disabled:cursor-not-allowed ${style}`}>
+                        {opt}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

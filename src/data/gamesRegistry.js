@@ -26,7 +26,7 @@ export const GAMES = [
     title: 'NZT48',
     icon: '🧠',
     category: 'Pruebas',
-    description: 'Trivia 1v1 en línea: invita a alguien por username, elige categoría y compitan por turnos.',
+    description: 'Trivia con 8 categorías: practica solo (funciona offline) o invita a alguien por username para un 1v1 en línea por turnos.',
     type: 'component',
     component: 'trivia',
     reward: 250,
