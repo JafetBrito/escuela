@@ -74,19 +74,28 @@ export default function TriviaGame() {
     setSoloLoading(true)
     setSoloError(null)
     let pool = null
+    let fetchFailed = false
     try {
       const bank = await fetchQuestionBank(category)
-      pool = bank?.questions ?? null
-      if (pool?.length) localStorage.setItem(SOLO_CACHE_KEY(category), JSON.stringify(pool))
+      pool = bank?.questions?.length ? bank.questions : null
+      if (pool) localStorage.setItem(SOLO_CACHE_KEY(category), JSON.stringify(pool))
     } catch {
-      // sin conexión — se resuelve abajo con lo que haya en caché
+      fetchFailed = true // de verdad no hubo respuesta del servidor (sin internet, timeout, etc.)
     }
-    if (!pool?.length) {
+    if (!pool) {
       try { pool = JSON.parse(localStorage.getItem(SOLO_CACHE_KEY(category)) || 'null') } catch { pool = null }
     }
     setSoloLoading(false)
     if (!pool?.length) {
-      setSoloError('Sin conexión y sin preguntas guardadas para esta categoría todavía. Conéctate una vez para descargarla y podrás jugarla offline después.')
+      // Dos causas muy distintas — antes se mostraba el mismo mensaje para
+      // ambas y confundía: "sin conexión" cuando en realidad SÍ había
+      // internet, solo que el servidor no tenía preguntas para esa
+      // categoría todavía (nadie corrió la migración/el admin no las cargó).
+      setSoloError(
+        fetchFailed
+          ? 'Sin conexión y sin preguntas guardadas para esta categoría todavía. Conéctate una vez para descargarla y podrás jugarla offline después.'
+          : 'Esta categoría todavía no tiene preguntas cargadas en el servidor — pídele a un admin que las agregue desde /admin/trivia.'
+      )
       return
     }
     setSoloPool(pool)
@@ -189,11 +198,73 @@ export default function TriviaGame() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="mx-auto max-w-2xl space-y-4">
+          <div className="mx-auto max-w-3xl space-y-4">
             {answerError && (
               <div className="rounded-xl border border-danger/40 bg-danger/10 p-3 text-sm text-danger">{answerError}</div>
             )}
 
+            {/* Los dos modos, uno junto al otro — elige cómo quieres jugar */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col rounded-2xl border-2 border-primary/30 bg-primary/5 p-4">
+                <p className="text-lg font-black text-text">🧩 Un jugador</p>
+                <p className="mb-3 flex-1 text-xs text-text-muted">Sin rival, a tu ritmo. La primera vez necesita conexión; después puedes repetir esa categoría sin internet.</p>
+                {soloError && (
+                  <div className="mb-2 rounded-lg border border-danger/40 bg-danger/10 p-2 text-xs text-danger">{soloError}</div>
+                )}
+                <select value={soloCategory} onChange={(e) => setSoloCategory(e.target.value)}
+                  className="mb-2 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary">
+                  {TRIVIA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button type="button" onClick={() => handleStartSolo(soloCategory)} disabled={soloLoading}
+                  className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background disabled:opacity-50">
+                  {soloLoading ? 'Cargando…' : 'Jugar solo →'}
+                </button>
+              </div>
+
+              <div className="flex flex-col rounded-2xl border-2 border-border bg-surface p-4">
+                <p className="text-lg font-black text-text">🎮 Multijugador</p>
+                <p className="mb-3 text-xs text-text-muted">Invita a alguien por username — la partida empieza en cuanto acepte.</p>
+
+                {friends.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {friends.map((f) => (
+                      <button key={f} type="button" onClick={() => setSearchQuery(f)}
+                        className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:bg-surface-hover">
+                        👤 {f}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Busca por nombre o email…"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+
+                <select value={inviteCategory} onChange={(e) => setInviteCategory(e.target.value)}
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary">
+                  {TRIVIA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+
+                <div className="mt-2 space-y-1.5">
+                  {searching && <p className="text-xs text-text-muted">Buscando…</p>}
+                  {!searching && searchQuery.trim() && searchResults.length === 0 && (
+                    <p className="text-xs text-text-muted">Sin resultados.</p>
+                  )}
+                  {searchResults.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-2.5 py-1.5">
+                      <div>
+                        <p className="text-sm font-semibold text-text">{u.display_name || 'Sin nombre'}</p>
+                        <p className="text-[11px] text-text-muted">{u.email}</p>
+                      </div>
+                      <button type="button" onClick={() => handleSendInvite(u.id, u.display_name || u.email)}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Invitar</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Estado de tus partidas/invitaciones — visible debajo de los dos modos */}
             {invitesIn.length > 0 && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3">
                 <p className="mb-2 text-xs font-bold uppercase text-text-muted">Invitaciones recibidas</p>
@@ -245,65 +316,6 @@ export default function TriviaGame() {
                 </div>
               </div>
             )}
-
-            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3">
-              <p className="mb-1 text-xs font-bold uppercase text-text-muted">🧩 Practicar solo</p>
-              <p className="mb-2 text-[11px] text-text-muted">Sin rival, a tu ritmo — la primera vez necesita conexión; después puedes repetir esa categoría sin internet.</p>
-              {soloError && (
-                <div className="mb-2 rounded-lg border border-danger/40 bg-danger/10 p-2 text-xs text-danger">{soloError}</div>
-              )}
-              <div className="flex gap-2">
-                <select value={soloCategory} onChange={(e) => setSoloCategory(e.target.value)}
-                  className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary">
-                  {TRIVIA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <button type="button" onClick={() => handleStartSolo(soloCategory)} disabled={soloLoading}
-                  className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background disabled:opacity-50">
-                  {soloLoading ? 'Cargando…' : 'Jugar solo'}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface p-3">
-              <p className="mb-2 text-xs font-bold uppercase text-text-muted">Invitar a alguien</p>
-
-              {friends.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {friends.map((f) => (
-                    <button key={f} type="button" onClick={() => setSearchQuery(f)}
-                      className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:bg-surface-hover">
-                      👤 {f}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Busca por nombre o email…"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
-
-              <select value={inviteCategory} onChange={(e) => setInviteCategory(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary">
-                {TRIVIA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-
-              <div className="mt-2 space-y-1.5">
-                {searching && <p className="text-xs text-text-muted">Buscando…</p>}
-                {!searching && searchQuery.trim() && searchResults.length === 0 && (
-                  <p className="text-xs text-text-muted">Sin resultados.</p>
-                )}
-                {searchResults.map((u) => (
-                  <div key={u.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-2.5 py-1.5">
-                    <div>
-                      <p className="text-sm font-semibold text-text">{u.display_name || 'Sin nombre'}</p>
-                      <p className="text-[11px] text-text-muted">{u.email}</p>
-                    </div>
-                    <button type="button" onClick={() => handleSendInvite(u.id, u.display_name || u.email)}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Invitar</button>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
