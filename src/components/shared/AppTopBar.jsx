@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 import NotificationBell from './NotificationBell'
+import RecruiterMode from './RecruiterMode'
 
 // `key` maps each group/item to its translation key in src/i18n/locales
 // (nav.groups.<key> / nav.items.<key>). `label` stays as the Spanish fallback
@@ -164,6 +165,8 @@ export default function AppTopBar({ variant = 'full' }) {
 
   if (variant === 'course') {
     return (
+      <>
+      <RecruiterMode />
       <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 md:gap-4 md:px-6 md:py-2.5">
         <div className="flex min-w-0 shrink-0 items-center gap-1.5">
           <Link to="/dashboard" className="flex min-w-0 items-center gap-1">
@@ -179,10 +182,13 @@ export default function AppTopBar({ variant = 'full' }) {
           {t('nav.backToDashboard')}
         </Link>
       </header>
+      </>
     )
   }
 
   return (
+    <>
+    <RecruiterMode />
     <header
       ref={navRef}
       className="relative flex items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2 md:px-5"
@@ -493,5 +499,6 @@ export default function AppTopBar({ variant = 'full' }) {
         </nav>
       )}
     </header>
+    </>
   )
 }

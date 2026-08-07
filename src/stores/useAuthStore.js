@@ -5,6 +5,12 @@ import { applyProgressSnapshot } from '../services/persistence/progressSnapshot'
 import { loadLocalSnapshot } from '../services/persistence/localStore'
 import { DEV_UNLOCK_ALL } from '../config/devUnlock'
 
+// ponytail: localStorage es suficiente para "recordar la sesión de
+// reclutador entre recargas" — la fuente de verdad real (si el token sigue
+// vivo) es la fila en recruiter_passes, esto solo evita repetir la
+// validación en cada F5.
+const RECRUITER_STORAGE_KEY = 'oliver_recruiter_pass'
+
 // Three user roles:
 //  - 'admin'            -> profile.role === 'admin', access to everything
 //  - alumno sin llave   -> logged in, profile.license is empty
@@ -26,6 +32,21 @@ export const useAuthStore = create((set, get) => ({
   isUnlocked: false,
 
   init: async () => {
+    const savedRecruiter = localStorage.getItem(RECRUITER_STORAGE_KEY)
+    if (savedRecruiter) {
+      try {
+        const { token, expiresAt } = JSON.parse(savedRecruiter)
+        if (new Date(expiresAt).getTime() > Date.now()) {
+          get().enterRecruiterMode(token, expiresAt)
+          set({ authReady: true })
+          return
+        }
+      } catch {
+        // ignore, se limpia abajo
+      }
+      localStorage.removeItem(RECRUITER_STORAGE_KEY)
+    }
+
     if (!supabase) {
       set({ authReady: true })
       return
@@ -123,6 +144,7 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
+    localStorage.removeItem(RECRUITER_STORAGE_KEY)
     if (supabase) await supabase.auth.signOut()
     set({
       session: null,
@@ -173,6 +195,7 @@ export const useAuthStore = create((set, get) => ({
     })),
 
   lock: () => {
+    localStorage.removeItem(RECRUITER_STORAGE_KEY)
     if (supabase) supabase.auth.signOut()
     set({
       session: null,
@@ -183,6 +206,38 @@ export const useAuthStore = create((set, get) => ({
       isUnlocked: false,
     })
   },
+
+  // Vista de Reclutador: cuenta "todo desbloqueado" sin registro real, para
+  // compartir un enlace temporal (ver /reclutador/:token + AdminRecruitersPage
+  // + migration_033.sql). Misma idea que enterGhostMode (sesión falsa local,
+  // no hay fila real en auth.users) pero SÍ funciona en producción y
+  // persiste en localStorage para sobrevivir un F5 hasta que expire.
+  // No usa role:'admin' a propósito — así no expone datos reales de otros
+  // alumnos en /admin ni acciones destructivas, solo el catálogo/curso.
+  enterRecruiterMode: (token, expiresAt) => {
+    const id = `recruiter-${token}`
+    localStorage.setItem(RECRUITER_STORAGE_KEY, JSON.stringify({ token, expiresAt }))
+    set({
+      session: { user: { id, email: 'reclutador@jafetbrito.online' } },
+      user: { id, email: 'reclutador@jafetbrito.online' },
+      profile: {
+        id,
+        email: 'reclutador@jafetbrito.online',
+        display_name: 'Cuenta de Reclutador',
+        role: 'student',
+        account_status: 'active',
+        age_profile: null,
+        license: null,
+        voice_enabled: false,
+        recruiter_view: true,
+        recruiter_expires_at: expiresAt,
+      },
+      license: null,
+      isUnlocked: true,
+    })
+  },
+
+  isRecruiterMode: () => get().profile?.recruiter_view === true,
 
   // ponytail: acceso fantasma SOLO para revisar la app en local (dev) sin
   // depender de Supabase — no crea una sesión real, así que cualquier
@@ -223,6 +278,7 @@ export const useAuthStore = create((set, get) => ({
   // course they were issued for. The demo course and admins are always open.
   hasAccessToCourse: (courseId) => {
     if (DEV_UNLOCK_ALL) return true
+    if (get().profile?.recruiter_view) return true
     if (courseId === 'course-demo' || courseId === 'course-claude-mayores') return true
     if (get().profile?.role === 'admin') return true
     const license = get().license

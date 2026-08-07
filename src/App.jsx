@@ -73,6 +73,8 @@ const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
 const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
 const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
+const RecruiterEntryPage = lazy(() => import('./components/auth/RecruiterEntryPage'))
+const AdminRecruitersPage = lazy(() => import('./components/admin/AdminRecruitersPage'))
 const ToolsPage = lazy(() => import('./components/tools/ToolsPage'))
 const TasksPage = lazy(() => import('./components/tasks/TasksPage'))
 const TaskDetailPage = lazy(() => import('./components/tasks/TaskDetailPage'))
@@ -195,6 +197,12 @@ export default function App() {
         <Route path="/m/:memeId" element={
           <Suspense fallback={<RouteFallback />}>
             <MemeSharePage />
+          </Suspense>
+        } />
+        {/* Enlace de reclutador — acceso público, sin login (ver useAuthStore.enterRecruiterMode) */}
+        <Route path="/reclutador/:token" element={
+          <Suspense fallback={<RouteFallback />}>
+            <RecruiterEntryPage />
           </Suspense>
         } />
 
@@ -440,6 +448,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminCommandsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reclutadores"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminRecruitersPage />
               </Suspense>
             </ProtectedRoute>
           }

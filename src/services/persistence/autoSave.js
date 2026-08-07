@@ -80,8 +80,13 @@ export function hydrateFromLocalStorage() {
 // instead of silent.
 export async function pushSnapshotToCloud() {
   if (!isSupabaseConfigured()) return
-  const { user } = useAuthStore.getState()
+  const { user, profile } = useAuthStore.getState()
   if (!user) return
+  // La cuenta de reclutador (ver useAuthStore.enterRecruiterMode) usa un id
+  // falso ("recruiter-<token>") sin fila real en auth.users — nunca hay
+  // nada que sincronizar y el intento solo generaba un 400 (uuid inválido)
+  // + un banner de error visible en una cuenta que se supone impecable.
+  if (profile?.recruiter_view) return
 
   useSyncStatusStore.getState().setSaving()
   const snapshot = buildProgressSnapshot()

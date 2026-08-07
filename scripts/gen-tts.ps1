@@ -1,4 +1,4 @@
-# Genera las 7 lineas del guion de "Cómo crear tu cuenta" como .wav con la
+﻿# Genera las 7 lineas del guion de "Cómo crear tu cuenta" como .wav con la
 # voz Sabina (es-MX) de Windows. No se importa desde la app -- solo se corre
 # una vez para producir remotion/public/audio/*.wav.
 Add-Type -AssemblyName System.Speech

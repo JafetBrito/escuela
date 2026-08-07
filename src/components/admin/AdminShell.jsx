@@ -17,6 +17,7 @@ const SECTIONS = [
   { to: '/admin/trivia', icon: '🎯', label: 'Trivia' },
   { to: '/admin/podcasts', icon: '🎙️', label: 'Podcasts' },
   { to: '/admin/comandos', icon: '🕹️', label: 'Comandos' },
+  { to: '/admin/reclutadores', icon: '🕵️', label: 'Reclutadores' },
   { to: '/admin-setup', icon: '⚙️', label: 'Configuración' },
 ]
 

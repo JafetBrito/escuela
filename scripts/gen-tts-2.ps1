@@ -1,4 +1,4 @@
-# Genera el audio de las 2 lecciones-video (Anatomia de un Prompt Perfecto,
+﻿# Genera el audio de las 2 lecciones-video (Anatomia de un Prompt Perfecto,
 # Como Piensa Realmente una IA) para course-003. Una sola vez.
 Add-Type -AssemblyName System.Speech
 
