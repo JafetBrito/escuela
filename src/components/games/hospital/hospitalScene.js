@@ -16,29 +16,42 @@ const OBJECTIVE_RADIUS = 110
 // entre ellos y de margen. Centro exacto del mapa (W/2, H/2) cae justo en
 // el cruce de pasillos entre columnas 2-3 y filas 1-2, así que sirve como
 // punto de aparición sin pisar ningún cuarto (ver _makePlayer).
+// `roles` (en vez de un `role` único) — la sala de servidores sirve tanto
+// al Hacker "de siempre" (multijugador real, todavía 1v1) como a los
+// sub-equipos Red/Blue de la práctica solo (fase Red vs Blue Team); ambos
+// trabajan desde el mismo cuarto, solo cambian sus acciones ahí dentro.
 const ZONES = [
   // Fila 0 — ala de ingreso
-  { x: 90,   y: 90,  w: 460, h: 360, label: '🚑 Urgencias',            fill: 0x1a0d0d, glow: 0x88301e, text: '#fb7185', role: null },
-  { x: 640,  y: 90,  w: 460, h: 360, label: '🪑 Sala de Espera',       fill: 0x14140d, glow: 0x6a6a1e, text: '#facc15', role: null },
-  { x: 1190, y: 90,  w: 460, h: 360, label: '🏥 Recepción',            fill: 0x0d1a3d, glow: 0x1e5888, text: '#60a5fa', role: 'doctor' },
-  { x: 1740, y: 90,  w: 460, h: 360, label: '📋 Administración',       fill: 0x14141a, glow: 0x4a4a6a, text: '#a5b4fc', role: null },
+  { x: 90,   y: 90,  w: 460, h: 360, label: '🚑 Urgencias',            fill: 0x1a0d0d, glow: 0x88301e, text: '#fb7185' },
+  { x: 640,  y: 90,  w: 460, h: 360, label: '🪑 Sala de Espera',       fill: 0x14140d, glow: 0x6a6a1e, text: '#facc15' },
+  { x: 1190, y: 90,  w: 460, h: 360, label: '🏥 Recepción',            fill: 0x0d1a3d, glow: 0x1e5888, text: '#60a5fa', roles: ['doctor'] },
+  { x: 1740, y: 90,  w: 460, h: 360, label: '📋 Administración',       fill: 0x14141a, glow: 0x4a4a6a, text: '#a5b4fc' },
   // Fila 1 — servicios
-  { x: 90,   y: 540, w: 460, h: 360, label: '💊 Farmacia',             fill: 0x1a1200, glow: 0x7a5a00, text: '#fbbf24', role: null },
-  { x: 640,  y: 540, w: 460, h: 360, label: '🧪 Laboratorio',          fill: 0x0d1a17, glow: 0x1e6850, text: '#5eead4', role: null },
-  { x: 1190, y: 540, w: 460, h: 360, label: '🩺 Consultorios',         fill: 0x141a0d, glow: 0x4a6a1e, text: '#a3e635', role: null },
-  { x: 1740, y: 540, w: 460, h: 360, label: '🖥️ Cuarto de Servidores', fill: 0x0d1e0d, glow: 0x1e8848, text: '#4ade80', role: 'hacker' },
+  { x: 90,   y: 540, w: 460, h: 360, label: '💊 Farmacia',             fill: 0x1a1200, glow: 0x7a5a00, text: '#fbbf24' },
+  { x: 640,  y: 540, w: 460, h: 360, label: '🧪 Laboratorio',          fill: 0x0d1a17, glow: 0x1e6850, text: '#5eead4' },
+  { x: 1190, y: 540, w: 460, h: 360, label: '🩺 Consultorios',         fill: 0x141a0d, glow: 0x4a6a1e, text: '#a3e635' },
+  { x: 1740, y: 540, w: 460, h: 360, label: '🖥️ Cuarto de Servidores', fill: 0x0d1e0d, glow: 0x1e8848, text: '#4ade80', roles: ['hacker', 'hacker_red', 'hacker_blue'] },
   // Fila 2 — hospitalización
-  { x: 90,   y: 990, w: 460, h: 360, label: '🩹 Quirófano',            fill: 0x1a0d1a, glow: 0x881a68, text: '#f472b6', role: null },
-  { x: 640,  y: 990, w: 460, h: 360, label: '🫀 Terapia Intensiva',    fill: 0x1a0d10, glow: 0x8a1e3e, text: '#fb7185', role: null },
-  { x: 1190, y: 990, w: 460, h: 360, label: '🛏️ Hospitalización',      fill: 0x0d1420, glow: 0x2a4a7a, text: '#93c5fd', role: null },
-  { x: 1740, y: 990, w: 460, h: 360, label: '☕ Personal / Cafetería',  fill: 0x1a150d, glow: 0x7a5a2e, text: '#fdba74', role: null },
+  { x: 90,   y: 990, w: 460, h: 360, label: '🩹 Quirófano',            fill: 0x1a0d1a, glow: 0x881a68, text: '#f472b6' },
+  { x: 640,  y: 990, w: 460, h: 360, label: '🫀 Terapia Intensiva',    fill: 0x1a0d10, glow: 0x8a1e3e, text: '#fb7185' },
+  { x: 1190, y: 990, w: 460, h: 360, label: '🛏️ Hospitalización',      fill: 0x0d1420, glow: 0x2a4a7a, text: '#93c5fd' },
+  { x: 1740, y: 990, w: 460, h: 360, label: '☕ Personal / Cafetería',  fill: 0x1a150d, glow: 0x7a5a2e, text: '#fdba74' },
 ]
+
+export function roleLabel(role) {
+  if (role === 'doctor') return '🩺 Doctor'
+  if (role === 'hacker_red') return '🔴 Red Team'
+  if (role === 'hacker_blue') return '🔵 Blue Team'
+  return '🕶️ Hacker'
+}
 
 // Puente React ↔ Phaser, mismo patrón que campusScene.js's `bridge`.
 export const bridge = {
   dir: { current: { x: 0, y: 0 } },
   meta: { name: 'Jugador', color: '#98ca3f', role: 'hacker' },
+  doorLocked: false,     // Red Team la bloquea, Blue Team la abre — el Doctor no puede entrar a Recepción mientras esté true
   onObjectiveNear: null, // (bool) — entra/sale del radio de TU zona de objetivo
+  onObjectiveVector: null, // (dx, dy, dist, near) — brújula
   onPosition: null,      // (x, y)
   scene: null,
 }
@@ -64,10 +77,11 @@ export default class HospitalScene extends Phaser.Scene {
 
   create() {
     bridge.scene = this
-    this._myObjective = ZONES.find((z) => z.role === bridge.meta.role) ?? null
+    this._myObjective = ZONES.find((z) => z.roles?.includes(bridge.meta.role)) ?? null
 
     this._drawMap()
     this._makePlayer()
+    this._makeDoorBadge()
 
     this._cursors = this.input.keyboard.createCursorKeys()
     this._wasd = this.input.keyboard.addKeys('W,A,S,D')
@@ -105,8 +119,8 @@ export default class HospitalScene extends Phaser.Scene {
         fontFamily: '"Segoe UI Emoji", system-ui, sans-serif', fontSize: '20px', color: z.text, align: 'center',
         stroke: '#000000', strokeThickness: 4,
       }).setOrigin(0.5)
-      if (z.role) {
-        this.add.text(z.x + z.w / 2, z.y + z.h / 2 + 26, z.role === 'hacker' ? 'objetivo del Hacker' : 'objetivo del Doctor', {
+      if (z.roles) {
+        this.add.text(z.x + z.w / 2, z.y + z.h / 2 + 26, z.roles.includes('doctor') ? 'objetivo del Doctor' : 'objetivo del Hacker', {
           fontFamily: 'system-ui, sans-serif', fontSize: '10px', color: '#ffffff99',
         }).setOrigin(0.5)
       }
@@ -131,10 +145,22 @@ export default class HospitalScene extends Phaser.Scene {
       backgroundColor: '#00000055', padding: { x: 4, y: 2 },
     }).setOrigin(0.5).setDepth(11)
 
-    this._pRole = this.add.text(cx, cy + 22, bridge.meta.role === 'hacker' ? '🕶️ Hacker' : '🩺 Doctor', {
-      fontFamily: 'system-ui, sans-serif', fontSize: '10px', color: '#000',
-      backgroundColor: bridge.meta.role === 'hacker' ? '#4ade80' : '#60a5fa', padding: { x: 3, y: 1 },
+    this._pRole = this.add.text(cx, cy + 22, roleLabel(bridge.meta.role), {
+      fontFamily: 'system-ui, sans-serif', fontSize: '10px', color: '#fff', stroke: '#000', strokeThickness: 2,
+      backgroundColor: bridge.meta.color, padding: { x: 3, y: 1 },
     }).setOrigin(0.5).setDepth(12)
+  }
+
+  // Aviso sobre Recepción cuando Red Team bloquea la puerta — visible para
+  // todos (no solo el Doctor), así Red/Blue Team también ven el estado
+  // actual sin tener que preguntarlo por chat.
+  _makeDoorBadge() {
+    const doctorZone = ZONES.find((z) => z.roles?.includes('doctor'))
+    if (!doctorZone) return
+    this._doorBadge = this.add.text(doctorZone.x + doctorZone.w / 2, doctorZone.y - 22, '🔒 Puerta bloqueada', {
+      fontFamily: 'system-ui, sans-serif', fontSize: '13px', color: '#fff',
+      backgroundColor: '#dc2626', padding: { x: 6, y: 3 },
+    }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
   // ── Multiplayer API (llamado desde React) ──────────────────────────────────
@@ -177,6 +203,7 @@ export default class HospitalScene extends Phaser.Scene {
     const px = this._player.x, py = this._player.y
     this._pName.setPosition(px, py - 28)
     this._pRole.setPosition(px, py + 22)
+    this._doorBadge?.setVisible(!!bridge.doorLocked)
 
     let nearNow = false
     if (this._myObjective) {

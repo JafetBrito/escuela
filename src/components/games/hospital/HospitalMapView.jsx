@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Phaser from 'phaser'
-import HospitalScene, { bridge } from './hospitalScene'
-import { HackerPanel, DoctorPanel, SecurityBar, HACK_DELTA, TREAT_DELTA } from './HospitalPanels'
+import HospitalScene, { bridge, roleLabel } from './hospitalScene'
+import { HackerPanel, DoctorPanel, DoorLockedNotice, SecurityBar, HACK_DELTA, TREAT_DELTA, BLUE_PATCH_DELTA } from './HospitalPanels'
 import { supabase } from '../../../services/supabase/client'
 
 // Joystick táctil — copia recortada de World2dPage.jsx (no está exportado
@@ -66,7 +66,9 @@ function VirtualJoystick({ dirRef }) {
 // panel de objetivo. La partida en sí (medidor de seguridad, reloj,
 // resultado) sigue siendo la misma lógica de HospitalRangeGame.jsx —
 // este componente solo cambia CÓMO se llega al panel.
-export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, isSolo, onSolve, onExit }) {
+const ROLE_COLOR = { hacker: '#4ade80', hacker_red: '#ef4444', hacker_blue: '#22d3ee', doctor: '#60a5fa' }
+
+export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, isSolo, doorLocked, onToggleDoor, onSolve, onExit }) {
   const containerRef = useRef(null)
   const gameRef = useRef(null)
   const dirRef = useRef({ x: 0, y: 0 })
@@ -74,9 +76,9 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [compass, setCompass] = useState(null)
 
-  const roleColor = myRole === 'hacker' ? '#4ade80' : '#60a5fa'
   bridge.dir = dirRef
-  bridge.meta = { name: myName, color: roleColor, role: myRole }
+  bridge.meta = { name: myName, color: ROLE_COLOR[myRole] ?? '#98ca3f', role: myRole }
+  bridge.doorLocked = !!doorLocked
 
   useEffect(() => {
     if (!containerRef.current || isOver) return
@@ -175,7 +177,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
         <div className="w-64"><SecurityBar security={activeMatch.security} /></div>
         <div className="flex items-center gap-3 text-[11px] font-bold text-white/80">
           {isSolo && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">🧪 Práctica</span>}
-          <span>{myRole === 'hacker' ? '🕶️ Hacker' : '🩺 Doctor'} vs {oppName}</span>
+          <span>{roleLabel(myRole)} vs {oppName}</span>
           <span className="font-mono">🕒 {String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:{String(secondsLeft % 60).padStart(2, '0')}</span>
           <span>💥 {activeMatch.hacks_completed} · 💉 {activeMatch.patients_saved}</span>
         </div>
@@ -190,7 +192,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
         <div className="absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 rounded-full border border-white/15 bg-black/70 px-4 py-2 backdrop-blur md:bottom-4">
           <span className="text-xl leading-none" style={{ display: 'inline-block', transform: `rotate(${(compass.angle * 180) / Math.PI}deg)` }}>➤</span>
           <span className="text-[10px] font-bold text-white/70">
-            {myRole === 'hacker' ? '🖥️ Cuarto de Servidores' : '🏥 Recepción'} · {compass.dist}m
+            {myRole === 'doctor' ? '🏥 Recepción' : '🖥️ Cuarto de Servidores'} · {compass.dist}m
           </span>
         </div>
       )}
@@ -209,9 +211,15 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
             Cerrar ✕
           </button>
           <div className="min-h-0 flex-1">
-            {myRole === 'hacker'
-              ? <HackerPanel onSolve={handleSolve} disabled={isOver} />
-              : <DoctorPanel onSolve={handleSolve} disabled={isOver} />}
+            {myRole === 'doctor'
+              ? (doorLocked ? <DoorLockedNotice /> : <DoctorPanel onSolve={handleSolve} disabled={isOver} />)
+              : (
+                <HackerPanel
+                  team={myRole === 'hacker_red' ? 'red' : myRole === 'hacker_blue' ? 'blue' : undefined}
+                  onSolve={handleSolve} disabled={isOver}
+                  doorLocked={doorLocked} onToggleDoor={onToggleDoor}
+                />
+              )}
           </div>
         </div>
       )}
@@ -219,4 +227,4 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
   )
 }
 
-export { HACK_DELTA, TREAT_DELTA }
+export { HACK_DELTA, TREAT_DELTA, BLUE_PATCH_DELTA }

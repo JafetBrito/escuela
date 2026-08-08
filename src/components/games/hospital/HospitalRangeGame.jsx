@@ -4,7 +4,7 @@ import { useAuthStore } from '../../../stores/useAuthStore'
 import { useFriendsStore } from '../../../stores/useFriendsStore'
 import { useHospitalStore } from '../../../stores/useHospitalStore'
 import { supabase } from '../../../services/supabase/client'
-import HospitalMapView, { HACK_DELTA, TREAT_DELTA } from './HospitalMapView'
+import HospitalMapView, { HACK_DELTA, TREAT_DELTA, BLUE_PATCH_DELTA } from './HospitalMapView'
 
 // "Oliver Cyber Range: Hospital" — Hacker vs Doctor 1v1 en tiempo real.
 // Quien invita elige su rol (useHospitalStore.sendInvite); ambos comparten
@@ -100,17 +100,19 @@ export default function HospitalRangeGame() {
     else if (accept && error) setAnswerError(error.message)
   }
 
+  // role: 'doctor' | 'hacker_red' | 'hacker_blue' — la práctica solo ahora
+  // simula los OTROS DOS roles con bots (no solo uno), para poder probar la
+  // dinámica de 3 bandas (Red ataca y bloquea la puerta, Blue parcha y
+  // desbloquea, Doctor atiende) sin depender de tener 2 jugadores reales.
   const handleStartSolo = (role) => {
     setAnswerError(null)
     setSoloMatch({
       id: 'solo',
-      hacker_id: role === 'hacker' ? myId : 'bot',
-      hacker_name: role === 'hacker' ? myName : '🤖 Hacker (práctica)',
-      doctor_id: role === 'doctor' ? myId : 'bot',
-      doctor_name: role === 'doctor' ? myName : '🤖 Doctor (práctica)',
+      myRole: role,
       security: 100,
       hacks_completed: 0,
       patients_saved: 0,
+      door_locked: false,
       status: 'en_curso',
       result: null,
       ends_at: new Date(Date.now() + 6 * 60_000).toISOString(),
@@ -132,31 +134,44 @@ export default function HospitalRangeGame() {
     return () => clearInterval(t)
   }, [mode, match?.status])
 
-  // Bot de práctica: en modo solo, cada ~4.5s mueve el medidor en tu
-  // contra (si eres Hacker, el "Doctor" bot cura un poco; si eres Doctor,
-  // el "Hacker" bot ataca un poco) — mismo delta que un acierto humano, así
-  // se siente como una partida real en vez de dejarte jugar sin presión.
+  // Bots de práctica: en modo solo hay hasta DOS roles simulados a la vez
+  // (los que no elegiste) — cada ~4.5s cada bot activo actúa: el Doctor
+  // bot cura, el Red Team bot ataca y a veces bloquea la puerta, el Blue
+  // Team bot parcha y a veces la desbloquea. Todo lee `prev` dentro del
+  // updater (no una variable capturada al armar el efecto) para no
+  // quedarse con un estado viejo si el intervalo dispara justo cuando el
+  // jugador también actuó.
   useEffect(() => {
     if (mode !== 'match' || !isSolo) return
-    const iAmHacker = soloMatch.hacker_id === myId
-    const botDelta = iAmHacker ? TREAT_DELTA : HACK_DELTA
     const t = setInterval(() => {
       setSoloMatch((prev) => {
         if (!prev || prev.status === 'finalizada' || Date.now() >= new Date(prev.ends_at).getTime()) return prev
-        const nextSecurity = Math.max(0, Math.min(100, prev.security + botDelta))
-        const closesNow = nextSecurity <= 0
+        let security = prev.security
+        let hacks = prev.hacks_completed
+        let saved = prev.patients_saved
+        let doorLocked = prev.door_locked
+        if (prev.myRole !== 'doctor') { security += TREAT_DELTA; saved += 1 }
+        if (prev.myRole !== 'hacker_red') {
+          security += HACK_DELTA
+          hacks += 1
+          if (!doorLocked && Math.random() < 0.4) doorLocked = true
+        }
+        if (prev.myRole !== 'hacker_blue') {
+          security += BLUE_PATCH_DELTA
+          saved += 1
+          if (doorLocked && Math.random() < 0.5) doorLocked = false
+        }
+        security = Math.max(0, Math.min(100, security))
+        const closesNow = security <= 0
         return {
           ...prev,
-          security: nextSecurity,
-          hacks_completed: prev.hacks_completed + (botDelta < 0 ? 1 : 0),
-          patients_saved: prev.patients_saved + (botDelta > 0 ? 1 : 0),
+          security, hacks_completed: hacks, patients_saved: saved, door_locked: doorLocked,
           status: closesNow ? 'finalizada' : prev.status,
           result: closesNow ? 'hacker' : prev.result,
         }
       })
     }, 4500)
     return () => clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, isSolo])
 
   // ── Lobby ──
@@ -181,16 +196,20 @@ export default function HospitalRangeGame() {
             <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/5 p-3">
               <p className="mb-1 text-xs font-black uppercase tracking-widest text-emerald-400">🧪 Practicar solo</p>
               <p className="mb-2 text-[11px] text-text-muted">
-                Entra directo al mapa sin invitar a nadie — un bot hace de rival para que veas cómo se juega.
+                Entra directo al mapa sin invitar a nadie — bots juegan los otros dos bandos. Red Team bloquea la puerta de Recepción, Blue Team la desbloquea, y si está cerrada el Doctor no puede pasar.
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => handleStartSolo('hacker')}
-                  className="rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-400 hover:bg-emerald-500/20">
-                  🕶️ Como Hacker
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" onClick={() => handleStartSolo('hacker_red')}
+                  className="rounded-xl border-2 border-red-500/60 bg-red-500/10 px-2 py-2 text-xs font-bold text-red-400 hover:bg-red-500/20 sm:text-sm">
+                  🔴 Red Team
+                </button>
+                <button type="button" onClick={() => handleStartSolo('hacker_blue')}
+                  className="rounded-xl border-2 border-sky-400/60 bg-sky-400/10 px-2 py-2 text-xs font-bold text-sky-300 hover:bg-sky-400/20 sm:text-sm">
+                  🔵 Blue Team
                 </button>
                 <button type="button" onClick={() => handleStartSolo('doctor')}
-                  className="rounded-xl border-2 border-sky-500/60 bg-sky-500/10 px-3 py-2 text-sm font-bold text-sky-400 hover:bg-sky-500/20">
-                  🩺 Como Doctor
+                  className="rounded-xl border-2 border-sky-500/60 bg-sky-500/10 px-2 py-2 text-xs font-bold text-sky-400 hover:bg-sky-500/20 sm:text-sm">
+                  🩺 Doctor
                 </button>
               </div>
             </div>
@@ -312,28 +331,33 @@ export default function HospitalRangeGame() {
     return <div className="flex h-full items-center justify-center text-sm text-text-muted">Cargando partida…</div>
   }
 
-  const myRole = myId === match.hacker_id ? 'hacker' : 'doctor'
-  const oppName = myRole === 'hacker' ? match.doctor_name : match.hacker_name
+  const myRole = isSolo ? match.myRole : (myId === match.hacker_id ? 'hacker' : 'doctor')
+  const isAttacker = myRole === 'hacker' || myRole === 'hacker_red'
+  const oppName = isSolo
+    ? (myRole === 'doctor' ? '🔴 Red Team & 🔵 Blue Team (práctica)'
+      : myRole === 'hacker_red' ? '🩺 Doctor & 🔵 Blue Team (práctica)'
+      : '🩺 Doctor & 🔴 Red Team (práctica)')
+    : (myRole === 'hacker' ? match.doctor_name : match.hacker_name)
   const endsAtMs = new Date(match.ends_at).getTime()
   const timeUp = now >= endsAtMs
   const isOver = match.status === 'finalizada' || timeUp
   const result = match.status === 'finalizada' ? match.result : (match.security <= 0 ? 'hacker' : 'doctor')
   const secondsLeft = Math.max(0, Math.round((endsAtMs - now) / 1000))
-  const iWon = result === myRole
+  const iWon = isAttacker ? result === 'hacker' : result === 'doctor'
 
   const handleSolve = () => {
     if (isOver) return
     if (isSolo) {
       setSoloMatch((prev) => {
         if (!prev || prev.status === 'finalizada') return prev
-        const delta = myRole === 'hacker' ? HACK_DELTA : TREAT_DELTA
+        const delta = prev.myRole === 'hacker_red' ? HACK_DELTA : prev.myRole === 'hacker_blue' ? BLUE_PATCH_DELTA : TREAT_DELTA
         const nextSecurity = Math.max(0, Math.min(100, prev.security + delta))
         const closesNow = nextSecurity <= 0
         return {
           ...prev,
           security: nextSecurity,
-          hacks_completed: prev.hacks_completed + (myRole === 'hacker' ? 1 : 0),
-          patients_saved: prev.patients_saved + (myRole === 'doctor' ? 1 : 0),
+          hacks_completed: prev.hacks_completed + (prev.myRole === 'hacker_red' ? 1 : 0),
+          patients_saved: prev.patients_saved + (prev.myRole !== 'hacker_red' ? 1 : 0),
           status: closesNow ? 'finalizada' : prev.status,
           result: closesNow ? 'hacker' : prev.result,
         }
@@ -341,6 +365,19 @@ export default function HospitalRangeGame() {
       return
     }
     submitAction(match.id, myRole === 'hacker' ? HACK_DELTA : TREAT_DELTA, myRole === 'hacker')
+  }
+
+  // Puerta de Recepción — solo existe en práctica solo por ahora (el
+  // multijugador real sigue siendo Hacker vs Doctor sin Red/Blue Team;
+  // llevar esto a partidas en vivo necesita una migración para guardar
+  // door_locked en hospital_matches, queda para una fase futura).
+  const handleToggleDoor = () => {
+    setSoloMatch((prev) => {
+      if (!prev) return prev
+      if (prev.myRole === 'hacker_red') return { ...prev, door_locked: true }
+      if (prev.myRole === 'hacker_blue') return { ...prev, door_locked: false }
+      return prev
+    })
   }
 
   return (
@@ -356,6 +393,8 @@ export default function HospitalRangeGame() {
         iWon={iWon}
         secondsLeft={secondsLeft}
         isSolo={isSolo}
+        doorLocked={isSolo ? match.door_locked : false}
+        onToggleDoor={isSolo && myRole !== 'doctor' ? handleToggleDoor : undefined}
         onSolve={handleSolve}
         onExit={exitMatch}
       />

@@ -11,6 +11,9 @@ import TerminalOutput from '../hacker/TerminalOutput'
 // archivo para no duplicar esta lógica entre los dos.
 export const HACK_DELTA = -15
 export const TREAT_DELTA = 10
+// Blue Team "parcha" la misma terminal que explota Red Team — mismo reto,
+// mismo minijuego, pero resolverlo suma seguridad en vez de restarla.
+export const BLUE_PATCH_DELTA = 12
 
 export function MiniTerminal({ shell, onOutput }) {
   const [lines, setLines] = useState([])
@@ -56,7 +59,28 @@ export function MiniTerminal({ shell, onOutput }) {
   )
 }
 
-export function HackerPanel({ onSolve, disabled }) {
+// Tema visual por equipo — clases completas y literales (no template
+// strings) porque Tailwind escanea el código fuente para generar el CSS;
+// una clase armada con interpolación (`border-${x}-900`) no se generaría.
+// `team` undefined = el Hacker "de siempre" del multijugador real 1v1
+// (verde, sin botón de puerta) — no toca esa experiencia ya probada.
+const HACKER_THEME = {
+  red: {
+    title: '🔴 Objetivo del Red Team', label: 'text-red-600', titleText: 'text-red-400',
+    border: 'border-red-900/50', headerBorder: 'border-red-900/40', flashBg: 'bg-red-500/10', flashText: 'text-red-400',
+  },
+  blue: {
+    title: '🔵 Objetivo del Blue Team', label: 'text-sky-600', titleText: 'text-sky-400',
+    border: 'border-sky-900/50', headerBorder: 'border-sky-900/40', flashBg: 'bg-sky-500/10', flashText: 'text-sky-400',
+  },
+  default: {
+    title: '🕶️ Objetivo del Hacker', label: 'text-emerald-600', titleText: 'text-emerald-400',
+    border: 'border-emerald-900/50', headerBorder: 'border-emerald-900/40', flashBg: 'bg-emerald-500/10', flashText: 'text-emerald-400',
+  },
+}
+
+export function HackerPanel({ team, onSolve, disabled, doorLocked, onToggleDoor }) {
+  const theme = HACKER_THEME[team] ?? HACKER_THEME.default
   const [solvedIds, setSolvedIds] = useState([])
   const [challengeId, setChallengeId] = useState(HOSPITAL_HACK_CHALLENGES[0].id)
   const [flash, setFlash] = useState(false)
@@ -96,17 +120,35 @@ export function HackerPanel({ onSolve, disabled }) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border-2 border-emerald-900/50">
-      <div className="border-b border-emerald-900/40 bg-[#161b22] px-4 py-2.5">
-        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">🕶️ Objetivo del Hacker</p>
-        <h3 className="font-bold text-emerald-400">{challenge.title}</h3>
+    <div className={`flex h-full flex-col overflow-hidden rounded-2xl border-2 ${theme.border}`}>
+      <div className={`border-b ${theme.headerBorder} bg-[#161b22] px-4 py-2.5`}>
+        <p className={`text-[10px] font-black uppercase tracking-widest ${theme.label}`}>{theme.title}</p>
+        <h3 className={`font-bold ${theme.titleText}`}>{challenge.title}</h3>
         <p className="mt-1 text-xs text-gray-400">{challenge.briefing}</p>
         <p className="mt-1 text-[11px] text-yellow-500">💡 {challenge.hint}</p>
       </div>
+      {onToggleDoor && (
+        <div className="border-b border-white/10 bg-[#0d1117] px-4 py-2">
+          {team === 'blue' ? (
+            <button type="button" disabled={!doorLocked} onClick={onToggleDoor}
+              className="rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-bold text-background disabled:cursor-not-allowed disabled:opacity-40">
+              🔓 Desbloquear puerta de Recepción
+            </button>
+          ) : (
+            <button type="button" disabled={!!doorLocked} onClick={onToggleDoor}
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">
+              🔒 Bloquear puerta de Recepción
+            </button>
+          )}
+          <span className="ml-2 text-[11px] text-text-muted">{doorLocked ? '🔒 Bloqueada' : '🔓 Abierta'}</span>
+        </div>
+      )}
       <div className="relative min-h-0 flex-1" aria-disabled={disabled}>
         {flash && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-emerald-500/10 backdrop-blur-[1px]">
-            <span className="text-3xl font-black text-emerald-400">💥 ¡Vulnerado! -{Math.abs(HACK_DELTA)} seguridad</span>
+          <div className={`absolute inset-0 z-10 flex items-center justify-center ${theme.flashBg} backdrop-blur-[1px]`}>
+            <span className={`text-3xl font-black ${theme.flashText}`}>
+              {team === 'blue' ? `🛡️ ¡Parchado! +${BLUE_PATCH_DELTA} seguridad` : `💥 ¡Vulnerado! -${Math.abs(HACK_DELTA)} seguridad`}
+            </span>
           </div>
         )}
         <MiniTerminal key={shellKey} shell={shellRef.current} onOutput={handleOutput} />
@@ -163,6 +205,23 @@ export function DoctorPanel({ onSolve, disabled }) {
         </div>
         {pick !== null && <p className="mt-3 text-xs text-text-muted">{kase.explanation}</p>}
       </div>
+    </div>
+  )
+}
+
+// Lo que ve el Doctor si llega a Recepción y Red Team ya bloqueó la
+// puerta — no puede hacer nada más que esperar a que Blue Team la abra
+// (la comprobación es en vivo: si se desbloquea mientras esto está en
+// pantalla, el padre re-renderiza DoctorPanel solo, sin que el jugador
+// tenga que cerrar y volver a entrar).
+export function DoorLockedNotice() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-red-900/50 bg-surface p-6 text-center">
+      <p className="mb-3 text-5xl">🔒</p>
+      <p className="text-lg font-bold text-text">La puerta de Recepción está bloqueada</p>
+      <p className="mt-2 max-w-xs text-sm text-text-muted">
+        Alguien del Red Team la cerró. No puedes atender pacientes hasta que el Blue Team la desbloquee — espera aquí.
+      </p>
     </div>
   )
 }
