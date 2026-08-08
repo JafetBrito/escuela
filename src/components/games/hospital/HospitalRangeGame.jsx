@@ -6,6 +6,19 @@ import { useHospitalStore } from '../../../stores/useHospitalStore'
 import { supabase } from '../../../services/supabase/client'
 import HospitalMapView, { HACK_DELTA, TREAT_DELTA, BLUE_PATCH_DELTA } from './HospitalMapView'
 
+// Fase "Doctor a ciegas": el Doctor nunca ve la pantalla de los hackers —
+// solo le puede llegar un mensaje sospechoso pidiéndole que haga clic en
+// algo. Caer en él cuesta caro (simula que Red Team entró); reportarlo da
+// una pequeña recompensa por estar alerta. Solo en práctica solo por
+// ahora, mismo motivo que Red/Blue Team: el multijugador real no cambia.
+const PHISHING_MESSAGES = [
+  '📧 "IT-Soporte": Tu sesión expiró — haz clic aquí para restaurar el acceso a Recepción.',
+  '📧 "Administración": Actualización urgente de contraseña requerida, haz clic aquí.',
+  '📧 "Servicio Técnico": Detectamos un problema en tu cuenta, verifica tus datos aquí.',
+]
+const PHISHING_PENALTY = -20
+const PHISHING_REWARD = 5
+
 // "Oliver Cyber Range: Hospital" — Hacker vs Doctor 1v1 en tiempo real.
 // Quien invita elige su rol (useHospitalStore.sendInvite); ambos comparten
 // un solo medidor "Seguridad del Hospital" (0-100) que ve el otro jugador
@@ -113,6 +126,7 @@ export default function HospitalRangeGame() {
       hacks_completed: 0,
       patients_saved: 0,
       door_locked: false,
+      phishing: null,
       status: 'en_curso',
       result: null,
       ends_at: new Date(Date.now() + 6 * 60_000).toISOString(),
@@ -173,6 +187,34 @@ export default function HospitalRangeGame() {
     }, 4500)
     return () => clearInterval(t)
   }, [mode, isSolo])
+
+  // Phishing — solo le llega al Doctor (es quien "no ve" a los hackers).
+  // Cada 5s hay 30% de chance de que aparezca uno nuevo, si no hay ya otro
+  // mensaje activo. No se dispara si el jugador está jugando Red/Blue Team.
+  useEffect(() => {
+    if (mode !== 'match' || !isSolo || soloMatch?.myRole !== 'doctor') return
+    const t = setInterval(() => {
+      setSoloMatch((prev) => {
+        if (!prev || prev.status === 'finalizada' || prev.phishing) return prev
+        if (Math.random() > 0.3) return prev
+        const text = PHISHING_MESSAGES[Math.floor(Math.random() * PHISHING_MESSAGES.length)]
+        return { ...prev, phishing: { id: Date.now(), text } }
+      })
+    }, 5000)
+    return () => clearInterval(t)
+  }, [mode, isSolo, soloMatch?.myRole])
+
+  // Si nadie lo toca en 15s, desaparece sin premio ni castigo — ignorarlo
+  // en silencio es una respuesta válida, solo no da la recompensa de
+  // reportarlo activamente.
+  useEffect(() => {
+    const phishId = soloMatch?.phishing?.id
+    if (!isSolo || !phishId) return
+    const t = setTimeout(() => {
+      setSoloMatch((prev) => (prev?.phishing?.id === phishId ? { ...prev, phishing: null } : prev))
+    }, 15000)
+    return () => clearTimeout(t)
+  }, [isSolo, soloMatch?.phishing?.id])
 
   // ── Lobby ──
   if (mode === 'lobby') {
@@ -380,6 +422,32 @@ export default function HospitalRangeGame() {
     })
   }
 
+  // Cayó en el phishing: simula que Red Team acaba de entrar — golpe fuerte
+  // de seguridad y la puerta se bloquea sola (nadie la desbloqueó, fue un
+  // clic, no un ataque real por la terminal).
+  const handlePhishingClick = () => {
+    setSoloMatch((prev) => {
+      if (!prev?.phishing) return prev
+      const nextSecurity = Math.max(0, prev.security + PHISHING_PENALTY)
+      const closesNow = nextSecurity <= 0
+      return {
+        ...prev,
+        security: nextSecurity,
+        door_locked: true,
+        phishing: null,
+        status: closesNow ? 'finalizada' : prev.status,
+        result: closesNow ? 'hacker' : prev.result,
+      }
+    })
+  }
+
+  const handlePhishingReport = () => {
+    setSoloMatch((prev) => {
+      if (!prev?.phishing) return prev
+      return { ...prev, security: Math.min(100, prev.security + PHISHING_REWARD), phishing: null }
+    })
+  }
+
   return (
     <div className="h-full w-full">
       <HospitalMapView
@@ -395,6 +463,9 @@ export default function HospitalRangeGame() {
         isSolo={isSolo}
         doorLocked={isSolo ? match.door_locked : false}
         onToggleDoor={isSolo && myRole !== 'doctor' ? handleToggleDoor : undefined}
+        phishing={isSolo ? match.phishing : null}
+        onPhishingClick={handlePhishingClick}
+        onPhishingReport={handlePhishingReport}
         onSolve={handleSolve}
         onExit={exitMatch}
       />

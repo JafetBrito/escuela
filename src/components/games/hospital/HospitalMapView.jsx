@@ -81,7 +81,7 @@ function WaitingRoomHint() {
   )
 }
 
-export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, isSolo, doorLocked, onToggleDoor, onSolve, onExit }) {
+export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, isSolo, doorLocked, onToggleDoor, phishing, onPhishingClick, onPhishingReport, onSolve, onExit }) {
   const containerRef = useRef(null)
   const gameRef = useRef(null)
   const dirRef = useRef({ x: 0, y: 0 })
@@ -206,6 +206,19 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
         className="absolute right-3 top-3 rounded-lg border border-white/20 bg-black/60 px-2.5 py-1.5 text-xs font-bold text-white/80 backdrop-blur hover:bg-black/80">
         ← Salir
       </button>
+
+      {phishing && (
+        <div className="absolute left-1/2 top-24 z-30 w-[90%] max-w-sm -translate-x-1/2 rounded-2xl border-2 border-amber-500 bg-black/90 p-4 shadow-xl backdrop-blur">
+          <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-amber-400">⚠️ Mensaje sospechoso</p>
+          <p className="mb-3 text-sm text-white">{phishing.text}</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={onPhishingClick}
+              className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-500">Hacer clic</button>
+            <button type="button" onClick={onPhishingReport}
+              className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500">🚩 Reportar phishing</button>
+          </div>
+        </div>
+      )}
 
       {compass && !overlayOpen && (
         <div className="absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 rounded-full border border-white/15 bg-black/70 px-4 py-2 backdrop-blur md:bottom-4">
