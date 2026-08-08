@@ -17,6 +17,91 @@ import { supabase } from '../../../services/supabase/client'
 //    funcionan sin conexión mientras el caché siga ahí.
 const SOLO_CACHE_KEY = (category) => `oliver_trivia_offline_${category}`
 const SOLO_QUESTIONS_PER_ROUND = 10
+const SOLO_START_LIVES = 3
+const TIME_PER_QUESTION = 60
+
+const CATEGORY_ICON = {
+  'Ciencia': '🔬',
+  'Historia': '🏛️',
+  'Geografía': '🌍',
+  'Cultura General': '🎭',
+  'Tecnología y Programación': '💻',
+  'Arte y Música': '🎨',
+  'Deportes': '⚽',
+  'Matemáticas': '➗',
+}
+
+// Estilo "Kahoot/Preguntados": cada posición de respuesta tiene su propio
+// color+forma FIJOS (no dependen de si es correcta) — ayuda a ubicar las
+// opciones de un vistazo antes de leer, que es justo la sensación de
+// "juego" que un formulario plano de pregunta/respuesta no da.
+const ANSWER_STYLES = [
+  { ring: 'border-rose-500', bg: 'bg-rose-500/10 hover:bg-rose-500/20', badge: 'bg-rose-500', shape: '▲' },
+  { ring: 'border-sky-500', bg: 'bg-sky-500/10 hover:bg-sky-500/20', badge: 'bg-sky-500', shape: '◆' },
+  { ring: 'border-amber-500', bg: 'bg-amber-500/10 hover:bg-amber-500/20', badge: 'bg-amber-500', shape: '●' },
+  { ring: 'border-emerald-500', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20', badge: 'bg-emerald-500', shape: '■' },
+]
+
+function ProgressDots({ total, current }) {
+  return (
+    <div className="flex gap-1 px-5 pt-2">
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < current ? 'bg-primary' : i === current ? 'bg-primary/50' : 'bg-border'}`} />
+      ))}
+    </div>
+  )
+}
+
+// Tarjeta de pregunta compartida entre el modo solo y el 1v1 online — misma
+// pinta de juego (icono de categoría, cronómetro, opciones con color+forma
+// fija) en los dos, en vez de reinventar el layout dos veces.
+function TriviaQuestionCard({ category, questionNumber, totalQuestions, timeLeft, question, image, options, pick, correctIndex, onAnswer, disabled, waitingLabel }) {
+  const revealed = pick !== null
+  return (
+    <div className="overflow-hidden rounded-3xl border-2 border-border bg-surface shadow-lg">
+      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-primary/15 to-transparent px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-2xl">{CATEGORY_ICON[category] ?? '🎯'}</span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{category}</p>
+            <p className="text-xs font-bold text-text">Pregunta {questionNumber} de {totalQuestions}</p>
+          </div>
+        </div>
+        {timeLeft != null && (
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-4 text-sm font-black transition-colors ${timeLeft <= 10 ? 'animate-pulse border-danger text-danger' : 'border-primary text-primary'}`}>
+            {timeLeft}
+          </div>
+        )}
+      </div>
+      <ProgressDots total={totalQuestions} current={questionNumber - 1} />
+      <div className="px-5 pb-5 pt-3">
+        {waitingLabel && <p className="mb-2 text-xs font-semibold text-amber-400">⏳ {waitingLabel}</p>}
+        {image && <img src={image} alt="" className="mb-3 max-h-48 w-full rounded-xl object-contain" />}
+        <p className="mb-4 text-xl font-black leading-snug text-text">{question}</p>
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {options.map((opt, i) => {
+            const s = ANSWER_STYLES[i % ANSWER_STYLES.length]
+            const isPicked = pick === i
+            const isCorrect = i === correctIndex
+            const cls = !revealed
+              ? `${s.ring} ${s.bg}`
+              : isCorrect ? 'scale-[1.02] border-emerald-500 bg-emerald-500/20 text-emerald-300'
+              : isPicked ? 'border-danger bg-danger/20 text-danger'
+              : 'border-border/60 opacity-40'
+            const badgeCls = !revealed ? s.badge : isCorrect ? 'bg-emerald-500' : isPicked ? 'bg-danger' : 'bg-border'
+            return (
+              <button key={i} type="button" disabled={disabled || revealed} onClick={() => onAnswer(i)}
+                className={`flex items-center gap-2.5 rounded-2xl border-2 px-4 py-3.5 text-left text-sm font-bold transition-all disabled:cursor-not-allowed ${cls}`}>
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs text-white ${badgeCls}`}>{s.shape}</span>
+                {opt}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function TriviaGame() {
   const session = useAuthStore((s) => s.session)
@@ -57,6 +142,8 @@ export default function TriviaGame() {
   const [soloIndex, setSoloIndex] = useState(0)
   const [soloScore, setSoloScore] = useState(0)
   const [soloPick, setSoloPick] = useState(null)
+  const [soloLives, setSoloLives] = useState(SOLO_START_LIVES)
+  const [soloTimeLeft, setSoloTimeLeft] = useState(TIME_PER_QUESTION)
 
   const startSoloRound = useCallback((pool) => {
     const shuffled = [...pool]
@@ -68,6 +155,8 @@ export default function TriviaGame() {
     setSoloIndex(0)
     setSoloScore(0)
     setSoloPick(null)
+    setSoloLives(SOLO_START_LIVES)
+    setSoloTimeLeft(TIME_PER_QUESTION)
   }, [])
 
   const handleStartSolo = async (category) => {
@@ -103,11 +192,14 @@ export default function TriviaGame() {
     setMode('solo')
   }
 
+  // choiceIndex -1 = se acabó el tiempo sin responder — cuenta como fallo,
+  // igual que en un juego de verdad, en vez de pausar esperando por siempre.
   const handleSoloAnswer = (choiceIndex) => {
     if (soloPick !== null) return
     setSoloPick(choiceIndex)
     const correct = choiceIndex === soloQuestions[soloIndex].correct
     if (correct) setSoloScore((s) => s + 1)
+    else setSoloLives((l) => Math.max(0, l - 1))
     setTimeout(() => {
       setSoloIndex((i) => i + 1)
       setSoloPick(null)
@@ -115,6 +207,18 @@ export default function TriviaGame() {
   }
 
   const exitSolo = () => setMode('lobby')
+
+  // Cronómetro del modo solo: se reinicia en cada pregunta nueva, y si
+  // llega a 0 sin que el jugador haya elegido, se autoenvía como fallo.
+  useEffect(() => { setSoloTimeLeft(TIME_PER_QUESTION) }, [soloIndex])
+  useEffect(() => {
+    if (mode !== 'solo' || soloPick !== null) return
+    if (soloIndex >= soloQuestions.length || soloLives <= 0) return
+    if (soloTimeLeft <= 0) { handleSoloAnswer(-1); return }
+    const t = setTimeout(() => setSoloTimeLeft((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, soloTimeLeft, soloPick, soloIndex, soloLives])
 
   const myId = session?.user?.id
   const myName = profile?.display_name || session?.user?.email || 'Jugador'
@@ -187,6 +291,21 @@ export default function TriviaGame() {
   // avanzó de pregunta), se limpia la selección local para la pregunta
   // siguiente.
   useEffect(() => { setLastPick(null) }, [activeMatch?.current_index])
+
+  // Cronómetro del 1v1: cada jugador solo corre SU PROPIO reloj en su
+  // propio turno (nada que sincronizar por Realtime) — si se acaba el
+  // tiempo sin responder, se autoenvía -1 (siempre cuenta como fallo) por
+  // el mismo camino que una respuesta normal.
+  const [matchTimeLeft, setMatchTimeLeft] = useState(TIME_PER_QUESTION)
+  useEffect(() => { setMatchTimeLeft(TIME_PER_QUESTION) }, [activeMatch?.current_index])
+  useEffect(() => {
+    if (!activeMatch || activeMatch.status === 'finalizada') return
+    if (activeMatch.current_turn !== myId || lastPick !== null) return
+    if (matchTimeLeft <= 0) { handleAnswer(-1); return }
+    const t = setTimeout(() => setMatchTimeLeft((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMatch, myId, lastPick, matchTimeLeft])
 
   // ── Lobby ──
   if (mode === 'lobby') {
@@ -324,54 +443,54 @@ export default function TriviaGame() {
 
   // ── Solo/offline ──
   if (mode === 'solo') {
-    const soloOver = soloIndex >= soloQuestions.length
+    const soloDead = soloLives <= 0
+    const soloOver = soloDead || soloIndex >= soloQuestions.length
     const sq = !soloOver ? soloQuestions[soloIndex] : null
     return (
       <div className="flex h-full flex-col bg-background text-text">
         <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2">
-          <span className="text-sm font-bold">🧩 {soloCategory} · solo</span>
+          <span className="text-sm font-bold">{CATEGORY_ICON[soloCategory] ?? '🧩'} {soloCategory} · solo</span>
           <button type="button" onClick={exitSolo} className="rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-text-muted hover:bg-surface-hover hover:text-text">← Lobby</button>
         </div>
         <div className="flex flex-1 flex-col items-center overflow-y-auto p-4">
           <div className="w-full max-w-xl">
+            {!soloOver && (
+              <div className="mb-3 flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-2">
+                <div className="flex gap-1 text-lg" title={`${soloLives} vidas`}>
+                  {Array.from({ length: SOLO_START_LIVES }).map((_, i) => (
+                    <span key={i}>{i < soloLives ? '❤️' : '🖤'}</span>
+                  ))}
+                </div>
+                <p className="text-sm font-black text-primary">⭐ {soloScore}</p>
+              </div>
+            )}
+
             {soloOver ? (
-              <div className="rounded-2xl border border-border bg-surface p-8 text-center">
-                <p className="mb-2 text-3xl font-black">🏁 {soloScore} / {soloQuestions.length}</p>
-                <p className="mb-4 text-sm text-text-muted">
-                  {soloScore === soloQuestions.length ? '¡Perfecto!' : soloScore >= soloQuestions.length * 0.6 ? '¡Buen trabajo!' : 'Sigue practicando.'}
+              <div className="rounded-3xl border-2 border-border bg-surface p-8 text-center">
+                <p className="mb-2 text-5xl">{soloDead ? '💀' : soloScore === soloQuestions.length ? '🏆' : '🏁'}</p>
+                <p className="mb-1 text-3xl font-black">{soloScore} / {soloQuestions.length}</p>
+                <p className="mb-5 text-sm font-semibold text-text-muted">
+                  {soloDead ? '¡Se acabaron tus vidas!' : soloScore === soloQuestions.length ? '¡Perfecto!' : soloScore >= soloQuestions.length * 0.6 ? '¡Buen trabajo!' : 'Sigue practicando.'}
                 </p>
                 <div className="flex justify-center gap-2">
-                  <button type="button" onClick={() => startSoloRound(soloPool)} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background">Jugar de nuevo</button>
-                  <button type="button" onClick={exitSolo} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:text-text">Volver al lobby</button>
+                  <button type="button" onClick={() => startSoloRound(soloPool)} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-background">🔁 Jugar de nuevo</button>
+                  <button type="button" onClick={exitSolo} className="rounded-xl border border-border px-5 py-2.5 text-sm font-bold text-text-muted hover:text-text">Volver al lobby</button>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-text-muted/60">
-                  Pregunta {soloIndex + 1} de {soloQuestions.length} · {soloScore} correctas
-                </p>
-                {sq.image && <img src={sq.image} alt="" className="mb-3 max-h-48 w-full rounded-lg object-contain" />}
-                <p className="mb-4 text-lg font-bold text-text">{sq.question}</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {sq.options.map((opt, i) => {
-                    const picked = soloPick === i
-                    const revealed = soloPick !== null
-                    const isCorrect = i === sq.correct
-                    const style = !revealed
-                      ? 'border-border hover:border-primary hover:bg-primary/5'
-                      : isCorrect ? 'border-emerald-500 bg-emerald-500/15 text-emerald-400'
-                      : picked ? 'border-danger bg-danger/15 text-danger'
-                      : 'border-border opacity-50'
-                    return (
-                      <button key={i} type="button" disabled={revealed}
-                        onClick={() => handleSoloAnswer(i)}
-                        className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors disabled:cursor-not-allowed ${style}`}>
-                        {opt}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+              <TriviaQuestionCard
+                category={soloCategory}
+                questionNumber={soloIndex + 1}
+                totalQuestions={soloQuestions.length}
+                timeLeft={soloTimeLeft}
+                question={sq.question}
+                image={sq.image}
+                options={sq.options}
+                pick={soloPick}
+                correctIndex={sq.correct}
+                onAnswer={handleSoloAnswer}
+                disabled={false}
+              />
             )}
           </div>
         </div>
@@ -408,7 +527,7 @@ export default function TriviaGame() {
   return (
     <div className="flex h-full flex-col bg-background text-text">
       <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2">
-        <span className="text-sm font-bold">🎯 {activeMatch.category}</span>
+        <span className="text-sm font-bold">{CATEGORY_ICON[activeMatch.category] ?? '🎯'} {activeMatch.category}</span>
         <button type="button" onClick={exitMatch} className="rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-text-muted hover:bg-surface-hover hover:text-text">← Lobby</button>
       </div>
 
@@ -421,40 +540,27 @@ export default function TriviaGame() {
           </div>
 
           {isOver ? (
-            <div className="rounded-2xl border border-border bg-surface p-8 text-center">
-              <p className="mb-2 text-3xl font-black">{resultText}</p>
-              <p className="text-sm text-text-muted">{myScore} — {oppScore}</p>
+            <div className="rounded-3xl border-2 border-border bg-surface p-8 text-center">
+              <p className="mb-2 text-5xl">{activeMatch.result === 'empate' ? '🤝' : (activeMatch.result === 'player1') === myIsPlayer1 ? '🏆' : '💔'}</p>
+              <p className="mb-1 text-3xl font-black">{resultText}</p>
+              <p className="text-sm font-semibold text-text-muted">{myScore} — {oppScore}</p>
+              <button type="button" onClick={exitMatch} className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-background">Volver al lobby</button>
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-text-muted/60">
-                Pregunta {activeMatch.current_index + 1} de {activeMatch.questions.length}
-              </p>
-              {!myTurn && (
-                <p className="mb-3 text-xs font-semibold text-amber-400">⏳ Esperando a {oppName}…</p>
-              )}
-              {q.image && <img src={q.image} alt="" className="mb-3 max-h-48 w-full rounded-lg object-contain" />}
-              <p className="mb-4 text-lg font-bold text-text">{q.question}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {q.options.map((opt, i) => {
-                  const picked = lastPick === i
-                  const revealed = lastPick !== null
-                  const isCorrect = i === q.correct
-                  const style = !revealed
-                    ? 'border-border hover:border-primary hover:bg-primary/5'
-                    : isCorrect ? 'border-emerald-500 bg-emerald-500/15 text-emerald-400'
-                    : picked ? 'border-danger bg-danger/15 text-danger'
-                    : 'border-border opacity-50'
-                  return (
-                    <button key={i} type="button" disabled={!myTurn || revealed}
-                      onClick={() => handleAnswer(i)}
-                      className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors disabled:cursor-not-allowed ${style}`}>
-                      {opt}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <TriviaQuestionCard
+              category={activeMatch.category}
+              questionNumber={activeMatch.current_index + 1}
+              totalQuestions={activeMatch.questions.length}
+              timeLeft={myTurn ? matchTimeLeft : null}
+              question={q.question}
+              image={q.image}
+              options={q.options}
+              pick={lastPick}
+              correctIndex={q.correct}
+              onAnswer={handleAnswer}
+              disabled={!myTurn}
+              waitingLabel={!myTurn ? `Esperando a ${oppName}…` : null}
+            />
           )}
         </div>
       </div>
