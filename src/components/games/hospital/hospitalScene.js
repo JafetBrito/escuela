@@ -1,20 +1,37 @@
 import Phaser from 'phaser'
 
-// Mapa chico del Hospital Central — mismo motor que campusScene.js (Mundo
-// 2D): gráficos generados en código, sin tilemaps ni assets externos. Solo
-// dos zonas importan para el juego (una por rol); las otras dos son
-// decorativas, para que se sienta un hospital de verdad y no solo dos
-// cuartos vacíos.
-const W = 1300
-const H = 950
-const SPEED = 220
+// Mapa del Hospital Central — mismo motor que campusScene.js (Mundo 2D):
+// gráficos generados en código, sin tilemaps ni assets externos. Doce
+// departamentos en una cuadrícula 4×3 con pasillos entre ellos (el hueco
+// entre rects, ya lo cubre la grilla de piso de _drawMap) — solo dos
+// importan para el juego (una zona por rol); el resto son decorativas,
+// para que se sienta un hospital real y no cuatro cuartos sueltos. Fases
+// futuras (Red/Blue Team, NPCs-paciente) se apoyan en este mismo layout.
+const W = 2300
+const H = 1450
+const SPEED = 260
 const OBJECTIVE_RADIUS = 110
 
+// Cuadrícula 4 columnas × 3 filas — cuartos de 460×360, pasillos de 90px
+// entre ellos y de margen. Centro exacto del mapa (W/2, H/2) cae justo en
+// el cruce de pasillos entre columnas 2-3 y filas 1-2, así que sirve como
+// punto de aparición sin pisar ningún cuarto (ver _makePlayer).
 const ZONES = [
-  { x: 80,  y: 80,  w: 380, h: 280, label: '🖥️ Cuarto de Servidores', fill: 0x0d1e0d, glow: 0x1e8848, text: '#4ade80', role: 'hacker' },
-  { x: 840, y: 580, w: 380, h: 280, label: '🏥 Recepción',             fill: 0x0d1a3d, glow: 0x1e5888, text: '#60a5fa', role: 'doctor' },
-  { x: 840, y: 80,  w: 300, h: 200, label: '💊 Farmacia',              fill: 0x1a1200, glow: 0x7a5a00, text: '#fbbf24', role: null },
-  { x: 80,  y: 600, w: 300, h: 220, label: '🩹 Quirófano',             fill: 0x1a0d1a, glow: 0x881a68, text: '#f472b6', role: null },
+  // Fila 0 — ala de ingreso
+  { x: 90,   y: 90,  w: 460, h: 360, label: '🚑 Urgencias',            fill: 0x1a0d0d, glow: 0x88301e, text: '#fb7185', role: null },
+  { x: 640,  y: 90,  w: 460, h: 360, label: '🪑 Sala de Espera',       fill: 0x14140d, glow: 0x6a6a1e, text: '#facc15', role: null },
+  { x: 1190, y: 90,  w: 460, h: 360, label: '🏥 Recepción',            fill: 0x0d1a3d, glow: 0x1e5888, text: '#60a5fa', role: 'doctor' },
+  { x: 1740, y: 90,  w: 460, h: 360, label: '📋 Administración',       fill: 0x14141a, glow: 0x4a4a6a, text: '#a5b4fc', role: null },
+  // Fila 1 — servicios
+  { x: 90,   y: 540, w: 460, h: 360, label: '💊 Farmacia',             fill: 0x1a1200, glow: 0x7a5a00, text: '#fbbf24', role: null },
+  { x: 640,  y: 540, w: 460, h: 360, label: '🧪 Laboratorio',          fill: 0x0d1a17, glow: 0x1e6850, text: '#5eead4', role: null },
+  { x: 1190, y: 540, w: 460, h: 360, label: '🩺 Consultorios',         fill: 0x141a0d, glow: 0x4a6a1e, text: '#a3e635', role: null },
+  { x: 1740, y: 540, w: 460, h: 360, label: '🖥️ Cuarto de Servidores', fill: 0x0d1e0d, glow: 0x1e8848, text: '#4ade80', role: 'hacker' },
+  // Fila 2 — hospitalización
+  { x: 90,   y: 990, w: 460, h: 360, label: '🩹 Quirófano',            fill: 0x1a0d1a, glow: 0x881a68, text: '#f472b6', role: null },
+  { x: 640,  y: 990, w: 460, h: 360, label: '🫀 Terapia Intensiva',    fill: 0x1a0d10, glow: 0x8a1e3e, text: '#fb7185', role: null },
+  { x: 1190, y: 990, w: 460, h: 360, label: '🛏️ Hospitalización',      fill: 0x0d1420, glow: 0x2a4a7a, text: '#93c5fd', role: null },
+  { x: 1740, y: 990, w: 460, h: 360, label: '☕ Personal / Cafetería',  fill: 0x1a150d, glow: 0x7a5a2e, text: '#fdba74', role: null },
 ]
 
 // Puente React ↔ Phaser, mismo patrón que campusScene.js's `bridge`.
@@ -57,7 +74,7 @@ export default class HospitalScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, W, H)
     this.cameras.main.startFollow(this._player, true, 0.08, 0.08)
-    this.cameras.main.setZoom(1.1)
+    this.cameras.main.setZoom(0.9)
     this.physics.world.setBounds(0, 0, W, H)
   }
 

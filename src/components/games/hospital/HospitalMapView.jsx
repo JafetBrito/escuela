@@ -134,8 +134,8 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
         if (p.key === myId || !p.name) continue
         seen.add(p.key)
         const color = p.role === 'hacker' ? '#4ade80' : '#60a5fa'
-        scene.addOther(p.key, p.x ?? 650, p.y ?? 475, p.name, color)
-        scene.moveOther(p.key, p.x ?? 650, p.y ?? 475)
+        scene.addOther(p.key, p.x ?? 1150, p.y ?? 725, p.name, color)
+        scene.moveOther(p.key, p.x ?? 1150, p.y ?? 725)
       }
       for (const id of Object.keys(scene._others ?? {})) {
         if (!seen.has(id)) scene.removeOther(id)
@@ -143,7 +143,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
     })
 
     ch.subscribe((status) => {
-      if (status === 'SUBSCRIBED') ch.track({ x: 650, y: 475, name: myName, role: myRole })
+      if (status === 'SUBSCRIBED') ch.track({ x: 1150, y: 725, name: myName, role: myRole })
     })
 
     channelRef.current = ch
