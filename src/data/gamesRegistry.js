@@ -12,16 +12,6 @@
 // presionar "Reclamar recompensa" en GamePlayerPage, como premio por jugar.
 export const GAMES = [
   {
-    id: 'reto-claude',
-    title: 'Reto Claude',
-    icon: '🎮',
-    category: 'Otros',
-    description: 'Un minijuego para poner a prueba tus reflejos y tu lógica. ¡Complétalo y reclama tu recompensa!',
-    type: 'external-url',
-    file: 'https://claude.ai/public/artifacts/8573ca92-7ec5-4c4c-97b1-df8338e591df',
-    reward: 500,
-  },
-  {
     id: 'quiz-rapido',
     title: 'NZT48',
     icon: '🧠',
@@ -30,16 +20,6 @@ export const GAMES = [
     type: 'component',
     component: 'trivia',
     reward: 250,
-  },
-  {
-    id: 'memoria',
-    title: 'Memoria de Conceptos',
-    icon: '🃏',
-    category: 'Pruebas',
-    description: 'Empareja conceptos clave con su definición antes de que se acabe el tiempo.',
-    type: null,
-    file: null,
-    reward: 0,
   },
   {
     id: 'mishi-jedrez',

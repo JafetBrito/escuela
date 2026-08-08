@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
@@ -6,21 +7,119 @@ import { GAMES } from '../../data/gamesRegistry'
 import { useI18n } from '../../i18n'
 import { useAuthStore } from '../../stores/useAuthStore'
 
-const CATEGORY_GRADIENTS = {
-  Otros: 'from-cyan-500 to-blue-600',
-  Pruebas: 'from-purple-500 to-pink-600',
-  Estrategia: 'from-emerald-500 to-teal-600',
-  Simuladores: 'from-blue-600 to-indigo-700',
+// Antes esto solo pintaba una etiqueta de color sobre cada tarjeta — ahora
+// es la puerta de entrada real: primero eliges categoría, luego ves sus
+// juegos. Cualquier categoría nueva que aparezca en gamesRegistry.js sin
+// entrada aquí cae en DEFAULT_CATEGORY_META, no rompe nada.
+const CATEGORY_META = {
+  Pruebas: { icon: '🧠', gradient: 'from-purple-500 to-pink-600', description: 'Trivia, idiomas y retos de conocimiento' },
+  Estrategia: { icon: '♟️', gradient: 'from-emerald-500 to-teal-600', description: 'Ajedrez y batallas de cartas por turnos' },
+  Simuladores: { icon: '🖥️', gradient: 'from-blue-600 to-indigo-700', description: 'Terminales reales y escenarios de ciberseguridad' },
+  Matemáticas: { icon: '🧮', gradient: 'from-orange-500 to-red-600', description: 'Combate numérico y viajes por la historia' },
+  Música: { icon: '🎹', gradient: 'from-pink-500 to-rose-600', description: 'Notas, ritmo y oído musical' },
+  Historia: { icon: '🏺', gradient: 'from-amber-500 to-yellow-600', description: 'Personajes y eventos que marcaron el mundo' },
+  Ciencias: { icon: '🧬', gradient: 'from-teal-500 to-cyan-600', description: 'El cuerpo humano y la naturaleza en 3D' },
+  'Inteligencia Artificial': { icon: '🤖', gradient: 'from-violet-500 to-fuchsia-600', description: 'Practica prompts y piensa como una IA' },
+  Programación: { icon: '⌨️', gradient: 'from-slate-500 to-blue-700', description: 'Escribe código real contra el reloj' },
 }
-const DEFAULT_GRADIENT = 'from-primary to-emerald-500'
+const DEFAULT_CATEGORY_META = { icon: '🎲', gradient: 'from-primary to-emerald-500', description: 'Más juegos por descubrir' }
+
+function FeaturedAlphaBanner({ to, icon, title, badge, badgeColor, description, tags, borderColor, glowColor, buttonLabel }) {
+  return (
+    <div className={`relative overflow-hidden rounded-2xl border ${borderColor} bg-black p-6`}>
+      {/* Tailwind no puede generar un arbitrary-value armado con interpolación
+          en runtime (bg-[...${x}...]) — el color del glow va por style. */}
+      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse at top left, ${glowColor}, transparent 60%)` }} />
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+        <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl ${badgeColor.bg} text-4xl border ${badgeColor.border}`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-xl font-black text-white">{title}</span>
+            <span className={`rounded-full border ${badgeColor.border} ${badgeColor.bg} px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${badgeColor.text}`}>
+              ⚡ Alpha
+            </span>
+            <span className={`rounded-full border ${badgeColor.border} ${badgeColor.bg} px-2 py-0.5 text-[10px] font-semibold ${badgeColor.text} uppercase tracking-wide`}>
+              {badge}
+            </span>
+          </div>
+          <p className="text-sm text-white/60 leading-relaxed mb-3">{description}</p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {tags.map((tag) => (
+              <span key={tag} className="rounded-full bg-white/5 border border-white/10 px-2.5 py-1 text-[11px] text-white/50">
+                {tag}
+              </span>
+            ))}
+          </div>
+          <Link to={to} className={`inline-block rounded-xl border ${badgeColor.border} ${badgeColor.bg} px-5 py-2 text-sm font-semibold ${badgeColor.text} transition-colors hover:brightness-125`}>
+            {buttonLabel}
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GameCard({ game }) {
+  const available = Boolean(game.file) || game.type === 'component'
+  return (
+    <div
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-transform ${
+        available ? 'hover:-translate-y-1 hover:shadow-xl' : 'opacity-75'
+      }`}
+    >
+      <div className={`flex items-center justify-between bg-gradient-to-r ${(CATEGORY_META[game.category] ?? DEFAULT_CATEGORY_META).gradient} px-4 py-5`}>
+        <span className="text-4xl drop-shadow-sm">{game.icon}</span>
+        <span className="rounded-full bg-background/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+          {available ? `+${game.reward} 🪙` : 'Próximamente'}
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <h2 className="text-base font-bold text-text">{game.title}</h2>
+        <p className="flex-1 text-sm text-text-muted">{game.description}</p>
+
+        {available ? (
+          <Link
+            to={`/games/${game.id}`}
+            className="mt-auto self-start rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-background transition-colors hover:bg-primary-hover"
+          >
+            ▶ Jugar
+          </Link>
+        ) : (
+          <button
+            disabled
+            className="mt-auto self-start rounded-lg border border-border px-4 py-2 text-xs font-semibold text-text-muted opacity-60"
+          >
+            🔒 Próximamente
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function GamesPage() {
   const { t } = useI18n()
   const ageProfile = useAuthStore((s) => s.profile?.age_profile)
+  const [activeCategory, setActiveCategory] = useState(null)
+
   const games = GAMES.filter((g) => !g.hideFor?.includes(ageProfile))
-  const categories = [...new Set(games.map((g) => g.category ?? 'Otros'))]
   const isAvailable = (g) => Boolean(g.file) || g.type === 'component'
   const availableCount = games.filter(isAvailable).length
+
+  const categories = [...new Set(games.map((g) => g.category ?? 'Otros'))].map((name) => {
+    const gamesInCategory = games.filter((g) => (g.category ?? 'Otros') === name)
+    return {
+      name,
+      games: gamesInCategory,
+      availableCount: gamesInCategory.filter(isAvailable).length,
+      meta: CATEGORY_META[name] ?? DEFAULT_CATEGORY_META,
+    }
+  })
+
+  const selected = categories.find((c) => c.name === activeCategory) ?? null
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -34,147 +133,85 @@ export default function GamesPage() {
             <p className="mt-1 text-sm font-medium text-white/85">
               {t('pages.games.subtitle')}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
-                🕹️ {availableCount}/{games.length} disponibles
-              </span>
+            <span className="mt-4 inline-block rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white">
+              🕹️ {availableCount}/{games.length} disponibles en {categories.length} categorías
+            </span>
+          </div>
+
+          <FeaturedAlphaBanner
+            to="/games/cyber-range-hospital"
+            icon="🕵️"
+            title="Oliver Cyber Range"
+            badge="Hacker vs Doctor"
+            badgeColor={{ bg: 'bg-green-500/10', border: 'border-green-500/50', text: 'text-green-400' }}
+            borderColor="border-green-500/30"
+            glowColor="rgba(34,197,94,0.12)"
+            description="Inspirado en los escenarios que usa el FBI para entrenar ciberseguridad — invita a alguien y elige bando: un Hacker vulnera en vivo los sistemas del Hospital Central mientras un Doctor trata pacientes para mantenerlo en pie. Un solo medidor de seguridad compartido, cada acierto de un lado le pesa al otro en tiempo real."
+            tags={['Tiempo real', 'Roles asimétricos', 'Terminal Linux real', 'Casos de pacientes', '1 vs 1']}
+            buttonLabel="🏥 Entrar al Cyber Range"
+          />
+
+          <FeaturedAlphaBanner
+            to="/games/duelo-de-mentes"
+            icon="⚔️"
+            title="Duelo de Mentes"
+            badge="Dev Alpha"
+            badgeColor={{ bg: 'bg-violet-500/10', border: 'border-violet-500/50', text: 'text-violet-400' }}
+            borderColor="border-violet-500/30"
+            glowColor="rgba(139,92,246,0.15)"
+            description="Juego de cartas por turnos donde Científicos, Hackers y Matemáticos se enfrentan en batalla. Elige tu deck — Marie Curie vs Aristóteles, Ada Lovelace vs Pitágoras — y cuando juegas una carta, tu personaje aparece en el campo como modelo 3D. Las habilidades son sus contribuciones reales al conocimiento."
+            tags={['Cartas por turnos', 'Modelos 3D en campo', 'Científicos vs Filósofos', 'Sacrificios y niveles', 'Educativo']}
+            buttonLabel="⚔️ Probar Alpha"
+          />
+
+          {!selected ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {categories.map((cat) => (
-                <span
-                  key={cat}
-                  className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-white"
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.name)}
+                  className="group relative flex flex-col items-start overflow-hidden rounded-2xl border border-border bg-surface p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl"
                 >
-                  {cat}
-                </span>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${cat.meta.gradient} opacity-10 transition-opacity group-hover:opacity-20`} />
+                  <div className="relative flex w-full items-center justify-between">
+                    <span className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${cat.meta.gradient} text-3xl shadow-md`}>
+                      {cat.meta.icon}
+                    </span>
+                    <span className="rounded-full border border-border bg-background/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                      {cat.availableCount}/{cat.games.length} juegos
+                    </span>
+                  </div>
+                  <h2 className="relative mt-4 text-lg font-bold text-text">{cat.name}</h2>
+                  <p className="relative mt-1 text-sm text-text-muted">{cat.meta.description}</p>
+                  <span className="relative mt-4 text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                    Ver juegos →
+                  </span>
+                </button>
               ))}
             </div>
-          </div>
-
-          {/* ── Cyber Range Alpha ────────────────────────────────────────── */}
-          <div className="relative overflow-hidden rounded-2xl border border-green-500/30 bg-black p-6">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(34,197,94,0.12),_transparent_60%)]" />
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-green-500/10 text-4xl border border-green-500/20">
-                🕵️
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xl font-black text-white">Oliver Cyber Range</span>
-                  <span className="rounded-full border border-green-500/50 bg-green-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-green-400">
-                    ⚡ Alpha
-                  </span>
-                  <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400 uppercase tracking-wide">
-                    Hacker vs Doctor
-                  </span>
-                </div>
-                <p className="text-sm text-white/60 leading-relaxed mb-3">
-                  Inspirado en los escenarios que usa el FBI para entrenar ciberseguridad — invita a
-                  alguien y elige bando: un Hacker vulnera en vivo los sistemas del Hospital Central
-                  mientras un Doctor trata pacientes para mantenerlo en pie. Un solo medidor de
-                  seguridad compartido, cada acierto de un lado le pesa al otro en tiempo real.
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {['Tiempo real', 'Roles asimétricos', 'Terminal Linux real', 'Casos de pacientes', '1 vs 1'].map((tag) => (
-                    <span key={tag} className="rounded-full bg-white/5 border border-white/10 px-2.5 py-1 text-[11px] text-white/50">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <Link
-                  to="/games/cyber-range-hospital"
-                  className="inline-block rounded-xl border border-green-500/50 bg-green-500/15 px-5 py-2 text-sm font-semibold text-green-300 transition-colors hover:bg-green-500/25"
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory(null)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-text-muted hover:bg-surface-hover hover:text-text"
                 >
-                  🏥 Entrar al Cyber Range
-                </Link>
+                  ← Todas las categorías
+                </button>
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${selected.meta.gradient} text-lg`}>
+                  {selected.meta.icon}
+                </span>
+                <h2 className="text-xl font-bold text-text">{selected.name}</h2>
+                <span className="text-sm text-text-muted">{selected.meta.description}</span>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {selected.games.map((game) => <GameCard key={game.id} game={game} />)}
               </div>
             </div>
-          </div>
-
-          {/* ── Duelo de Mentes Alpha ────────────────────────────────────── */}
-          <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-black p-6">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(139,92,246,0.15),_transparent_60%)]" />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(236,72,153,0.08),_transparent_60%)]" />
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-violet-500/10 text-4xl border border-violet-500/20">
-                ⚔️
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xl font-black text-white">Duelo de Mentes</span>
-                  <span className="rounded-full border border-violet-500/50 bg-violet-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-violet-400">
-                    ⚡ Alpha
-                  </span>
-                  <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400 uppercase tracking-wide">
-                    Dev Alpha
-                  </span>
-                </div>
-                <p className="text-sm text-white/60 leading-relaxed mb-3">
-                  Juego de cartas por turnos donde Científicos, Hackers y Matemáticos se enfrentan en batalla.
-                  Elige tu deck — Marie Curie vs Aristóteles, Ada Lovelace vs Pitágoras — y cuando juegas una carta,
-                  tu personaje aparece en el campo como modelo 3D. Las habilidades son sus contribuciones reales al conocimiento.
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {['Cartas por turnos', 'Modelos 3D en campo', 'Científicos vs Filósofos', 'Sacrificios y niveles', 'Educativo'].map((tag) => (
-                    <span key={tag} className="rounded-full bg-white/5 border border-white/10 px-2.5 py-1 text-[11px] text-white/50">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <Link
-                  to="/games/duelo-de-mentes"
-                  className="inline-block rounded-xl border border-violet-500/50 bg-violet-500/15 px-5 py-2 text-sm font-semibold text-violet-300 transition-colors hover:bg-violet-500/25"
-                >
-                  ⚔️ Probar Alpha
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {games.map((game) => {
-              const available = isAvailable(game)
-              const gradient = CATEGORY_GRADIENTS[game.category] ?? DEFAULT_GRADIENT
-
-              return (
-                <div
-                  key={game.id}
-                  className={`group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-transform ${
-                    available ? 'hover:-translate-y-1 hover:shadow-xl' : 'opacity-75'
-                  }`}
-                >
-                  <div className={`flex items-center justify-between bg-gradient-to-r ${gradient} px-4 py-5`}>
-                    <span className="text-4xl drop-shadow-sm">{game.icon}</span>
-                    <span className="rounded-full bg-background/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-                      {available ? `+${game.reward} 🪙` : 'Próximamente'}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-1 flex-col gap-2 p-4">
-                    <span className="self-start rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                      {game.category ?? 'Otros'}
-                    </span>
-                    <h2 className="text-base font-bold text-text">{game.title}</h2>
-                    <p className="flex-1 text-sm text-text-muted">{game.description}</p>
-
-                    {available ? (
-                      <Link
-                        to={`/games/${game.id}`}
-                        className="mt-auto self-start rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-background transition-colors hover:bg-primary-hover"
-                      >
-                        ▶ Jugar
-                      </Link>
-                    ) : (
-                      <button
-                        disabled
-                        className="mt-auto self-start rounded-lg border border-border px-4 py-2 text-xs font-semibold text-text-muted opacity-60"
-                      >
-                        🔒 Próximamente
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          )}
         </div>
       </main>
 
