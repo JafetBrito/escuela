@@ -11,6 +11,18 @@ const W = 2300
 const H = 1450
 const SPEED = 260
 const OBJECTIVE_RADIUS = 110
+const PATIENT_RADIUS = 90
+
+// Pacientes-NPC dentro de Recepción — posiciones relativas al centro de la
+// zona del Doctor (ver _makePatients). Por ahora son solo un punto de
+// interacción visual (el contenido del diagnóstico sigue siendo el mismo
+// banco compartido de HOSPITAL_PATIENT_CASES vía DoctorPanel) — vestir
+// cada paciente con SU caso fijo es la siguiente vuelta de esta fase.
+const PATIENT_NPCS = [
+  { id: 'p1', dx: -130, dy: 30, emoji: '🧑', line: '🗨️ Doctor, ¿me revisa?' },
+  { id: 'p2', dx: 0, dy: 100, emoji: '👵', line: '🗨️ No me siento bien...' },
+  { id: 'p3', dx: 130, dy: 30, emoji: '👦', line: '🗨️ Llevo un rato esperando' },
+]
 
 // Cuadrícula 4 columnas × 3 filas — cuartos de 460×360, pasillos de 90px
 // entre ellos y de margen. Centro exacto del mapa (W/2, H/2) cae justo en
@@ -52,6 +64,7 @@ export const bridge = {
   doorLocked: false,     // Red Team la bloquea, Blue Team la abre — el Doctor no puede entrar a Recepción mientras esté true
   onObjectiveNear: null, // (bool) — entra/sale del radio de TU zona de objetivo
   onObjectiveVector: null, // (dx, dy, dist, near) — brújula
+  onPatientNear: null,   // (bool) — Doctor entra/sale del radio de CUALQUIER paciente-NPC
   onPosition: null,      // (x, y)
   scene: null,
 }
@@ -61,6 +74,7 @@ export default class HospitalScene extends Phaser.Scene {
     super({ key: 'HospitalScene' })
     this._others = {}
     this._near = false
+    this._nearPatient = false
     this._posT = 0
   }
 
@@ -82,6 +96,7 @@ export default class HospitalScene extends Phaser.Scene {
     this._drawMap()
     this._makePlayer()
     this._makeDoorBadge()
+    this._makePatients()
 
     this._cursors = this.input.keyboard.createCursorKeys()
     this._wasd = this.input.keyboard.addKeys('W,A,S,D')
@@ -163,6 +178,26 @@ export default class HospitalScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(20).setVisible(false)
   }
 
+  // Pacientes-NPC dentro de Recepción — sprites estáticos con una línea de
+  // diálogo flotante siempre visible, para que se sienta gente esperando
+  // y no un cuarto vacío. Guarda sus coordenadas absolutas en this._patients
+  // para el chequeo de proximidad de update().
+  _makePatients() {
+    const doctorZone = ZONES.find((z) => z.roles?.includes('doctor'))
+    if (!doctorZone) return
+    const cx = doctorZone.x + doctorZone.w / 2, cy = doctorZone.y + doctorZone.h / 2
+    this._patients = PATIENT_NPCS.map((p) => {
+      const x = cx + p.dx, y = cy + p.dy
+      this.add.image(x, y, 'h_dot_other').setTint(0xfbbf24).setScale(1.3).setDepth(6)
+      this.add.text(x, y, p.emoji, { fontSize: '18px' }).setOrigin(0.5).setDepth(7)
+      this.add.text(x, y - 26, p.line, {
+        fontFamily: 'system-ui, sans-serif', fontSize: '10px', color: '#fff',
+        backgroundColor: '#00000077', padding: { x: 4, y: 2 },
+      }).setOrigin(0.5).setDepth(7)
+      return { id: p.id, x, y }
+    })
+  }
+
   // ── Multiplayer API (llamado desde React) ──────────────────────────────────
   addOther(id, x, y, name, color) {
     if (this._others[id]) return
@@ -219,6 +254,19 @@ export default class HospitalScene extends Phaser.Scene {
     if (nearNow !== this._near) {
       this._near = nearNow
       bridge.onObjectiveNear?.(nearNow)
+    }
+
+    // El Doctor solo puede diagnosticar parado junto a un paciente
+    // concreto, no en cualquier punto de Recepción — entrar a la zona
+    // sigue mostrando el aviso de puerta bloqueada si aplica, pero el
+    // panel de diagnóstico en sí espera a que camines hasta alguien.
+    if (bridge.meta.role === 'doctor' && this._patients?.length) {
+      const nearestDist = Math.min(...this._patients.map((p) => Phaser.Math.Distance.Between(px, py, p.x, p.y)))
+      const nearPatientNow = nearestDist < PATIENT_RADIUS
+      if (nearPatientNow !== this._nearPatient) {
+        this._nearPatient = nearPatientNow
+        bridge.onPatientNear?.(nearPatientNow)
+      }
     }
 
     // Broadcast más frecuente que el Mundo 2D general (400ms vs 2000ms) —

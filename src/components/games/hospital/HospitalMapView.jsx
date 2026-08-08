@@ -68,6 +68,19 @@ function VirtualJoystick({ dirRef }) {
 // este componente solo cambia CÓMO se llega al panel.
 const ROLE_COLOR = { hacker: '#4ade80', hacker_red: '#ef4444', hacker_blue: '#22d3ee', doctor: '#60a5fa' }
 
+// Lo que ve el Doctor al entrar a Recepción antes de acercarse a un
+// paciente concreto — entrar al cuarto ya no abre el diagnóstico solo,
+// hay que caminar hasta alguien (ver PATIENT_NPCS en hospitalScene.js).
+function WaitingRoomHint() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-sky-900/50 bg-surface p-6 text-center">
+      <p className="mb-3 text-5xl">🪑</p>
+      <p className="text-lg font-bold text-text">Sala de espera</p>
+      <p className="mt-2 max-w-xs text-sm text-text-muted">Hay pacientes esperando — camina hasta uno de ellos para atenderlo.</p>
+    </div>
+  )
+}
+
 export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, isSolo, doorLocked, onToggleDoor, onSolve, onExit }) {
   const containerRef = useRef(null)
   const gameRef = useRef(null)
@@ -75,6 +88,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
   const channelRef = useRef(null)
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [compass, setCompass] = useState(null)
+  const [nearPatient, setNearPatient] = useState(false)
 
   bridge.dir = dirRef
   bridge.meta = { name: myName, color: ROLE_COLOR[myRole] ?? '#98ca3f', role: myRole }
@@ -106,6 +120,10 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
     bridge.onObjectiveVector = (dx, dy, dist, near) => {
       setCompass(near ? null : { angle: Math.atan2(dy, dx), dist: Math.round(dist) })
     }
+    // Solo el Doctor lo usa — entrar a Recepción abre el aviso de puerta
+    // (si aplica), pero el panel de diagnóstico en sí espera a esto: estar
+    // parado junto a un paciente concreto, no en cualquier punto del cuarto.
+    bridge.onPatientNear = (near) => setNearPatient(near)
 
     gameRef.current = new Phaser.Game(config)
 
@@ -113,6 +131,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
       bridge.onObjectiveNear = null
       bridge.onPosition = null
       bridge.onObjectiveVector = null
+      bridge.onPatientNear = null
       bridge.scene = null
       gameRef.current?.destroy(true)
       gameRef.current = null
@@ -212,7 +231,9 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
           </button>
           <div className="min-h-0 flex-1">
             {myRole === 'doctor'
-              ? (doorLocked ? <DoorLockedNotice /> : <DoctorPanel onSolve={handleSolve} disabled={isOver} />)
+              ? (doorLocked ? <DoorLockedNotice />
+                : nearPatient ? <DoctorPanel onSolve={handleSolve} disabled={isOver} />
+                : <WaitingRoomHint />)
               : (
                 <HackerPanel
                   team={myRole === 'hacker_red' ? 'red' : myRole === 'hacker_blue' ? 'blue' : undefined}
