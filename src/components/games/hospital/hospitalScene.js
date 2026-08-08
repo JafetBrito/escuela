@@ -164,7 +164,13 @@ export default class HospitalScene extends Phaser.Scene {
     let nearNow = false
     if (this._myObjective) {
       const z = this._myObjective
-      nearNow = Phaser.Math.Distance.Between(px, py, z.x + z.w / 2, z.y + z.h / 2) < OBJECTIVE_RADIUS
+      const zx = z.x + z.w / 2, zy = z.y + z.h / 2
+      const dist = Phaser.Math.Distance.Between(px, py, zx, zy)
+      nearNow = dist < OBJECTIVE_RADIUS
+      // Brújula — sin esto no hay ninguna pista en pantalla de hacia dónde
+      // caminar, y el mapa es lo bastante grande como para perderse (sobre
+      // todo la Recepción del Doctor, que queda lejos del punto de spawn).
+      bridge.onObjectiveVector?.(zx - px, zy - py, dist, nearNow)
     }
     if (nearNow !== this._near) {
       this._near = nearNow

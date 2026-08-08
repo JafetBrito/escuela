@@ -72,6 +72,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
   const dirRef = useRef({ x: 0, y: 0 })
   const channelRef = useRef(null)
   const [overlayOpen, setOverlayOpen] = useState(false)
+  const [compass, setCompass] = useState(null)
 
   const roleColor = myRole === 'hacker' ? '#4ade80' : '#60a5fa'
   bridge.dir = dirRef
@@ -98,12 +99,18 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
     bridge.onPosition = (x, y) => {
       channelRef.current?.track({ x: Math.round(x), y: Math.round(y), name: myName, role: myRole })
     }
+    // Brújula hacia tu zona de objetivo — sin esto no hay ninguna pista de
+    // hacia dónde caminar en un mapa que puede sentirse grande al inicio.
+    bridge.onObjectiveVector = (dx, dy, dist, near) => {
+      setCompass(near ? null : { angle: Math.atan2(dy, dx), dist: Math.round(dist) })
+    }
 
     gameRef.current = new Phaser.Game(config)
 
     return () => {
       bridge.onObjectiveNear = null
       bridge.onPosition = null
+      bridge.onObjectiveVector = null
       bridge.scene = null
       gameRef.current?.destroy(true)
       gameRef.current = null
@@ -178,6 +185,15 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
         className="absolute right-3 top-3 rounded-lg border border-white/20 bg-black/60 px-2.5 py-1.5 text-xs font-bold text-white/80 backdrop-blur hover:bg-black/80">
         ← Salir
       </button>
+
+      {compass && !overlayOpen && (
+        <div className="absolute bottom-24 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 rounded-full border border-white/15 bg-black/70 px-4 py-2 backdrop-blur md:bottom-4">
+          <span className="text-xl leading-none" style={{ display: 'inline-block', transform: `rotate(${(compass.angle * 180) / Math.PI}deg)` }}>➤</span>
+          <span className="text-[10px] font-bold text-white/70">
+            {myRole === 'hacker' ? '🖥️ Cuarto de Servidores' : '🏥 Recepción'} · {compass.dist}m
+          </span>
+        </div>
+      )}
 
       <div className="absolute bottom-4 left-4 touch-none select-none md:hidden">
         <VirtualJoystick dirRef={dirRef} />
