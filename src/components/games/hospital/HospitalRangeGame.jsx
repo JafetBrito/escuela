@@ -43,9 +43,17 @@ export default function HospitalRangeGame() {
   const [myRoleChoice, setMyRoleChoice] = useState('hacker')
   const [answerError, setAnswerError] = useState(null)
   const [now, setNow] = useState(Date.now())
+  // Práctica solo — partida que vive solo en el cliente (nunca toca
+  // hospital_invites/hospital_matches), para que puedas entrar al mapa y
+  // probar el juego sin depender de invitar a alguien más. Un "bot" mueve
+  // el medidor de seguridad en tu contra cada pocos segundos para que se
+  // sienta como una partida real, en vez de dejarte solo sin presión.
+  const [soloMatch, setSoloMatch] = useState(null)
 
   const myId = session?.user?.id
   const myName = profile?.display_name || session?.user?.email || 'Jugador'
+  const isSolo = !!soloMatch
+  const match = soloMatch ?? activeMatch
 
   const refreshLobby = useCallback(() => {
     if (!myId) return
@@ -92,7 +100,26 @@ export default function HospitalRangeGame() {
     else if (accept && error) setAnswerError(error.message)
   }
 
-  const exitMatch = () => { closeMatch(); setMode('lobby'); refreshLobby() }
+  const handleStartSolo = (role) => {
+    setAnswerError(null)
+    setSoloMatch({
+      id: 'solo',
+      hacker_id: role === 'hacker' ? myId : 'bot',
+      hacker_name: role === 'hacker' ? myName : '🤖 Hacker (práctica)',
+      doctor_id: role === 'doctor' ? myId : 'bot',
+      doctor_name: role === 'doctor' ? myName : '🤖 Doctor (práctica)',
+      security: 100,
+      hacks_completed: 0,
+      patients_saved: 0,
+      status: 'en_curso',
+      result: null,
+      ends_at: new Date(Date.now() + 6 * 60_000).toISOString(),
+    })
+    setNow(Date.now())
+    setMode('match')
+  }
+
+  const exitMatch = () => { closeMatch(); setSoloMatch(null); setMode('lobby'); refreshLobby() }
 
   // Reloj visible del tiempo restante. El cierre real de la partida en la
   // base de datos ocurre en el próximo acierto de cualquiera de los dos
@@ -100,10 +127,37 @@ export default function HospitalRangeGame() {
   // el reloj llega a 0 el cliente YA trata la partida como terminada
   // (isOver más abajo), sin necesitar un cron que la cierre sola.
   useEffect(() => {
-    if (mode !== 'match' || !activeMatch || activeMatch.status === 'finalizada') return
+    if (mode !== 'match' || !match || match.status === 'finalizada') return
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
-  }, [mode, activeMatch?.status])
+  }, [mode, match?.status])
+
+  // Bot de práctica: en modo solo, cada ~4.5s mueve el medidor en tu
+  // contra (si eres Hacker, el "Doctor" bot cura un poco; si eres Doctor,
+  // el "Hacker" bot ataca un poco) — mismo delta que un acierto humano, así
+  // se siente como una partida real en vez de dejarte jugar sin presión.
+  useEffect(() => {
+    if (mode !== 'match' || !isSolo) return
+    const iAmHacker = soloMatch.hacker_id === myId
+    const botDelta = iAmHacker ? TREAT_DELTA : HACK_DELTA
+    const t = setInterval(() => {
+      setSoloMatch((prev) => {
+        if (!prev || prev.status === 'finalizada' || Date.now() >= new Date(prev.ends_at).getTime()) return prev
+        const nextSecurity = Math.max(0, Math.min(100, prev.security + botDelta))
+        const closesNow = nextSecurity <= 0
+        return {
+          ...prev,
+          security: nextSecurity,
+          hacks_completed: prev.hacks_completed + (botDelta < 0 ? 1 : 0),
+          patients_saved: prev.patients_saved + (botDelta > 0 ? 1 : 0),
+          status: closesNow ? 'finalizada' : prev.status,
+          result: closesNow ? 'hacker' : prev.result,
+        }
+      })
+    }, 4500)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, isSolo])
 
   // ── Lobby ──
   if (mode === 'lobby') {
@@ -122,6 +176,23 @@ export default function HospitalRangeGame() {
                 Un Hacker intenta vulnerar los sistemas del hospital mientras un Doctor trata pacientes para mantenerlo en pie.
                 Invita a alguien, elige tu bando, y que gane el que resista más.
               </p>
+            </div>
+
+            <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/5 p-3">
+              <p className="mb-1 text-xs font-black uppercase tracking-widest text-emerald-400">🧪 Practicar solo</p>
+              <p className="mb-2 text-[11px] text-text-muted">
+                Entra directo al mapa sin invitar a nadie — un bot hace de rival para que veas cómo se juega.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => handleStartSolo('hacker')}
+                  className="rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-400 hover:bg-emerald-500/20">
+                  🕶️ Como Hacker
+                </button>
+                <button type="button" onClick={() => handleStartSolo('doctor')}
+                  className="rounded-xl border-2 border-sky-500/60 bg-sky-500/10 px-3 py-2 text-sm font-bold text-sky-400 hover:bg-sky-500/20">
+                  🩺 Como Doctor
+                </button>
+              </div>
             </div>
 
             {answerError && (
@@ -237,28 +308,45 @@ export default function HospitalRangeGame() {
   }
 
   // ── Match ──
-  if (!activeMatch) {
+  if (!match) {
     return <div className="flex h-full items-center justify-center text-sm text-text-muted">Cargando partida…</div>
   }
 
-  const myRole = myId === activeMatch.hacker_id ? 'hacker' : 'doctor'
-  const oppName = myRole === 'hacker' ? activeMatch.doctor_name : activeMatch.hacker_name
-  const endsAtMs = new Date(activeMatch.ends_at).getTime()
+  const myRole = myId === match.hacker_id ? 'hacker' : 'doctor'
+  const oppName = myRole === 'hacker' ? match.doctor_name : match.hacker_name
+  const endsAtMs = new Date(match.ends_at).getTime()
   const timeUp = now >= endsAtMs
-  const isOver = activeMatch.status === 'finalizada' || timeUp
-  const result = activeMatch.status === 'finalizada' ? activeMatch.result : (activeMatch.security <= 0 ? 'hacker' : 'doctor')
+  const isOver = match.status === 'finalizada' || timeUp
+  const result = match.status === 'finalizada' ? match.result : (match.security <= 0 ? 'hacker' : 'doctor')
   const secondsLeft = Math.max(0, Math.round((endsAtMs - now) / 1000))
   const iWon = result === myRole
 
   const handleSolve = () => {
     if (isOver) return
-    submitAction(activeMatch.id, myRole === 'hacker' ? HACK_DELTA : TREAT_DELTA, myRole === 'hacker')
+    if (isSolo) {
+      setSoloMatch((prev) => {
+        if (!prev || prev.status === 'finalizada') return prev
+        const delta = myRole === 'hacker' ? HACK_DELTA : TREAT_DELTA
+        const nextSecurity = Math.max(0, Math.min(100, prev.security + delta))
+        const closesNow = nextSecurity <= 0
+        return {
+          ...prev,
+          security: nextSecurity,
+          hacks_completed: prev.hacks_completed + (myRole === 'hacker' ? 1 : 0),
+          patients_saved: prev.patients_saved + (myRole === 'doctor' ? 1 : 0),
+          status: closesNow ? 'finalizada' : prev.status,
+          result: closesNow ? 'hacker' : prev.result,
+        }
+      })
+      return
+    }
+    submitAction(match.id, myRole === 'hacker' ? HACK_DELTA : TREAT_DELTA, myRole === 'hacker')
   }
 
   return (
     <div className="h-full w-full">
       <HospitalMapView
-        activeMatch={activeMatch}
+        activeMatch={match}
         myId={myId}
         myName={myName}
         myRole={myRole}
@@ -267,6 +355,7 @@ export default function HospitalRangeGame() {
         result={result}
         iWon={iWon}
         secondsLeft={secondsLeft}
+        isSolo={isSolo}
         onSolve={handleSolve}
         onExit={exitMatch}
       />

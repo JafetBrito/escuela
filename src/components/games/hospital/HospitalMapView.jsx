@@ -66,7 +66,7 @@ function VirtualJoystick({ dirRef }) {
 // panel de objetivo. La partida en sí (medidor de seguridad, reloj,
 // resultado) sigue siendo la misma lógica de HospitalRangeGame.jsx —
 // este componente solo cambia CÓMO se llega al panel.
-export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, onSolve, onExit }) {
+export default function HospitalMapView({ activeMatch, myId, myName, myRole, oppName, isOver, result, iWon, secondsLeft, isSolo, onSolve, onExit }) {
   const containerRef = useRef(null)
   const gameRef = useRef(null)
   const dirRef = useRef({ x: 0, y: 0 })
@@ -112,7 +112,9 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
   }, [isOver])
 
   useEffect(() => {
-    if (!activeMatch?.id || !myId || isOver) return
+    // En modo práctica solo no hay un segundo jugador real ni un match_id
+    // real en la base — no tiene sentido abrir un canal de presencia.
+    if (!activeMatch?.id || !myId || isOver || isSolo) return
     const ch = supabase.channel(`hospital_presence:${activeMatch.id}`, { config: { presence: { key: myId } } })
 
     ch.on('presence', { event: 'sync' }, () => {
@@ -139,7 +141,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
 
     channelRef.current = ch
     return () => { ch.unsubscribe(); channelRef.current = null }
-  }, [activeMatch?.id, myId, myName, myRole, isOver])
+  }, [activeMatch?.id, myId, myName, myRole, isOver, isSolo])
 
   const handleSolve = () => { onSolve(); setOverlayOpen(false) }
 
@@ -165,6 +167,7 @@ export default function HospitalMapView({ activeMatch, myId, myName, myRole, opp
       <div className="absolute left-1/2 top-3 flex -translate-x-1/2 flex-col items-center gap-1.5 rounded-2xl border border-white/15 bg-black/70 px-4 py-2 backdrop-blur">
         <div className="w-64"><SecurityBar security={activeMatch.security} /></div>
         <div className="flex items-center gap-3 text-[11px] font-bold text-white/80">
+          {isSolo && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">🧪 Práctica</span>}
           <span>{myRole === 'hacker' ? '🕶️ Hacker' : '🩺 Doctor'} vs {oppName}</span>
           <span className="font-mono">🕒 {String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:{String(secondsLeft % 60).padStart(2, '0')}</span>
           <span>💥 {activeMatch.hacks_completed} · 💉 {activeMatch.patients_saved}</span>
