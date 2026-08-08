@@ -106,6 +106,16 @@ export const GAMES = [
     reward: 400,
   },
   {
+    id: 'cyber-range-hospital',
+    title: 'Oliver Cyber Range: Hospital',
+    icon: '🏥',
+    category: 'Simuladores',
+    description: 'Invita a alguien y elige bando: un Hacker intenta vulnerar los sistemas del Hospital Central mientras un Doctor trata pacientes para mantenerlo en pie. Tiempo real, un solo medidor de seguridad compartido.',
+    type: 'component',
+    component: 'cyber-range-hospital',
+    reward: 400,
+  },
+  {
     id: 'aprendiendo-memes',
     title: 'Aprendiendo con Memes',
     icon: '😂',

@@ -63,27 +63,27 @@ export default function GamesPage() {
                     ⚡ Alpha
                   </span>
                   <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400 uppercase tracking-wide">
-                    Solo Hackers
+                    Hacker vs Doctor
                   </span>
                 </div>
                 <p className="text-sm text-white/60 leading-relaxed mb-3">
-                  Un mundo VR exclusivo inspirado en los escenarios reales que usa el FBI para entrenar
-                  ciberseguridad. Trabaja en equipo para defender hospitales, estaciones de energía e
-                  infraestructura crítica contra ataques simulados por IA. Red team vs Blue team.
-                  Los NPCs adaptan sus tácticas. Los escenarios cambian con cada partida.
+                  Inspirado en los escenarios que usa el FBI para entrenar ciberseguridad — invita a
+                  alguien y elige bando: un Hacker vulnera en vivo los sistemas del Hospital Central
+                  mientras un Doctor trata pacientes para mantenerlo en pie. Un solo medidor de
+                  seguridad compartido, cada acierto de un lado le pesa al otro en tiempo real.
                 </p>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {['Defensa activa', 'Red team / Blue team', 'IA adaptativa', 'Escenarios reales', 'Por equipos'].map((tag) => (
+                  {['Tiempo real', 'Roles asimétricos', 'Terminal Linux real', 'Casos de pacientes', '1 vs 1'].map((tag) => (
                     <span key={tag} className="rounded-full bg-white/5 border border-white/10 px-2.5 py-1 text-[11px] text-white/50">
                       {tag}
                     </span>
                   ))}
                 </div>
                 <Link
-                  to="/games/hacker-terminal"
+                  to="/games/cyber-range-hospital"
                   className="inline-block rounded-xl border border-green-500/50 bg-green-500/15 px-5 py-2 text-sm font-semibold text-green-300 transition-colors hover:bg-green-500/25"
                 >
-                  🕵️ Entrar al Cyber Range
+                  🏥 Entrar al Cyber Range
                 </Link>
               </div>
             </div>

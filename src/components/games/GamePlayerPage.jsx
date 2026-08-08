@@ -11,6 +11,7 @@ const COMPONENT_MAP = {
   janulus: lazy(() => import('./janulus/JanulingoMain')),
   memes: lazy(() => import('./memes/MemesGame')),
   'hacker-terminal': lazy(() => import('./hacker/HackerTerminalGame')),
+  'cyber-range-hospital': lazy(() => import('./hospital/HospitalRangeGame')),
   'math': lazy(() => import('./math/MathGame')),
   'math-history': lazy(() => import('./math-history/MathHistoryGame')),
   'body-explorer': lazy(() => import('./body-explorer/BodyExplorerGame')),
