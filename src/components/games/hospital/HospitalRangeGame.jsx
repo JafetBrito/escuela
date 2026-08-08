@@ -255,7 +255,8 @@ export default function HospitalRangeGame() {
 
   const handleSendInvite = async (toId, toName) => {
     if (!myId) return
-    await sendInvite(myId, myName, myRoleChoice, toId, toName)
+    const { error } = await sendInvite(myId, myName, myRoleChoice, toId, toName)
+    if (error) { setAnswerError(`No se pudo enviar la invitación: ${error.message}`); return }
     setSearchQuery('')
   }
 
