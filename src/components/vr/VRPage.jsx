@@ -36,6 +36,11 @@ import BashTerminalModal from './BashTerminalModal'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import MobField from './MobField'
 import { useMobStore } from '../../stores/useMobStore'
+import { useSpawnedNpcStore } from '../../stores/useSpawnedNpcStore'
+import { useEquipmentStore } from '../../stores/useEquipmentStore'
+import { EQUIPMENT_REGISTRY, SLOT_META } from '../../data/equipmentRegistry'
+import { SHOP_ITEMS, SHOP_CATEGORIES } from '../../data/shopRegistry'
+import { runGmCommand, SELF_TARGET } from '../../services/admin/gmCommands'
 import { useTargetStore } from '../../stores/useTargetStore'
 import LootToast from './LootToast'
 import { formatCurrency } from '../../utils/currency'
@@ -812,15 +817,22 @@ function AppleTree({ position }) {
   const [apples, setApples] = useState([])
   const nextId = useRef(0)
 
+  const x = position[0]
+  const z = position[2]
+
   useEffect(() => {
-    const [x, , z] = position
+    // Deliberately depend on the primitive x/z, not the `position` array
+    // itself: VRPage re-renders often (proximity flags, chat, HUD toggles),
+    // and each render passes a brand-new `[16, 0, 6]` literal — depending on
+    // that array's identity tore this interval down and restarted it before
+    // it ever fired again, which is why apples dropped once and then stopped.
     const interval = setInterval(() => {
       const id = nextId.current++
       const pos = [x + (Math.random() - 0.5) * 1.4, 4.2, z + (Math.random() - 0.5) * 1.4]
       setApples((cur) => [...cur.slice(-(APPLE_TREE_MAX - 1)), { id, pos }])
     }, APPLE_DROP_MS)
     return () => clearInterval(interval)
-  }, [position])
+  }, [x, z])
 
   return (
     <>
@@ -1098,6 +1110,90 @@ function AbilityTesterPanel({ onUseSkill, onClose }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// Skyrim-style "cofre secreto": todo el equipo (armas/gear, hoy solo emoji —
+// modelUrl:null hasta que existan modelos 3D) y todos los objetos de la
+// Tienda, en una lista para tomar directamente sin pasar por nivel/clase ni
+// monedas. Equipo se pone en el store al toque (equip() no valida nada);
+// objetos de Tienda usan el mismo /additem que ya usa la GmConsole.
+function ChestPanel({ onClose }) {
+  const [tab, setTab] = useState('equipo')
+  const [feedback, setFeedback] = useState('')
+
+  const takeEquipment = (item) => {
+    useEquipmentStore.getState().equip(item.owner, item.slot, item.id)
+    setFeedback(`✅ Equipado: ${item.name} (${item.owner === 'oliver' ? 'Mascota' : 'Avatar'})`)
+  }
+
+  const takeShopItem = async (item) => {
+    try {
+      setFeedback(await runGmCommand(SELF_TARGET, 'additem', [item.id]))
+    } catch (err) {
+      setFeedback(`❌ ${err.message}`)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4">
+      <div className="flex max-h-[80vh] w-full max-w-2xl flex-col rounded-xl border border-amber-500/40 bg-black/95 text-xs text-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-amber-500/30 px-4 py-3">
+          <span className="font-semibold text-amber-300">📦 Cofre — todos los objetos del juego</span>
+          <button type="button" onClick={onClose} className="text-white/50 hover:text-white">✕</button>
+        </div>
+        <div className="flex gap-2 border-b border-amber-500/30 px-4 py-2">
+          <button
+            type="button"
+            onClick={() => setTab('equipo')}
+            className={`rounded px-2 py-1 font-semibold ${tab === 'equipo' ? 'bg-amber-500/20 text-amber-300' : 'text-white/50 hover:text-white'}`}
+          >
+            ⚔️ Equipo ({EQUIPMENT_REGISTRY.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('tienda')}
+            className={`rounded px-2 py-1 font-semibold ${tab === 'tienda' ? 'bg-amber-500/20 text-amber-300' : 'text-white/50 hover:text-white'}`}
+          >
+            🧰 Tienda ({SHOP_ITEMS.length})
+          </button>
+        </div>
+        {feedback && <div className="border-b border-amber-500/20 px-4 py-1.5 text-amber-300">{feedback}</div>}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {tab === 'equipo'
+              ? EQUIPMENT_REGISTRY.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => takeEquipment(item)}
+                    title={item.description}
+                    className="flex flex-col items-start gap-1 rounded-lg border border-white/10 bg-white/5 p-2 text-left transition-colors hover:border-amber-500/50 hover:bg-amber-500/10"
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="font-semibold">{item.name}</span>
+                    <span className="text-[10px] text-white/40">
+                      {item.owner === 'oliver' ? 'Mascota' : 'Avatar'} · {SLOT_META[item.slot]?.label}
+                    </span>
+                  </button>
+                ))
+              : SHOP_ITEMS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => takeShopItem(item)}
+                    title={item.description}
+                    className="flex flex-col items-start gap-1 rounded-lg border border-white/10 bg-white/5 p-2 text-left transition-colors hover:border-amber-500/50 hover:bg-amber-500/10"
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="font-semibold">{item.name}</span>
+                    <span className="text-[10px] text-white/40">{SHOP_CATEGORIES[item.category]?.label ?? item.category}</span>
+                  </button>
+                ))}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1899,6 +1995,12 @@ function World({
   worldTreeMode,
   testMode,
 }) {
+  // Called unconditionally (before any of the per-mode early returns below)
+  // so it always runs in the same order across renders of a mounted World
+  // instance — testMode itself never flips mid-mount, only across a route
+  // change that remounts this component fresh.
+  const spawnedNpcs = useSpawnedNpcStore((s) => s.npcs)
+
   if (testMode) {
     // ponytail: same NPCs/mobs as the real campus, just lined up on a flat
     // test field so they're easy to walk between while testing — the real
@@ -1912,7 +2014,11 @@ function World({
     // real campus coordinates — useless here since they're lined up instead,
     // so it needs this world's actual (repositioned) coordinates to ever
     // report "near" and let onAttack's E-prompt/mission card work at all.
-    const linedNpcPositions = linedNpcs.map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) }))
+    // GmConsole-summoned NPCs (spawnedNpcs) go in too, so they're talkable
+    // and not just decoration.
+    const linedNpcPositions = [...linedNpcs, ...spawnedNpcs].map((npc) => ({
+      id: npc.id, vec: new THREE.Vector3(...npc.position),
+    }))
     return (
       <>
         <TestGroundWorld
@@ -1926,6 +2032,7 @@ function World({
           playerId={playerId}
         />
         {linedNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
+        {spawnedNpcs.map((npc) => <IdleNpc key={npc._spawnId} config={npc} playerPositionRef={playerPositionRef} />)}
         <MobField />
         <AppleTree position={[16, 0, 6]} />
         <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} />
@@ -2940,6 +3047,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [friendsOpen, setFriendsOpen] = useState(false)
   const [arenaConfirmOpen, setArenaConfirmOpen] = useState(false)
   const [abilityTesterOpen, setAbilityTesterOpen] = useState(false)
+  const [chestOpen, setChestOpen] = useState(false)
   // Fall-into-the-void rescue: { x, y, z } of where the player fell, used to
   // show Oliver (orange cat) "arriving" there for a moment. null = no rescue
   // in progress.
@@ -3563,6 +3671,21 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {abilityTesterOpen && (
           <AbilityTesterPanel onUseSkill={handleUseSkill} onClose={() => setAbilityTesterOpen(false)} />
         )}
+
+        {/* Cofre secreto — el Mapa de Pruebas only, admin only: every
+            weapon/gear item (EQUIPMENT_REGISTRY) and every Tienda item
+            (SHOP_ITEMS), grab any of them straight into your inventory
+            without needing the level/class/coins that normally gate them. */}
+        {testMode && isAdmin && (
+          <button
+            type="button"
+            onClick={() => setChestOpen((v) => !v)}
+            className="absolute right-32 top-4 z-20 rounded-full bg-amber-500/90 px-3 py-1.5 text-xs font-semibold text-background shadow-lg hover:bg-amber-500"
+          >
+            📦 Cofre
+          </button>
+        )}
+        {chestOpen && <ChestPanel onClose={() => setChestOpen(false)} />}
 
         {/* BashMishi's free-text Bash exercise (see questsRegistry.js step.type 'terminal') */}
         {bashTerminalStep && (
