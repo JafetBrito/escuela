@@ -52,20 +52,26 @@ const SUB_TABS_MASCOT_ONLY = [
   { id: 'notas',      label: 'Notas',      icon: '📝' },
 ]
 
-const SUB_TABS_AVATAR = [
+// Antes Avatar y Mascota tenían listas de pestañas DISTINTAS — Avatar no
+// traía Misiones ni Chat, así que había que cambiar a la pestaña Mascota
+// solo para verlas, aunque misiones/chat/bolsas no son cosas "de un
+// personaje", son de la cuenta. Ahora ambas entidades muestran el mismo
+// menú completo — lo único que cambia por entidad es el contenido de cada
+// pestaña (CharacterPaperdoll/CharacterTree/CharacterStats/Bolsas ya leen
+// `entity.owner` para eso), no cuáles pestañas existen.
+const SUB_TABS_FULL = [
   { id: 'personaje',  label: 'Personaje', icon: '🧑' },
   { id: 'arbol',      label: 'Árbol',     icon: '🌳' },
-  { id: 'bolsas',     label: 'Bolsas',    icon: '🎒' },
   { id: 'apariencia', label: 'Apariencia',icon: '🎨' },
+  { id: 'estadisticas',label:'Estadísticas',icon:'📊'},
+  { id: 'bolsas',     label: 'Bolsas',    icon: '🎒' },
+  { id: 'misiones',   label: 'Misiones',  icon: '🎯' },
+  { id: 'chat',       label: 'Chat',      icon: '💬' },
   { id: 'libros',     label: 'Libros',    icon: '📚' },
   { id: 'notas',      label: 'Notas',     icon: '📝' },
-  { id: 'estadisticas',label:'Estadísticas',icon:'📊'},
 ]
-const SUB_TABS_MASCOTA = [
-  ...SUB_TABS_AVATAR,
-  { id: 'misiones',  label: 'Misiones',  icon: '🎯' },
-  { id: 'chat',      label: 'Chat',      icon: '💬' },
-]
+const SUB_TABS_AVATAR = SUB_TABS_FULL
+const SUB_TABS_MASCOTA = SUB_TABS_FULL
 
 // Simple mode for non-RPG audiences (e.g. claude-mayores)
 const SIMPLE_MODE_COURSES = new Set(['course-claude-mayores'])
@@ -111,8 +117,9 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
   const subTab = subTabs.some((t) => t.id === rawSubTab) ? rawSubTab : subTabs[0].id
 
   const setEntity = (id) => {
-    const fallback = subTab === 'chat' && id === 'avatar' ? 'personaje' : subTab
-    setPanel(`${id}-${fallback}`)
+    // Ya no hace falta forzar 'personaje' al entrar a Avatar viniendo de
+    // Chat — ahora Avatar también tiene pestaña Chat (ver SUB_TABS_FULL).
+    setPanel(`${id}-${subTab}`)
   }
   const setSubTab = (id) => setPanel(`${entity.id}-${id}`)
 

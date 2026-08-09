@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import MascotMesh from './MascotMesh'
 import MascotEmotionOverlay from './MascotEmotionOverlay'
@@ -7,6 +7,7 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
+import { isWebglAvailable } from '../../utils/webgl'
 
 // Mientras el objeto "Reina Nefertiti" está activo, la mascota toma
 // temporalmente la apariencia de este modelo (además del tema dorado).
@@ -18,18 +19,30 @@ export default function MascotViewport({ className = '', showEmotions = false })
   const nefertitiActive = useItemEffectsStore((s) => !!s.activeItems['reina-nefertiti'])
   const mascot = getMascotById(nefertitiActive ? NEFERTITI_MASCOT_ID : selectedMascotId)
   const skin = getSkinById(selectedSkinId)
+  // Checked once per mount, not per render — this viewport sits inside the
+  // always-visible floating paw button on nearly every page, so without
+  // this guard a machine with WebGL disabled/sandboxed at the OS level
+  // (GL_VENDOR = Disabled) throws an uncaught WebGLRenderer creation error
+  // on every single page load.
+  const [webglOk] = useState(isWebglAvailable)
 
   return (
     <div className={`relative ${className}`}>
-      <Canvas camera={{ position: [0, 0.4, 4.2], fov: 38 }} gl={{ preserveDrawingBuffer: true }}>
-        <ambientLight color="#ffecd8" intensity={0.95} />
-        <directionalLight position={[3, 3, 3]} color="#ffd9a0" intensity={1.4} />
-        <directionalLight position={[-3, 1, -2]} color="#a0c4ff" intensity={0.28} />
-        <Suspense fallback={null}>
-          <MascotMesh mascot={mascot} skin={skin} />
-        </Suspense>
-        <SceneEffects />
-      </Canvas>
+      {webglOk ? (
+        <Canvas camera={{ position: [0, 0.4, 4.2], fov: 38 }} gl={{ preserveDrawingBuffer: true }}>
+          <ambientLight color="#ffecd8" intensity={0.95} />
+          <directionalLight position={[3, 3, 3]} color="#ffd9a0" intensity={1.4} />
+          <directionalLight position={[-3, 1, -2]} color="#a0c4ff" intensity={0.28} />
+          <Suspense fallback={null}>
+            <MascotMesh mascot={mascot} skin={skin} />
+          </Suspense>
+          <SceneEffects />
+        </Canvas>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-4xl" title={mascot.name}>
+          {mascot.icon ?? '🐾'}
+        </div>
+      )}
       {skin.accessory && (
         <div
           className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 text-3xl drop-shadow-lg"
