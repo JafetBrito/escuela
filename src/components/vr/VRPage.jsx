@@ -798,6 +798,47 @@ function FallingApple({ position }) {
   )
 }
 
+// Endless little physics demo for el Mapa de Pruebas: a primitive tree that
+// drops a new <FallingApple> on a loop, so gravity/collisions are always
+// visibly doing something to test against — not just the one-time static
+// apples near the real campus's maple trees. Apples are siblings of the
+// group (absolute world positions), not nested inside it: Rapier resolves a
+// RigidBody's position in world space, so nesting it under a transformed
+// <group> would desync the visual mesh from where it actually collides.
+const APPLE_TREE_MAX = 6
+const APPLE_DROP_MS = 3000
+
+function AppleTree({ position }) {
+  const [apples, setApples] = useState([])
+  const nextId = useRef(0)
+
+  useEffect(() => {
+    const [x, , z] = position
+    const interval = setInterval(() => {
+      const id = nextId.current++
+      const pos = [x + (Math.random() - 0.5) * 1.4, 4.2, z + (Math.random() - 0.5) * 1.4]
+      setApples((cur) => [...cur.slice(-(APPLE_TREE_MAX - 1)), { id, pos }])
+    }, APPLE_DROP_MS)
+    return () => clearInterval(interval)
+  }, [position])
+
+  return (
+    <>
+      <group position={position}>
+        <mesh position={[0, 1.5, 0]} castShadow>
+          <cylinderGeometry args={[0.25, 0.35, 3, 8]} />
+          <meshStandardMaterial color="#5b4636" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 3.6, 0]} castShadow>
+          <sphereGeometry args={[1.6, 10, 10]} />
+          <meshStandardMaterial color="#2f6b2f" roughness={0.85} />
+        </mesh>
+      </group>
+      {apples.map((apple) => <FallingApple key={apple.id} position={apple.pos} />)}
+    </>
+  )
+}
+
 // Desk + monitor prop for the Programador class's terminal ability — only
 // visually "usable" (E prompt + interaction) for class===programmer or the
 // admin; everyone else just sees a static prop in the plaza.
@@ -1010,6 +1051,53 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
           {result === 'wrong' && <p className="text-red-400">❌ No es eso. Vuelve mañana para otro intento.</p>}
           {result === 'claimed' && <p className="text-yellow-400">⏳ Ya usaste la terminal hoy. Vuelve mañana.</p>}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Admin-only "try every ability" panel for el Mapa de Pruebas — every entry
+// in SKILL_REGISTRY (60+, across every class including ones with no real
+// hotbar yet) routed through the exact same handleUseSkill() the real hotbar
+// calls, so testing an ability here behaves identically to using it live.
+function AbilityTesterPanel({ onUseSkill, onClose }) {
+  const groups = useMemo(() => {
+    const byGroup = {}
+    Object.values(SKILL_REGISTRY).forEach((skill) => {
+      const key = skill.requiredClass ?? (skill.owner === 'oliver' ? 'oliver (Mascota)' : 'General')
+      byGroup[key] = byGroup[key] ?? []
+      byGroup[key].push(skill)
+    })
+    return Object.entries(byGroup).sort(([a], [b]) => a.localeCompare(b))
+  }, [])
+
+  return (
+    <div className="fixed right-4 top-16 z-[999] flex max-h-[75vh] w-80 flex-col rounded-xl border border-primary/40 bg-black/95 text-xs text-white shadow-2xl">
+      <div className="flex items-center justify-between border-b border-primary/30 px-3 py-2">
+        <span className="font-semibold">🧪 Probar habilidades ({Object.keys(SKILL_REGISTRY).length})</span>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white">✕</button>
+      </div>
+      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
+        {groups.map(([group, skills]) => (
+          <div key={group}>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-white/40">{group}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {skills.map((skill) => (
+                <button
+                  key={skill.id}
+                  type="button"
+                  onClick={() => onUseSkill(skill.id)}
+                  title={skill.description}
+                  className="flex items-center gap-1 rounded-lg border px-2 py-1 transition-colors hover:brightness-125"
+                  style={{ borderColor: `${skill.vfxColor}55`, background: `${skill.vfxColor}15` }}
+                >
+                  <span>{skill.icon}</span>
+                  <span>{skill.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -1526,7 +1614,7 @@ const ALL_NPC_POSITIONS = [
 // Ids that belong to idle (non-mission) NPCs — used to decide which card to show.
 const IDLE_NPC_IDS = new Set([OLIVER_NPC.id, EINSTEIN_NPC.id, JAFET_NPC.id])
 
-function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
+function NpcProximityTracker({ playerPositionRef, onNearbyChange, npcs = ALL_NPC_POSITIONS }) {
   const lastId = useRef(null)
 
   useFrame(() => {
@@ -1535,7 +1623,7 @@ function NpcProximityTracker({ playerPositionRef, onNearbyChange }) {
 
     let nearestId = null
     let nearestDist = Infinity
-    for (const { id, vec } of ALL_NPC_POSITIONS) {
+    for (const { id, vec } of npcs) {
       const dist = pos.distanceTo(vec)
       if (dist < nearestDist) {
         nearestDist = dist
@@ -1820,6 +1908,11 @@ function World({
       ...npc,
       position: [i * 4 - 12, 0, 0],
     }))
+    // NpcProximityTracker's default list (ALL_NPC_POSITIONS) uses each NPC's
+    // real campus coordinates — useless here since they're lined up instead,
+    // so it needs this world's actual (repositioned) coordinates to ever
+    // report "near" and let onAttack's E-prompt/mission card work at all.
+    const linedNpcPositions = linedNpcs.map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) }))
     return (
       <>
         <TestGroundWorld
@@ -1834,6 +1927,9 @@ function World({
         />
         {linedNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
         <MobField />
+        <AppleTree position={[16, 0, 6]} />
+        <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} />
+        <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} npcs={linedNpcPositions} />
         <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
       </>
     )
@@ -2843,6 +2939,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [bagsOpen, setBagsOpen] = useState(false)
   const [friendsOpen, setFriendsOpen] = useState(false)
   const [arenaConfirmOpen, setArenaConfirmOpen] = useState(false)
+  const [abilityTesterOpen, setAbilityTesterOpen] = useState(false)
   // Fall-into-the-void rescue: { x, y, z } of where the player fell, used to
   // show Oliver (orange cat) "arriving" there for a moment. null = no rescue
   // in progress.
@@ -2969,7 +3066,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       if (e.key.toLowerCase() === 'f') { useItemEffectsStore.getState().toggleItem('linterna'); return }
       if (e.key.toLowerCase() === 'e') {
         if (nearDailyReward) { setDailyRewardsOpen(true); return }
-        if (nearComputer && (playerClass === 'programmer' || isAdmin)) { setTerminalOpen(true); return }
+        if (nearComputer && (playerClass === 'programmer' || playerClass === 'hacker' || isAdmin)) { setTerminalOpen(true); return }
         if (nearbyNpcId) {
           setActiveNpcId((cur) => (cur === nearbyNpcId ? null : nearbyNpcId))
           return
@@ -3241,7 +3338,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         )}
 
         {/* Computer terminal prompt — only for the Programador class (or admin) */}
-        {nearComputer && !terminalOpen && (playerClass === 'programmer' || isAdmin) && (
+        {nearComputer && !terminalOpen && (playerClass === 'programmer' || playerClass === 'hacker' || isAdmin) && (
           <button
             type="button"
             onClick={() => setTerminalOpen(true)}
@@ -3267,8 +3364,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <TransportMenu onNavigate={(path) => navigate(path)} onClose={() => setPortalMenuOpen(false)} />
         )}
 
-        {/* NPC mission card / nearby-NPC hint (campus only) */}
-        {!isPrivateWorld && (
+        {/* NPC mission card / nearby-NPC hint (campus, and el Mapa de Pruebas
+            so admins can test NPC missions there too — the other private
+            worlds are 1-player rooms with no real NPCs to show one for) */}
+        {(!isPrivateWorld || testMode) && (
           activeNpcId ? (
             IDLE_NPC_IDS.has(activeNpcId) ? (
               <IdleNpcCard
@@ -3447,6 +3546,22 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClose={() => setTerminalOpen(false)}
             playerPositionRef={playerPositionRef}
           />
+        )}
+
+        {/* Ability tester — el Mapa de Pruebas only, admin only: try any
+            skill from any class/mascot without needing to actually be that
+            class first (see AbilityTesterPanel + handleUseSkill above). */}
+        {testMode && isAdmin && (
+          <button
+            type="button"
+            onClick={() => setAbilityTesterOpen((v) => !v)}
+            className="absolute right-4 top-4 z-20 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-background shadow-lg hover:bg-primary"
+          >
+            🧪 Habilidades
+          </button>
+        )}
+        {abilityTesterOpen && (
+          <AbilityTesterPanel onUseSkill={handleUseSkill} onClose={() => setAbilityTesterOpen(false)} />
         )}
 
         {/* BashMishi's free-text Bash exercise (see questsRegistry.js step.type 'terminal') */}
