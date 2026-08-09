@@ -114,10 +114,10 @@ export const MASCOTS = [
     geometry: 'cat',
     color: '#f472b6',
     description: 'Alegre e inquebrantable. Su energía positiva te mantendrá motivado ante cualquier desafío académico.',
-    // ⚠️ balloon_dog.glb no está en la nueva carpeta MODELOS 3D — esta ruta
-    // sigue rota hasta que se agregue el archivo. Mientras tanto cae al
-    // gato de respaldo (CatMesh) por geometry: 'cat'.
-    modelPath: '/balloon_dog.glb',
+    // ⚠️ balloon_dog.glb no está en la nueva carpeta MODELOS 3D. Sin
+    // modelPath, MascotMesh.jsx cae directo al gato de respaldo (CatMesh)
+    // por geometry: 'cat' — antes SÍ intentaba el fetch roto primero y
+    // tiraba un error sin capturar en consola antes de llegar al fallback.
   },
   {
     id: 14,
