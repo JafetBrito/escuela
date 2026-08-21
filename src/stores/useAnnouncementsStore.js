@@ -2,11 +2,17 @@ import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
 import { buildAnnouncement } from '../data/buildInfo'
 
-export const useAnnouncementsStore = create((set) => ({
+export const useAnnouncementsStore = create((set, get) => ({
   announcements: [],
   loading: false,
+  loaded: false,
 
+  // `loaded` evita volver a pedir /school_announcements en cada página —
+  // AppTopBar (y su CampusMarquee) se monta de nuevo en cada ruta, ya que
+  // cada página renderiza su propio <AppTopBar /> en vez de vivir en un
+  // layout compartido.
   fetch: async () => {
+    if (get().loading || get().loaded) return
     set({ loading: true })
     const { data } = await supabase
       .from('school_announcements')
@@ -16,7 +22,7 @@ export const useAnnouncementsStore = create((set) => ({
     // The current build (from the latest git commit) is always the top entry,
     // auto-generated — no manual publishing needed. See buildInfo.js.
     const build = buildAnnouncement()
-    set({ announcements: build ? [build, ...(data ?? [])] : (data ?? []), loading: false })
+    set({ announcements: build ? [build, ...(data ?? [])] : (data ?? []), loading: false, loaded: true })
   },
 
   create: async (payload) => {

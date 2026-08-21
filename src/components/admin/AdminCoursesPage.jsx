@@ -35,6 +35,11 @@ const emptyModule = (nextId) => ({
   resources: [],
 })
 
+// El quiz es independiente del `type` del módulo (ModuleQuiz.jsx lo muestra
+// sin importar si es video/texto/etc.) — mismo shape que ya consume
+// ModuleQuiz.jsx: { question, options: string[], correctIndex }.
+const emptyQuiz = () => ({ question: '', options: ['', ''], correctIndex: 0 })
+
 const emptyCourse = (id) => ({
   id,
   title: '',
@@ -91,6 +96,20 @@ export default function AdminCoursesPage() {
   }
   const removeModule = (id) => setModules((ms) => ms.filter((m) => m.id !== id))
   const updateModule = (id, patch) => setModules((ms) => ms.map((m) => (m.id === id ? { ...m, ...patch } : m)))
+  const updateQuiz = (m, patch) => updateModule(m.id, { quiz: { ...(m.quiz ?? emptyQuiz()), ...patch } })
+  const addQuizOption = (m) => updateQuiz(m, { options: [...(m.quiz?.options ?? []), ''] })
+  const setQuizOption = (m, i, value) => {
+    const options = [...m.quiz.options]
+    options[i] = value
+    updateQuiz(m, { options })
+  }
+  const removeQuizOption = (m, i) => {
+    const options = m.quiz.options.filter((_, idx) => idx !== i)
+    let correctIndex = m.quiz.correctIndex
+    if (i === correctIndex) correctIndex = 0
+    else if (i < correctIndex) correctIndex -= 1
+    updateQuiz(m, { options, correctIndex })
+  }
   const moveModule = (index, dir) => setModules((ms) => {
     const target = index + dir
     if (target < 0 || target >= ms.length) return ms
@@ -271,6 +290,57 @@ export default function AdminCoursesPage() {
                             <input value={m.vrWorldName ?? ''} onChange={(e) => updateModule(m.id, { vrWorldName: e.target.value })}
                               placeholder="Nombre del mundo (opcional)"
                               className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Quiz — independiente del `type` de arriba, mismo criterio que
+                          ModuleQuiz.jsx (lo muestra sin importar si el módulo es video/
+                          texto/etc.). */}
+                      <div className="mt-2.5 rounded-lg border border-border/60 bg-background/40 p-2.5 pl-5">
+                        <label className="flex items-center gap-2 text-xs font-bold text-text-muted">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(m.quiz)}
+                            onChange={(e) => updateModule(m.id, { quiz: e.target.checked ? emptyQuiz() : undefined })}
+                          />
+                          🧩 Quiz de esta clase
+                        </label>
+
+                        {m.quiz && (
+                          <div className="mt-2 space-y-1.5">
+                            <input
+                              value={m.quiz.question ?? ''}
+                              onChange={(e) => updateQuiz(m, { question: e.target.value })}
+                              placeholder="Pregunta"
+                              className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
+                            />
+                            <p className="text-[10px] text-text-muted">Marca la opción correcta:</p>
+                            {(m.quiz.options ?? []).map((opt, i) => (
+                              <div key={i} className="flex items-center gap-1.5">
+                                <input
+                                  type="radio"
+                                  name={`correct-${m.id}`}
+                                  checked={m.quiz.correctIndex === i}
+                                  onChange={() => updateQuiz(m, { correctIndex: i })}
+                                  className="shrink-0 accent-primary"
+                                />
+                                <input
+                                  value={opt}
+                                  onChange={(e) => setQuizOption(m, i, e.target.value)}
+                                  placeholder={`Opción ${i + 1}`}
+                                  className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-sm text-text outline-none focus:border-primary"
+                                />
+                                {m.quiz.options.length > 2 && (
+                                  <button type="button" onClick={() => removeQuizOption(m, i)}
+                                    className="shrink-0 text-text-muted hover:text-danger">✕</button>
+                                )}
+                              </div>
+                            ))}
+                            {(m.quiz.options ?? []).length < 5 && (
+                              <button type="button" onClick={() => addQuizOption(m)}
+                                className="text-xs font-semibold text-primary hover:underline">+ Agregar opción</button>
+                            )}
                           </div>
                         )}
                       </div>

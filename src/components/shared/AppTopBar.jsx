@@ -7,6 +7,8 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 import NotificationBell from './NotificationBell'
 import RecruiterMode from './RecruiterMode'
+import CampusMarquee from './CampusMarquee'
+import { playMeow } from '../../utils/meow'
 
 // `key` maps each group/item to its translation key in src/i18n/locales
 // (nav.groups.<key> / nav.items.<key>). `label` stays as the Spanish fallback
@@ -170,7 +172,7 @@ export default function AppTopBar({ variant = 'full' }) {
       <RecruiterMode />
       <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 md:gap-4 md:px-6 md:py-2.5">
         <div className="flex min-w-0 shrink-0 items-center gap-1.5">
-          <Link to="/dashboard" className="flex min-w-0 items-center gap-1">
+          <Link to="/dashboard" onClick={playMeow} className="flex min-w-0 items-center gap-1">
             <Logo className="text-base sm:text-xl" tagline={logoTagline} />
             <span aria-hidden="true" className="hidden sm:inline">🐱</span>
           </Link>
@@ -196,7 +198,7 @@ export default function AppTopBar({ variant = 'full' }) {
     >
       {/* Logo */}
       <div className="flex shrink-0 items-center gap-2">
-        <Link to="/dashboard" onClick={closeAll} className="flex items-center gap-1.5">
+        <Link to="/dashboard" onClick={() => { playMeow(); closeAll() }} className="flex items-center gap-1.5">
           <Logo tagline={logoTagline} />
           <span aria-hidden="true">🐱</span>
         </Link>
@@ -500,6 +502,7 @@ export default function AppTopBar({ variant = 'full' }) {
         </nav>
       )}
     </header>
+    <CampusMarquee />
     </>
   )
 }
