@@ -21,10 +21,13 @@ import { useExamsStore } from '../../stores/useExamsStore'
 import { useQuestsStore } from '../../stores/useQuestsStore'
 import { getQuestById } from '../../data/questsRegistry'
 import { useNotificationsStore } from '../../stores/useNotificationsStore'
-import { useMascotStore } from '../../stores/useMascotStore'
-import { formatCurrency } from '../../utils/currency'
 import { buildPendingActions } from '../../utils/pendingActions'
-import AchievementsPanel from '../mascot/AchievementsPanel'
+import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
+import { useMissionState } from '../../stores/useMissionState'
+import { GLOBAL_MISSIONS, evaluateMission } from '../../data/globalMissionsRegistry'
+import { COURSE_MISSIONS } from '../../data/courseMissionsRegistry'
+import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
+import { buildRegions } from '../../utils/regions'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 // Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
@@ -33,6 +36,139 @@ const CAMPUS_LINKS = [
   { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱', hideFor: ['kids', 'seniors'] },
   { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲', hideFor: ['kids', 'seniors'] },
 ]
+
+// ── Mapa: fila de "regiones" (src/utils/regions.js) con una línea punteada de fondo, estilo mapa
+// de aventura. Cada nodo lleva a la página real de esa academia/categoría.
+function WorldMapSection({ regions }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-extrabold text-text">🗺️ Explora el mundo</h2>
+        <Link to="/academias" className="text-xs text-primary hover:underline">Ver todas</Link>
+      </div>
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-x-1 top-8 -z-10 h-px border-t-2 border-dashed border-border" />
+        <div className="flex gap-4 overflow-x-auto px-1 pb-2">
+          {regions.map((r) => (
+            <Link
+              key={r.key}
+              to={r.to}
+              className="group flex w-24 shrink-0 flex-col items-center gap-1.5 text-center"
+            >
+              <span
+                className={`flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br ${r.gradient} text-2xl shadow-md ring-2 transition-transform group-hover:-translate-y-1 ${
+                  r.state === 'current' ? 'ring-primary' : 'ring-background'
+                }`}
+              >
+                {r.icon}
+              </span>
+              <span className="text-[11px] font-bold leading-tight text-text line-clamp-2">{r.title}</span>
+              <span className="text-[10px] text-text-muted">
+                {r.state === 'current' ? 'En curso' : r.completed > 0 ? `${r.completed}/${r.total} ✓` : `${r.total} cursos`}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Quest log: misión principal (el curso más relevante para continuar) +
+// misiones secundarias (top 3 de globalMissionsRegistry/courseMissionsRegistry,
+// mismo sistema que ya alimenta /misiones) + racha diaria.
+function MainQuestCard({ course, pct, meta, onClick }) {
+  if (!course) return null
+  const started = pct !== null && pct > 0
+  return (
+    <div className="rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4">
+      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">📜 Misión principal</p>
+      <button type="button" onClick={onClick} className="flex w-full items-center gap-3 text-left">
+        <span
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
+          style={{ background: `${meta.accent}22`, border: `1px solid ${meta.accent}44` }}
+        >
+          {course.icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-text line-clamp-1">{started ? `Continúa: ${course.title}` : `Empieza: ${course.title}`}</p>
+          <p className="text-xs text-text-muted line-clamp-2">{course.description}</p>
+        </div>
+      </button>
+      {started && (
+        <div className="mt-3 flex items-center gap-2">
+          <div className="h-1.5 flex-1 rounded-full bg-surface-hover">
+            <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: meta.accent }} />
+          </div>
+          <span className="text-[10px] text-text-muted">{pct}%</span>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-3 rounded-lg px-3 py-1.5 text-xs font-bold text-background"
+        style={{ background: meta.accent }}
+      >
+        {started ? 'Continuar →' : 'Empezar →'}
+      </button>
+    </div>
+  )
+}
+
+function SideQuestRow({ mission, accepted, onAccept, onClaim }) {
+  const done = mission._completed
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5">
+      <span className="text-xl">{mission.icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-text line-clamp-1">{mission.title}</p>
+        <p className="text-[11px] text-text-muted line-clamp-1">{mission.description}</p>
+      </div>
+      <div className="shrink-0">
+        {done ? (
+          <button type="button" onClick={() => onClaim(mission.id)}
+            className="rounded-lg border border-primary bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">
+            🎁 Reclamar
+          </button>
+        ) : accepted ? (
+          <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
+            🕓 En curso
+          </span>
+        ) : (
+          <button type="button" onClick={() => onAccept(mission.id)}
+            className="rounded-lg bg-primary px-2.5 py-1 text-[10px] font-bold text-background">
+            📜 Aceptar
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function DailyQuestRow() {
+  const canClaim = useDailyRewardsStore((s) => s.canClaim())
+  const streak = useDailyRewardsStore((s) => s.streak)
+  const claim = useDailyRewardsStore((s) => s.claim)
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+      <span className="text-xl">🔥</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-text">Racha diaria</p>
+        <p className="text-[11px] text-text-muted">
+          {streak > 0 ? `${streak} día${streak === 1 ? '' : 's'} seguidos` : 'Reclama hoy para empezar tu racha'}
+        </p>
+      </div>
+      {canClaim ? (
+        <button type="button" onClick={claim}
+          className="shrink-0 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-bold text-background">
+          🎁 Reclamar
+        </button>
+      ) : (
+        <span className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-[10px] font-semibold text-text-muted">✓ Hoy</span>
+      )}
+    </div>
+  )
+}
 
 // ── Course card (compact) ─────────────────────────────────────────────────────
 export function CourseCard({ course, pct, owned, accent, onClick }) {
@@ -99,6 +235,32 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
     courses.filter((c) => !c.locked && (progressByCourse(c.id) === null || progressByCourse(c.id) === 0))
       .slice(0, 3),
   [progressByCourse])
+
+  const coins = useCurrencyStore((s) => s.coins)
+  const regions = useMemo(() => buildRegions(courses, progressByCourse), [progressByCourse])
+  const focusCourse = inProgress[0] ?? recommended[0] ?? null
+
+  // Misiones secundarias del quest log: mismo cálculo que MissionsBoardPage
+  // (globales + de curso, evaluadas con useMissionState), solo que aquí
+  // mostramos únicamente las 3 más relevantes para no duplicar /misiones.
+  const allProgress = useProgressStore((s) => s.progress)
+  const missionState = useMissionState()
+  const missionsAccepted = useGlobalMissionsStore((s) => s.accepted)
+  const missionsClaimed = useGlobalMissionsStore((s) => s.claimed)
+  const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
+  const claimMissionReward = useGlobalMissionsStore((s) => s.claimReward)
+
+  const topSideQuests = useMemo(() => {
+    const courseMissions = Object.keys(allProgress).flatMap((courseId) =>
+      (COURSE_MISSIONS[courseId] ?? []).map((m) => ({ ...m, _completed: evaluateMission(m, missionState) }))
+    )
+    const globalMissions = GLOBAL_MISSIONS.map((m) => ({ ...m, _completed: evaluateMission(m, missionState) }))
+    const rank = (m) => (missionsAccepted.includes(m.id) && m._completed ? 0 : missionsAccepted.includes(m.id) ? 1 : 2)
+    return [...courseMissions, ...globalMissions]
+      .filter((m) => !missionsClaimed.includes(m.id))
+      .sort((a, b) => rank(a) - rank(b))
+      .slice(0, 3)
+  }, [allProgress, missionState, missionsAccepted, missionsClaimed])
 
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
   const visibleCampusLinks = CAMPUS_LINKS.filter((l) => !l.hideFor?.includes(profile?.age_profile))
@@ -173,6 +335,9 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
                 style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
             </div>
           </div>
+          <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-400">
+            🪙 {coins.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -230,69 +395,40 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         </div>
       </div>
 
-      {/* Recomendadas para ti */}
-      {recommended.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-text">{t('dashboard.recommended')}</h2>
-            <Link to="/anuncios" className="text-xs text-primary hover:underline">{t('dashboard.seeAnnouncements')}</Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {recommended.map((c) => {
-              const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => handleSelect(c)}
-                  className="group rounded-2xl border border-border bg-surface text-left overflow-hidden transition-all hover:border-primary hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  {/* Video thumbnail */}
-                  <div className={`relative flex items-center justify-center h-24 bg-gradient-to-br ${meta.gradient}`}>
-                    <span className="text-5xl drop-shadow-lg">{c.icon}</span>
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
-                      <div className="rounded-full bg-black/40 p-2 opacity-0 group-hover:opacity-100 transition-opacity scale-90 group-hover:scale-100">
-                        <span className="text-white text-base leading-none">▶</span>
-                      </div>
-                    </div>
-                    <span className="absolute top-2 right-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold text-white/80 backdrop-blur-sm">
-                      {t('dashboard.new')}
-                    </span>
-                  </div>
-                  {/* Info */}
-                  <div className="p-3">
-                    <p className="text-[10px] text-text-muted mb-0.5">{meta.icon} {c.category}</p>
-                    <p className="text-sm font-bold text-text leading-tight line-clamp-2">{c.title}</p>
-                    <p className="mt-1 text-xs text-text-muted line-clamp-2">{c.description}</p>
-                    <span className="mt-2 inline-block text-xs font-semibold text-primary">
-                      {t('dashboard.seeCourse')}
-                    </span>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </section>
-      )}
+      {/* Mapa de aventura + quest log — reemplaza los antiguos bloques
+          "Recomendadas para ti" / "Continúa aprendiendo" (listas de cursos
+          sin jerarquía) por un solo hub: el mapa navega a las mismas
+          academias/categorías de siempre, y el quest log es el mismo
+          sistema de misiones globales/de curso que ya alimenta /misiones,
+          solo que ahora visible y accionable sin salir del Inicio. */}
+      <WorldMapSection regions={regions} />
 
-      {/* Continúa aprendiendo */}
-      {inProgress.length > 0 && (
-        <section>
-          <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.continueLearning')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {inProgress.map((c) => {
-              const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
-              return (
-                <CourseCard key={c.id} course={c} pct={progressByCourse(c.id)}
-                  owned={hasAccessToCourse(c.id)} accent={meta.accent}
-                  onClick={() => handleSelect(c)} />
-              )
-            })}
+      <section>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MainQuestCard
+            course={focusCourse}
+            pct={focusCourse ? progressByCourse(focusCourse.id) : null}
+            meta={focusCourse ? (CATEGORY_META[focusCourse.category] ?? CATEGORY_META.Otros) : null}
+            onClick={() => focusCourse && handleSelect(focusCourse)}
+          />
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">⚔️ Misiones secundarias</p>
+            {topSideQuests.map((m) => (
+              <SideQuestRow
+                key={m.id}
+                mission={m}
+                accepted={missionsAccepted.includes(m.id)}
+                onAccept={acceptMission}
+                onClaim={claimMissionReward}
+              />
+            ))}
+            <DailyQuestRow />
+            <Link to="/misiones" className="text-center text-xs text-primary hover:underline">Ver tablón de misiones →</Link>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
-      {inProgress.length === 0 && (
+      {!focusCourse && topSideQuests.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <p className="text-3xl mb-2">📚</p>
           <p className="text-sm font-semibold text-text mb-1">{t('dashboard.noCoursesTitle')}</p>
@@ -402,214 +538,8 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   )
 }
 
-const MASCOT_EMOJI_MAP = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
-
-// Fila label:valor dentro de una tarjeta — como la tabla de datos del
-// perfil (Email, DOB, Clase...) de un sistema escolar real.
-function InfoRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between border-b border-border px-4 py-2.5 last:border-b-0">
-      <span className="text-xs font-medium text-text-muted">{label}</span>
-      <span className="text-sm font-semibold text-text">{value}</span>
-    </div>
-  )
-}
-
-// Botón de sección sólido y coloreado — igual que la barra de accesos
-// (Docs / Exam Reports / Attendance...) del sistema de referencia: color
-// plano, ícono + etiqueta, sin transparencias ni degradados.
-function SectionTab({ icon, label, color, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{ background: color }}
-      className={`flex min-w-[92px] flex-1 flex-col items-center gap-1 rounded-lg px-2 py-2.5 text-white transition-transform ${active ? 'ring-2 ring-white/80' : 'opacity-70 hover:opacity-100'}`}
-    >
-      <span className="text-lg leading-none">{icon}</span>
-      <span className="text-[11px] font-bold leading-none">{label}</span>
-    </button>
-  )
-}
-
-// Tabla de datos simple con encabezado — para cursos, calificaciones y logros.
-function DataTable({ columns, children, empty }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border">
-      <table className="w-full border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b border-border bg-surface-hover/60">
-            {columns.map((col) => (
-              <th key={col} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">{col}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border bg-surface">
-          {children}
-        </tbody>
-      </table>
-      {empty && <p className="border-t border-border px-4 py-6 text-center text-sm text-text-muted">{empty}</p>}
-    </div>
-  )
-}
-
-// Solo avance académico aquí — mascota/árbol/misiones son del mundo VR y
-// viven en el grupo de nav "Campus", no en "Mi Progreso".
-const SECTIONS = [
-  { id: 'cursos',         label: 'Cursos',         icon: '📚', color: '#2563eb' },
-  { id: 'calificaciones', label: 'Calificaciones', icon: '📝', color: '#0d9488' },
-  { id: 'logros',         label: 'Logros',         icon: '🏅', color: '#7c3aed' },
-  { id: 'economia',       label: 'Economía',       icon: '💰', color: '#dc2626' },
-]
-
-// ── Tab: Mi Progreso ──────────────────────────────────────────────────────────
-function ProgresoTab({ progressByCourse, profile }) {
-  const { t }            = useI18n()
-  const session          = useAuthStore((s) => s.session)
-  const xp               = useLevelStore((s) => s.xp)
-  const coins            = useCurrencyStore((s) => s.coins)
-  const tasks            = useTasksStore((s) => s.tasks)
-  const mascotId         = useMascotStore((s) => s.mascot)
-  const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
-  const [activeSection, setActiveSection] = useState('cursos')
-
-  const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Estudiante'
-  const avatarEmoji = MASCOT_EMOJI_MAP[mascotId] ?? '👤'
-
-  const completedCourses = courses.filter((c) => progressByCourse(c.id) === 100)
-  const inProgress       = courses.filter((c) => { const p = progressByCourse(c.id); return p !== null && p > 0 && p < 100 })
-  const enrolledCourses  = [...inProgress, ...completedCourses]
-
-  const pending      = tasks.filter((t) => t.status === 'pendiente').length
-  const submitted    = tasks.filter((t) => t.status === 'entregada').length
-  const graded       = tasks.filter((t) => t.status === 'revisada')
-  const avgGrade     = graded.length > 0
-    ? Math.round(graded.reduce((acc, t) => acc + (t.grade / t.grade_max) * 100, 0) / graded.length)
-    : null
-
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
-      <h1 className="mb-5 text-2xl font-black text-text">{t('dashboard.progressTitle')}</h1>
-
-      <div className="grid gap-5 lg:grid-cols-[240px_1fr]">
-        {/* ══ TARJETA DE PERFIL ══════════════════════════════ */}
-        <div className="h-fit rounded-xl border border-border bg-surface">
-          <div className="flex flex-col items-center gap-2 border-b border-border p-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-primary bg-surface-hover text-4xl">
-              {avatarEmoji}
-            </div>
-            <p className="text-center text-sm font-bold text-text">{displayName}</p>
-            <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary">Nivel {level}</span>
-          </div>
-          <div>
-            <InfoRow label="XP total" value={xp.toLocaleString()} />
-            <InfoRow label="Siguiente nivel" value={isMaxLevel ? 'MAX' : `${xpForNextLevel - xpIntoLevel} XP`} />
-            <InfoRow label="Cursos inscritos" value={enrolledCourses.length} />
-            <InfoRow label="Promedio" value={avgGrade !== null ? `${avgGrade}%` : '—'} />
-            <InfoRow label="Monedas" value={coins.toLocaleString()} />
-          </div>
-        </div>
-
-        {/* ══ CONTENIDO ══════════════════════════════════════ */}
-        <div className="min-w-0 space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {SECTIONS.map((s) => (
-              <SectionTab key={s.id} {...s} active={activeSection === s.id} onClick={() => setActiveSection(s.id)} />
-            ))}
-          </div>
-
-          {/* Cursos */}
-          {activeSection === 'cursos' && (
-            <DataTable columns={['Curso', 'Categoría', 'Progreso', 'Estado']} empty={enrolledCourses.length === 0 ? 'Aún no te has inscrito a ningún curso. Explora las escuelas para empezar.' : null}>
-              {enrolledCourses.map((c) => {
-                const pct  = progressByCourse(c.id)
-                const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
-                return (
-                  <tr key={c.id} className="cursor-default transition-colors hover:bg-surface-hover">
-                    <td className="px-4 py-3">
-                      <Link to={`/learn/${c.id}`} className="flex items-center gap-2 font-medium text-text hover:text-primary">
-                        <span>{c.icon}</span>{c.title}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-text-muted">{c.category}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-24 rounded-full bg-surface-hover">
-                          <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: meta.accent }} />
-                        </div>
-                        <span className="text-xs tabular-nums text-text-muted">{pct}%</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {pct === 100
-                        ? <span className="text-xs font-semibold text-emerald-400">Completado</span>
-                        : <span className="text-xs font-semibold text-amber-400">En curso</span>}
-                    </td>
-                  </tr>
-                )
-              })}
-            </DataTable>
-          )}
-
-          {/* Calificaciones */}
-          {activeSection === 'calificaciones' && (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3">
-                <div className="flex gap-5 text-xs text-text-muted">
-                  <span>⏳ {pending} {t('dashboard.progress.pending').toLowerCase()}</span>
-                  <span>📤 {submitted} {t('dashboard.progress.submitted').toLowerCase()}</span>
-                  <span>✅ {graded.length} {t('dashboard.progress.graded').toLowerCase()}</span>
-                </div>
-                {avgGrade !== null && (
-                  <span className="text-xs font-bold text-primary">{t('dashboard.progress.average', { pct: avgGrade })}</span>
-                )}
-              </div>
-              <DataTable columns={['Tarea', 'Calificación', '%', 'Comentario']} empty={graded.length === 0 ? t('dashboard.progress.noTasks') : null}>
-                {graded.map((task) => {
-                  const pct   = Math.round((task.grade / task.grade_max) * 100)
-                  const color = pct >= 80 ? 'text-emerald-400' : pct >= 60 ? 'text-amber-400' : 'text-red-400'
-                  return (
-                    <tr key={task.id}>
-                      <td className="px-4 py-3 font-medium text-text">{task.title}</td>
-                      <td className={`px-4 py-3 font-semibold tabular-nums ${color}`}>{task.grade}/{task.grade_max}</td>
-                      <td className={`px-4 py-3 tabular-nums ${color}`}>{pct}%</td>
-                      <td className="px-4 py-3 text-text-muted">{task.feedback || '—'}</td>
-                    </tr>
-                  )
-                })}
-              </DataTable>
-              <Link to="/mis-tareas"
-                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
-                {t('dashboard.progress.seeAllTasks')}
-              </Link>
-            </>
-          )}
-
-          {/* Logros — reusa AchievementsPanel (la misma que /logros) en vez
-              de reimplementar la tabla acá, para no mantener dos vistas del
-              mismo dato desincronizadas. */}
-          {activeSection === 'logros' && <AchievementsPanel className="mt-2" />}
-
-          {/* Economía */}
-          {activeSection === 'economia' && (
-            <div className="rounded-xl border border-border bg-surface">
-              <InfoRow label="Saldo total" value={formatCurrency(coins)} />
-              <InfoRow label="Cobre" value={coins.toLocaleString()} />
-              <div className="p-4">
-                <Link to="/tienda" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary">
-                  Ir a la Tienda →
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { t }             = useI18n()
   const navigate          = useNavigate()
   const progress          = useProgressStore((s) => s.progress)
   const license           = useAuthStore((s) => s.license)
@@ -623,7 +553,6 @@ export default function DashboardPage() {
   const fetchPendingExams = useExamsStore((s) => s.fetchPendingExams)
   const session           = useAuthStore((s) => s.session)
 
-  const [tab, setTab]               = useState(() => new URLSearchParams(window.location.search).get('tab') || 'inicio')
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
 
   useEffect(() => { fetchTasks(); fetchProjects() }, [fetchTasks, fetchProjects])
@@ -657,43 +586,20 @@ export default function DashboardPage() {
 
       <AppTopBar />
 
-      {/* Pestañas Inicio / Mi Progreso — mismo patrón de pill-tabs que
-          TasksPage/ProgresoTab, ya no un sidebar propio. Escuelas se movió a
-          su propia entrada de navegación ("🏫 Academias" en el header). */}
-      <div className="mx-auto w-full max-w-4xl px-4 pt-6">
-        <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
-          {[
-            { id: 'inicio',   icon: '🏠' },
-            { id: 'progreso', icon: '📊' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition ${
-                tab === item.id ? 'bg-background text-text shadow-sm' : 'text-text-muted hover:text-text'
-              }`}
-            >
-              <span>{item.icon}</span>{t(`dashboard.tabs.${item.id}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      {/* "Mi Progreso" ahora vive en su propia ruta (/progreso, ver
+          ProgressPage.jsx) en vez de ser una pestaña aquí — Inicio es la
+          única vista de esta página. */}
       <main className="flex-1">
-        {tab === 'inicio' && (
-          <InicioTab
-            profile={profile}
-            license={license}
-            tasks={tasks}
-            projects={projects}
-            pendingExams={pendingExams}
-            patchNotesOpen={patchNotesOpen}
-            setPatchNotesOpen={setPatchNotesOpen}
-            {...tabProps}
-          />
-        )}
-        {tab === 'progreso' && <ProgresoTab progressByCourse={progressByCourse} profile={profile} />}
+        <InicioTab
+          profile={profile}
+          license={license}
+          tasks={tasks}
+          projects={projects}
+          pendingExams={pendingExams}
+          patchNotesOpen={patchNotesOpen}
+          setPatchNotesOpen={setPatchNotesOpen}
+          {...tabProps}
+        />
       </main>
 
       <MascotCompanion />

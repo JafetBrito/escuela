@@ -15,6 +15,8 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './components/landing/LandingPage'
+import PrivacyPage from './components/legal/PrivacyPage'
+import TermsPage from './components/legal/TermsPage'
 import CreateAccountPage from './components/checkout/CreateAccountPage'
 import LoginPage from './components/auth/LoginPage'
 import PortalPage from './components/portal/PortalPage'
@@ -69,6 +71,7 @@ const FlipbookTestPage = lazy(() => import('./components/admin/FlipbookTestPage'
 const ArenaPage = lazy(() => import('./components/arena/ArenaPage'))
 const BookReaderModal = lazy(() => import('./components/library/BookReaderModal'))
 const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoardPage'))
+const ProgressPage = lazy(() => import('./components/dashboard/ProgressPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
 const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
@@ -192,6 +195,8 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/privacidad" element={<PrivacyPage />} />
+        <Route path="/terminos" element={<TermsPage />} />
         <Route path="/unlock" element={<PortalPage />} />
         {/* Meme compartido — acceso público, sin login */}
         <Route path="/m/:memeId" element={
@@ -228,6 +233,17 @@ export default function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/progreso"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <ProgressPage />
+              </Suspense>
             </ProtectedRoute>
           }
         />

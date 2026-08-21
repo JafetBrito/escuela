@@ -224,6 +224,13 @@ export default function CreateAccountPage() {
                         {status === 'processing' ? 'Creando cuenta…' : 'Crear cuenta y continuar →'}
                       </Button>
                     )}
+
+                    <p className="text-center text-[11px] text-text-muted">
+                      Al crear tu cuenta aceptas nuestro{' '}
+                      <Link to="/privacidad" target="_blank" className="font-semibold text-primary hover:underline">Aviso de Privacidad</Link>
+                      {' '}y nuestros{' '}
+                      <Link to="/terminos" target="_blank" className="font-semibold text-primary hover:underline">Términos de Uso</Link>.
+                    </p>
                   </form>
 
                   <div className="my-5 flex items-center gap-3">

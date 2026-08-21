@@ -33,6 +33,7 @@ export const en = {
       arbol: 'Skill Tree',
       misiones: 'Missions',
       logros: 'Achievements',
+      miProgreso: 'My Progress',
       misTareas: 'My Tasks',
       proyectos: 'Projects',
       vr: 'VR Campus',

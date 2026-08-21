@@ -110,7 +110,7 @@ export default function LandingPage() {
               value={lang}
               onChange={(e) => setLang(e.target.value)}
               aria-label="Idioma"
-              className="rounded-md border border-border/60 bg-surface px-1.5 py-1 text-xs text-text outline-none focus:border-primary"
+              className="w-[84px] truncate rounded-md border border-border/60 bg-surface px-1.5 py-1 text-xs text-text outline-none focus:border-primary sm:w-auto sm:max-w-none"
             >
               {SUPPORTED_LANGUAGES.map((code) => (
                 <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
@@ -310,7 +310,11 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted md:px-12">
-        {t('landing.footer', { year: new Date().getFullYear() })}
+        <p>{t('landing.footer', { year: new Date().getFullYear() })}</p>
+        <p className="mt-2 flex items-center justify-center gap-4 text-xs">
+          <Link to="/privacidad" className="hover:text-text hover:underline">Aviso de Privacidad</Link>
+          <Link to="/terminos" className="hover:text-text hover:underline">Términos de Uso</Link>
+        </p>
       </footer>
 
       <WelcomeVideoModal />

@@ -37,6 +37,7 @@ export const es = {
       arbol: 'Árbol',
       misiones: 'Misiones',
       logros: 'Logros',
+      miProgreso: 'Mi Progreso',
       misTareas: 'Mis Tareas',
       proyectos: 'Proyectos',
       vr: 'Campus VR',
