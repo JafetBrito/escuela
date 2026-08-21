@@ -1,26 +1,51 @@
 import { useState } from 'react'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
+import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
 import { useSeenStore } from '../../stores/useSeenStore'
 
-// Shows once per ACCOUNT per version (tracked in useSeenStore, synced via
-// progressSnapshot) regardless of whether `open`/`onClose` are passed —
-// callers that force `open` (e.g. the VR entry gate) still only see it once,
-// they just also need to not rely on `onClose` firing when already seen.
-export default function PatchNotesModal({ open: controlledOpen, onClose } = {}) {
+// La entrada "actual" viene de los commits reales (mismo dato que la
+// tarjeta de cambios del Dashboard) en vez del changelog curado a mano —
+// PATCH_NOTES_ALL (patchNotesRegistry.js) se queda desactualizado entre
+// releases porque hay que editarlo a mano por cada versión. Cuando hay
+// commits (RECENT_COMMITS), esa es la pestaña 0; el changelog curado sigue
+// disponible como historial detrás de ella.
+function buildLiveEntry() {
+  if (RECENT_COMMITS.length === 0) return null
+  return {
+    version: `#${BUILD_INFO.number}`,
+    date: BUILD_INFO.date ? BUILD_INFO.date.slice(0, 10) : '',
+    title: BUILD_INFO.message || 'Última actualización',
+    emoji: '🚀',
+    tag: 'ACTUAL',
+    tagColor: '#22c55e',
+    changes: RECENT_COMMITS.slice(0, 8).map((c) => ({ icon: '•', text: c.message })),
+  }
+}
+
+// Muestra una vez por versión/build para quien lo ve como aviso automático
+// (VR entry gate) — pero cualquier caller que pase `force` (VersionBadge,
+// el botón "Historial" del Dashboard) siempre lo abre bajo demanda, sin
+// importar si ya se marcó como visto. Sin `force`, una vez cerrado no volvía
+// a abrirse NUNCA por ningún medio — ese era el bug real.
+export default function PatchNotesModal({ open: controlledOpen, onClose, force = false } = {}) {
   const seenVersion = useSeenStore((s) => s.patchVersion)
   const setSeenVersion = useSeenStore((s) => s.setPatchVersion)
   const [tab, setTab] = useState(0)
 
-  const alreadySeen = seenVersion === LATEST_VERSION
+  const liveEntry = buildLiveEntry()
+  const notes = liveEntry ? [liveEntry, ...PATCH_NOTES] : PATCH_NOTES
+  const versionKey = liveEntry ? liveEntry.version : LATEST_VERSION
+
+  const alreadySeen = !force && seenVersion === versionKey
   const isOpen = (controlledOpen ?? true) && !alreadySeen
   if (!isOpen) return null
 
   const dismiss = () => {
-    setSeenVersion(LATEST_VERSION)
+    setSeenVersion(versionKey)
     onClose?.()
   }
 
-  const note = PATCH_NOTES[tab]
+  const note = notes[tab]
 
   return (
     <div
@@ -60,7 +85,7 @@ export default function PatchNotesModal({ open: controlledOpen, onClose } = {}) 
 
         {/* Version tabs */}
         <div className="flex gap-1 overflow-x-auto px-4 pt-3 pb-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {PATCH_NOTES.map((n, i) => (
+          {notes.map((n, i) => (
             <button
               key={n.version}
               type="button"
@@ -118,7 +143,7 @@ export default function PatchNotesModal({ open: controlledOpen, onClose } = {}) 
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.3)' }}
         >
           <p className="text-xs text-white/25">
-            Versión actual: <strong className="text-white/40">{LATEST_VERSION}</strong>
+            Versión actual: <strong className="text-white/40">{versionKey}</strong>
           </p>
           <button
             type="button"

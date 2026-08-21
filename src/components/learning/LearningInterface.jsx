@@ -44,6 +44,7 @@ import ModuleSlideshow from './ModuleSlideshow'
 import ModuleAudioPlayer from './ModuleAudioPlayer'
 import ModuleEmbed from './ModuleEmbed'
 import TextLesson from './TextLesson'
+import ModuleQuiz from './ModuleQuiz'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -205,6 +206,16 @@ export default function LearningInterface() {
                   <VerticalVideo module={currentModule} />
                 </div>
               </>
+            )}
+
+            {/* 🧩 QUIZ DE LA CLASE — antes solo vivía escondido en la pestaña
+                Misiones del chat de la mascota (MissionsTab.jsx); ahora se ve
+                de inmediato debajo del contenido, sin tener que abrir nada. */}
+            {currentModule.quiz && (
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="mb-3 text-xs font-black uppercase tracking-widest text-text-muted">🧩 Quiz de esta clase</p>
+                <ModuleQuiz courseId={courseId} module={currentModule} />
+              </div>
             )}
 
             {/* 📚 RECURSOS Y TAREAS */}

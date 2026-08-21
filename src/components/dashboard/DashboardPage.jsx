@@ -582,7 +582,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <PageVideoModal pageKey="dashboard" />
-      {patchNotesOpen && <PatchNotesModal open onClose={() => setPatchNotesOpen(false)} />}
+      {patchNotesOpen && <PatchNotesModal open force onClose={() => setPatchNotesOpen(false)} />}
 
       <AppTopBar />
 

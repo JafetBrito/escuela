@@ -25,7 +25,7 @@ export default function VersionBadge() {
       >
         #{BUILD_INFO.number}{BUILD_INFO.hash ? ` · ${BUILD_INFO.hash}` : ''}
       </button>
-      {open && <PatchNotesModal open onClose={() => setOpen(false)} />}
+      {open && <PatchNotesModal open force onClose={() => setOpen(false)} />}
     </>
   )
 }

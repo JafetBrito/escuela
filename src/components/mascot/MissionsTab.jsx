@@ -3,7 +3,6 @@ import { useProgressStore, EMPTY_OBJECT } from '../../stores/useProgressStore'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { GLOBAL_MISSIONS } from '../../data/globalMissionsRegistry'
 import { formatCurrency } from '../../utils/currency'
-import ModuleQuiz from '../learning/ModuleQuiz'
 
 export default function MissionsTab({ courseId, module, onGoToChat, courseOnly = false }) {
   // EMPTY_OBJECT (referencia estable) en vez de `{}` — un objeto nuevo cada
@@ -47,7 +46,9 @@ export default function MissionsTab({ courseId, module, onGoToChat, courseOnly =
                     </div>
                   </div>
                   {!done && mission.type === 'quiz' && (
-                    <ModuleQuiz courseId={courseId} module={module} className="mt-3" />
+                    <p className="mt-2 text-xs text-text-muted">
+                      🧩 Contesta el quiz que aparece debajo del contenido de esta clase.
+                    </p>
                   )}
                   {!done && mission.type === 'chat' && onGoToChat && (
                     <button
