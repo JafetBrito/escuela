@@ -223,7 +223,7 @@
   {
     "id": "course-git-github",
     "title": "Git y GitHub: de Cero a Experto",
-    "description": "El curso más completo de la escuela sobre control de versiones: desde por qué existe Git (con su historia real) hasta rebase, colaboración en equipo y automatización con GitHub Actions — con un simulador de terminal para practicar cada comando.",
+    "description": "El curso más completo de la escuela sobre control de versiones: desde por qué existe Git (con su historia real) hasta rebase, colaboración en equipo y automatización con GitHub Actions — con clases dedicadas de Consola Interactiva para practicar cada comando.",
     "icon": "🐙",
     "color": "#f97316",
     "category": "Programación",

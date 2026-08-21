@@ -1074,18 +1074,85 @@ Piénsalo como un compañero de equipo robótico que revisa cada cambio automát
   },
 ]
 
+// ── Reestructura: cada terminalSim pasa a ser su PROPIA clase dedicada
+// ("🖥️ Consola Interactiva: ..."), en vez de ir pegado al final de la clase
+// de concepto — pedido explícito del dueño, para que se entienda como una
+// consola interactiva con sus propios ejercicios, no como un anexo. Separa
+// el módulo original en dos (concepto sin terminalSim + consola nueva) y
+// reasigna id/order de corrido; guarda un mapa oldId -> {conceptId,
+// consoleId} para poder remapear enModulesRaw (las traducciones) igual.
+function buildConsoleIntroHtml(terminalSim) {
+  return `
+<h2>🖥️ Esta clase es 100% práctica</h2>
+<p>Vas a usar una <strong>consola interactiva simulada</strong> — no es una terminal real conectada a tu computadora, pero funciona igual para aprender: escribe exactamente el comando que se te pide en cada paso y presiona <strong>Ejecutar</strong> (o Enter). Si está bien, avanzas al siguiente paso.</p>
+<div class="tip">
+💡 Si te equivocas, te va a dar una pista — no hay límite de intentos, tómate tu tiempo. La idea es que el comando se te quede en los dedos, no solo en la cabeza.
+</div>
+${terminalSim.intro ? `<p>${terminalSim.intro}</p>` : ''}
+`
+}
+
+function splitConsoleModules(mods) {
+  const result = []
+  const idMap = new Map()
+  for (const m of mods) {
+    if (m.terminalSim) {
+      const { terminalSim, ...concept } = m
+      const conceptId = result.length
+      result.push(concept)
+      const consoleId = result.length
+      result.push({
+        type: 'text',
+        title: `🖥️ Consola Interactiva: ${terminalSim.title.replace(/^Simulador:\s*/, '')}`,
+        description: 'Practica en una consola interactiva simulada — sin arriesgar nada real.',
+        content: buildConsoleIntroHtml(terminalSim),
+        exercises: [],
+        resources: [],
+        terminalSim,
+      })
+      idMap.set(m.id, { conceptId, consoleId })
+    } else {
+      const conceptId = result.length
+      result.push(m)
+      idMap.set(m.id, { conceptId })
+    }
+  }
+  return { modules: result.map((m, i) => ({ ...m, id: i, order: i })), idMap }
+}
+
+function remapTranslationModules(enMods, idMap) {
+  const out = []
+  for (const em of enMods) {
+    const mapping = idMap.get(em.id)
+    if (!mapping) continue
+    const { terminalSim, ...conceptOverride } = em
+    out.push({ ...conceptOverride, id: mapping.conceptId })
+    if (terminalSim && mapping.consoleId != null) {
+      out.push({
+        id: mapping.consoleId,
+        title: `🖥️ Interactive Console: ${terminalSim.title.replace(/^Simulator:\s*/, '')}`,
+        description: 'Practice in a simulated interactive console — nothing real at risk.',
+        terminalSim,
+      })
+    }
+  }
+  return out
+}
+
+const { modules: splitModules, idMap } = splitConsoleModules(modules)
+
 const course = {
   id: COURSE_ID,
   title: 'Git y GitHub: de Cero a Experto',
-  description: 'El curso más completo de la escuela sobre control de versiones: desde por qué existe Git (con su historia real) hasta rebase, colaboración en equipo y automatización con GitHub Actions — con un simulador de terminal para practicar cada comando.',
-  ai_instructions: 'Eres el Mago, profesor de la Escuela de Programación de Oliver Academy, guiando el curso "Git y GitHub: de Cero a Experto". Explica con analogías claras (la maleta para el área de preparación, universos paralelos para las ramas), nunca asumas que el alumno ya sabe qué es una terminal, y cuando pregunten por un comando específico, dale el comando exacto y qué hace cada parte. Si preguntan por el simulador de terminal, recuérdales que deben escribir el comando exacto que se les pide, tal como lo harían en una terminal real.',
+  description: 'El curso más completo de la escuela sobre control de versiones: desde por qué existe Git (con su historia real) hasta rebase, colaboración en equipo y automatización con GitHub Actions — con una consola interactiva dedicada para practicar cada comando.',
+  ai_instructions: 'Eres el Mago, profesor de la Escuela de Programación de Oliver Academy, guiando el curso "Git y GitHub: de Cero a Experto". Explica con analogías claras (la maleta para el área de preparación, universos paralelos para las ramas), nunca asumas que el alumno ya sabe qué es una terminal, y cuando pregunten por la consola interactiva, recuérdales que deben escribir el comando exacto que se les pide, tal como lo harían en una terminal real.',
   icon: '🐙',
   color: '#f97316',
   category: 'Programación',
   subcategory: 'Herramientas de Desarrollo',
   difficulty: 'principiante',
   locked: false,
-  modules,
+  modules: splitModules,
 }
 
 // ── Traducción a inglés (parcial, a propósito) ────────────────────────────
@@ -1094,10 +1161,7 @@ const course = {
 // los quizzes, más título/descripción de cada módulo — no cada párrafo de
 // contenido, que es un trabajo de traducción de prosa mucho más grande y
 // mejor hecho como su propia tanda de trabajo.
-const enTranslations = {
-  title: 'Git and GitHub: Zero to Expert',
-  description: "The school's most complete course on version control: from why Git exists (with its real history) to rebase, team collaboration, and automation with GitHub Actions — with a terminal simulator to practice every command.",
-  modules: [
+const enModulesRaw = [
     { id: 0, title: 'Welcome: why Git is going to change how you code', description: "What you'll achieve by the end of this course and how it's organized." },
     { id: 1, title: 'The History of Git and GitHub', description: "From Linus Torvalds's frustration in 2005 to the tool running the world's software.", quiz: { question: 'Why did Linus Torvalds create Git in 2005?', options: ['Just for fun, no urgent reason', 'Because the company owning BitKeeper (the tool the Linux kernel used) revoked free access', 'Because GitHub asked him to', 'Because he wanted to replace Python'] } },
     { id: 2, title: 'What is version control?', description: 'The problem Git solves, before touching a single command.', quiz: { question: 'What is the key difference between a centralized and a distributed system like Git?', options: ['Centralized is faster', 'In a distributed system, everyone has a full copy of the history, not just the server', "Distributed doesn't allow teamwork", "There isn't a real difference"] } },
@@ -1206,7 +1270,12 @@ const enTranslations = {
     },
     { id: 17, title: 'Automation: a first look at GitHub Actions', description: 'How to make GitHub run tasks automatically on every push.', quiz: { question: 'What does a GitHub Actions workflow like the example (`on: [push]`) do?', options: ['Deletes the repository on every push', 'Automatically runs the defined steps (e.g. tests) every time someone pushes code', 'Only runs if you trigger it manually every time', 'Completely replaces the need to commit'] } },
     { id: 18, title: 'Final project: prove you master Git', description: 'A challenge that combines everything you learned, from zero to expert.' },
-  ],
+]
+
+const enTranslations = {
+  title: 'Git and GitHub: Zero to Expert',
+  description: "The school's most complete course on version control: from why Git exists (with its real history) to rebase, team collaboration, and automation with GitHub Actions — with a dedicated interactive console to practice every command.",
+  modules: remapTranslationModules(enModulesRaw, idMap),
 }
 
 // ── SQL ─────────────────────────────────────────────────────────────────
@@ -1216,11 +1285,12 @@ function sqlStr(js) {
 
 const sql = `-- ════════════════════════════════════════════════════════════════════════
 -- MIGRACIÓN 038 — Curso "Git y GitHub: de Cero a Experto" (course-git-github)
--- 19 clases: historia real, modelo de tres árboles, ramas, merge, rebase,
--- GitHub, colaboración, estrategias de equipo, GitHub Actions y un
--- simulador de terminal (GitTerminalSim.jsx) en 7 de las clases.
--- Traducción a inglés parcial en translations.en: cubre el simulador de
--- terminal completo y los quizzes/títulos — no cada párrafo de contenido
+-- ${course.modules.length} clases: historia real, modelo de tres árboles, ramas, merge,
+-- rebase, GitHub, colaboración, estrategias de equipo, GitHub Actions y
+-- ${course.modules.filter((m) => m.terminalSim).length} clases dedicadas de "Consola Interactiva" (GitTerminalSim.jsx), cada
+-- una como su propio módulo, no pegadas a la clase de concepto.
+-- Traducción a inglés parcial en translations.en: cubre la consola
+-- interactiva completa y los quizzes/títulos — no cada párrafo de contenido
 -- todavía (ver nota en scripts/build_git_course.mjs).
 -- ════════════════════════════════════════════════════════════════════════
 
@@ -1256,4 +1326,4 @@ on conflict (id) do update set
 `
 
 writeFileSync(path.join(process.cwd(), 'supabase', 'migration_038.sql'), sql)
-console.log('✓ supabase/migration_038.sql —', modules.length, 'módulos,', JSON.stringify(sql).length, 'bytes de SQL')
+console.log('✓ supabase/migration_038.sql —', course.modules.length, 'módulos,', JSON.stringify(sql).length, 'bytes de SQL')

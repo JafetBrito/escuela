@@ -344,6 +344,27 @@ export default function AdminCoursesPage() {
                           </div>
                         )}
                       </div>
+
+                      {/* Simulador de terminal (GitTerminalSim.jsx) — de solo
+                          lectura aquí a propósito: sus checkpoints (pattern de
+                          regex + hint/success por cada paso) se autorían por
+                          migración/SQL, no tienen editor visual todavía. Este
+                          bloque existe para que se pueda CONFIRMAR de un
+                          vistazo que los datos sí están ahí. */}
+                      {m.terminalSim && (
+                        <div className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5 pl-5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-emerald-500">
+                              ⌨️ Simulador de terminal — {m.terminalSim.checkpoints?.length ?? 0} paso{(m.terminalSim.checkpoints?.length ?? 0) === 1 ? '' : 's'}
+                            </p>
+                            <button type="button" onClick={() => updateModule(m.id, { terminalSim: undefined })}
+                              className="text-[10px] font-semibold text-text-muted hover:text-danger">Quitar</button>
+                          </div>
+                          <p className="mt-1 text-[10px] text-text-muted">
+                            {m.terminalSim.title ?? 'Sin título'} — se edita por ahora desde el código/migración, no desde aquí.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {modules.length === 0 && <p className="text-sm text-text-muted">Sin módulos todavía.</p>}

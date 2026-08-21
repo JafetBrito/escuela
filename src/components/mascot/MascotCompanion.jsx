@@ -15,6 +15,7 @@ import TechDexPanel from './TechDexPanel'
 import CodicePanel from './CodicePanel'
 import ToolsPanel from './ToolsPanel'
 import ObjetosBagPanel from './ObjetosBagPanel'
+import FourthWallPhone from '../vr/FourthWallPhone'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -69,6 +70,7 @@ const SUB_TABS_FULL = [
   { id: 'chat',       label: 'Chat',      icon: '💬' },
   { id: 'libros',     label: 'Libros',    icon: '📚' },
   { id: 'notas',      label: 'Notas',     icon: '📝' },
+  { id: '4pared',     label: '4 Pared',   icon: '📱' },
 ]
 const SUB_TABS_AVATAR = SUB_TABS_FULL
 const SUB_TABS_MASCOTA = SUB_TABS_FULL
@@ -230,6 +232,22 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             {subTab === 'estadisticas' && <CharacterStats owner={entity.owner} />}
             {subTab === 'libros'       && <BooksPanel />}
             {subTab === 'notas'        && <Inventory className="h-full" />}
+
+            {/* "4 Pared" — mismo componente que el botón flotante de
+                VRPage.jsx, ahora también accesible desde aquí (más fácil de
+                encontrar que un botón suelto en la esquina). Solo
+                escritorio, misma razón que el botón flotante: el iframe
+                completo no es usable en pantallas táctiles chicas. */}
+            {subTab === '4pared' && (
+              <>
+                <div className="hidden md:block">
+                  <FourthWallPhone onClose={() => setSubTab('personaje')} />
+                </div>
+                <p className="py-8 text-center text-sm text-text-muted md:hidden">
+                  📱 4 Pared solo está disponible en pantallas de escritorio.
+                </p>
+              </>
+            )}
 
             {subTab === 'apariencia' && (
               isAvatarEntity ? (
