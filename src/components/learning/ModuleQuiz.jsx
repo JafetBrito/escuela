@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useProgressStore } from '../../stores/useProgressStore'
-import { DEV_UNLOCK_ALL } from '../../config/devUnlock'
 
 export default function ModuleQuiz({ courseId, module, className = '' }) {
   const isCompleted = useProgressStore((s) => s.isMissionDone(courseId, module.id, 'quiz'))
@@ -16,10 +15,14 @@ export default function ModuleQuiz({ courseId, module, className = '' }) {
 
   if (!module.quiz) return null
 
-  // ponytail: en modo prueba, el quiz se muestra como lectura (pregunta +
-  // opciones, la correcta marcada) en vez de un formulario que hay que
-  // resolver — no bloquea nada, solo evita el paso interactivo.
-  if (DEV_UNLOCK_ALL) {
+  // ponytail: en desarrollo local (import.meta.env.DEV, nunca true en un
+  // build de producción) el quiz se muestra como lectura (pregunta +
+  // opciones, la correcta marcada) para no tener que resolverlo cada vez
+  // que se prueba algo. Antes esto se disparaba con DEV_UNLOCK_ALL, que
+  // queda en `true` también en producción (desbloquea módulos a propósito)
+  // — eso hacía que TODOS los alumnos vieran el quiz ya "resuelto" y sin
+  // formulario real. Ver [[project_dev_unlock_all_in_prod]] en memoria.
+  if (import.meta.env.DEV) {
     return (
       <div className={className}>
         <p className="mb-2 text-sm font-semibold text-text">{module.quiz.question}</p>

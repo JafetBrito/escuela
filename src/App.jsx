@@ -62,6 +62,9 @@ import { useEffect } from 'react'
 const LearningInterface = lazy(() => import('./components/learning/LearningInterface'))
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
+const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
+const BlogPage = lazy(() => import('./components/blog/BlogPage'))
+const BlogPostPage = lazy(() => import('./components/blog/BlogPostPage'))
 const EpubReaderPage = lazy(() => import('./components/library/EpubReaderPage'))
 const VRPage = lazy(() => import('./components/vr/VRPage'))
 const VrArbol      = lazy(() => import('./components/vr/VrArbol'))
@@ -356,6 +359,39 @@ export default function App() {
           }
         />
         
+        <Route
+          path="/estanteria"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <BookshelfPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/blog"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <BlogPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/blog/:postId"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <BlogPostPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/biblioteca/:bookId"
           element={

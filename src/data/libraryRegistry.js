@@ -145,6 +145,30 @@ export const LIBRARY_BOOKS = [
     file: null,
   },
   {
+    id: 'el-gato-que-aprendio-a-programar',
+    title: 'El Gato que Aprendió a Programar',
+    author: 'Oliver Academy',
+    category: 'Literatura',
+    icon: '🐱',
+    color: '#fb923c',
+    description: 'Un cuento corto sobre Oliver y sus primeros pasos escribiendo código.',
+    type: 'epub',
+    file: '/epub/el-gato-que-aprendio-a-programar.epub',
+    offline: true,
+  },
+  {
+    id: 'cuentos-breves-de-sabiduria',
+    title: 'Cuentos Breves de Sabiduría',
+    author: 'Oliver Academy',
+    category: 'Literatura',
+    icon: '🕯️',
+    color: '#a78bfa',
+    description: 'Tres relatos breves, de esos que se leen en cinco minutos y se piensan por más tiempo.',
+    type: 'epub',
+    file: '/epub/cuentos-breves-de-sabiduria.epub',
+    offline: true,
+  },
+  {
     id: 'linux-bible',
     title: 'Linux meowster (2026)',
     author: 'Oliver The Hacker CAT',
@@ -177,4 +201,20 @@ export function getBookById(id) {
  */
 export function isBookPurchasable(book) {
   return !!book.file && typeof book.price === 'number'
+}
+
+/**
+ * Libros que el alumno ya puede abrir de verdad: tienen archivo (no son
+ * "Próximamente") y, si tienen precio, ya los compró. Mismo filtro que
+ * usaban por separado BooksPanel.jsx y ahora también Bookshelf/BookshelfPage
+ * — un solo lugar para no repetirlo.
+ *
+ * @param {string[]} purchased - `useShopStore().purchased`.
+ * @returns {Book[]}
+ */
+export function getAvailableBooks(purchased) {
+  return LIBRARY_BOOKS.filter((book) => {
+    if (!book.file) return false
+    return !isBookPurchasable(book) || purchased.includes(book.id)
+  })
 }

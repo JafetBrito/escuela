@@ -17,6 +17,8 @@ export const en = {
       horario: 'Schedule',
       notas: 'Notes',
       biblioteca: 'Library',
+      estanteria: 'My Bookshelf',
+      blog: 'Blog',
       guias: 'Guides',
       ia: 'AI Tools',
       herramientas: 'Tools',

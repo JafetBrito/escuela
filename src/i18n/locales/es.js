@@ -21,6 +21,8 @@ export const es = {
       horario: 'Horario',
       notas: 'Notas',
       biblioteca: 'Librería',
+      estanteria: 'Mi Estantería',
+      blog: 'Blog',
       guias: 'Guías',
       ia: 'IA Tools',
       herramientas: 'Herramientas',

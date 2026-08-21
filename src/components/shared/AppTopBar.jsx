@@ -26,6 +26,8 @@ const GROUPS = [
       { to: '/horario',      key: 'horario',      label: 'Horario',      icon: '🗓️' },
       { to: '/notas',        key: 'notas',        label: 'Notas',        icon: '📝' },
       { to: '/biblioteca',   key: 'biblioteca',   label: 'Librería',     icon: '📚' },
+      { to: '/estanteria',   key: 'estanteria',   label: 'Mi Estantería', icon: '🗄️' },
+      { to: '/blog',         key: 'blog',         label: 'Blog',          icon: '📰' },
       { to: '/guias',        key: 'guias',        label: 'Guías',        icon: '📖' },
       { to: '/ia',           key: 'ia',           label: 'IA Tools',     icon: '🤖' },
       { to: '/herramientas', key: 'herramientas', label: 'Herramientas', icon: '🔧' },
