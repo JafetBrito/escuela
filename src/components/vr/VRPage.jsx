@@ -33,6 +33,7 @@ import { useTerminalRewardsStore } from '../../stores/useTerminalRewardsStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import GmConsole from '../shared/GmConsole'
 import BashTerminalModal from './BashTerminalModal'
+import FourthWallPhone from './FourthWallPhone'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import MobField from './MobField'
 import { useMobStore } from '../../stores/useMobStore'
@@ -3048,6 +3049,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [arenaConfirmOpen, setArenaConfirmOpen] = useState(false)
   const [abilityTesterOpen, setAbilityTesterOpen] = useState(false)
   const [chestOpen, setChestOpen] = useState(false)
+  const [phoneOpen, setPhoneOpen] = useState(false)
   // Fall-into-the-void rescue: { x, y, z } of where the player fell, used to
   // show Oliver (orange cat) "arriving" there for a moment. null = no rescue
   // in progress.
@@ -3686,6 +3688,19 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           </button>
         )}
         {chestOpen && <ChestPanel onClose={() => setChestOpen(false)} />}
+
+        {/* "4 Pared" — teléfono del mundo VR (dashboard/cursos/mensajes
+            embebidos, ver FourthWallPhone.jsx). Solo escritorio a propósito:
+            el iframe completo dentro del HUD 3D no es usable en pantallas
+            táctiles pequeñas. */}
+        <button
+          type="button"
+          onClick={() => setPhoneOpen(true)}
+          className="absolute bottom-4 right-4 z-20 hidden items-center gap-1.5 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur hover:bg-surface md:flex"
+        >
+          📱 4 Pared
+        </button>
+        {phoneOpen && <FourthWallPhone onClose={() => setPhoneOpen(false)} />}
 
         {/* BashMishi's free-text Bash exercise (see questsRegistry.js step.type 'terminal') */}
         {bashTerminalStep && (
