@@ -221,6 +221,17 @@
     "locked": false
   },
   {
+    "id": "course-git-github",
+    "title": "Git y GitHub: de Cero a Experto",
+    "description": "El curso más completo de la escuela sobre control de versiones: desde por qué existe Git (con su historia real) hasta rebase, colaboración en equipo y automatización con GitHub Actions — con un simulador de terminal para practicar cada comando.",
+    "icon": "🐙",
+    "color": "#f97316",
+    "category": "Programación",
+    "subcategory": "Herramientas de Desarrollo",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
     "id": "course-filo-001",
     "title": "Introducción a la Filosofía",
     "description": "Explora las grandes preguntas de la humanidad con Jafet Brito. Desde Platón hasta el mundo digital, cada lección combina teoría con experiencias VR únicas.",

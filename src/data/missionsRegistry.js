@@ -35,6 +35,18 @@ export const MISSION_TYPES = {
       description: 'Obtenido al hablar con tu mascota sobre una clase.',
     },
   },
+  terminal: {
+    icon: '⌨️',
+    label: 'Completa el ejercicio de terminal de esta clase',
+    reward: 3000,
+    itemReward: {
+      id: 'diploma-clase',
+      name: 'Diploma de Clase',
+      icon: '🎓',
+      rarity: 'rare',
+      description: 'Obtenido al superar el reto de conocimiento de una clase.',
+    },
+  },
 }
 
 export function getModuleMissions(module) {
@@ -43,6 +55,9 @@ export function getModuleMissions(module) {
 
   if (module?.quiz) {
     missions.push({ id: 'quiz', type: 'quiz', ...MISSION_TYPES.quiz, ...(overrides.quiz ?? {}) })
+  }
+  if (module?.terminalSim) {
+    missions.push({ id: 'terminal', type: 'terminal', ...MISSION_TYPES.terminal, ...(overrides.terminal ?? {}) })
   }
   if (!module?.noChat) {
     missions.push({ id: 'chat', type: 'chat', ...MISSION_TYPES.chat, ...(overrides.chat ?? {}) })

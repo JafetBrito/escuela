@@ -15,7 +15,7 @@ const FREE_MODULE_ORDER_LIMIT = 2
 
 // XP awarded for each "tarea" (mission), for finishing a module, and for
 // completing an entire course. Mirrors the mission reward map but in XP.
-const MISSION_XP = { quiz: 50, chat: 20, item: 20, fun: 30 }
+const MISSION_XP = { quiz: 50, chat: 20, item: 20, fun: 30, terminal: 50 }
 const MODULE_COMPLETE_XP = 100
 const COURSE_COMPLETE_XP = 500
 

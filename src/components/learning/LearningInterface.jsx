@@ -45,6 +45,7 @@ import ModuleAudioPlayer from './ModuleAudioPlayer'
 import ModuleEmbed from './ModuleEmbed'
 import TextLesson from './TextLesson'
 import ModuleQuiz from './ModuleQuiz'
+import GitTerminalSim from './GitTerminalSim'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -216,6 +217,10 @@ export default function LearningInterface() {
                 <p className="mb-3 text-xs font-black uppercase tracking-widest text-text-muted">🧩 Quiz de esta clase</p>
                 <ModuleQuiz courseId={courseId} module={currentModule} />
               </div>
+            )}
+
+            {currentModule.terminalSim && (
+              <GitTerminalSim courseId={courseId} module={currentModule} />
             )}
 
             {/* 📚 RECURSOS Y TAREAS */}

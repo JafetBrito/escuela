@@ -28,13 +28,30 @@ function mergeModule(base, override) {
     exercises: mergeArrayByIndex(base.exercises, override.exercises),
     resources: mergeArrayByIndex(base.resources, override.resources),
     quiz: base.quiz ? { ...base.quiz, ...(override.quiz ?? {}) } : base.quiz,
+    terminalSim: base.terminalSim
+      ? {
+          ...base.terminalSim,
+          ...(override.terminalSim ?? {}),
+          checkpoints: mergeArrayByIndex(base.terminalSim.checkpoints, override.terminalSim?.checkpoints),
+        }
+      : base.terminalSim,
   }
 }
 
 // Returns `course` translated into `lang`, falling back to the Spanish base
 // for any field (or whole module) the translation doesn't cover yet.
+//
+// Two sources of overrides, checked in order:
+//  1. `course.translations[lang]` — lives on the course row itself (Supabase
+//     `courses.translations` jsonb), same self-contained pattern as
+//     `course_exams.translations` (useExamsStore.localizeExam). This is the
+//     one that actually works for every course added after the move to
+//     Supabase (migration_024+) — courseId isn't even a field on those rows.
+//  2. COURSE_TRANSLATIONS (this file) — legacy, only for the handful of
+//     courses that still carry a `courseId` field from before the move
+//     (course-003, course-bash). Kept so those don't regress.
 export function localizeCourse(course, lang) {
-  const override = COURSE_TRANSLATIONS[course.courseId]?.[lang]
+  const override = course.translations?.[lang] ?? COURSE_TRANSLATIONS[course.courseId]?.[lang]
   if (!override) return course
 
   const overridesById = new Map((override.modules ?? []).map((m) => [m.id, m]))

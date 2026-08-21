@@ -188,7 +188,7 @@ export function CharacterStats({ owner }) {
             <span className="text-[10px] font-bold text-white/70">{energy.current}/{energy.max}</span>
           </div>
         )}
-        {clsDef
+        {clsDef?.stats
           ? Object.entries(clsDef.stats).map(([stat, val]) => (
             <div key={stat} className="col-span-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1" style={{ background: 'rgba(0,0,0,0.2)' }}>
               <span className="text-[9px] font-bold uppercase tracking-wide text-white/40">{stat}</span>
@@ -197,7 +197,9 @@ export function CharacterStats({ owner }) {
           ))
           : (
             <p className="col-span-2 text-[10px] text-white/30">
-              Elige una clase en el Árbol del Mundo para ver tus estadísticas de combate.
+              {clsDef
+                ? 'Este estilo de Oliver todavía no tiene estadísticas de combate propias.'
+                : 'Elige una clase en el Árbol del Mundo para ver tus estadísticas de combate.'}
             </p>
           )}
       </div>
