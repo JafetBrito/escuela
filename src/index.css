@@ -27,6 +27,18 @@ html {
      para "encoger" la página a su tamaño real. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Red de seguridad global: SIN esto, un solo elemento ancho en cualquier
+     parte de la app (un <pre> de código sin overflow propio, una tabla, una
+     URL larga sin cortar, un flex/grid hijo sin min-w-0) puede empujar el
+     documento COMPLETO más ancho que la pantalla — y en móvil eso se ve
+     exactamente como "todo aparece gigante, hay que hacer pellizco para
+     verlo bien", en CUALQUIER página, no solo donde está el elemento ancho
+     de origen. Con overflow-x:hidden aquí, el documento nunca puede crecer
+     más allá del viewport pase lo que pase adentro — el elemento culpable
+     simplemente se recorta o queda con su propio scroll interno, en vez de
+     inflar toda la página. No bloquea el overflow-x-auto de contenedores
+     internos (tablas, <pre>), que siguen scrolleando normal por su cuenta. */
+  overflow-x: hidden;
 }
 
 body {
@@ -34,10 +46,12 @@ body {
   background-color: var(--color-background);
   color: var(--color-text);
   font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 /* "Reina Nefertiti" objeto: desert theme with gold tones and a subtle
