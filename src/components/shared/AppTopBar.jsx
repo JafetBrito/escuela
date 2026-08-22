@@ -100,8 +100,10 @@ function visibleGroupsFor(ageProfile) {
 
 // Persistent navigation bar for the protected app.
 // variant="full"   -> dashboard/mascot/profile/etc (default)
-// variant="course" -> inside a course: just back-to-dashboard
-export default function AppTopBar({ variant = 'full' }) {
+// variant="course" -> inside a course/VR/game: just a back link — `backTo`/
+//   `backLabel` lo dejan apuntar a otro lado (ej. LearningInterface.jsx lo
+//   manda al mapa del curso en vez del Dashboard) sin duplicar este header.
+export default function AppTopBar({ variant = 'full', backTo = '/dashboard', backLabel }) {
   const location = useLocation()
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
@@ -180,10 +182,10 @@ export default function AppTopBar({ variant = 'full' }) {
           <VersionBadge />
         </div>
         <Link
-          to="/dashboard"
+          to={backTo}
           className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:text-text sm:px-3 sm:py-1.5 sm:text-sm"
         >
-          {t('nav.backToDashboard')}
+          {backLabel ?? t('nav.backToDashboard')}
         </Link>
       </header>
       </>

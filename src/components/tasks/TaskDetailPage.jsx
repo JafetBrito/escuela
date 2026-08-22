@@ -5,7 +5,6 @@ import ResourceGallery from '../shared/ResourceGallery'
 import GradeModal from './GradeModal'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useProgressStore } from '../../stores/useProgressStore'
 import { taskTypeOf } from '../../data/taskTypes'
 import { renderMarkdown } from '../../utils/markdown'
 
@@ -55,7 +54,6 @@ export default function TaskDetailPage() {
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
   const isAdmin = useAuthStore((s) => s.isAdmin)
-  const setSelectedModule = useProgressStore((s) => s.setSelectedModule)
 
   const fetchTask = useTasksStore((s) => s.fetchTask)
   const submitTaskFile = useTasksStore((s) => s.submitTaskFile)
@@ -162,8 +160,9 @@ export default function TaskDetailPage() {
 
   const handleGoToLesson = () => {
     const { courseId, moduleId } = details.linkedLesson
-    setSelectedModule(courseId, moduleId)
-    navigate(`/learn/${courseId}`)
+    // Va directo a la clase enlazada, no al mapa del curso — este botón
+    // existe justamente para saltar a un punto específico, no para explorar.
+    navigate(`/learn/${courseId}/clase/${moduleId}`)
   }
 
   return (

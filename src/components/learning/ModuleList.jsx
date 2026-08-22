@@ -1,12 +1,13 @@
+import { useNavigate } from 'react-router-dom'
 import { getCourseData } from '../../data/courseRegistry'
 import { useProgressStore, EMPTY_ARRAY } from '../../stores/useProgressStore'
 import { useI18n } from '../../i18n'
 
 export default function ModuleList({ courseId, className = '' }) {
   const { t, lang } = useI18n()
+  const navigate = useNavigate()
   const courseData = getCourseData(courseId, lang)
   const selectedModuleId = useProgressStore((s) => s.getSelectedModuleId(courseId))
-  const setSelectedModule = useProgressStore((s) => s.setSelectedModule)
   const moduleProgress = useProgressStore((s) => s.progress[courseId]?.moduleProgress ?? EMPTY_ARRAY)
   const isModuleUnlocked = useProgressStore((s) => s.isModuleUnlocked)
 
@@ -25,7 +26,7 @@ export default function ModuleList({ courseId, className = '' }) {
           return (
             <li key={mod.id}>
               <button
-                onClick={() => setSelectedModule(courseId, mod.id)}
+                onClick={() => navigate(`/learn/${courseId}/clase/${mod.id}`)}
                 disabled={!unlocked}
                 // min-w-0: sin esto, el <span className="truncate"> de abajo
                 // NUNCA trunca de verdad — un hijo de flex por defecto tiene

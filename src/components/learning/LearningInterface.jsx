@@ -2,8 +2,8 @@
  * ============================================================================
  * 🎓 INTERFAZ DE APRENDIZAJE PRINCIPAL (LearningInterface.jsx)
  * ============================================================================
- * 
- * Este archivo es una joya arquitectónica. A diferencia de los componentes anteriores que hacían una sola cosa 
+ *
+ * Este archivo es una joya arquitectónica. A diferencia de los componentes anteriores que hacían una sola cosa
  * (como la tienda o las notas), este archivo es un Componente Orquestador (Layout Component).
  *  Su trabajo no es hacer el trabajo pesado, sino coordinar a todos los demás componentes
  *  para que la experiencia de aprendizaje fluya sin problemas.
@@ -15,19 +15,23 @@ El patrón useRef para el Chat: La IA de tu mascota tiene "memoria a corto plazo
   archivar la conversación de la Clase 1 en el historial, y limpiar el cerebro de la mascota para la Clase 2.
    Esto evita que la mascota mezcle temas.
 
-El "Responsive Design" Condicional: Tienes un reproductor de video para computadoras 
+El "Responsive Design" Condicional: Tienes un reproductor de video para computadoras
 de escritorio (VideoPlayer) y uno completamente distinto para celulares (VerticalVideo).
- * 
- * 
+ *
+ *
  * Este es el "Escenario Principal" de la plataforma. Es el componente orquestador
- * que ensambla el video, la lista de módulos, los recursos, los comentarios y 
+ * que ensambla el video, la lista de módulos, los recursos, los comentarios y
  * a la mascota 3D en una sola vista.
  * * 🏗️ RESPONSABILIDADES CLAVE:
- * 1. Enrutamiento y Seguridad: Verifica si el curso existe y si el usuario 
+ * 1. Enrutamiento y Seguridad: Verifica si el curso existe y si el usuario
  * tiene acceso (modo Freemium vs Premium).
  * 2. Ciclo de vida del Chat: Reinicia el cerebro de la mascota al cambiar de clase.
- * 3. Renderizado Condicional (Responsive): Cambia el tipo de reproductor de 
+ * 3. Renderizado Condicional (Responsive): Cambia el tipo de reproductor de
  * video dependiendo de si es móvil o escritorio.
+ * 4. Navegación por URL: el módulo activo vive en la URL (/learn/:courseId/clase/:moduleId),
+ * no solo en el store — así cambiar de clase es una navegación real (se
+ * siente como "avanzar", no como un simple cambio de estado en la misma
+ * pantalla), con "Clase anterior/Siguiente clase" al final de cada una.
  * ============================================================================
  */
 
@@ -92,61 +96,81 @@ function VrModuleLauncher({ module: mod }) {
 
 export default function LearningInterface() {
   // --- 1. LECTURA DE URL Y RUTAS ---
-  const { courseId } = useParams()
+  const { courseId, moduleId } = useParams()
+  const navigate = useNavigate()
   const { t, lang }  = useI18n()
 
   // --- 2. ESTADOS GLOBALES (Zustand) ---
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
-  const selectedModuleId = useProgressStore((s) => s.getSelectedModuleId(courseId))
+  const setSelectedModule = useProgressStore((s) => s.setSelectedModule)
   const moduleProgress = useProgressStore((s) => s.progress[courseId]?.moduleProgress ?? EMPTY_ARRAY)
+  const isModuleUnlocked = useProgressStore((s) => s.isModuleUnlocked)
   const startNewChat = useChatStore((s) => s.startNewChat)
-  
+
   // --- 3. REFERENCIAS MUTABLES (Sin Re-renders) ---
-  // Guardamos el ID de la clase anterior. Usamos useRef en lugar de useState 
+  // Guardamos el ID de la clase anterior. Usamos useRef en lugar de useState
   // porque NO queremos que la página parpadee o se vuelva a dibujar al actualizar este valor.
   const prevModuleIdRef = useRef(null)
 
   // --- 4. DERIVACIÓN DE DATOS (Obteniendo el curso actual) ---
   const courseData = hasCourseData(courseId) ? getCourseData(courseId, lang) : null
-  
-  // Determinamos qué clase (módulo) está viendo el alumno ahora mismo.
-  // Fallback: Si no hay un ID seleccionado guardado en su progreso, le mostramos la primera clase [0].
+
+  // La URL es la fuente de verdad de qué clase se ve (no solo el store) —
+  // así cambiar de clase es una navegación real, no un cambio de estado
+  // invisible en la misma pantalla.
+  const requestedId = Number(moduleId)
   const currentModule = courseData
-    ? courseData.modules.find((m) => m.id === selectedModuleId) ?? courseData.modules[0]
+    ? courseData.modules.find((m) => m.id === requestedId) ?? courseData.modules[0]
     : null
+
+  // El store sigue llevando "selectedModuleId" porque otras piezas ya
+  // confían en él (ModuleList resalta la clase activa, MissionsTab, etc.) —
+  // se sincroniza con la URL en vez de duplicar la fuente de verdad.
+  useEffect(() => {
+    if (courseId && currentModule) setSelectedModule(courseId, currentModule.id)
+  }, [courseId, currentModule, setSelectedModule])
 
   // --- 5. LÓGICA DE NEGOCIO: GESTIÓN DEL CHAT 🧠 ---
   /**
    * REGLA: Cada clase es una conversación fresca para la mascota.
-   * Si el alumno cambia de módulo, debemos archivar la conversación anterior 
+   * Si el alumno cambia de módulo, debemos archivar la conversación anterior
    * en el historial ("Chats") y empezar una nueva en blanco.
    */
   useEffect(() => {
     if (!courseData || !currentModule) return
-    
+
     // Caso A: Es la primera vez que entra a la página. Solo guardamos la referencia.
     if (prevModuleIdRef.current === null) {
       prevModuleIdRef.current = currentModule.id
       return
     }
-    
+
     // Caso B: El alumno hizo clic en otra clase.
     if (prevModuleIdRef.current !== currentModule.id) {
       // 1. Buscamos cómo se llamaba la clase anterior para usarla como título en el archivo de Chats.
       const prevModule = courseData.modules.find((m) => m.id === prevModuleIdRef.current)
-      
+
       // 2. Le decimos al cerebro global de la IA que archive y reinicie.
       startNewChat(prevModule ? `${courseData.title} · ${prevModule.title}` : undefined)
-      
+
       // 3. Actualizamos nuestra referencia para el próximo salto.
       prevModuleIdRef.current = currentModule.id
     }
+
+    // Al entrar a una clase nueva, empieza arriba — sin esto, si la clase
+    // anterior terminaba con mucho scroll, la nueva abría a la mitad.
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [currentModule, courseData, startNewChat])
 
   // --- 6. PROTECCIÓN DE RUTAS ---
   // Si el alumno escribe una URL inventada (ej: /curso/hakuna-matata), lo pateamos al Dashboard.
   if (!courseData) {
     return <Navigate to="/dashboard" replace />
+  }
+  // Clase todavía bloqueada (orden secuencial) o id inexistente en la URL —
+  // de vuelta al mapa del curso en vez de mostrar algo roto.
+  if (!Number.isFinite(requestedId) || !isModuleUnlocked(courseId, requestedId)) {
+    return <Navigate to={`/learn/${courseId}`} replace />
   }
 
   // --- 7. CÁLCULOS UI ---
@@ -156,11 +180,18 @@ export default function LearningInterface() {
     (moduleProgress.filter((p) => p.completed).length / courseData.modules.length) * 100,
   )
 
-  // --- 8. RENDERIZADO DEL LAYOUT ---
+  // --- 8. NAVEGACIÓN "CLASE ANTERIOR / SIGUIENTE CLASE" ---
+  const sortedModules = [...courseData.modules].sort((a, b) => a.order - b.order)
+  const posInOrder = sortedModules.findIndex((m) => m.id === currentModule.id)
+  const prevModule = posInOrder > 0 ? sortedModules[posInOrder - 1] : null
+  const nextModuleCandidate = posInOrder >= 0 && posInOrder < sortedModules.length - 1 ? sortedModules[posInOrder + 1] : null
+  const nextModule = nextModuleCandidate && isModuleUnlocked(courseId, nextModuleCandidate.id) ? nextModuleCandidate : null
+
+  // --- 9. RENDERIZADO DEL LAYOUT ---
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
         {/* 🟢 NAVEGACIÓN SUPERIOR */}
-        <AppTopBar variant="course" />
+        <AppTopBar variant="course" backTo={`/learn/${courseId}`} backLabel={lang === 'es' ? '🗺️ Mapa del curso' : '🗺️ Course map'} />
         <TopBar
           courseTitle={courseData.title}
           moduleTitle={currentModule.title}
@@ -179,15 +210,18 @@ export default function LearningInterface() {
 
         {/* 🟢 GRILLA PRINCIPAL (Contenido a la izq, Lista de Clases a la der) */}
         <div className="grid flex-1 gap-4 p-4 pb-24 md:grid-cols-[1fr_260px]">
-          
-          {/* COLUMNA IZQUIERDA: Área de Aprendizaje */}
+
+          {/* COLUMNA IZQUIERDA: Área de Aprendizaje. key=currentModule.id: al
+              cambiar de clase, React desmonta y vuelve a montar esta columna
+              entera — retriggerea la animación module-enter (index.css) para
+              que se sienta como "avanzar" a algo nuevo, no un cambio mudo. */}
           {/* min-w-0: sin esto, un <pre> de código con una línea larga (o
               cualquier hijo ancho) hace que este renglón del grid/flex crezca
               para "abrazar" ese contenido en vez de dejar que su propio
               overflow-x-auto se encargue — eso es lo que inflaba TODA la
               página a ~800px de ancho en un viewport de celular. */}
-          <div className="flex min-w-0 flex-col gap-4">
-            
+          <div key={currentModule.id} className="module-enter flex min-w-0 flex-col gap-4">
+
             {/* 🎬 REPRODUCTOR / LAUNCHER */}
             {currentModule.type === 'vr' ? (
               <VrModuleLauncher module={currentModule} />
@@ -258,9 +292,41 @@ export default function LearningInterface() {
               <PhishingGame courseId={courseId} module={currentModule} />
             )}
 
+            {/* ⏭️ CLASE ANTERIOR / SIGUIENTE CLASE — antes la única forma de
+                avanzar era el índice de la derecha (invisible en móvil sin
+                bajar); esto da una sensación clara de progreso lineal,
+                calcada del mini-menú de navegación de clase en clase. */}
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-3">
+              {prevModule ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/learn/${courseId}/clase/${prevModule.id}`)}
+                  className="flex min-w-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-text-muted transition-colors hover:bg-surface-hover hover:text-text"
+                >
+                  ← <span className="truncate">{prevModule.title}</span>
+                </button>
+              ) : <span />}
+              {nextModule ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/learn/${courseId}/clase/${nextModule.id}`)}
+                  className="flex min-w-0 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-background transition-transform hover:scale-105 active:scale-95"
+                >
+                  <span className="truncate">{nextModuleCandidate === nextModule ? nextModule.title : 'Siguiente'}</span> →
+                </button>
+              ) : (
+                <Link
+                  to={`/learn/${courseId}`}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-background transition-transform hover:scale-105 active:scale-95"
+                >
+                  🗺️ Volver al mapa
+                </Link>
+              )}
+            </div>
+
             {/* 📚 RECURSOS Y TAREAS */}
             <ModuleResources module={currentModule} className="min-h-[200px]" />
-            
+
             {/* 💬 COMENTARIOS DE LA COMUNIDAD */}
             <CommentsPanel courseId={courseId} moduleId={currentModule.id} />
           </div>
@@ -272,7 +338,7 @@ export default function LearningInterface() {
         {/* 🟢 COMPONENTES FLOTANTES GLOBALES */}
         {/* La mascota acompaña al alumno e inyecta el contexto de la clase actual a su IA */}
         <MascotCompanion courseId={courseId} module={currentModule} />
-        
+
         {/* Modal que saluda al alumno la primera vez que entra al curso */}
         <WelcomeModal courseId={courseId} />
     </div>

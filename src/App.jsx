@@ -60,6 +60,7 @@ import { useEffect } from 'react'
  * porque Webpack/Vite empaqueta estos archivos pesados en "chunks" separados.
  */
 const LearningInterface = lazy(() => import('./components/learning/LearningInterface'))
+const CourseRoadmapPage = lazy(() => import('./components/learning/CourseRoadmapPage'))
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
@@ -859,6 +860,16 @@ export default function App() {
         />
         <Route
           path="/learn/:courseId"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <CourseRoadmapPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/learn/:courseId/clase/:moduleId"
           element={
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>

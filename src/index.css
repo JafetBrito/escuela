@@ -54,6 +54,21 @@ body {
   overflow-x: clip;
 }
 
+/* Transición al cambiar de clase (LearningInterface.jsx, key=módulo.id) —
+   sin esto, cambiar de clase se sentía como un cambio de estado mudo en la
+   misma pantalla en vez de "avanzar" a algo nuevo. Solo un fade + pequeño
+   desplazamiento, nada que estorbe la lectura. */
+@keyframes module-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.module-enter {
+  animation: module-enter 0.28s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .module-enter { animation: none; }
+}
+
 /* "Reina Nefertiti" objeto: desert theme with gold tones and a subtle
    hieroglyph pattern, toggled via [data-theme="desert"] on <html>. */
 :root[data-theme='desert'] {

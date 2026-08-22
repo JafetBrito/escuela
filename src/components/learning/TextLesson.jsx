@@ -151,10 +151,15 @@ export default function TextLesson({ content, className = '' }) {
 
   return (
     <div onMouseOver={handleMouseOver} onMouseOut={handleMouseOut}>
+      {/* sticky: antes vivía pegado justo arriba del contenido — si la clase
+          traía un video largo o una imagen grande encima, el botón quedaba
+          bien arriba de la pantalla y el alumno nunca lo veía sin volver a
+          subir. Con sticky se queda visible cerca del borde superior
+          mientras se hace scroll por el texto. */}
       <button
         type="button"
         onClick={toggleReading}
-        className={`mb-3 flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all
+        className={`sticky top-2 z-10 mb-3 flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur transition-all
           ${reading
             ? 'animate-pulse border-amber-500/40 bg-amber-500/10 text-amber-400'
             : 'border-border bg-surface text-text hover:border-primary/40 hover:text-primary'
@@ -180,6 +185,7 @@ export default function TextLesson({ content, className = '' }) {
           [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-hover [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-text
           [&_td]:border-b [&_td]:border-border/60 [&_td]:px-3 [&_td]:py-2 [&_td]:text-text-muted
           [&_blockquote]:mb-3 [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:text-sm [&_blockquote]:italic [&_blockquote]:text-text-muted
+          [&_img]:mb-4 [&_img]:max-h-72 [&_img]:w-full [&_img]:rounded-xl [&_img]:border [&_img]:border-border [&_img]:object-cover
           [&_.tip]:mb-3 [&_.tip]:rounded-xl [&_.tip]:border [&_.tip]:border-blue-500/30 [&_.tip]:bg-blue-900/20 [&_.tip]:p-4 [&_.tip]:text-sm [&_.tip]:text-blue-300
           [&_.warn]:mb-3 [&_.warn]:rounded-xl [&_.warn]:border [&_.warn]:border-yellow-500/30 [&_.warn]:bg-yellow-900/20 [&_.warn]:p-4 [&_.warn]:text-sm [&_.warn]:text-yellow-300
           [&_.example]:mb-3 [&_.example]:rounded-xl [&_.example]:border [&_.example]:border-violet-500/30 [&_.example]:bg-violet-900/20 [&_.example]:p-4 [&_.example]:text-sm [&_.example]:text-violet-200
