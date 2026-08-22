@@ -61,29 +61,42 @@ export default function GamePlayerPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background text-text">
-      <AppTopBar />
+    // h-dvh, no h-screen (=100vh): en móvil, 100vh cuenta el alto como si la
+    // barra de direcciones del navegador no existiera — el layout completo
+    // (juego + banner de recompensa) termina calculando más espacio del que
+    // realmente se ve, empujando el fondo (el prompt de la terminal, el
+    // editor de código, la explicación del quiz) por debajo de lo visible.
+    // dvh sí refleja el viewport real; mismo fix ya usado en VRPage.jsx.
+    <div className="flex h-dvh flex-col bg-background text-text">
+      {/* variant="course": la barra completa (menú + anuncio) le comía
+          demasiada altura a los juegos en móvil, igual que se detectó antes
+          en VR — mismo header compacto de una fila que ya usan las clases. */}
+      <AppTopBar variant="course" />
 
-      <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5">
+      <header className="flex items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
         <button
           onClick={() => navigate('/games')}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:text-text"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-text-muted transition-colors hover:text-text sm:px-3"
         >
-          ← Volver a Games
+          {/* Texto completo solo desde sm — sin esto, "Volver a Games" +
+              título + botón de recompensa no cabían en una fila en móvil, y
+              el texto se partía en dos líneas, inflando la altura del header. */}
+          ← <span className="hidden sm:inline">Volver a Games</span>
         </button>
-        <p className="truncate text-sm font-semibold text-text">
+        <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-text sm:text-left">
           {game.icon} {game.title}
         </p>
         {game.reward > 0 ? (
           <button
             onClick={handleClaim}
             disabled={!canClaim || claimed}
-            className="rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-lg border border-primary/40 px-2 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
           >
-            {canClaim && !claimed ? `🪙 Reclamar +${game.reward}` : '✅ Reclamado hoy'}
+            <span className="sm:hidden">{canClaim && !claimed ? `🪙 +${game.reward}` : '✅'}</span>
+            <span className="hidden sm:inline">{canClaim && !claimed ? `🪙 Reclamar +${game.reward}` : '✅ Reclamado hoy'}</span>
           </button>
         ) : (
-          <span className="w-24" aria-hidden="true" />
+          <span className="w-6 shrink-0 sm:w-24" aria-hidden="true" />
         )}
       </header>
 

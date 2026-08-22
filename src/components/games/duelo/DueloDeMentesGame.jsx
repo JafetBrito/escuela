@@ -4,8 +4,8 @@ const GAME_HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #0a0a0f; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
-.game { display: flex; flex-direction: column; height: 100vh; }
+body { background: #0a0a0f; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100dvh; }
+.game { display: flex; flex-direction: column; height: 100dvh; }
 .arena { flex: 1; position: relative; background: radial-gradient(ellipse at center, #0d1a2e 0%, #060a14 100%); overflow: hidden; }
 .bottom-bar { height: 130px; background: #080c18; border-top: 1px solid #1e2d4a; display: flex; gap: 0; }
 .arena-label { position: absolute; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #ffffff20; font-weight: 700; }
