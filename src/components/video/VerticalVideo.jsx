@@ -1,12 +1,15 @@
 import VideoPlayer from './VideoPlayer'
 
-// Mobile-first portrait video. If the module doesn't have a
-// `verticalVideoId` yet (recorded specifically for phones), fall back to a
-// "próximamente" placeholder that still shows the regular horizontal video.
+// Mobile-first portrait video. `verticalVideoSrc` (archivo autohospedado)
+// tiene prioridad sobre `verticalVideoId` (YouTube) — mismo criterio que
+// VideoPlayer.jsx. Si el módulo no tiene ninguna versión vertical todavía,
+// cae a un "próximamente" que sigue mostrando el video horizontal (también
+// autohospedado si `videoSrc` está presente).
 export default function VerticalVideo({ module, className = '' }) {
-  if (module.verticalVideoId) {
+  if (module.verticalVideoSrc || module.verticalVideoId) {
     return (
       <VideoPlayer
+        src={module.verticalVideoSrc}
         videoId={module.verticalVideoId}
         aspectClassName="aspect-[9/16] max-h-[75vh]"
         className={`w-full ${className}`}
@@ -24,7 +27,7 @@ export default function VerticalVideo({ module, className = '' }) {
           teléfono. Mientras tanto, aquí tienes el video normal.
         </p>
       </div>
-      <VideoPlayer videoId={module.videoId} className="w-full" />
+      <VideoPlayer src={module.videoSrc} videoId={module.videoId} className="w-full" />
     </div>
   )
 }

@@ -203,13 +203,14 @@ export default function LearningInterface() {
                     módulo type:'video', pero sin reemplazar la lectura: la
                     idea es que el video dé el mismo contenido de forma más
                     entretenida/fácil de digerir, y el texto se quede debajo
-                    para quien prefiera leer o repasar. `module.videoId`
-                    (y opcionalmente `verticalVideoId`) son los mismos
-                    campos que ya usa un módulo de video normal. */}
-                {currentModule.videoId && (
+                    para quien prefiera leer o repasar. `module.videoId`/
+                    `videoSrc` (y opcionalmente `verticalVideoId`/
+                    `verticalVideoSrc`) son los mismos campos que ya usa un
+                    módulo de video normal. */}
+                {(currentModule.videoId || currentModule.videoSrc) && (
                   <>
                     <div className="hidden md:block">
-                      <VideoPlayer videoId={currentModule.videoId} className="w-full" />
+                      <VideoPlayer src={currentModule.videoSrc} videoId={currentModule.videoId} className="w-full" />
                     </div>
                     <div className="md:hidden">
                       <VerticalVideo module={currentModule} />
@@ -222,7 +223,7 @@ export default function LearningInterface() {
               <>
                 {/* Escritorio: Oculto en móviles (hidden), visible en pantallas medianas o mayores (md:block) */}
                 <div className="hidden md:block">
-                  <VideoPlayer videoId={currentModule.videoId} className="w-full" />
+                  <VideoPlayer src={currentModule.videoSrc} videoId={currentModule.videoId} className="w-full" />
                 </div>
                 {/* Móvil: Formato vertical estilo TikTok. Oculto en escritorio (md:hidden) */}
                 <div className="md:hidden">
