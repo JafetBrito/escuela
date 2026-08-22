@@ -48,6 +48,7 @@ import ModuleQuiz from './ModuleQuiz'
 import GitTerminalSim from './GitTerminalSim'
 import ApiTrackSelector from './ApiTrackSelector'
 import TrackContent from './TrackContent'
+import PhishingGame from './PhishingGame'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -197,7 +198,26 @@ export default function LearningInterface() {
             ) : currentModule.type === 'embed' ? (
               <ModuleEmbed html={currentModule.embedHtml} className="w-full" />
             ) : currentModule.type === 'text' ? (
-              <TextLesson content={currentModule.content} className="w-full" />
+              <>
+                {/* Video opcional arriba del texto — mismo componente que un
+                    módulo type:'video', pero sin reemplazar la lectura: la
+                    idea es que el video dé el mismo contenido de forma más
+                    entretenida/fácil de digerir, y el texto se quede debajo
+                    para quien prefiera leer o repasar. `module.videoId`
+                    (y opcionalmente `verticalVideoId`) son los mismos
+                    campos que ya usa un módulo de video normal. */}
+                {currentModule.videoId && (
+                  <>
+                    <div className="hidden md:block">
+                      <VideoPlayer videoId={currentModule.videoId} className="w-full" />
+                    </div>
+                    <div className="md:hidden">
+                      <VerticalVideo module={currentModule} />
+                    </div>
+                  </>
+                )}
+                <TextLesson content={currentModule.content} className="w-full" />
+              </>
             ) : (
               <>
                 {/* Escritorio: Oculto en móviles (hidden), visible en pantallas medianas o mayores (md:block) */}
@@ -231,6 +251,10 @@ export default function LearningInterface() {
 
             {currentModule.trackContent && (
               <TrackContent courseId={courseId} module={currentModule} />
+            )}
+
+            {currentModule.phishingGame && (
+              <PhishingGame courseId={courseId} module={currentModule} />
             )}
 
             {/* 📚 RECURSOS Y TAREAS */}

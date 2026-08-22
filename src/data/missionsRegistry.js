@@ -47,6 +47,18 @@ export const MISSION_TYPES = {
       description: 'Obtenido al superar el reto de conocimiento de una clase.',
     },
   },
+  phishing: {
+    icon: '🎣',
+    label: 'Descubre cuál correo NO es phishing',
+    reward: 3000,
+    itemReward: {
+      id: 'diploma-clase',
+      name: 'Diploma de Clase',
+      icon: '🎓',
+      rarity: 'rare',
+      description: 'Obtenido al superar el reto de conocimiento de una clase.',
+    },
+  },
 }
 
 export function getModuleMissions(module) {
@@ -58,6 +70,9 @@ export function getModuleMissions(module) {
   }
   if (module?.terminalSim) {
     missions.push({ id: 'terminal', type: 'terminal', ...MISSION_TYPES.terminal, ...(overrides.terminal ?? {}) })
+  }
+  if (module?.phishingGame) {
+    missions.push({ id: 'phishing', type: 'phishing', ...MISSION_TYPES.phishing, ...(overrides.phishing ?? {}) })
   }
   if (!module?.noChat) {
     missions.push({ id: 'chat', type: 'chat', ...MISSION_TYPES.chat, ...(overrides.chat ?? {}) })

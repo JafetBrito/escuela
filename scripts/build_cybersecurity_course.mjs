@@ -27,6 +27,7 @@ const modules = [
     type: 'text',
     title: '¿Por qué importa la ciberseguridad?',
     description: 'No es solo para "gente de sistemas" — es para cualquiera que use un correo, un banco o redes sociales.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <div class="tip">
 🛡️ Este curso es presentado por <strong>Rúbics Digital Solutions</strong> — "Crear un mundo digital más seguro". Todas las técnicas que vas a aprender son reales y aplicables hoy mismo, en tus cuentas de verdad.
@@ -77,6 +78,7 @@ const modules = [
     type: 'text',
     title: 'Contraseñas seguras: tu primera línea de defensa',
     description: 'El error más común — y el más fácil de arreglar hoy mismo.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>El error de Raúl</h2>
 <div class="bad">
@@ -123,6 +125,7 @@ const modules = [
     type: 'text',
     title: 'Herramienta real: un gestor de contraseñas (gratis)',
     description: 'La única forma práctica de tener una contraseña distinta y fuerte en cada cuenta.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Qué es un gestor de contraseñas</h2>
 <p>Un <strong>gestor de contraseñas</strong> es una aplicación que genera y recuerda contraseñas larguísimas y aleatorias por ti — tú solo memorizas UNA contraseña maestra para abrir el gestor, y él se encarga del resto. Es, hoy, la herramienta individual más efectiva contra el robo de cuentas.</p>
@@ -172,6 +175,7 @@ Emma instaló Bitwarden hace 6 meses. Cada cuenta suya tiene una contraseña dis
     type: 'text',
     title: 'Autenticación de dos factores (2FA): el candado extra',
     description: 'Incluso si te roban la contraseña, esto puede detener al atacante en seco.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>¿Qué es 2FA?</h2>
 <p>La <strong>autenticación de dos factores</strong> (2FA, o "verificación en dos pasos") pide algo MÁS que tu contraseña para entrar a una cuenta — normalmente un código de 6 dígitos que cambia cada 30 segundos, generado por una app en tu celular. Aunque un atacante tenga tu contraseña, sin ese código no puede entrar.</p>
@@ -226,6 +230,7 @@ Emma tiene 2FA activo en su correo, su banco y sus redes sociales. Raúl lo desa
     type: 'text',
     title: 'Phishing: cómo reconocer un correo o mensaje falso',
     description: 'El correo que recibió Raúl — y las 6 señales que se saltó.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>¿Qué es el phishing?</h2>
 <p><strong>Phishing</strong> (pronunciado como "fishing", pescar) es cuando un atacante se hace pasar por una empresa, banco o persona de confianza para engañarte y que reveles tu contraseña, datos bancarios, o hagas clic en un enlace malicioso.</p>
@@ -281,6 +286,7 @@ Emma tiene 2FA activo en su correo, su banco y sus redes sociales. Raúl lo desa
     type: 'text',
     title: 'Ingeniería social: manipular personas, no computadoras',
     description: 'Por qué el eslabón más débil de la seguridad casi siempre es humano.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>La técnica más antigua del mundo, aplicada a internet</h2>
 <p>La <strong>ingeniería social</strong> es el arte de manipular a una persona para que haga algo que compromete su seguridad — sin necesitar hackear ningún sistema técnico. Es, con mucho, la forma más efectiva de ataque, porque los humanos confiamos, tenemos miedo, y queremos ayudar.</p>
@@ -335,6 +341,7 @@ Cuando sientas estas tres cosas juntas — urgencia, autoridad, miedo — en un 
     type: 'text',
     title: 'Malware y ransomware: cuando el ataque ya entró',
     description: 'Qué son, cómo se propagan, y por qué el ransomware es especialmente peligroso.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Malware: el término general</h2>
 <p><strong>Malware</strong> (software malicioso) es cualquier programa diseñado para dañar, espiar, o tomar control de tu dispositivo sin tu permiso. Es un término paraguas que incluye varios tipos:</p>
@@ -391,6 +398,7 @@ Cuando sientas estas tres cosas juntas — urgencia, autoridad, miedo — en un 
     type: 'text',
     title: 'Herramienta real: antivirus y firewall (gratis)',
     description: 'Ya tienes una defensa básica instalada sin saberlo — y cómo reforzarla gratis.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Windows Defender: ya lo tienes</h2>
 <p>Si usas Windows 10 u 11, ya tienes <strong>Microsoft Defender</strong> integrado y activo por defecto — es un antivirus y firewall real, gratuito, que Microsoft mejora constantemente. No necesitas comprar un antivirus de paga para tener protección básica sólida.</p>
@@ -447,6 +455,7 @@ Emma nunca desactiva Windows Defender y corre un escaneo con Malwarebytes cada m
     type: 'text',
     title: 'Wi-Fi pública y VPN: cuidado con las redes que no controlas',
     description: 'Ese café con Wi-Fi gratis puede no ser tan gratis como crees.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>El riesgo real de la Wi-Fi pública</h2>
 <p>Cuando te conectas a una red Wi-Fi pública (cafetería, aeropuerto, hotel), no tienes forma de saber quién más está en esa misma red, ni si el punto de acceso es siquiera legítimo. Un atacante en la misma red puede, con las herramientas correctas, interceptar tráfico no cifrado.</p>
@@ -499,6 +508,7 @@ Emma nunca desactiva Windows Defender y corre un escaneo con Malwarebytes cada m
     type: 'text',
     title: 'Actualizaciones de software: la defensa que ignoras sin darte cuenta',
     description: 'Ese "Recordarme más tarde" tiene un costo real.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Por qué las actualizaciones importan tanto</h2>
 <p>Cada vez que una empresa (Microsoft, Apple, Google, o el creador de cualquier app) encuentra una falla de seguridad en su software, la corrige y publica una actualización. Pero también, al publicar la corrección, básicamente le está avisando a los atacantes exactamente dónde estaba la falla — cualquiera que NO haya actualizado sigue siendo vulnerable a un problema ya conocido públicamente.</p>
@@ -553,6 +563,7 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
     type: 'text',
     title: 'Copias de seguridad: la regla 3-2-1',
     description: 'La única defensa que vuelve inútil un ransomware — y protege contra fallas de hardware también.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>La regla 3-2-1</h2>
 <div class="example">
@@ -605,6 +616,7 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
     type: 'text',
     title: 'Privacidad en redes sociales: lo que publicas es munición',
     description: 'Cómo un atacante usa tu propio perfil en tu contra.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Lo que publicas alimenta la ingeniería social</h2>
 <p>Recuerda la clase de ingeniería social: entre más sabe un atacante sobre ti, más creíble puede hacer su ataque. Tu fecha de nacimiento, el nombre de tu mascota, dónde trabajas, cuándo te vas de vacaciones — todo eso, público en tus redes, es información que un atacante puede usar para adivinar contraseñas o construir una historia convincente.</p>
@@ -653,6 +665,7 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
     type: 'text',
     title: 'Navegación segura: HTTPS, extensiones y descargas',
     description: 'Hábitos simples que evitan la mayoría de los problemas antes de que empiecen.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>HTTPS: el candado en la barra de direcciones</h2>
 <p>Cuando un sitio usa <strong>HTTPS</strong> (verás un candado 🔒 junto a la URL), la conexión entre tu navegador y el sitio está cifrada — nadie en el camino puede leer lo que envías. La mayoría de sitios serios lo usan hoy por defecto.</p>
@@ -703,6 +716,7 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
     type: 'text',
     title: 'Seguridad en el trabajo: tu responsabilidad no termina en casa',
     description: 'Un error en la computadora del trabajo puede afectar a toda la empresa, no solo a ti.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Por qué las empresas son un blanco especialmente atractivo</h2>
 <p>Un atacante que compromete la cuenta de un solo empleado a veces puede moverse lateralmente hacia sistemas más sensibles, datos de clientes, o información financiera de la empresa entera. Por eso muchos ataques de phishing e ingeniería social se dirigen específicamente a direcciones de correo corporativas.</p>
@@ -771,6 +785,7 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
     type: 'text',
     title: 'Robo de identidad: qué hacer si ya te hackearon',
     description: 'La checklist exacta que Raúl necesitaba — y que tú puedes usar ahora mismo si algo así te pasa.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>Lo que le pasó a Raúl</h2>
 <p>Con su contraseña y sin 2FA que lo detuviera, el atacante entró a la cuenta bancaria de Raúl, cambió su información de contacto, y usando esos mismos datos (más lo que encontró en sus redes sociales) solicitó un crédito a su nombre en otra institución. Raúl se enteró semanas después, al recibir una llamada de cobranza por una deuda que nunca pidió.</p>
@@ -823,6 +838,7 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
     type: 'text',
     title: 'Cierre: así se mantuvo protegida Emma',
     description: 'Tu checklist final — y las herramientas gratuitas que ya conoces para aplicarla hoy.',
+    videoId: 'aqz-KE-bpKQ',
     content: `
 <h2>La misma historia, dos finales distintos</h2>
 <p>Cuando el mismo atacante intentó el mismo ataque contra Emma semanas después (usando una lista de correos filtrada de la empresa), su intento no llegó a ningún lado: la contraseña de Emma era única y estaba en Bitwarden, así que aunque el atacante hubiera adivinado algo, no le habría servido en ninguna otra cuenta. Y aunque hubiera conseguido su contraseña, el 2FA de su correo lo habría detenido en seco. Emma ni se enteró de que fue un objetivo — su rutina de seguridad simplemente funcionó, en silencio.</p>
@@ -848,6 +864,51 @@ El teléfono de Raúl lleva 3 meses pidiendo actualizar el sistema operativo. Si
 `,
     exercises: [],
     resources: [],
+  },
+
+  // ── 18. Reto final: detector de phishing ─────────────────────────────────
+  {
+    id: 18,
+    order: 18,
+    type: 'text',
+    title: '🎣 Reto Final: Detecta el Phishing',
+    description: 'Pon a prueba todo lo que aprendiste — elige cuál de estos 3 correos NO es phishing.',
+    content: `
+<h2>Última prueba antes de graduarte</h2>
+<p>Abajo hay 3 correos. Dos son phishing — el tercero es legítimo. Usa todo lo que aprendiste en la clase de phishing (urgencia, saludo genérico, dominio raro) para identificar cuál es el real.</p>
+`,
+    exercises: [],
+    resources: [],
+    phishingGame: {
+      title: 'Detector de Phishing',
+      intro: 'Elige el correo que SÍ es legítimo — los otros dos son phishing.',
+      emails: [
+        {
+          id: 'legit',
+          sender: 'notificaciones@bancoseguro.com.mx',
+          subject: 'Tu estado de cuenta de agosto ya está disponible',
+          preview: 'Hola, tu estado de cuenta del mes está listo para consultar. Ingresa a la app o a bancoseguro.com.mx directamente para verlo. No es necesario hacer nada más.',
+          isPhishing: false,
+          explanation: '✅ Legítimo: te habla por tu nombre real, no pide ninguna acción urgente ni tu contraseña, y te invita a entrar TÚ MISMO al sitio oficial, no con un enlace del correo.',
+        },
+        {
+          id: 'urgente',
+          sender: 'seguridad@bancoseguro-alertas.com',
+          subject: '🚨 URGENTE: Verifica tu cuenta en 24 horas o será suspendida',
+          preview: 'Estimado cliente, hemos detectado actividad sospechosa. Haz clic aquí para verificar tu identidad de inmediato o tu cuenta quedará bloqueada permanentemente.',
+          isPhishing: true,
+          explanation: '🎣 Phishing: dominio sospechoso (no es el oficial del banco), saludo genérico ("Estimado cliente"), y urgencia extrema con amenaza — las tres señales clásicas.',
+        },
+        {
+          id: 'soporte',
+          sender: 'soporte-ti@0liver-academy-help.com',
+          subject: 'Tu contraseña expira hoy — restablécela aquí',
+          preview: 'Hola, somos el equipo de soporte técnico. Tu contraseña vence hoy y necesitamos que la confirmes en este enlace para no perder acceso a tu cuenta.',
+          isPhishing: true,
+          explanation: '🎣 Phishing: ningún equipo de soporte real pide confirmar tu contraseña por correo, y el dominio usa un CERO en vez de la letra O — un truco común para parecer legítimo a primera vista.',
+        },
+      ],
+    },
   },
 ]
 
