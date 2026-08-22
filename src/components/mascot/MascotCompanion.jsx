@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import MascotViewport from './MascotViewport'
 import ChatTab from './ChatTab'
 import BooksPanel from './BooksPanel'
@@ -82,6 +83,31 @@ const SUB_TABS_SIMPLE = [
   { id: 'libros', label: 'Libros', icon: '📚' },
 ]
 
+// Posición arrastrada de la burbuja colapsada — persistida por dispositivo
+// (localStorage, no la cuenta: es una preferencia de pantalla, mismo
+// criterio que courseTrack.js). "Ocultar" en cambio usa sessionStorage a
+// propósito: se pidió poder quitarla de en medio, pero que desaparezca para
+// siempre sin ninguna forma de regresarla sería peor — vuelve a aparecer en
+// la próxima carga de página.
+const BUBBLE_POS_KEY = 'mascotBubblePos'
+const BUBBLE_HIDDEN_KEY = 'mascotBubbleHidden'
+const BUBBLE_SIZE = 96 // aprox. h-24 en desktop; suficiente para el clamp, no necesita ser exacto
+
+function loadBubblePos() {
+  try {
+    const raw = localStorage.getItem(BUBBLE_POS_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function clampBubblePos(right, bottom) {
+  const maxRight = Math.max(0, window.innerWidth - BUBBLE_SIZE)
+  const maxBottom = Math.max(0, window.innerHeight - BUBBLE_SIZE)
+  return { right: Math.min(Math.max(right, 0), maxRight), bottom: Math.min(Math.max(bottom, 0), maxBottom) }
+}
+
 export default function MascotCompanion({ courseId, module, hideViewport = false, vrMode = false }) {
   const open         = useMascotCompanionStore((s) => s.open)
   const setOpen      = useMascotCompanionStore((s) => s.setOpen)
@@ -134,6 +160,60 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
     }
   }
 
+  // Arrastrar y ocultar la burbuja colapsada — pedido explícito tras
+  // reportar que tapaba contenido de la clase en móvil. Solo aplica cuando
+  // el panel está cerrado (con el panel abierto, ya tiene su propio botón
+  // ✕ para cerrarlo, y arrastrar un panel grande de 80vh es otro problema).
+  const [bubblePos, setBubblePos] = useState(loadBubblePos)
+  const [bubbleHidden, setBubbleHidden] = useState(() => sessionStorage.getItem(BUBBLE_HIDDEN_KEY) === '1')
+  const dragRef = useRef({ dragging: false, moved: false })
+
+  const onBubblePointerDown = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    dragRef.current = {
+      dragging: true,
+      moved: false,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startRight: window.innerWidth - rect.right,
+      startBottom: window.innerHeight - rect.bottom,
+      lastPos: null,
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const onBubblePointerMove = (e) => {
+    const d = dragRef.current
+    if (!d.dragging) return
+    const dx = e.clientX - d.startClientX
+    const dy = e.clientY - d.startClientY
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true
+    if (!d.moved) return
+    const next = clampBubblePos(d.startRight - dx, d.startBottom - dy)
+    d.lastPos = next
+    setBubblePos(next)
+  }
+
+  const onBubblePointerUp = () => {
+    const d = dragRef.current
+    if (!d.dragging) return
+    d.dragging = false
+    if (d.moved && d.lastPos) {
+      try { localStorage.setItem(BUBBLE_POS_KEY, JSON.stringify(d.lastPos)) } catch { /* localStorage no disponible */ }
+    } else {
+      handlePawClick()
+    }
+  }
+
+  const hideBubble = () => {
+    setBubbleHidden(true)
+    sessionStorage.setItem(BUBBLE_HIDDEN_KEY, '1')
+  }
+  const showBubble = () => {
+    setBubbleHidden(false)
+    sessionStorage.removeItem(BUBBLE_HIDDEN_KEY)
+  }
+
   const selectedMascotId  = useMascotStore((s) => s.selectedMascotId)
   const mascot            = getMascotById(selectedMascotId)
   const settingsMascotName= useSettingsStore((s) => s.mascotName)
@@ -152,7 +232,17 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
     // bottom-20 en móvil: la barra de pestañas inferior del Dashboard
     // (DashboardPage.jsx) solo se oculta a partir de md — con bottom-4/sm:bottom-6
     // la mascota le quedaba encima entre 0-767px. Coincide con ese mismo breakpoint.
-    <div className="fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3 md:bottom-6 md:right-6">
+    <div
+      // Posición por defecto (bottom-20/right-4, md:bottom-6/right-6) salvo
+      // que la burbuja colapsada haya sido arrastrada — en ese caso, con el
+      // panel CERRADO se usa esa posición guardada; con el panel ABIERTO
+      // siempre vuelve a la posición segura por defecto (arrastrar un panel
+      // de 80vh de alto es otro problema, y uno que nadie pidió).
+      className={`fixed z-40 flex flex-col items-end gap-3 ${
+        !open && bubblePos ? '' : 'bottom-20 right-4 md:bottom-6 md:right-6'
+      }`}
+      style={!open && bubblePos ? { right: bubblePos.right, bottom: bubblePos.bottom } : undefined}
+    >
       {open && (
         <div className="flex h-[80vh] w-[95vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           {/* Header */}
@@ -293,17 +383,60 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
         </div>
       )}
 
-      <button
-        onClick={handlePawClick}
-        className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
-        aria-label="Abrir mascota"
-      >
-        {hideViewport ? (
-          <span className="text-3xl sm:text-4xl">🐾</span>
-        ) : (
-          <MascotViewport className="h-full w-full" />
-        )}
-      </button>
+      {open ? (
+        // Panel abierto: burbuja simple sin arrastre/ocultar — ya tiene su
+        // propio botón ✕ en el header de arriba para cerrarla.
+        <button
+          onClick={handlePawClick}
+          className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
+          aria-label="Cerrar mascota"
+        >
+          {hideViewport ? (
+            <span className="text-3xl sm:text-4xl">🐾</span>
+          ) : (
+            <MascotViewport className="h-full w-full" />
+          )}
+        </button>
+      ) : bubbleHidden ? (
+        // Oculta — una pastilla chica en vez de nada, para que siga siendo
+        // fácil traerla de vuelta (desaparece por completo hasta la próxima
+        // carga de página, no para siempre).
+        <button
+          type="button"
+          onClick={showBubble}
+          className="flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface/90 px-3 text-xs font-semibold text-text-muted shadow backdrop-blur hover:text-text"
+          aria-label="Mostrar mascota"
+        >
+          🐾 Mostrar
+        </button>
+      ) : (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={hideBubble}
+            className="absolute -left-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-xs text-text-muted shadow hover:text-text"
+            aria-label="Ocultar mascota"
+            title="Ocultar"
+          >
+            ✕
+          </button>
+          <button
+            onPointerDown={onBubblePointerDown}
+            onPointerMove={onBubblePointerMove}
+            onPointerUp={onBubblePointerUp}
+            onPointerCancel={onBubblePointerUp}
+            className="flex h-20 w-20 cursor-grab touch-none items-center justify-center overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform active:scale-95 active:cursor-grabbing sm:h-24 sm:w-24"
+            aria-label="Abrir mascota — mantén presionado y arrastra para moverla"
+            title="Arrastra para moverla"
+          >
+            {hideViewport ? (
+              <span className="text-3xl sm:text-4xl">🐾</span>
+            ) : (
+              <MascotViewport className="h-full w-full" />
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

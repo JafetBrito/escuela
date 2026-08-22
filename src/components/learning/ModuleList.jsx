@@ -11,7 +11,7 @@ export default function ModuleList({ courseId, className = '' }) {
   const isModuleUnlocked = useProgressStore((s) => s.isModuleUnlocked)
 
   return (
-    <nav className={`rounded-xl border border-border bg-surface p-3 ${className}`}>
+    <nav className={`min-w-0 rounded-xl border border-border bg-surface p-3 ${className}`}>
       <p className="mb-2 px-2 text-xs font-semibold uppercase text-text-muted">
         {t('learning.modules')}
       </p>
@@ -27,7 +27,17 @@ export default function ModuleList({ courseId, className = '' }) {
               <button
                 onClick={() => setSelectedModule(courseId, mod.id)}
                 disabled={!unlocked}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                // min-w-0: sin esto, el <span className="truncate"> de abajo
+                // NUNCA trunca de verdad — un hijo de flex por defecto tiene
+                // min-width:auto, así que "truncate" (white-space:nowrap +
+                // ellipsis) queda sin efecto y el título completo se
+                // renderiza en una sola línea. Con títulos de módulo largos
+                // (comunes en los cursos nuevos), eso vuelve a este botón
+                // más ancho que el celular, y como es hijo del mismo grid de
+                // una sola columna en móvil que el contenido de la clase,
+                // infla el ancho de TODA la página — el bug real detrás de
+                // "los cursos se ven gigantes/cortados en móvil".
+                className={`flex w-full min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                   isActive
                     ? 'bg-primary/10 text-primary'
                     : unlocked

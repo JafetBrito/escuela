@@ -322,7 +322,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
               style={{ background:'#22c55e22', color:'#22c55e', border:'1px solid #22c55e33' }}>
               {t('dashboard.changesTag')}
             </span>
-            <span className="truncate text-sm font-bold text-white">
+            <span className="min-w-0 flex-1 truncate text-sm font-bold text-white">
               {RECENT_COMMITS.length > 0
                 ? `Versión #${BUILD_INFO.number} · ${BUILD_INFO.message}`
                 : latest.title}
