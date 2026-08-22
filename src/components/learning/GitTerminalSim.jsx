@@ -97,7 +97,9 @@ export default function GitTerminalSim({ courseId, module, className = '' }) {
             placeholder={checkpoint.placeholder}
             spellCheck={false}
             autoCapitalize="off"
-            className="flex-1 bg-transparent text-xs text-emerald-400 outline-none placeholder:text-emerald-800"
+            // text-base, no text-xs: <16px dispara auto-zoom al enfocar en
+            // móvil (ver mismo fix en ChatPanel.jsx).
+            className="flex-1 bg-transparent text-base text-emerald-400 outline-none placeholder:text-emerald-800"
           />
         </div>
 

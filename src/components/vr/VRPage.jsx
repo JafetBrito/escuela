@@ -1813,7 +1813,9 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
   if (!cfg) return null
   return (
     <div
-      className="absolute bottom-24 left-1/2 z-30 w-80 -translate-x-1/2 overflow-hidden rounded-2xl shadow-2xl sm:bottom-20"
+      // Mismo fix de max-h/overflow-y-auto que NpcMissionCard — evita que la
+      // tarjeta crezca hasta chocar con el HUD superior en pantallas cortas.
+      className="absolute bottom-24 left-1/2 z-30 max-h-[min(70vh,32rem)] w-80 -translate-x-1/2 overflow-y-auto rounded-2xl shadow-2xl sm:bottom-20"
       style={{ background: 'linear-gradient(160deg, #1a0f2e 0%, #0f0818 100%)', border: '1px solid rgba(124,58,237,0.45)' }}
     >
       {/* Header */}
@@ -2155,7 +2157,11 @@ function NpcMissionCard({
 
   return (
     <div
-      className="absolute bottom-24 left-1/2 z-30 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 overflow-hidden rounded-2xl shadow-2xl sm:bottom-20"
+      // max-h + overflow-y-auto: sin esto, el contenido (misión larga, quest
+      // encadenada) empujaba la altura de la tarjeta hacia arriba sin límite
+      // — en una pantalla corta (móvil en horizontal) llegaba a chocar con el
+      // HUD de arriba (PortraitHud) en vez de quedarse contenida abajo.
+      className="absolute bottom-24 left-1/2 z-30 max-h-[min(70vh,32rem)] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 overflow-y-auto rounded-2xl shadow-2xl sm:bottom-20"
       style={{ background: 'linear-gradient(160deg, #1a0f2e 0%, #0c0814 100%)', border: '1px solid rgba(124,58,237,0.45)' }}
     >
       {/* NPC portrait row */}
@@ -3328,7 +3334,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
   return (
     <div className="flex h-dvh flex-col bg-background text-text">
-      <AppTopBar />
+      {/* variant="course": la barra completa (menú + marquee) le robaba
+          demasiada altura al canvas 3D en móvil, sobre todo en horizontal —
+          mismo header compacto de una sola fila que ya usan las clases,
+          siempre visible pero mínimo, con un link directo de vuelta al
+          Dashboard. */}
+      <AppTopBar variant="course" />
       {!roomMode && <PageVideoModal pageKey="vr" />}
 
       <div

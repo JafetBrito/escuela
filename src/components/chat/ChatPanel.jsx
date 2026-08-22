@@ -136,7 +136,12 @@ export default function ChatPanel({ className = '', module, courseId, prefill = 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Escribe tu mensaje…"
-          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          // text-base (16px), no text-sm: por debajo de 16px, Chrome/Safari en
+          // móvil hacen zoom-in automático al enfocar el input — y como esto
+          // vive en un widget flotante presente en TODAS las páginas de curso,
+          // ese zoom se queda "pegado" al navegar entre clases (SPA, sin
+          // recarga completa) hasta que el usuario lo corrige a mano con pellizco.
+          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-base outline-none focus:border-primary"
         />
         <button
           type="submit"

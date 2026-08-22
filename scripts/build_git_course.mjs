@@ -15,6 +15,11 @@ const modules = [
     title: 'Bienvenida: por qué Git te va a cambiar la forma de programar',
     description: 'Qué vas a lograr al terminar este curso y cómo está organizado.',
     videoId: 'aqz-KE-bpKQ',
+    // Video vertical de prueba (VerticalVideo.jsx, formato 9:16) — solo en
+    // esta clase, para validar cómo se ve el reproductor vertical en móvil
+    // antes de decidir si se graba así el resto del curso. Mismo ID
+    // placeholder que el resto de los videos hasta que se suban a YouTube.
+    verticalVideoId: 'aqz-KE-bpKQ',
     exercises: [],
     resources: [],
   },

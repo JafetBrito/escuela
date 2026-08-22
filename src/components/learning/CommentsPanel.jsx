@@ -176,7 +176,9 @@ export default function CommentsPanel({ courseId, moduleId, className = '' }) {
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Escribe un comentario sobre esta clase…"
                 rows={3}
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                // text-base, no text-sm: <16px dispara auto-zoom al enfocar en
+                // móvil (ver mismo fix en ChatPanel.jsx).
+                className="rounded-lg border border-border bg-background px-3 py-2 text-base text-text outline-none focus:border-primary"
               />
               {error && <p className="text-xs text-danger">{error}</p>}
               <button

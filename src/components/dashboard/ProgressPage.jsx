@@ -14,8 +14,7 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { buildRegions } from '../../utils/regions'
 import { useI18n } from '../../i18n'
-
-const MASCOT_EMOJI_MAP = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
+import { MASCOTS } from '../../data/mascotRegistry'
 
 // Anillo de progreso circular — mismo dato que la barra lineal de siempre
 // (pct 0-100), solo que dibujado como stroke-dasharray sobre un <circle>.
@@ -118,7 +117,7 @@ export default function ProgressPage() {
   const coins       = useCurrencyStore((s) => s.coins)
   const tasks       = useTasksStore((s) => s.tasks)
   const fetchTasks  = useTasksStore((s) => s.fetchMyTasks)
-  const mascotId    = useMascotStore((s) => s.mascot)
+  const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
   const [activeSection, setActiveSection] = useState('cursos')
 
@@ -132,7 +131,7 @@ export default function ProgressPage() {
   }, [progress])
 
   const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Estudiante'
-  const avatarEmoji = MASCOT_EMOJI_MAP[mascotId] ?? '👤'
+  const avatarEmoji = MASCOTS.find((m) => m.id === selectedMascotId)?.icon ?? '👤'
 
   const completedCourses = useMemo(() => courses.filter((c) => progressByCourse(c.id) === 100), [progressByCourse])
   const inProgress       = useMemo(() => courses.filter((c) => { const p = progressByCourse(c.id); return p !== null && p > 0 && p < 100 }), [progressByCourse])

@@ -4,6 +4,7 @@ import Logo from './Logo'
 import VersionBadge from './VersionBadge'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { MASCOTS } from '../../data/mascotRegistry'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 import NotificationBell from './NotificationBell'
 import RecruiterMode from './RecruiterMode'
@@ -97,8 +98,6 @@ function visibleGroupsFor(ageProfile) {
     .filter((g) => g.items.length > 0)
 }
 
-const MASCOT_EMOJI = { orange_cat: '🐱', black_cat: '🐈‍⬛', robot: '🤖', dragon: '🐉', bunny: '🐰', fox: '🦊' }
-
 // Persistent navigation bar for the protected app.
 // variant="full"   -> dashboard/mascot/profile/etc (default)
 // variant="course" -> inside a course: just back-to-dashboard
@@ -108,7 +107,7 @@ export default function AppTopBar({ variant = 'full' }) {
   const session = useAuthStore((s) => s.session)
   const profile = useAuthStore((s) => s.profile)
   const signOut = useAuthStore((s) => s.signOut)
-  const mascotId = useMascotStore((s) => s.mascot)
+  const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const { t, lang, setLang } = useI18n()
   const visibleGroups = visibleGroupsFor(profile?.age_profile)
   // "Script Kiddies" bajo el logo cuando el admin asignó el perfil de edad
@@ -127,7 +126,7 @@ export default function AppTopBar({ variant = 'full' }) {
   const navRef = useRef(null)
 
   const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Usuario'
-  const avatarEmoji = MASCOT_EMOJI[mascotId] ?? '👤'
+  const avatarEmoji = MASCOTS.find((m) => m.id === selectedMascotId)?.icon ?? '👤'
 
   const open = useCallback((id) => {
     clearTimeout(closeTimer.current)

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import ProfileHeroCard from './ProfileHeroCard'
 import PageVideoModal from '../shared/PageVideoModal'
 import PatchNotesModal from '../shared/PatchNotesModal'
 import courses from '../../data/courses.json'
@@ -9,8 +10,6 @@ import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useGameStore } from '../../stores/useGameStore'
-import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
-import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
@@ -223,8 +222,6 @@ export function CourseCard({ course, pct, owned, accent, onClick }) {
 function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, tasks, projects, pendingExams, patchNotesOpen, setPatchNotesOpen }) {
   const { t }    = useI18n()
   const latest   = PATCH_NOTES[0]
-  const xp       = useLevelStore((s) => s.xp)
-  const { level, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
 
   const inProgress = useMemo(() => courses.filter((c) => {
     const p = progressByCourse(c.id)
@@ -236,7 +233,6 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       .slice(0, 3),
   [progressByCourse])
 
-  const coins = useCurrencyStore((s) => s.coins)
   const regions = useMemo(() => buildRegions(courses, progressByCourse), [progressByCourse])
   const focusCourse = inProgress[0] ?? recommended[0] ?? null
 
@@ -264,7 +260,6 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
 
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
   const visibleCampusLinks = CAMPUS_LINKS.filter((l) => !l.hideFor?.includes(profile?.age_profile))
-  const hasOliver = useGameStore((s) => Boolean(s.oliver.class))
   // Perfil de edad "niños"/"abuelos" (profiles.age_profile) no ve el mundo VR
   // en absoluto — /vr y /vr-templo ya están bloqueados a nivel de ruta
   // (ProtectedRoute blockAgeProfiles), así que tampoco tiene sentido
@@ -292,15 +287,18 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
 
-      {!hasOliver && vrAllowed && (
-        <Link to="/vr-templo" className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 transition hover:bg-primary/15">
-          <div>
-            <p className="text-sm font-bold text-text">🐾 ¿Quieres tu mascota y el mundo VR?</p>
-            <p className="text-xs text-text-muted">Es opcional — puedes seguir tomando cursos sin esto. Cuando quieras, crea tu personaje aquí.</p>
-          </div>
-          <span className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Crear →</span>
-        </Link>
-      )}
+      {/* Foto + nivel + nombre + mascota — lo primero que se ve, pedido
+          explícito tras revisar el Dashboard en móvil ("muestra lo más
+          importante primero"). Reemplaza el saludo de texto plano + la
+          tarjeta de XP que vivían más abajo. */}
+      <ProfileHeroCard vrAllowed={vrAllowed} />
+
+      <div>
+        <h1 className="text-xl font-black text-text">
+          {t('dashboard.greeting', { name: displayName })}{license?.role === 'admin' ? ' 🛡️' : ' 👋'}
+        </h1>
+        <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
+      </div>
 
       {vrAllowed && totalTP > 0 && (
         <Link to="/arbol" className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 transition hover:bg-amber-500/15">
@@ -311,35 +309,6 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
           <span className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">Ir al Árbol →</span>
         </Link>
       )}
-
-      {/* Greeting */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-text">
-            {t('dashboard.greeting', { name: displayName })}{license?.role === 'admin' ? ' 🛡️' : ' 👋'}
-          </h1>
-          <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
-        </div>
-        {/* XP bar */}
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-2">
-          <div className="text-center">
-            <p className="text-xs text-text-muted">{t('dashboard.level')}</p>
-            <p className="text-xl font-black text-primary">{level}</p>
-          </div>
-          <div className="w-28">
-            <div className="flex justify-between text-[10px] text-text-muted mb-1">
-              <span>{xpIntoLevel} XP</span><span>{xpForNextLevel} XP</span>
-            </div>
-            <div className="h-2 rounded-full bg-surface-hover">
-              <div className="h-2 rounded-full bg-primary transition-all"
-                style={{ width: `${(xpIntoLevel / xpForNextLevel) * 100}%` }} />
-            </div>
-          </div>
-          <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-400">
-            🪙 {coins.toLocaleString()}
-          </span>
-        </div>
-      </div>
 
       {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
           Sin git (algún checkout raro) cae al patch note curado como respaldo. */}
