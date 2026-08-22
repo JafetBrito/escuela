@@ -5,6 +5,12 @@ import { LeccionAnatomiaPrompt, LECCION_ANATOMIA_TOTAL_FRAMES } from './composit
 import { LeccionComoPiensaIA, LECCION_MENTE_TOTAL_FRAMES } from './compositions/LeccionComoPiensaIA.jsx'
 import { HistoriaGitGitHub, HISTORIA_GIT_TOTAL_FRAMES } from './compositions/HistoriaGitGitHub.jsx'
 import { FlujoDiarioGit, FLUJO_DIARIO_TOTAL_FRAMES } from './compositions/FlujoDiarioGit.jsx'
+import { TalesDeMileto, TALES_TOTAL_FRAMES } from './compositions/TalesDeMileto.jsx'
+import { PitagorasYPitagoricos, PITAGORAS_TOTAL_FRAMES } from './compositions/PitagorasYPitagoricos.jsx'
+import { ElementosDeEuclides, EUCLIDES_TOTAL_FRAMES } from './compositions/ElementosDeEuclides.jsx'
+import { Arquimedes, ARQUIMEDES_TOTAL_FRAMES } from './compositions/Arquimedes.jsx'
+import { ApiBienvenida, API_BIENVENIDA_TOTAL_FRAMES } from './compositions/ApiBienvenida.jsx'
+import { ApiBotEnAccion, API_BOT_EN_ACCION_TOTAL_FRAMES } from './compositions/ApiBotEnAccion.jsx'
 
 // Cada <Composition> es un video renderizable por separado (id único,
 // duración, tamaño). Para un video nuevo: agrega un componente en
@@ -56,6 +62,54 @@ export function RemotionRoot() {
         id="FlujoDiarioGit"
         component={FlujoDiarioGit}
         durationInFrames={FLUJO_DIARIO_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="TalesDeMileto"
+        component={TalesDeMileto}
+        durationInFrames={TALES_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="PitagorasYPitagoricos"
+        component={PitagorasYPitagoricos}
+        durationInFrames={PITAGORAS_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="ElementosDeEuclides"
+        component={ElementosDeEuclides}
+        durationInFrames={EUCLIDES_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="Arquimedes"
+        component={Arquimedes}
+        durationInFrames={ARQUIMEDES_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="ApiBienvenida"
+        component={ApiBienvenida}
+        durationInFrames={API_BIENVENIDA_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="ApiBotEnAccion"
+        component={ApiBotEnAccion}
+        durationInFrames={API_BOT_EN_ACCION_TOTAL_FRAMES}
         fps={30}
         width={1920}
         height={1080}

@@ -46,6 +46,8 @@ import ModuleEmbed from './ModuleEmbed'
 import TextLesson from './TextLesson'
 import ModuleQuiz from './ModuleQuiz'
 import GitTerminalSim from './GitTerminalSim'
+import ApiTrackSelector from './ApiTrackSelector'
+import TrackContent from './TrackContent'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -221,6 +223,14 @@ export default function LearningInterface() {
 
             {currentModule.terminalSim && (
               <GitTerminalSim courseId={courseId} module={currentModule} />
+            )}
+
+            {currentModule.trackSelector && (
+              <ApiTrackSelector courseId={courseId} module={currentModule} />
+            )}
+
+            {currentModule.trackContent && (
+              <TrackContent courseId={courseId} module={currentModule} />
             )}
 
             {/* 📚 RECURSOS Y TAREAS */}

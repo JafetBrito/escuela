@@ -232,6 +232,17 @@
     "locked": false
   },
   {
+    "id": "course-apis-python-telegram-bot",
+    "title": "APIs con Python: Crea tu Bot Consultor de Telegram",
+    "description": "Curso práctico de 0 a un bot funcionando: qué es una API, HTTP y JSON, peticiones con requests, protección de claves, y cómo construir tu propio bot de Telegram con python-telegram-bot. Tú eliges qué API consulta tu bot: NASA, clima en tiempo real, o datos de Pokémon.",
+    "icon": "🤖",
+    "color": "#06b6d4",
+    "category": "Programación",
+    "subcategory": "APIs y Automatización",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
     "id": "course-filo-001",
     "title": "Introducción a la Filosofía",
     "description": "Explora las grandes preguntas de la humanidad con Jafet Brito. Desde Platón hasta el mundo digital, cada lección combina teoría con experiencias VR únicas.",
@@ -341,6 +352,17 @@
     "color": "#818cf8",
     "category": "Matemáticas",
     "subcategory": "Historia de las Matemáticas",
+    "locked": false
+  },
+  {
+    "id": "course-matematicas-griegas",
+    "title": "Matemáticas de la Antigua Grecia: Axiomas y los Padres de la Geometría",
+    "description": "De la primera demostración de Tales al método de exhaución de Arquímedes: cómo los griegos inventaron la demostración matemática, qué es un axioma, y por qué \"Los Elementos\" de Euclides se enseñó sin cambios durante más de 2000 años. Con videos narrados a fondo por tema.",
+    "icon": "🏛️",
+    "color": "#38bdf8",
+    "category": "Matemáticas",
+    "subcategory": "Historia de las Matemáticas",
+    "difficulty": "principiante",
     "locked": false
   },
   {
