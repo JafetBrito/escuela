@@ -3046,10 +3046,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [chatOpen, setChatOpen] = useState(false)
   const [hudVisible, setHudVisible] = useState(true)
   const [cameraMenuOpen, setCameraMenuOpen] = useState(false)
-  // Already-seen patch notes skip straight to the daily reward instead of
-  // showing an announcement the player already dismissed on a past visit.
   const patchAlreadySeen = useSeenStore.getState().patchVersion === LATEST_VERSION
-  const [dailyRewardsOpen, setDailyRewardsOpen] = useState(patchAlreadySeen)
+  // Ya NO se auto-abre al entrar (ni encadenada al cerrar el tablón de
+  // anuncios, ni de entrada si el tablón ya se había visto antes) — dos
+  // modales de pantalla completa apenas cargar el mundo es justo lo que se
+  // reportó como "popups gigantes que tapan todo" en móvil. Sigue siendo
+  // alcanzable por su cuenta: el aviso de cercanía (nearDailyReward) o el
+  // botón de regalo del HUD.
+  const [dailyRewardsOpen, setDailyRewardsOpen] = useState(false)
   const [bagsOpen, setBagsOpen] = useState(false)
   const [friendsOpen, setFriendsOpen] = useState(false)
   const [arenaConfirmOpen, setArenaConfirmOpen] = useState(false)
@@ -3354,7 +3358,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       >
         {vrReady && <Canvas
           camera={{ position: [0, 1.6, 3.4], fov: 58 }}
-          dpr={[1, 1.5]}
+          // Techo de dpr más bajo en pantallas angostas: en un celular gama
+          // media/baja, renderizar a 1.5x la densidad de píxeles reales es
+          // caro (más aún con post-procesado activo) — no todos los que
+          // entren van a tener un teléfono potente. 1x sigue viéndose nítido
+          // en una pantalla física pequeña; el ahorro de GPU es real.
+          dpr={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : [1, 1.5]}
           gl={{ powerPreference: 'high-performance', antialias: true }}
           onCreated={({ gl }) => {
             const canvas = gl.domElement
@@ -3562,9 +3571,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <VoicePanel playerId={playerId} name={chatAuthor} channelRef={channelRef} />
         )}
 
-        {/* Connection status badge — hidden in private worlds or when HUD is off */}
+        {/* Connection status badge — hidden en móvil (below sm): a "right-4
+            top-4" choca de frente con el reloj, que vive centrado en
+            "top-2" (DayNightClock, VrHud.jsx) — en una pantalla angosta
+            ambos textos terminan superpuestos ("a.m." sobre "jugadores
+            más"). Mismo criterio que ya usa el minimap (VrMinimap: "hidden
+            sm:flex") — es información secundaria, no crítica para jugar. */}
         {hudVisible && !isPrivateWorld && (
-          <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
+          <div className="pointer-events-none absolute right-4 top-4 z-20 hidden rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur sm:block">
             {isVrRealtimeAvailable() ? (
               connected ? (
                 <span>🟢 Conectado · {remotePlayerCount} {remotePlayerCount === 1 ? 'jugador' : 'jugadores'} más</span>
@@ -3649,14 +3663,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <ArenaConfirmPopup onClose={() => setArenaConfirmOpen(false)} />
         )}
 
-        {/* Tablón de anuncios al iniciar la aventura — al cerrarlo, abre la recompensa diaria */}
+        {/* Tablón de anuncios al iniciar la aventura. Ya NO encadena la
+            recompensa diaria justo después de cerrarlo — dos modales de
+            pantalla completa seguidos, uno tras otro, apenas se entra al
+            mundo, es exactamente lo que se ve como "popups gigantes que
+            tapan todo" en móvil. La recompensa diaria se sigue pudiendo
+            reclamar con su propio botón/aviso de cercanía, sin forzarla. */}
         {showAnnouncements && (
           <PatchNotesModal
             open
-            onClose={() => {
-              setShowAnnouncements(false)
-              setDailyRewardsOpen(true)
-            }}
+            onClose={() => setShowAnnouncements(false)}
           />
         )}
 
