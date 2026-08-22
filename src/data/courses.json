@@ -649,6 +649,17 @@
     "locked": true
   },
   {
+    "id": "course-ciberseguridad-basica",
+    "title": "Ciberseguridad para Todos: Protege tu Vida Digital",
+    "description": "El curso de seguridad digital para personas comunes y trabajadores de empresa, presentado por Rúbics Digital Solutions (\"Crear un mundo digital más seguro\"). Contraseñas, 2FA, phishing, malware, VPN, backups y más — con herramientas gratuitas reales y la historia de Emma y Raúl, dos compañeros de trabajo que eligen caminos muy distintos.",
+    "icon": "🛡️",
+    "color": "#14b8a6",
+    "category": "Ciberseguridad",
+    "subcategory": "Seguridad Personal",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
     "id": "course-ciberseguridad",
     "title": "Fundamentos de Ciberseguridad",
     "description": "Los conceptos esenciales para proteger sistemas y datos: amenazas comunes, criptografía básica, seguridad de redes y buenas prácticas que todo desarrollador debería conocer. Próximamente.",

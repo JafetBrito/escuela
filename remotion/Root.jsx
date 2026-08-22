@@ -11,6 +11,10 @@ import { ElementosDeEuclides, EUCLIDES_TOTAL_FRAMES } from './compositions/Eleme
 import { Arquimedes, ARQUIMEDES_TOTAL_FRAMES } from './compositions/Arquimedes.jsx'
 import { ApiBienvenida, API_BIENVENIDA_TOTAL_FRAMES } from './compositions/ApiBienvenida.jsx'
 import { ApiBotEnAccion, API_BOT_EN_ACCION_TOTAL_FRAMES } from './compositions/ApiBotEnAccion.jsx'
+import { CyberBienvenida, CYBER_BIENVENIDA_TOTAL_FRAMES } from './compositions/CyberBienvenida.jsx'
+import { CyberBienvenidaVertical, CYBER_BIENVENIDA_VERTICAL_TOTAL_FRAMES } from './compositions/CyberBienvenidaVertical.jsx'
+import { CyberClimax, CYBER_CLIMAX_TOTAL_FRAMES } from './compositions/CyberClimax.jsx'
+import { CyberClimaxVertical, CYBER_CLIMAX_VERTICAL_TOTAL_FRAMES } from './compositions/CyberClimaxVertical.jsx'
 
 // Cada <Composition> es un video renderizable por separado (id único,
 // duración, tamaño). Para un video nuevo: agrega un componente en
@@ -113,6 +117,38 @@ export function RemotionRoot() {
         fps={30}
         width={1920}
         height={1080}
+      />
+      <Composition
+        id="CyberBienvenida"
+        component={CyberBienvenida}
+        durationInFrames={CYBER_BIENVENIDA_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="CyberBienvenidaVertical"
+        component={CyberBienvenidaVertical}
+        durationInFrames={CYBER_BIENVENIDA_VERTICAL_TOTAL_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="CyberClimax"
+        component={CyberClimax}
+        durationInFrames={CYBER_CLIMAX_TOTAL_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="CyberClimaxVertical"
+        component={CyberClimaxVertical}
+        durationInFrames={CYBER_CLIMAX_VERTICAL_TOTAL_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
       />
     </>
   )
