@@ -2,13 +2,30 @@ import { useEffect, useRef, useState } from 'react'
 import { getGlossaryEntry } from '../../data/glossaryRegistry'
 import { useI18n } from '../../i18n'
 import { stopAll as stopSharedTts } from '../../utils/tts'
+import {
+  getMatchingVoices, getPreferredLang, setPreferredLang,
+  getPreferredRate, setPreferredRate, getPreferredVoiceURI, setPreferredVoiceURI,
+} from '../../utils/readAloudPrefs'
 import WikiPopover from './WikiPopover'
 
 // Mismo mapeo de idioma → voz que TextSelectionMenu.jsx (leer texto
-// seleccionado) — aquí se deriva automáticamente del idioma actual del sitio
-// en vez de tener su propio selector, porque el contenido de la clase ya
-// viene traducido a ese idioma (ver courseTranslations.js).
+// seleccionado) — el idioma por defecto se deriva del idioma actual del
+// sitio (el contenido de la clase ya viene traducido a ese idioma, ver
+// courseTranslations.js), pero el alumno puede cambiarlo en el menú de
+// opciones — el contenido no cambia, solo la voz que lo lee.
 const TTS_LANG_MAP = { es: 'es-ES', en: 'en-US', fr: 'fr-FR', it: 'it-IT', ca: 'ca-ES', de: 'de-DE', ja: 'ja-JP', hi: 'hi-IN' }
+const LANG_NAMES = { 'es-ES': 'Español', 'en-US': 'English', 'fr-FR': 'Français', 'it-IT': 'Italiano', 'ca-ES': 'Català', 'de-DE': 'Deutsch', 'ja-JP': '日本語', 'hi-IN': 'हिन्दी' }
+const SPEEDS = [
+  { rate: 0.5, icon: '🐌', label: '0.5×' },
+  { rate: 0.75, icon: '🚶', label: '0.75×' },
+  { rate: 1.0, icon: '🏃', label: '1×' },
+]
+
+// Emojis y variantes (selector de emoji, ZWJ, banderas) — se leían letra por
+// letra / por su nombre largo en algunas voces ("cara sonriendo con..."), lo
+// cual sonaba mal y a veces trababa la lectura. Se quitan antes de hablar,
+// el texto se sigue viendo con emojis normalmente, solo no se escuchan.
+const EMOJI_REGEX = /[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]|\u{FE0F}|\u{200D}/gu
 
 // El HTML de una clase mezcla párrafos, listas y cajas .tip/.warn/.example
 // con bloques <pre><code> de código — se descarta el código (nadie quiere
@@ -24,7 +41,7 @@ function getReadableChunks(html) {
   // DOM no inserta espacio en los límites de elementos por su cuenta.
   div.innerHTML = html.replace(/<\/(h1|h2|h3|h4|p|li|div|blockquote|tr|td|th)>/gi, '</$1> ')
   div.querySelectorAll('pre, code').forEach((el) => el.remove())
-  const text = (div.textContent || '').replace(/\s+/g, ' ').trim()
+  const text = (div.textContent || '').replace(EMOJI_REGEX, '').replace(/\s+/g, ' ').trim()
   if (!text) return []
   const sentences = text.match(/[^.!?]+[.!?]+|\S+$/g) || [text]
   const chunks = []
@@ -47,6 +64,15 @@ export default function TextLesson({ content, className = '' }) {
   const { lang } = useI18n()
   const [hover, setHover] = useState(null) // { entry, rect }
   const [reading, setReading] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [voices, setVoices] = useState(() => window.speechSynthesis?.getVoices() ?? [])
+  const [readLang, setReadLang] = useState(() => getPreferredLang(TTS_LANG_MAP[lang] ?? 'es-ES'))
+  const [rate, setRate] = useState(() => getPreferredRate())
+  // La voz preferida vive en localStorage, no en un useState propio — se lee
+  // fresca en cada render (más abajo) y `voiceVersion` solo existe para
+  // forzar un re-render cuando se guarda una nueva, sin necesitar un efecto
+  // que sincronice un estado espejo de otro estado (readLang).
+  const [voiceVersion, setVoiceVersion] = useState(0)
   const hideTimer = useRef(null)
   const chunksRef = useRef([])
   const chunkIndexRef = useRef(0)
@@ -58,6 +84,17 @@ export default function TextLesson({ content, className = '' }) {
   // reemplazados por la lectura nueva — la voz terminaba leyendo una mezcla
   // de ambas, empezando de cualquier punto menos el principio.
   const sessionRef = useRef(0)
+
+  // Voces instaladas del sistema — se cargan async en varios navegadores
+  // (Chrome sobre todo), por eso el listener además de la lectura inicial.
+  useEffect(() => {
+    const synth = window.speechSynthesis
+    if (!synth) return
+    const update = () => setVoices(synth.getVoices())
+    synth.addEventListener('voiceschanged', update)
+    update()
+    return () => synth.removeEventListener('voiceschanged', update)
+  }, [])
 
   // Si el alumno cambia de clase (o sale de la página) a media lectura, la
   // voz no debe seguir hablando del contenido anterior.
@@ -77,6 +114,17 @@ export default function TextLesson({ content, className = '' }) {
 
   if (!content) return null
 
+  // eslint-disable-next-line no-unused-vars -- solo se lee para forzar el recálculo de abajo en cada cambio
+  const _voiceVersionTick = voiceVersion
+  const matchingVoices = getMatchingVoices(readLang, voices)
+  const savedVoiceURI = getPreferredVoiceURI(readLang)
+  const activeVoiceURI = matchingVoices.find((v) => v.voiceURI === savedVoiceURI)?.voiceURI ?? matchingVoices[0]?.voiceURI ?? ''
+
+  const applyVoice = (uri) => {
+    setPreferredVoiceURI(readLang, uri)
+    setVoiceVersion((v) => v + 1)
+  }
+
   const stopReading = () => {
     sessionRef.current += 1
     stopSharedTts()
@@ -89,8 +137,12 @@ export default function TextLesson({ content, className = '' }) {
     const i = chunkIndexRef.current
     if (i >= chunks.length) { setReading(false); return }
     const utt = new SpeechSynthesisUtterance(chunks[i])
-    utt.lang = TTS_LANG_MAP[lang] ?? 'es-ES'
-    utt.rate = 0.95
+    utt.lang = readLang
+    utt.rate = rate
+    const allVoices = window.speechSynthesis.getVoices()
+    const preferredURI = getPreferredVoiceURI(readLang)
+    const voice = allVoices.find((v) => v.voiceURI === preferredURI) ?? allVoices.find((v) => v.lang === readLang)
+    if (voice) utt.voice = voice
     const advance = () => {
       if (session !== sessionRef.current) return
       chunkIndexRef.current += 1
@@ -130,6 +182,15 @@ export default function TextLesson({ content, className = '' }) {
 
   const toggleReading = () => (reading ? stopReading() : startReading())
 
+  const applyRate = (r) => {
+    setRate(r)
+    setPreferredRate(r)
+  }
+  const applyReadLang = (l) => {
+    setReadLang(l)
+    setPreferredLang(l)
+  }
+
   const cancelHide = () => clearTimeout(hideTimer.current)
   const scheduleHide = () => {
     hideTimer.current = setTimeout(() => setHover(null), 150)
@@ -156,18 +217,89 @@ export default function TextLesson({ content, className = '' }) {
           bien arriba de la pantalla y el alumno nunca lo veía sin volver a
           subir. Con sticky se queda visible cerca del borde superior
           mientras se hace scroll por el texto. */}
-      <button
-        type="button"
-        onClick={toggleReading}
-        className={`sticky top-2 z-10 mb-3 flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur transition-all
-          ${reading
-            ? 'animate-pulse border-amber-500/40 bg-amber-500/10 text-amber-400'
-            : 'border-border bg-surface text-text hover:border-primary/40 hover:text-primary'
-          }`}
-      >
-        <span className="text-base">{reading ? '⏹' : '🔊'}</span>
-        <span>{reading ? 'Detener lectura' : 'Leer esta clase en voz alta'}</span>
-      </button>
+      <div className="sticky top-2 z-10 mb-3 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleReading}
+            className={`flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold shadow-lg backdrop-blur transition-all
+              ${reading
+                ? 'animate-pulse border-amber-500/40 bg-amber-500/10 text-amber-400'
+                : 'border-border bg-surface text-text hover:border-primary/40 hover:text-primary'
+              }`}
+          >
+            <span className="text-base">{reading ? '⏹' : '🔊'}</span>
+            <span>{reading ? 'Detener lectura' : 'Leer esta clase en voz alta'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowSettings((s) => !s)}
+            aria-label="Opciones de lectura"
+            title="Opciones de lectura"
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-lg backdrop-blur transition-all ${
+              showSettings ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border bg-surface text-text-muted hover:text-text'
+            }`}
+          >
+            ⚙️
+          </button>
+        </div>
+
+        {showSettings && (
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 text-xs shadow-lg backdrop-blur">
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 font-semibold text-text-muted">Idioma</span>
+              <select
+                value={readLang}
+                onChange={(e) => applyReadLang(e.target.value)}
+                className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-text"
+              >
+                {Object.entries(LANG_NAMES).map(([code, name]) => (
+                  <option key={code} value={code}>{name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 font-semibold text-text-muted">Voz</span>
+              {matchingVoices.length > 0 ? (
+                <select
+                  value={activeVoiceURI}
+                  onChange={(e) => applyVoice(e.target.value)}
+                  className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-text"
+                >
+                  {matchingVoices.map((v) => (
+                    <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="flex-1 rounded-lg border border-dashed border-border px-2 py-1.5 text-text-muted">
+                  Sin voces alternativas instaladas — usando la voz por defecto del sistema
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="w-16 shrink-0 font-semibold text-text-muted">Velocidad</span>
+              <div className="flex gap-1.5">
+                {SPEEDS.map((s) => (
+                  <button
+                    key={s.rate}
+                    type="button"
+                    onClick={() => applyRate(s.rate)}
+                    className={`rounded-lg border px-2 py-1 font-bold transition-all ${
+                      rate === s.rate
+                        ? 'border-primary bg-primary/15 text-primary'
+                        : 'border-border text-text-muted hover:border-primary/30'
+                    }`}
+                  >
+                    {s.icon} {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       <div
         className={`rounded-xl border border-border bg-surface px-6 py-5 text-text
           [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary first:[&_h2]:mt-0
