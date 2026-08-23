@@ -23,6 +23,27 @@ function SectionCard({ icon, title, children }) {
   )
 }
 
+// Popup de calificación — antes era un bloque siempre visible en la página;
+// ahora se ve al hacer click, como pidió el usuario ("en la calificación
+// puedas ver como un popup de tus resultados y comentarios").
+function GradeViewModal({ task, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl border border-emerald-500/25 bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+        <p className="text-xs font-bold uppercase tracking-wide text-text-muted">📊 Calificación</p>
+        <p className="mt-1 text-3xl font-extrabold text-emerald-400">{task.grade}/{task.grade_max ?? 10}</p>
+        {task.feedback && (
+          <div className="mt-3 rounded-xl bg-surface-hover p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">💬 Comentarios del profesor</p>
+            <p className="mt-1 text-sm leading-relaxed text-text">{task.feedback}</p>
+          </div>
+        )}
+        <button type="button" onClick={onClose} className="mt-4 w-full rounded-lg border border-border py-2 text-sm text-text-muted hover:text-text">Cerrar</button>
+      </div>
+    </div>
+  )
+}
+
 // Vista previa de un .md ya entregado — trae el texto crudo del bucket
 // público (task-submissions) y lo renderiza. Componente aparte porque el
 // fetch depende de la URL, no del ciclo de vida de la página completa.
@@ -74,6 +95,7 @@ export default function TaskDetailPage() {
 
   const [newQuestion, setNewQuestion] = useState('')
   const [grading, setGrading] = useState(false)
+  const [viewingGrade, setViewingGrade] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -193,7 +215,18 @@ export default function TaskDetailPage() {
                   <h1 className="text-lg font-extrabold text-text">{task.title}</h1>
                 </div>
               </div>
-              <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold ${status.cls}`}>{status.label}</span>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${status.cls}`}>{status.label}</span>
+                {hasGrade && (
+                  <button
+                    type="button"
+                    onClick={() => setViewingGrade(true)}
+                    className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/25"
+                  >
+                    📊 {task.grade}/{task.grade_max ?? 10}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3 px-5 py-4">
@@ -286,12 +319,21 @@ export default function TaskDetailPage() {
             </SectionCard>
           )}
 
-          {/* Calificación */}
-          {hasGrade && (
-            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-              <p className="text-lg font-extrabold text-emerald-400">📊 Calificación: {task.grade}/{task.grade_max ?? 10}</p>
-              {task.feedback && <p className="mt-2 text-sm leading-relaxed text-text-muted">💬 {task.feedback}</p>}
-            </div>
+          {/* Cursos recomendados */}
+          {details.recommendedCourses?.length > 0 && (
+            <SectionCard icon="🎯" title="Cursos recomendados">
+              <div className="flex flex-wrap gap-2">
+                {details.recommendedCourses.map((c) => (
+                  <Link
+                    key={c.id}
+                    to={`/learn/${c.id}`}
+                    className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-hover px-3 py-1.5 text-sm text-text hover:border-primary/50"
+                  >
+                    <span>{c.icon}</span> {c.title}
+                  </Link>
+                ))}
+              </div>
+            </SectionCard>
           )}
 
           {/* Entrega */}
@@ -373,6 +415,9 @@ export default function TaskDetailPage() {
 
       {grading && (
         <GradeModal task={task} onClose={() => setGrading(false)} onSave={handleGradeSaved} />
+      )}
+      {viewingGrade && (
+        <GradeViewModal task={task} onClose={() => setViewingGrade(false)} />
       )}
     </div>
   )

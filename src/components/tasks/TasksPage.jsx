@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { taskTypeOf } from '../../data/taskTypes'
-import WeeklyClassCalendar from '../liveclass/WeeklyClassCalendar'
 
 // ── Subject config ─────────────────────────────────────────────────────────────
 const SUBJECTS = {
@@ -436,8 +435,10 @@ export default function TasksPage() {
         }),
     })).filter((g) => g.tasks.length > 0)
 
-  const completedTasks = filtered
-    .filter((t) => t.status !== 'pendiente')
+  // Entregadas y en espera de revisión — es el mismo estado ("entregada")
+  // que el profesor ve como "por revisar", solo cambia quién lo nombra.
+  const submittedTasks = filtered
+    .filter((t) => t.status === 'entregada')
     .sort((a, b) => new Date(b.updated_at ?? b.created_at ?? 0) - new Date(a.updated_at ?? a.created_at ?? 0))
 
   return (
@@ -503,10 +504,9 @@ export default function TasksPage() {
           {/* ── Tabs ─────────────────────────────────────────────────── */}
           <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
             {[
-              { key: 'tasks',     label: '📋 Mis Tareas',      badge: pending > 0 ? pending : null },
-              { key: 'completed', label: '✅ Completadas',     badge: (delivered + reviewed) > 0 ? (delivered + reviewed) : null },
-              { key: 'grades',    label: '⭐ Calificaciones',   badge: graded.length > 0 ? graded.length : null },
-              { key: 'clases',    label: '🎓 Clases',          badge: null },
+              { key: 'tasks',     label: '📋 Por realizar',        badge: pending > 0 ? pending : null },
+              { key: 'submitted', label: '📤 Enviadas / Por revisión', badge: delivered > 0 ? delivered : null },
+              { key: 'grades',    label: '⭐ Calificadas',          badge: reviewed > 0 ? reviewed : null },
             ].map(({ key, label, badge }) => (
               <button
                 key={key}
@@ -531,8 +531,8 @@ export default function TasksPage() {
           {/* ── Body: sidebar + content ───────────────────────────────── */}
           <div className="mt-4 flex gap-6">
 
-            {/* Sidebar: subject filter (tasks/completed tabs) */}
-            {(activeTab === 'tasks' || activeTab === 'completed') && (
+            {/* Sidebar: subject filter (tasks/submitted tabs) */}
+            {(activeTab === 'tasks' || activeTab === 'submitted') && (
               <aside className="hidden w-52 shrink-0 md:block">
                 <div className="sticky top-4 rounded-2xl border border-border bg-surface p-3">
                   <p className="mb-2 px-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted/60">
@@ -615,31 +615,31 @@ export default function TasksPage() {
                 )
               )}
 
-              {/* ── Completed tab ─────────────────────────── */}
-              {activeTab === 'completed' && (
+              {/* ── Submitted tab (enviada / por revisión) ── */}
+              {activeTab === 'submitted' && (
                 loading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                     <p className="text-sm text-text-muted">Cargando…</p>
                   </div>
-                ) : completedTasks.length === 0 ? (
+                ) : submittedTasks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
                     <span className="text-5xl">📭</span>
                     <div>
-                      <p className="font-bold text-text">Aún no completas ninguna tarea</p>
-                      <p className="mt-1 text-sm text-text-muted">Cuando marques una como entregada, aparecerá aquí.</p>
+                      <p className="font-bold text-text">Nada en espera de revisión</p>
+                      <p className="mt-1 text-sm text-text-muted">Cuando entregues una tarea, aparecerá aquí mientras tu profesor la califica.</p>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {completedTasks.map((task) => (
+                    {submittedTasks.map((task) => (
                       <TaskCard key={task.id} task={task} onOpen={openTask} />
                     ))}
                   </div>
                 )
               )}
 
-              {/* ── Grades tab ────────────────────────────── */}
+              {/* ── Grades tab (calificadas) ─────────────── */}
               {activeTab === 'grades' && (
                 loading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
@@ -650,9 +650,6 @@ export default function TasksPage() {
                   <GradesView tasks={tasks} />
                 )
               )}
-
-              {/* ── Clases tab ────────────────────────────── */}
-              {activeTab === 'clases' && <WeeklyClassCalendar />}
             </div>
           </div>
         </div>

@@ -39,11 +39,12 @@ const CAMPUS_LINKS = [
 // ── Mapa: fila de "regiones" (src/utils/regions.js) con una línea punteada de fondo, estilo mapa
 // de aventura. Cada nodo lleva a la página real de esa academia/categoría.
 function WorldMapSection({ regions }) {
+  const { t } = useI18n()
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-extrabold text-text">🗺️ Explora el mundo</h2>
-        <Link to="/academias" className="text-xs text-primary hover:underline">Ver todas</Link>
+        <h2 className="text-base font-extrabold text-text">🗺️ {t('dashboard.worldMap')}</h2>
+        <Link to="/academias" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
       </div>
       <div className="relative">
         <div className="pointer-events-none absolute inset-x-1 top-8 -z-10 h-px border-t-2 border-dashed border-border" />
@@ -63,7 +64,9 @@ function WorldMapSection({ regions }) {
               </span>
               <span className="text-[11px] font-bold leading-tight text-text line-clamp-2">{r.title}</span>
               <span className="text-[10px] text-text-muted">
-                {r.state === 'current' ? 'En curso' : r.completed > 0 ? `${r.completed}/${r.total} ✓` : `${r.total} cursos`}
+                {r.state === 'current'
+                  ? t('dashboard.quest.regionInProgress')
+                  : r.completed > 0 ? `${r.completed}/${r.total} ✓` : t('dashboard.quest.regionCourses', { count: r.total })}
               </span>
             </Link>
           ))}
@@ -77,11 +80,12 @@ function WorldMapSection({ regions }) {
 // misiones secundarias (top 3 de globalMissionsRegistry/courseMissionsRegistry,
 // mismo sistema que ya alimenta /misiones) + racha diaria.
 function MainQuestCard({ course, pct, meta, onClick }) {
+  const { t } = useI18n()
   if (!course) return null
   const started = pct !== null && pct > 0
   return (
     <div className="rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4">
-      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">📜 Misión principal</p>
+      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">{t('dashboard.quest.mainLabel')}</p>
       <button type="button" onClick={onClick} className="flex w-full items-center gap-3 text-left">
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
@@ -90,7 +94,9 @@ function MainQuestCard({ course, pct, meta, onClick }) {
           {course.icon}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-text line-clamp-1">{started ? `Continúa: ${course.title}` : `Empieza: ${course.title}`}</p>
+          <p className="text-sm font-bold text-text line-clamp-1">
+            {started ? t('dashboard.quest.continueCourse', { title: course.title }) : t('dashboard.quest.startCourse', { title: course.title })}
+          </p>
           <p className="text-xs text-text-muted line-clamp-2">{course.description}</p>
         </div>
       </button>
@@ -108,13 +114,14 @@ function MainQuestCard({ course, pct, meta, onClick }) {
         className="mt-3 rounded-lg px-3 py-1.5 text-xs font-bold text-background"
         style={{ background: meta.accent }}
       >
-        {started ? 'Continuar →' : 'Empezar →'}
+        {started ? t('dashboard.quest.continueBtn') : t('dashboard.quest.startBtn')}
       </button>
     </div>
   )
 }
 
 function SideQuestRow({ mission, accepted, onAccept, onClaim }) {
+  const { t } = useI18n()
   const done = mission._completed
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5">
@@ -127,16 +134,16 @@ function SideQuestRow({ mission, accepted, onAccept, onClaim }) {
         {done ? (
           <button type="button" onClick={() => onClaim(mission.id)}
             className="rounded-lg border border-primary bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">
-            🎁 Reclamar
+            {t('dashboard.quest.claim')}
           </button>
         ) : accepted ? (
           <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
-            🕓 En curso
+            {t('dashboard.quest.inProgress')}
           </span>
         ) : (
           <button type="button" onClick={() => onAccept(mission.id)}
             className="rounded-lg bg-primary px-2.5 py-1 text-[10px] font-bold text-background">
-            📜 Aceptar
+            {t('dashboard.quest.accept')}
           </button>
         )}
       </div>
@@ -145,6 +152,7 @@ function SideQuestRow({ mission, accepted, onAccept, onClaim }) {
 }
 
 function DailyQuestRow() {
+  const { t } = useI18n()
   const canClaim = useDailyRewardsStore((s) => s.canClaim())
   const streak = useDailyRewardsStore((s) => s.streak)
   const claim = useDailyRewardsStore((s) => s.claim)
@@ -152,18 +160,20 @@ function DailyQuestRow() {
     <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
       <span className="text-xl">🔥</span>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-text">Racha diaria</p>
+        <p className="text-xs font-bold text-text">{t('dashboard.quest.dailyLabel')}</p>
         <p className="text-[11px] text-text-muted">
-          {streak > 0 ? `${streak} día${streak === 1 ? '' : 's'} seguidos` : 'Reclama hoy para empezar tu racha'}
+          {streak > 0
+            ? (streak === 1 ? t('dashboard.quest.dailyStreakOne') : t('dashboard.quest.dailyStreakMany', { n: streak }))
+            : t('dashboard.quest.dailyStart')}
         </p>
       </div>
       {canClaim ? (
         <button type="button" onClick={claim}
           className="shrink-0 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-bold text-background">
-          🎁 Reclamar
+          {t('dashboard.quest.claim')}
         </button>
       ) : (
-        <span className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-[10px] font-semibold text-text-muted">✓ Hoy</span>
+        <span className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-[10px] font-semibold text-text-muted">{t('dashboard.quest.dailyClaimed')}</span>
       )}
     </div>
   )
@@ -220,7 +230,7 @@ export function CourseCard({ course, pct, owned, accent, onClick }) {
 
 // ── Tab: Inicio ───────────────────────────────────────────────────────────────
 function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, tasks, projects, pendingExams, patchNotesOpen, setPatchNotesOpen }) {
-  const { t }    = useI18n()
+  const { t, lang } = useI18n()
   const latest   = PATCH_NOTES[0]
 
   const inProgress = useMemo(() => courses.filter((c) => {
@@ -303,10 +313,12 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       {vrAllowed && totalTP > 0 && (
         <Link to="/arbol" className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 transition hover:bg-amber-500/15">
           <div>
-            <p className="text-sm font-bold text-text">🌳 Tienes {totalTP} punto{totalTP === 1 ? '' : 's'} de talento sin gastar</p>
-            <p className="text-xs text-text-muted">Úsalos en el Árbol para desbloquear habilidades.</p>
+            <p className="text-sm font-bold text-text">
+              🌳 {totalTP === 1 ? t('dashboard.quest.talentOne') : t('dashboard.quest.talentMany', { n: totalTP })}
+            </p>
+            <p className="text-xs text-text-muted">{t('dashboard.quest.talentUse')}</p>
           </div>
-          <span className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">Ir al Árbol →</span>
+          <span className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">{t('dashboard.quest.talentGoTree')}</span>
         </Link>
       )}
 
@@ -381,7 +393,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
             onClick={() => focusCourse && handleSelect(focusCourse)}
           />
           <div className="flex flex-col gap-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">⚔️ Misiones secundarias</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('dashboard.quest.sideLabel')}</p>
             {topSideQuests.map((m) => (
               <SideQuestRow
                 key={m.id}
@@ -392,7 +404,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
               />
             ))}
             <DailyQuestRow />
-            <Link to="/misiones" className="text-center text-xs text-primary hover:underline">Ver tablón de misiones →</Link>
+            <Link to="/misiones" className="text-center text-xs text-primary hover:underline">{t('dashboard.quest.seeBoard')}</Link>
           </div>
         </div>
       </section>
@@ -427,8 +439,12 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-text line-clamp-1">{action.title}</p>
                   <p className="text-[11px] text-text-muted">
-                    {action.subtitle ?? { task: 'Tarea', project: 'Proyecto', exam: 'Examen' }[action.kind]}
-                    {action.dueDate && ` · 📅 ${new Date(action.dueDate + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}`}
+                    {action.subtitle ?? {
+                      task: t('dashboard.quest.taskKindTask'),
+                      project: t('dashboard.quest.taskKindProject'),
+                      exam: t('dashboard.quest.taskKindExam'),
+                    }[action.kind]}
+                    {action.dueDate && ` · 📅 ${new Date(action.dueDate + 'T12:00:00').toLocaleDateString(lang, { day: 'numeric', month: 'short' })}`}
                   </p>
                 </div>
               </Link>
@@ -442,8 +458,8 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
       {vrAllowed && activeQuests.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-text">📜 Misiones activas</h2>
-            <Link to="/misiones" className="text-xs text-primary hover:underline">Ver todas</Link>
+            <h2 className="text-base font-extrabold text-text">{t('dashboard.quest.activeMissionsLabel')}</h2>
+            <Link to="/misiones" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {activeQuests.map(({ quest, step }) => (
@@ -452,7 +468,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
                 <span className="text-xl">{quest.icon}</span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-text line-clamp-1">{quest.title}</p>
-                  <p className="text-xs text-text-muted">Paso {step + 1}/{quest.steps.length}</p>
+                  <p className="text-xs text-text-muted">{t('dashboard.quest.step', { step: step + 1, total: quest.steps.length })}</p>
                 </div>
               </Link>
             ))}
@@ -468,7 +484,7 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
           useExamsStore.js) sin insertar una fila en student_notifications. */}
       {recentActivity.length > 0 && (
         <section>
-          <h2 className="text-base font-extrabold text-text mb-3">🔔 Actividad reciente</h2>
+          <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.quest.recentActivityLabel')}</h2>
           <div className="divide-y divide-border rounded-2xl border border-border bg-surface">
             {recentActivity.map((n) => (
               <div key={n.id} className="flex items-start justify-between gap-3 px-4 py-2.5">

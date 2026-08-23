@@ -31,6 +31,7 @@ const emptyForm = () => ({
   time: '', duration_minutes: '', modality: 'Presencial', topics: '', deliverables: '',
   linkedCourseId: '', linkedModuleId: '', linkedMissionId: '',
   resources: [], newResourceLabel: '', newResourceUrl: '',
+  recommendedCourseIds: [], newRecommendedCourseId: '',
   notesMd: '',
 })
 
@@ -101,6 +102,17 @@ export default function AdminTasksPage() {
   }
   const removeResourceRow = (idx) => setForm((f) => ({ ...f, resources: f.resources.filter((_, i) => i !== idx) }))
 
+  const addRecommendedCourse = () => {
+    if (!form.newRecommendedCourseId || form.recommendedCourseIds.includes(form.newRecommendedCourseId)) return
+    setForm((f) => ({
+      ...f,
+      recommendedCourseIds: [...f.recommendedCourseIds, f.newRecommendedCourseId],
+      newRecommendedCourseId: '',
+    }))
+  }
+  const removeRecommendedCourse = (courseId) =>
+    setForm((f) => ({ ...f, recommendedCourseIds: f.recommendedCourseIds.filter((id) => id !== courseId) }))
+
   const linkedModuleOptions = form.linkedCourseId && hasCourseData(form.linkedCourseId)
     ? [...getCourseData(form.linkedCourseId).modules].sort((a, b) => a.order - b.order)
     : []
@@ -138,6 +150,12 @@ export default function AdminTasksPage() {
     if (form.linkedMissionId) {
       const mission = ALL_MISSIONS.find((m) => m.id === form.linkedMissionId)
       if (mission) details.linkedMission = { missionId: mission.id, title: mission.title, icon: mission.icon }
+    }
+    if (form.recommendedCourseIds.length) {
+      details.recommendedCourses = form.recommendedCourseIds
+        .map((id) => courses.find((c) => c.id === id))
+        .filter(Boolean)
+        .map((c) => ({ id: c.id, title: c.title, icon: c.icon }))
     }
     return details
   }
@@ -444,6 +462,34 @@ export default function AdminTasksPage() {
                             className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary"
                           />
                           <button type="button" onClick={addResourceRow} className="shrink-0 rounded-lg bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary">+ Agregar</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-text-muted">🎯 Cursos recomendados</label>
+                      <div className="mt-1 space-y-1.5">
+                        {form.recommendedCourseIds.map((id) => {
+                          const c = courses.find((c) => c.id === id)
+                          return (
+                            <div key={id} className="flex items-center gap-2 rounded-lg border border-border/60 px-2 py-1.5 text-xs">
+                              <span className="flex-1 truncate text-text">{c?.icon} {c?.title ?? id}</span>
+                              <button type="button" onClick={() => removeRecommendedCourse(id)} className="text-danger hover:opacity-70">🗑️</button>
+                            </div>
+                          )
+                        })}
+                        <div className="flex gap-1.5">
+                          <select
+                            value={form.newRecommendedCourseId}
+                            onChange={(e) => setForm((f) => ({ ...f, newRecommendedCourseId: e.target.value }))}
+                            className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-text outline-none focus:border-primary"
+                          >
+                            <option value="">Elige un curso para recomendar</option>
+                            {courses.filter((c) => !form.recommendedCourseIds.includes(c.id)).map((c) => (
+                              <option key={c.id} value={c.id}>{c.icon} {c.title}</option>
+                            ))}
+                          </select>
+                          <button type="button" onClick={addRecommendedCourse} className="shrink-0 rounded-lg bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary">+ Agregar</button>
                         </div>
                       </div>
                     </div>

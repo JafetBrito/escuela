@@ -5,6 +5,7 @@ import { useGameStore, OLIVER_CLASSES } from '../../stores/useGameStore'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { MASCOTS } from '../../data/mascotRegistry'
+import { useI18n } from '../../i18n'
 
 // Lo primero que se ve al entrar al Dashboard — antes foto/nivel/nombre
 // quedaban como texto plano enterrado bajo los banners de aviso, y no había
@@ -13,6 +14,7 @@ import { MASCOTS } from '../../data/mascotRegistry'
 // vrAllowed: perfiles niños/abuelos no tienen VR/mascota — se oculta esa
 // franja para ellos, mismo criterio que el resto del Dashboard.
 export default function ProfileHeroCard({ vrAllowed }) {
+  const { t } = useI18n()
   const profile = useAuthStore((s) => s.profile)
   const session = useAuthStore((s) => s.session)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
@@ -21,7 +23,7 @@ export default function ProfileHeroCard({ vrAllowed }) {
   const coins = useCurrencyStore((s) => s.coins)
   const { level, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
 
-  const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Estudiante'
+  const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || t('dashboard.defaultStudent')
   const mascot = MASCOTS.find((m) => m.id === selectedMascotId)
   const oliverClass = oliver.class ? OLIVER_CLASSES[oliver.class] : null
   const hpPct = oliver.hp?.max ? Math.round((oliver.hp.current / oliver.hp.max) * 100) : 0
@@ -40,7 +42,7 @@ export default function ProfileHeroCard({ vrAllowed }) {
           <div className="min-w-0">
             <p className="truncate text-lg font-black text-text">{displayName}</p>
             <div className="mt-1 flex items-center gap-2">
-              <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-black text-primary">Nv. {level}</span>
+              <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-black text-primary">{t('dashboard.hero.levelAbbr')} {level}</span>
               <span className="text-xs text-text-muted">{xpIntoLevel}/{xpForNextLevel} XP</span>
             </div>
             <div className="mt-1.5 h-1.5 w-32 rounded-full bg-surface-hover">
@@ -74,13 +76,13 @@ export default function ProfileHeroCard({ vrAllowed }) {
                   <span className="shrink-0 text-[10px] text-text-muted">{oliver.hp?.current ?? 0}/{oliver.hp?.max ?? 0} HP</span>
                 </div>
               </div>
-              <span className="shrink-0 text-xs text-text-muted">Ver →</span>
+              <span className="shrink-0 text-xs text-text-muted">{t('dashboard.hero.view')}</span>
             </>
           ) : (
             <>
               <span className="text-2xl">🐾</span>
-              <p className="flex-1 text-sm font-semibold text-text-muted">Aún no tienes una mascota — créala aquí</p>
-              <span className="shrink-0 text-xs font-semibold text-primary">Crear →</span>
+              <p className="flex-1 text-sm font-semibold text-text-muted">{t('dashboard.hero.noMascot')}</p>
+              <span className="shrink-0 text-xs font-semibold text-primary">{t('dashboard.hero.createMascot')}</span>
             </>
           )}
         </Link>
