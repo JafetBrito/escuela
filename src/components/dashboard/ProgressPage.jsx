@@ -15,37 +15,8 @@ import { CATEGORY_META } from '../../data/categoryMeta'
 import { buildRegions } from '../../utils/regions'
 import { useI18n } from '../../i18n'
 import { MASCOTS } from '../../data/mascotRegistry'
-import ProgressRing from '../shared/ProgressRing'
-
-function TodayCourseCard({ course, pct, meta }) {
-  const totalModules = COURSES_DATA[course.id]?.modules.length ?? 0
-  return (
-    <Link to={`/learn/${course.id}`}
-      className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4 transition hover:border-primary hover:-translate-y-0.5">
-      <ProgressRing pct={pct} accent={meta.accent} />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-text line-clamp-1">{course.icon} {course.title}</p>
-        <p className="text-xs text-text-muted">{totalModules} clase{totalModules === 1 ? '' : 's'}</p>
-      </div>
-      <span className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-background" style={{ background: meta.accent }}>
-        {pct > 0 ? 'Continuar' : 'Empezar'}
-      </span>
-    </Link>
-  )
-}
-
-function RegionBar({ region }) {
-  const pct = region.total > 0 ? Math.round(((region.completed + region.inProgress * 0.5) / region.total) * 100) : 0
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-32 shrink-0 truncate text-xs font-semibold text-text">{region.icon} {region.title}</span>
-      <div className="h-2.5 flex-1 rounded-full bg-surface-hover">
-        <div className="h-2.5 rounded-full transition-all" style={{ width: `${pct}%`, background: region.accent }} />
-      </div>
-      <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-text-muted">{pct}%</span>
-    </div>
-  )
-}
+import TodayCourseCard from '../shared/TodayCourseCard'
+import RegionBar from '../shared/RegionBar'
 
 function SectionTab({ id, label, icon, active, onClick }) {
   return (

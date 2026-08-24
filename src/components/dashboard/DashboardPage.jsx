@@ -26,7 +26,10 @@ import { GLOBAL_MISSIONS, evaluateMission } from '../../data/globalMissionsRegis
 import { COURSE_MISSIONS } from '../../data/courseMissionsRegistry'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { buildRegions } from '../../utils/regions'
-import ProgressRing from '../shared/ProgressRing'
+import TodayCourseCard from '../shared/TodayCourseCard'
+import RegionBar from '../shared/RegionBar'
+import { useCurrencyStore } from '../../stores/useCurrencyStore'
+import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 // Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
@@ -290,27 +293,25 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   const notifications = useNotificationsStore((s) => s.notifications)
   const recentActivity = notifications.slice(0, 5)
 
-  // Resumen de avance — un solo anillo agregado (misma fórmula ponderada que
-  // RegionBar/ProgressPage.jsx: completadas + en progreso*0.5, sobre el total),
-  // reusando el memo `regions` de más abajo en vez de recalcular nada nuevo.
-  const overallPct = useMemo(() => {
-    const withCourses = regions.filter((r) => r.total > 0)
-    const total = withCourses.reduce((sum, r) => sum + r.total, 0)
-    if (total === 0) return 0
-    const done = withCourses.reduce((sum, r) => sum + r.completed + r.inProgress * 0.5, 0)
-    return Math.round((done / total) * 100)
-  }, [regions])
-  const tasksPending = tasks.filter((tk) => tk.status === 'pendiente').length
-  const tasksGraded  = tasks.filter((tk) => tk.status === 'revisada').length
+  // Curso(s) de hoy + puntos/racha — mismo cálculo que ProgressPage.jsx,
+  // traído al Dashboard como la pieza principal del hero (pedido explícito:
+  // "tu curso de hoy" con anillo de progreso grande, como en la referencia
+  // que mandó el usuario, no una barra de XP genérica).
+  const completedCourses = useMemo(() => courses.filter((c) => progressByCourse(c.id) === 100), [progressByCourse])
+  const enrolledCourses  = inProgress.length + completedCourses.length
+  const todayCourses     = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 2)
+  const topRegions = useMemo(
+    () => regions.filter((r) => r.total > 0)
+      .sort((a, b) => (b.completed + b.inProgress * 0.5) / b.total - (a.completed + a.inProgress * 0.5) / a.total)
+      .slice(0, 6),
+    [regions]
+  )
+  const xp    = useLevelStore((s) => s.xp)
+  const coins = useCurrencyStore((s) => s.coins)
+  const { isMaxLevel, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
-
-      {/* Foto + nivel + nombre + mascota — lo primero que se ve, pedido
-          explícito tras revisar el Dashboard en móvil ("muestra lo más
-          importante primero"). Reemplaza el saludo de texto plano + la
-          tarjeta de XP que vivían más abajo. */}
-      <ProfileHeroCard vrAllowed={vrAllowed} />
 
       <div>
         <h1 className="text-xl font-black text-text">
@@ -319,22 +320,72 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
       </div>
 
-      {/* Resumen de avance — anillo general + contadores rápidos, con enlace
-          a /progreso para el detalle curso-por-curso y calificaciones. */}
-      <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
-        <ProgressRing pct={overallPct} accent="var(--color-primary)" size={64} stroke={6} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-extrabold text-text">{t('dashboard.snapshot.title')}</p>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
-            <span>📚 {inProgress.length} {t('dashboard.progress.coursesInProgress').toLowerCase()}</span>
-            <span>⏳ {tasksPending} {t('dashboard.progress.pending').toLowerCase()}</span>
-            <span>✅ {tasksGraded} {t('dashboard.progress.graded').toLowerCase()}</span>
+      {/* Hero: columna izquierda = curso(s) de hoy (la pieza más grande e
+          importante), columna derecha = perfil + puntos + accesos rápidos.
+          Reemplaza la versión anterior (roster de Jugador/Oliver) — el
+          usuario pidió algo más parecido a un dashboard tipo Platzi, con
+          datos reales en vez de contenido de ejemplo. */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <section>
+          <p className="mb-3 text-sm font-extrabold text-text">{t('dashboard.promo.todayTitle')}</p>
+          {todayCourses.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {todayCourses.map((c) => (
+                <TodayCourseCard key={c.id} course={c} pct={progressByCourse(c.id) ?? 0} meta={CATEGORY_META[c.category] ?? CATEGORY_META.Otros} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-text-muted">
+              {t('dashboard.promo.todayEmpty')}
+            </div>
+          )}
+        </section>
+
+        <div className="flex flex-col gap-3">
+          <ProfileHeroCard enrolledCount={enrolledCourses} />
+
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold text-text">{t('dashboard.points.title')}</p>
+              <p className="text-lg font-black text-amber-400">🪙 {coins.toLocaleString()}</p>
+              <p className="text-[11px] text-text-muted">
+                {isMaxLevel ? t('dashboard.progress.totalXp', { xp: xp.toLocaleString() }) : `${xpIntoLevel}/${xpForNextLevel} XP`}
+              </p>
+            </div>
+            <Link to="/tienda" className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">
+              {t('dashboard.points.spend')}
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Link to="/mascota" className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 p-3 transition hover:border-violet-500/40">
+              <p className="text-xl">🐾</p>
+              <p className="mt-1 text-xs font-bold text-text">{t('dashboard.promo.mascotTitle').replace('🐾 ', '')}</p>
+            </Link>
+            <Link to="/logros" className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/5 p-3 transition hover:border-amber-500/40">
+              <p className="text-xl">🏅</p>
+              <p className="mt-1 text-xs font-bold text-text">{t('dashboard.promo.achievementsSub', { n: completedCourses.length })}</p>
+            </Link>
           </div>
         </div>
-        <Link to="/progreso" className="shrink-0 text-xs font-semibold text-primary hover:underline">
-          {t('dashboard.snapshot.seeMore')}
-        </Link>
       </div>
+
+      {/* Avance por área — mismas "regiones" del mapa de aventura, mostradas
+          aquí como barras comparables (igual que en /progreso). Reemplaza
+          el anillo agregado único de la versión anterior por algo más
+          parecido a la sección "Learning activity" de la referencia, pero
+          con datos reales de progreso en vez de un gráfico inventado. */}
+      {topRegions.length > 0 && (
+        <section className="rounded-2xl border border-border bg-surface p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm font-extrabold text-text">{t('dashboard.snapshot.title')}</p>
+            <Link to="/progreso" className="text-xs font-semibold text-primary hover:underline">{t('dashboard.snapshot.seeMore')}</Link>
+          </div>
+          <div className="space-y-3">
+            {topRegions.map((r) => <RegionBar key={r.key} region={r} />)}
+          </div>
+        </section>
+      )}
 
       {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
           Sin git (algún checkout raro) cae al patch note curado como respaldo. */}

@@ -155,10 +155,23 @@ export const es = {
       createClass: 'Elegir →',
       playerLabel: 'Tú',
       oliverLabel: 'Oliver',
+      coursesLabel: 'Cursos',
     },
     snapshot: {
-      title: '📊 Tu avance',
+      title: '📊 Tu avance por área',
       seeMore: 'Ver progreso completo →',
+    },
+    points: {
+      title: '⭐ Tus puntos',
+      spend: 'Ir a la Tienda →',
+    },
+    promo: {
+      mascotTitle: '🐾 Habla con tu mascota',
+      mascotSub: 'Resuelve dudas y gana misiones de chat',
+      achievementsTitle: '🏅 Tus logros',
+      achievementsSub: '{n} completados',
+      todayTitle: '🎯 Tu curso de hoy',
+      todayEmpty: 'Explora las Escuelas y empieza tu primer curso.',
     },
   },
   languageAcademy: {

@@ -12,6 +12,7 @@ const COMPONENT_MAP = {
   memes: lazy(() => import('./memes/MemesGame')),
   'hacker-terminal': lazy(() => import('./hacker/HackerTerminalGame')),
   'cyber-range-hospital': lazy(() => import('./hospital/HospitalRangeGame')),
+  'phishing-office': lazy(() => import('./phishing2d/PhishingOfficeGame')),
   'math': lazy(() => import('./math/MathGame')),
   'math-history': lazy(() => import('./math-history/MathHistoryGame')),
   'body-explorer': lazy(() => import('./body-explorer/BodyExplorerGame')),

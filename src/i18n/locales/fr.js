@@ -134,10 +134,23 @@ export const fr = {
       createClass: 'Choisir →',
       playerLabel: 'Toi',
       oliverLabel: 'Oliver',
+      coursesLabel: 'Cours',
     },
     snapshot: {
-      title: '📊 Ta progression',
+      title: '📊 Ta progression par domaine',
       seeMore: 'Voir toute la progression →',
+    },
+    points: {
+      title: '⭐ Tes points',
+      spend: 'Aller à la Boutique →',
+    },
+    promo: {
+      mascotTitle: '🐾 Parle à ta mascotte',
+      mascotSub: 'Résous des doutes et gagne des missions de chat',
+      achievementsTitle: '🏅 Tes réussites',
+      achievementsSub: '{n} terminés',
+      todayTitle: '🎯 Ton cours du jour',
+      todayEmpty: "Explore les Écoles et commence ton premier cours.",
     },
   },
   landing: {

@@ -151,10 +151,23 @@ export const en = {
       createClass: 'Pick →',
       playerLabel: 'You',
       oliverLabel: 'Oliver',
+      coursesLabel: 'Courses',
     },
     snapshot: {
-      title: '📊 Your progress',
+      title: '📊 Your progress by area',
       seeMore: 'See full progress →',
+    },
+    points: {
+      title: '⭐ Your points',
+      spend: 'Go to the Shop →',
+    },
+    promo: {
+      mascotTitle: '🐾 Talk to your mascot',
+      mascotSub: 'Solve doubts and earn chat missions',
+      achievementsTitle: '🏅 Your achievements',
+      achievementsSub: '{n} completed',
+      todayTitle: '🎯 Your course today',
+      todayEmpty: 'Explore the Schools and start your first course.',
     },
   },
   languageAcademy: {

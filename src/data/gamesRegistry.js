@@ -96,6 +96,16 @@ export const GAMES = [
     reward: 400,
   },
   {
+    id: 'phishing-office',
+    title: 'Protégete del Phishing',
+    icon: '🎣',
+    category: 'Simuladores',
+    description: 'Camina por una oficina 2D y acércate a cada escritorio para resolver una situación real de phishing: remitentes falsos, enlaces sospechosos, urgencia, adjuntos peligrosos y más.',
+    type: 'component',
+    component: 'phishing-office',
+    reward: 300,
+  },
+  {
     id: 'aprendiendo-memes',
     title: 'Aprendiendo con Memes',
     icon: '😂',
