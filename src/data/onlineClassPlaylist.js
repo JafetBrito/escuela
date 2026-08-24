@@ -1,11 +1,14 @@
 // Lista de reproducción de "Clase Online" — se reproduce en bucle, uno tras
-// otro. Totalmente independiente de las clases en vivo/de práctica: no usa
-// live_classes ni el Hub, es un canal continuo con chat global aparte.
+// otro (VideoPlayer llama onEnded al terminar cada video, OnlineClassPage
+// avanza al siguiente índice con módulo % length). Totalmente independiente
+// de las clases en vivo/de práctica: no usa live_classes ni el Hub, es un
+// canal continuo con chat global aparte.
 //
-// courseId (opcional): si el video corresponde a un curso escrito de la
-// plataforma, se muestra debajo un link "Ver el curso completo →" hacia
-// /learn/<courseId> — así el que ve el video de NotebookLM puede saltar
-// directo al curso de NotebookLM, etc.
+// Para agregar más videos, solo agrega otro objeto { title, videoId } al
+// final del arreglo.
 export const ONLINE_CLASS_PLAYLIST = [
-  { title: 'Bienvenida a Clase Online', videoId: 'aqz-KE-bpKQ', courseId: 'course-001' },
+  { title: 'Fundamentos de la IA', videoId: 'Pg3DXxBD638' },
+  { title: 'Antiguo Egipto', videoId: 'nUB6XYg9K3o' },
+  { title: 'Medicina en el antiguo Egipto', videoId: 'DmlIBouEyng' },
+  { title: 'El Enfoque Cognitivo', videoId: 'a283A0Ry5m0' },
 ]

@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import VideoPlayer from '../video/VideoPlayer'
 import { ONLINE_CLASS_PLAYLIST } from '../../data/onlineClassPlaylist'
-import courses from '../../data/courses.json'
 import { useOnlineChatStore } from '../../stores/useOnlineChatStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 
@@ -86,22 +84,6 @@ export default function OnlineClassPage() {
                   <VideoPlayer videoId={current.videoId} onEnded={handleEnded} />
                   <p className="mt-3 text-sm font-bold text-text">▶️ {current.title}</p>
                   {next && next !== current && <p className="text-xs text-text-muted">Sigue: {next.title}</p>}
-                  {current.courseId && (() => {
-                    const course = courses.find((c) => c.id === current.courseId)
-                    return course ? (
-                      <Link
-                        to={`/learn/${course.id}`}
-                        className="mt-3 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 transition hover:bg-primary/10"
-                      >
-                        <span className="text-2xl">{course.icon}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold uppercase tracking-wide text-primary/70">De este video es el curso</p>
-                          <p className="text-sm font-bold text-text">{course.title}</p>
-                        </div>
-                        <span className="shrink-0 text-sm font-bold text-primary">Ver curso completo →</span>
-                      </Link>
-                    ) : null
-                  })()}
                 </>
               ) : (
                 <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-border text-sm text-text-muted">
