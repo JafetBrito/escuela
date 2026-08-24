@@ -4,6 +4,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useI18n } from '../../i18n'
+import { MAILBOX_INBOX_KEY } from '../../utils/mailboxStorage'
 
 // Buzón de correo del alumno — extraído de FriendsPage.jsx (donde vivía
 // mezclado con la lista de amigos) a su propia sección, con layout de
@@ -11,7 +12,9 @@ import { useI18n } from '../../i18n'
 // tarjeta con pestañas de antes. Sigue siendo el mismo mecanismo de
 // siempre: mensajes guardados en localStorage, no hay backend de mensajería
 // real entre alumnos todavía (ver project_community_restructure en memoria).
-const INBOX_KEY = 'oliver_mailbox_inbox'
+// INBOX_KEY vive en utils/mailboxStorage.js (compartida con el ícono del
+// header en AppTopBar.jsx, que necesita leer el conteo de no leídos).
+const INBOX_KEY = MAILBOX_INBOX_KEY
 const SENT_KEY  = 'oliver_mailbox_sent'
 
 function loadBox(key) {

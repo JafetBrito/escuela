@@ -110,19 +110,24 @@ function ClassPlayer({ cls, mode, onBack }) {
           </div>
         </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-          <VideoPlayer videoId={cls.demo_video_id} />
-          <div className="min-w-0 lg:sticky lg:top-6">
-            <div className="mb-3 flex items-center gap-2">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
+          <div className="min-w-0">
+            <VideoPlayer videoId={cls.demo_video_id} />
+          </div>
+          {/* Antes tenía max-h-[75vh] + overflow-y-auto propio — un scroll
+              anidado dentro del scroll de la página se ve mal y descuadra la
+              columna en pantallas grandes ("no se ve bien en computadora").
+              Ahora crece con su contenido y usa el scroll normal de la
+              página; sticky sigue funcionando mientras quepa en el viewport. */}
+          <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
+            <div className="flex items-center gap-2">
               <span className="text-lg">🎯</span>
               <p className="text-sm font-extrabold text-text">Hub de la clase</p>
               <span className="ml-auto flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sincronizado
               </span>
             </div>
-            <div className="max-h-[75vh] space-y-4 overflow-y-auto pr-1">
-              {activeClass ? <HubContent activeClass={activeClass} /> : <p className="text-sm text-text-muted">Cargando Hub…</p>}
-            </div>
+            {activeClass ? <HubContent activeClass={activeClass} /> : <p className="text-sm text-text-muted">Cargando Hub…</p>}
           </div>
         </div>
       )}
@@ -151,7 +156,7 @@ export default function AvailableClassesPage() {
       <AppTopBar />
 
       <main className="flex-1 px-4 py-8 md:px-8">
-        <div className={`mx-auto ${openClassEntry?.mode === 'sideBySide' ? 'max-w-6xl' : 'max-w-3xl'}`}>
+        <div className={`mx-auto ${openClassEntry?.mode === 'sideBySide' ? 'max-w-7xl' : 'max-w-3xl'}`}>
           {!openClassEntry && (
             <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
               <h1 className="text-3xl font-extrabold text-white">🎬 Clases Disponibles</h1>

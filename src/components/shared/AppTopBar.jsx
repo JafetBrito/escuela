@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Logo from './Logo'
 import VersionBadge from './VersionBadge'
@@ -7,6 +7,7 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { MASCOTS } from '../../data/mascotRegistry'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 import NotificationBell from './NotificationBell'
+import { getUnreadMailCount } from '../../utils/mailboxStorage'
 import RecruiterMode from './RecruiterMode'
 import CampusMarquee from './CampusMarquee'
 import { playMeow } from '../../utils/meow'
@@ -85,8 +86,9 @@ const GROUPS = [
     label: 'Comunidad',
     icon: '💬',
     items: [
+      // Buzón ya no vive aquí — es un ícono junto a la campanita de
+      // notificaciones (pedido explícito del usuario), no un item de menú.
       { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥', hideFor: ['kids'] },
-      { to: '/buzon',  key: 'buzon',  label: 'Buzón',  icon: '📬', hideFor: ['kids'] },
       { to: '/foro',   key: 'foro',   label: 'Foro',   icon: '🗣️', hideFor: ['kids'] },
     ],
   },
@@ -101,6 +103,35 @@ function visibleGroupsFor(ageProfile) {
   return GROUPS
     .map((g) => ({ ...g, items: g.items.filter((item) => !item.hideFor?.includes(ageProfile)) }))
     .filter((g) => g.items.length > 0)
+}
+
+// Ícono de Buzón junto a la campanita — pedido explícito del usuario en vez
+// de dejarlo solo dentro del menú "Comunidad" (que ya no lo lista). El
+// conteo de no leídos se recalcula cada vez que cambia la ruta (`pathname`
+// como dependencia) porque el buzón vive en localStorage, no en un store —
+// un evento nativo 'storage' no avisa de cambios hechos en la MISMA pestaña
+// (solo entre pestañas), así que esto es lo más simple que sí se actualiza
+// al volver de /buzon sin tener que convertir el buzón a un store de verdad.
+function MailboxIconLink({ pathname }) {
+  // Lectura síncrona (localStorage), no hace falta estado — se recalcula en
+  // cada render, y cambia de valor cuando cambia `pathname` (vuelve de /buzon).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const unread = useMemo(() => getUnreadMailCount(), [pathname])
+
+  return (
+    <Link
+      to="/buzon"
+      className="relative flex h-9 w-9 items-center justify-center rounded-lg text-lg text-text-muted transition-colors hover:text-text"
+      aria-label="Buzón"
+    >
+      📬
+      {unread > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+          {unread > 9 ? '9+' : unread}
+        </span>
+      )}
+    </Link>
+  )
 }
 
 // Persistent navigation bar for the protected app.
@@ -315,8 +346,9 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
         </Link>
       </nav>
 
-      {/* ── Notificaciones (desktop) ─────────────────────────── */}
-      <div className="hidden md:block">
+      {/* ── Buzón + Notificaciones (desktop) ────────────────── */}
+      <div className="hidden items-center gap-1 md:flex">
+        {profile?.age_profile !== 'kids' && <MailboxIconLink pathname={location.pathname} />}
         <NotificationBell />
       </div>
 
@@ -382,9 +414,10 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
         )}
       </div>
 
-      {/* ── Notificaciones (móvil, siempre visible junto al hamburguesa —
-          nunca escondidas dentro del menú desplegable) ─────────────────── */}
-      <div className="md:hidden">
+      {/* ── Buzón + Notificaciones (móvil, siempre visibles junto al
+          hamburguesa — nunca escondidas dentro del menú desplegable) ──── */}
+      <div className="flex items-center gap-1 md:hidden">
+        {profile?.age_profile !== 'kids' && <MailboxIconLink pathname={location.pathname} />}
         <NotificationBell />
       </div>
 
