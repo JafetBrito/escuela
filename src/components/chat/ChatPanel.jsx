@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import TypedText from './TypedText'
 import { useChatStore } from '../../stores/useChatStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -10,8 +10,14 @@ import { useMascotMemoryStore } from '../../stores/useMascotMemoryStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getCourseData } from '../../data/courseRegistry'
 
-export default function ChatPanel({ className = '', module, courseId, prefill = '' }) {
-  const [input, setInput] = useState(prefill)
+export default function ChatPanel({ className = '', module, courseId, prefill = '', autoSend = false }) {
+  // Si autoSend, el mensaje se manda solo al montar (ver efecto más abajo)
+  // — el input arranca vacío en vez de con el prefill, así no queda un
+  // texto "fantasma" en la caja justo después de haberse enviado ya.
+  const [input, setInput] = useState(autoSend ? '' : prefill)
+  // Guarda contra el doble-invoke de efectos de StrictMode en desarrollo
+  // (monta→desmonta→monta) — sin esto, autoSend mandaba el mensaje 2 veces.
+  const autoSentRef = useRef(false)
   const messages = useChatStore((s) => s.messages)
   const isSending = useChatStore((s) => s.isSending)
   const send = useChatStore((s) => s.send)
@@ -66,6 +72,18 @@ export default function ChatPanel({ className = '', module, courseId, prefill = 
     })
     if (module && courseId) completeMission(courseId, module.id, 'chat')
   }
+
+  // Manda el prefill solo al montar (ej. desde "preguntarle a tu mascota" en
+  // /buscar) — no depende de `sendMessage`/`prefill` en el array de
+  // dependencias a propósito, para que corra una sola vez por montaje y no
+  // se repita si algo más re-renderiza este panel.
+  useEffect(() => {
+    if (autoSend && prefill.trim() && !autoSentRef.current) {
+      autoSentRef.current = true
+      sendMessage(prefill)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = (e) => {
     e.preventDefault()

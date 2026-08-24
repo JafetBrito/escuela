@@ -24,19 +24,22 @@ export default function ChatTab({ courseId, module, className = '' }) {
   const [view, setView] = useState('menu')
   const [openDay, setOpenDay] = useState(null)
   const [pendingPrefill, setPendingPrefill] = useState('')
+  const [pendingAutoSend, setPendingAutoSend] = useState(false)
   const messages = useChatStore((s) => s.messages)
   const startNewChat = useChatStore((s) => s.startNewChat)
   const chatHistory = useChatHistoryStore((s) => s.history)
   const chatPrefill = useMascotCompanionStore((s) => s.chatPrefill)
+  const chatAutoSend = useMascotCompanionStore((s) => s.chatAutoSend)
   const clearChatPrefill = useMascotCompanionStore((s) => s.clearChatPrefill)
 
   useEffect(() => {
     if (chatPrefill) {
       setPendingPrefill(chatPrefill)
+      setPendingAutoSend(chatAutoSend)
       clearChatPrefill()
       setView('current')
     }
-  }, [chatPrefill, clearChatPrefill])
+  }, [chatPrefill, chatAutoSend, clearChatPrefill])
 
   if (view === 'current') {
     return (
@@ -47,7 +50,7 @@ export default function ChatTab({ courseId, module, className = '' }) {
         >
           ← Menú
         </button>
-        <ChatPanel courseId={courseId} module={module} prefill={pendingPrefill} className="h-full flex-1 border-0" />
+        <ChatPanel courseId={courseId} module={module} prefill={pendingPrefill} autoSend={pendingAutoSend} className="h-full flex-1 border-0" />
       </div>
     )
   }
