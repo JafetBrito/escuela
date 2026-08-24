@@ -1,258 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
-import { useAuthStore } from '../../stores/useAuthStore'
 import { useI18n } from '../../i18n'
+import { supabase } from '../../services/supabase/client'
 
-// ─── Local mailbox helpers (localStorage) ─────────────────────────────────
-const INBOX_KEY = 'oliver_mailbox_inbox'
-const SENT_KEY  = 'oliver_mailbox_sent'
-
-function loadBox(key) {
-  try { return JSON.parse(localStorage.getItem(key) ?? '[]') } catch { return [] }
-}
-function saveBox(key, msgs) {
-  localStorage.setItem(key, JSON.stringify(msgs))
-}
-
-function systemMessage(id, from, subject, body) {
-  return { id, from, subject, body, date: new Date().toISOString(), read: false, system: true }
-}
-
-const SYSTEM_MESSAGES = [
-  systemMessage('sys-1', 'oliver.school', '🌳 Bienvenido al campus', 'El Árbol del Mundo te espera. Elige tu clase y comienza tu aventura.'),
-  systemMessage('sys-2', 'oliver.school', '🎯 Completa tu primera misión', 'Visita la página de Misiones y acepta tu primera tarea para ganar monedas y XP.'),
-]
-
-// ─── Mailbox section ────────────────────────────────────────────────────────
-function Buzon({ myName, friends }) {
-  const [box, setBox] = useState('inbox')
-  const [inbox, setInbox] = useState(() => {
-    const stored = loadBox(INBOX_KEY)
-    if (!stored.length) { saveBox(INBOX_KEY, SYSTEM_MESSAGES); return SYSTEM_MESSAGES }
-    return stored
-  })
-  const [sent, setSent] = useState(() => loadBox(SENT_KEY))
-  const [selected, setSelected] = useState(null)
-  const [composeTo, setComposeTo] = useState('')
-  const [composeEmail, setComposeEmail] = useState('')
-  const [composeSub, setComposeSub] = useState('')
-  const [composeBody, setComposeBody] = useState('')
-  const [composeSent, setComposeSent] = useState(false)
-  const unread = inbox.filter(m => !m.read).length
-
-  const markRead = (id) => {
-    const next = inbox.map(m => m.id === id ? { ...m, read: true } : m)
-    setInbox(next)
-    saveBox(INBOX_KEY, next)
-  }
-
-  const openMsg = (msg) => {
-    setSelected(msg)
-    if (!msg.read) markRead(msg.id)
-  }
-
-  const handleSend = (e) => {
-    e.preventDefault()
-    const msg = {
-      id: Date.now(),
-      to: composeTo,
-      email: composeEmail,
-      subject: composeSub,
-      body: composeBody,
-      date: new Date().toISOString(),
-    }
-    const nextSent = [msg, ...sent]
-    setSent(nextSent)
-    saveBox(SENT_KEY, nextSent)
-    if (composeEmail) {
-      window.open(`mailto:${composeEmail}?subject=${encodeURIComponent(composeSub)}&body=${encodeURIComponent(`${composeBody}\n\n— ${myName} (oliver.school)`)}`)
-    }
-    setComposeSent(true)
-    setTimeout(() => {
-      setComposeSent(false)
-      setComposeTo(''); setComposeEmail(''); setComposeSub(''); setComposeBody('')
-    }, 2000)
-  }
-
-  const formatDate = (iso) => {
-    try { return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) }
-    catch { return iso }
-  }
-
-  return (
-    <section className="rounded-2xl border border-border bg-surface">
-      {/* Tabs */}
-      <div className="flex border-b border-border">
-        {[
-          { id: 'inbox',   label: 'Bandeja',   icon: '📥', badge: unread || null },
-          { id: 'sent',    label: 'Enviados',  icon: '📤' },
-          { id: 'compose', label: 'Redactar',  icon: '✏️' },
-        ].map(t => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => { setBox(t.id); setSelected(null) }}
-            className={`relative flex flex-1 items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors ${
-              box === t.id ? 'border-b-2 border-primary text-primary' : 'text-text-muted hover:text-text'
-            }`}
-          >
-            {t.icon} {t.label}
-            {t.badge > 0 && (
-              <span className="absolute right-3 top-2 min-w-[18px] rounded-full bg-primary px-1 text-center text-[10px] font-bold text-background">
-                {t.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Inbox / Sent */}
-      {(box === 'inbox' || box === 'sent') && !selected && (
-        <ul className="divide-y divide-border">
-          {(box === 'inbox' ? inbox : sent).length === 0 ? (
-            <li className="py-8 text-center text-sm text-text-muted">
-              {box === 'inbox' ? 'La bandeja está vacía.' : 'Aún no has enviado ningún mensaje.'}
-            </li>
-          ) : (box === 'inbox' ? inbox : sent).map(msg => (
-            <li
-              key={msg.id}
-              onClick={() => openMsg(msg)}
-              className="flex cursor-pointer items-start gap-3 px-5 py-3.5 transition-colors hover:bg-surface-hover"
-            >
-              <span className="mt-0.5 text-xl">{msg.system ? '📣' : box === 'inbox' ? '📩' : '📧'}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={`truncate text-sm ${!msg.read ? 'font-bold text-text' : 'text-text-muted'}`}>
-                    {box === 'inbox' ? (msg.from ?? 'Desconocido') : (msg.to ?? 'Sin destinatario')}
-                  </span>
-                  {!msg.read && box === 'inbox' && (
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-                  )}
-                </div>
-                <p className="truncate text-xs text-text-muted">{msg.subject}</p>
-              </div>
-              <span className="shrink-0 text-[10px] text-text-muted">{formatDate(msg.date)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Message detail */}
-      {(box === 'inbox' || box === 'sent') && selected && (
-        <div className="p-5">
-          <button
-            type="button"
-            onClick={() => setSelected(null)}
-            className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text"
-          >
-            ← Volver
-          </button>
-          <div className="mb-4 rounded-xl border border-border bg-background p-4">
-            <p className="mb-1 text-xs text-text-muted">
-              {box === 'inbox' ? `De: ${selected.from}` : `Para: ${selected.to}${selected.email ? ` <${selected.email}>` : ''}`}
-            </p>
-            <p className="font-bold text-text">{selected.subject}</p>
-            <p className="mt-0.5 text-xs text-text-muted">{formatDate(selected.date)}</p>
-          </div>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{selected.body}</p>
-          {box === 'inbox' && !selected.system && (
-            <button
-              type="button"
-              onClick={() => { setComposeTo(selected.from ?? ''); setBox('compose'); setSelected(null) }}
-              className="mt-4 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
-            >
-              ↩ Responder
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Compose */}
-      {box === 'compose' && (
-        <form onSubmit={handleSend} className="flex flex-col gap-3 p-5">
-          {composeSent && (
-            <div className="rounded-lg bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-500">
-              ✅ Mensaje guardado{composeEmail ? ' y correo abierto.' : '.'}
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold text-text-muted">Para (nombre en VR)</label>
-              <input
-                value={composeTo}
-                onChange={e => setComposeTo(e.target.value)}
-                placeholder="Nombre del jugador…"
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold text-text-muted">Email (opcional)</label>
-              <input
-                type="email"
-                value={composeEmail}
-                onChange={e => setComposeEmail(e.target.value)}
-                placeholder="correo@ejemplo.com"
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-text-muted">Asunto</label>
-            <input
-              required
-              value={composeSub}
-              onChange={e => setComposeSub(e.target.value)}
-              placeholder="Asunto del mensaje…"
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-text-muted">Mensaje</label>
-            <textarea
-              required
-              rows={4}
-              value={composeBody}
-              onChange={e => setComposeBody(e.target.value)}
-              placeholder="Escribe tu mensaje…"
-              className="resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10px] text-text-muted">
-              {composeEmail ? 'Se abrirá tu cliente de email al enviar.' : 'Sin email: solo se guarda localmente.'}
-            </p>
-            <button
-              type="submit"
-              disabled={!composeSub.trim() || !composeBody.trim()}
-              className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-background transition-colors hover:bg-primary-hover disabled:opacity-50"
-            >
-              {composeEmail ? '✉️ Enviar por email' : '💾 Guardar'}
-            </button>
-          </div>
-          {friends.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              <span className="text-[10px] text-text-muted">Amigos rápidos:</span>
-              {friends.map(f => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setComposeTo(f)}
-                  className="rounded-full border border-border px-2 py-0.5 text-[10px] text-text-muted transition-colors hover:border-primary hover:text-primary"
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          )}
-        </form>
-      )}
-    </section>
-  )
-}
+// El buzón que vivía aquí (mensajes tipo email) se movió a /buzon
+// (MailboxPage.jsx) — esta página ahora es solo lo que dice su nombre:
+// tu lista de amigos, agregar amigos, y regalarles algo. Pedido explícito
+// del usuario tras notar que las dos cosas mezcladas en una sola página no
+// tenía sentido.
+const GIFT_AMOUNT_LABEL = '1,000 🪙' // ver migration_043.sql (send_daily_gift)
 
 // ─── Online dot ─────────────────────────────────────────────────────────────
 function OnlineDot({ online }) {
@@ -276,19 +36,13 @@ export default function FriendsPage() {
   const removeFriend = useFriendsStore(s => s.removeFriend)
   const addFriend    = useFriendsStore(s => s.addFriend)
   const players      = useVrPresenceStore(s => s.players)
-  const profile      = useAuthStore(s => s.profile)
-  const session      = useAuthStore(s => s.session)
 
   const [newName, setNewName] = useState('')
   const [confirmRemove, setConfirmRemove] = useState(null)
+  const [giftBusy, setGiftBusy] = useState(null)
+  const [giftResult, setGiftResult] = useState(null) // { name, ok, message }
 
   const onlinePlayers = new Set(Object.values(players).map(p => p?.name).filter(Boolean))
-
-  const myName =
-    profile?.display_name ||
-    session?.user?.user_metadata?.name ||
-    session?.user?.email?.split('@')[0] ||
-    'Tú'
 
   const handleAdd = (e) => {
     e.preventDefault()
@@ -296,6 +50,23 @@ export default function FriendsPage() {
     if (!trimmed) return
     addFriend(trimmed)
     setNewName('')
+  }
+
+  // Un regalo por día en total (no por amigo) — lo hace cumplir el RPC en
+  // el servidor (gift_log, unique por remitente+día), esto solo llama y
+  // muestra el resultado. El nombre se resuelve contra profiles.display_name
+  // — mismo criterio "difuso" que ya usa esta página para el estado en
+  // línea, porque los amigos aquí son solo texto, no cuentas vinculadas.
+  const handleGift = async (name) => {
+    setGiftBusy(name)
+    setGiftResult(null)
+    const { data, error } = await supabase.rpc('send_daily_gift', { p_recipient_name: name })
+    setGiftBusy(null)
+    if (error) {
+      setGiftResult({ name, ok: false, message: 'No se pudo enviar el regalo. Intenta de nuevo.' })
+      return
+    }
+    setGiftResult({ name, ok: data?.ok, message: data?.message ?? '' })
   }
 
   return (
@@ -310,11 +81,13 @@ export default function FriendsPage() {
           </p>
         </div>
 
-        {/* Buzón */}
-        <div className="mb-6">
-          <p className="mb-2 text-sm font-bold text-text">📬 Buzón</p>
-          <Buzon myName={myName} friends={friends} />
-        </div>
+        {giftResult && (
+          <div className={`mb-4 rounded-xl border px-4 py-2.5 text-sm font-semibold ${
+            giftResult.ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+          }`}>
+            {giftResult.message}
+          </div>
+        )}
 
         {/* Friends list */}
         <div className="mb-6">
@@ -350,6 +123,15 @@ export default function FriendsPage() {
                       </div>
 
                       <div className="flex shrink-0 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleGift(name)}
+                          disabled={giftBusy === name}
+                          title={`Enviar tu regalo diario (${GIFT_AMOUNT_LABEL})`}
+                          className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 disabled:opacity-50"
+                        >
+                          {giftBusy === name ? '…' : '🎁'}
+                        </button>
                         {online && (
                           <button
                             type="button"
@@ -378,6 +160,11 @@ export default function FriendsPage() {
               </ul>
             )}
           </div>
+          {friends.length > 0 && (
+            <p className="mt-2 text-[11px] text-text-muted">
+              🎁 Puedes enviar un regalo de {GIFT_AMOUNT_LABEL} a un amigo una vez al día.
+            </p>
+          )}
         </div>
 
         {/* Add friend */}

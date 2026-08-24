@@ -32,6 +32,9 @@ export const fr = {
       arena: 'Arène',
       amigos: 'Amis',
       chats: 'Discussions',
+      historialIA: 'Historique des conversations IA',
+      buzon: 'Boîte de réception',
+      foro: 'Forum',
       tienda: 'Boutique',
     },
     profile: {

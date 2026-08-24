@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
-import ProfileHeroCard from './ProfileHeroCard'
 import PageVideoModal from '../shared/PageVideoModal'
 import PatchNotesModal from '../shared/PatchNotesModal'
 import courses from '../../data/courses.json'
@@ -13,31 +12,8 @@ import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
 import { useI18n } from '../../i18n'
-import { useTasksStore } from '../../stores/useTasksStore'
-import { useProjectsStore } from '../../stores/useProjectsStore'
-import { useExamsStore } from '../../stores/useExamsStore'
-import { useQuestsStore } from '../../stores/useQuestsStore'
-import { getQuestById } from '../../data/questsRegistry'
-import { useNotificationsStore } from '../../stores/useNotificationsStore'
-import { buildPendingActions } from '../../utils/pendingActions'
-import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
-import { useMissionState } from '../../stores/useMissionState'
-import { GLOBAL_MISSIONS, evaluateMission } from '../../data/globalMissionsRegistry'
-import { COURSE_MISSIONS } from '../../data/courseMissionsRegistry'
-import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { buildRegions } from '../../utils/regions'
 import TodayCourseCard from '../shared/TodayCourseCard'
-import RegionBar from '../shared/RegionBar'
-import { useCurrencyStore } from '../../stores/useCurrencyStore'
-import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
-
-// ── Sidebar nav data ──────────────────────────────────────────────────────────
-// Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
-const CAMPUS_LINKS = [
-  { to: '/vr',    key: 'vr',    label: 'Campus VR',  icon: '🕶️', hideFor: ['kids', 'seniors'] },
-  { to: '/mundo', key: 'mundo', label: 'Mundo 2D',   icon: '📱', hideFor: ['kids', 'seniors'] },
-  { to: '/rol',   key: 'rol',   label: 'Mundo ROL',  icon: '🎲', hideFor: ['kids', 'seniors'] },
-]
 
 // ── Mapa: fila de "regiones" (src/utils/regions.js) con una línea punteada de fondo, estilo mapa
 // de aventura. Cada nodo lleva a la página real de esa academia/categoría.
@@ -79,110 +55,7 @@ function WorldMapSection({ regions }) {
   )
 }
 
-// ── Quest log: misión principal (el curso más relevante para continuar) +
-// misiones secundarias (top 3 de globalMissionsRegistry/courseMissionsRegistry,
-// mismo sistema que ya alimenta /misiones) + racha diaria.
-function MainQuestCard({ course, pct, meta, onClick }) {
-  const { t } = useI18n()
-  if (!course) return null
-  const started = pct !== null && pct > 0
-  return (
-    <div className="rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-4">
-      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">{t('dashboard.quest.mainLabel')}</p>
-      <button type="button" onClick={onClick} className="flex w-full items-center gap-3 text-left">
-        <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
-          style={{ background: `${meta.accent}22`, border: `1px solid ${meta.accent}44` }}
-        >
-          {course.icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-text line-clamp-1">
-            {started ? t('dashboard.quest.continueCourse', { title: course.title }) : t('dashboard.quest.startCourse', { title: course.title })}
-          </p>
-          <p className="text-xs text-text-muted line-clamp-2">{course.description}</p>
-        </div>
-      </button>
-      {started && (
-        <div className="mt-3 flex items-center gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-surface-hover">
-            <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: meta.accent }} />
-          </div>
-          <span className="text-[10px] text-text-muted">{pct}%</span>
-        </div>
-      )}
-      <button
-        type="button"
-        onClick={onClick}
-        className="mt-3 rounded-lg px-3 py-1.5 text-xs font-bold text-background"
-        style={{ background: meta.accent }}
-      >
-        {started ? t('dashboard.quest.continueBtn') : t('dashboard.quest.startBtn')}
-      </button>
-    </div>
-  )
-}
-
-function SideQuestRow({ mission, accepted, onAccept, onClaim }) {
-  const { t } = useI18n()
-  const done = mission._completed
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5">
-      <span className="text-xl">{mission.icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-text line-clamp-1">{mission.title}</p>
-        <p className="text-[11px] text-text-muted line-clamp-1">{mission.description}</p>
-      </div>
-      <div className="shrink-0">
-        {done ? (
-          <button type="button" onClick={() => onClaim(mission.id)}
-            className="rounded-lg border border-primary bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">
-            {t('dashboard.quest.claim')}
-          </button>
-        ) : accepted ? (
-          <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-400">
-            {t('dashboard.quest.inProgress')}
-          </span>
-        ) : (
-          <button type="button" onClick={() => onAccept(mission.id)}
-            className="rounded-lg bg-primary px-2.5 py-1 text-[10px] font-bold text-background">
-            {t('dashboard.quest.accept')}
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function DailyQuestRow() {
-  const { t } = useI18n()
-  const canClaim = useDailyRewardsStore((s) => s.canClaim())
-  const streak = useDailyRewardsStore((s) => s.streak)
-  const claim = useDailyRewardsStore((s) => s.claim)
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
-      <span className="text-xl">🔥</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-text">{t('dashboard.quest.dailyLabel')}</p>
-        <p className="text-[11px] text-text-muted">
-          {streak > 0
-            ? (streak === 1 ? t('dashboard.quest.dailyStreakOne') : t('dashboard.quest.dailyStreakMany', { n: streak }))
-            : t('dashboard.quest.dailyStart')}
-        </p>
-      </div>
-      {canClaim ? (
-        <button type="button" onClick={claim}
-          className="shrink-0 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-bold text-background">
-          {t('dashboard.quest.claim')}
-        </button>
-      ) : (
-        <span className="shrink-0 rounded-lg border border-border px-2.5 py-1 text-[10px] font-semibold text-text-muted">{t('dashboard.quest.dailyClaimed')}</span>
-      )}
-    </div>
-  )
-}
-
-// ── Course card (compact) ─────────────────────────────────────────────────────
+// ── Course card (compact) — usado también por MainCategoryPage.jsx y SchoolPage.jsx ──
 export function CourseCard({ course, pct, owned, accent, onClick }) {
   const { t } = useI18n()
   return (
@@ -232,86 +105,32 @@ export function CourseCard({ course, pct, owned, accent, onClick }) {
 }
 
 // ── Tab: Inicio ───────────────────────────────────────────────────────────────
-function InicioTab({ profile, license, categories, progressByCourse, hasAccessToCourse, handleSelect, tasks, projects, pendingExams, patchNotesOpen, setPatchNotesOpen }) {
-  const { t, lang } = useI18n()
-  const latest   = PATCH_NOTES[0]
+// Deliberadamente chico: solo actualizaciones del sitio + tus cursos. Todo lo
+// demás (perfil, XP/monedas, misiones, tareas pendientes, actividad reciente,
+// accesos a Campus) ya vive en otra parte de la app (/progreso, /misiones,
+// /mis-tareas, /anuncios, el menú Campus del nav) — pedido explícito del
+// usuario tras notar que el Dashboard duplicaba /progreso sin aportar nada
+// nuevo. Antes esta pestaña era mucho más grande (roster de personaje, quest
+// log, tareas pendientes...) — ver project_dashboard_hero_redesign en
+// memoria para el historial de ese diseño anterior, ya descartado.
+function InicioTab({ profile, license, progressByCourse }) {
+  const { t } = useI18n()
+  const [patchNotesOpen, setPatchNotesOpen] = useState(false)
+  const latest = PATCH_NOTES[0]
 
   const inProgress = useMemo(() => courses.filter((c) => {
     const p = progressByCourse(c.id)
     return p !== null && p > 0 && p < 100
   }), [progressByCourse])
 
-  const recommended = useMemo(() =>
-    courses.filter((c) => !c.locked && (progressByCourse(c.id) === null || progressByCourse(c.id) === 0))
-      .slice(0, 3),
-  [progressByCourse])
-
+  const todayCourses = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 2)
   const regions = useMemo(() => buildRegions(courses, progressByCourse), [progressByCourse])
-  const focusCourse = inProgress[0] ?? recommended[0] ?? null
-
-  // Misiones secundarias del quest log: mismo cálculo que MissionsBoardPage
-  // (globales + de curso, evaluadas con useMissionState), solo que aquí
-  // mostramos únicamente las 3 más relevantes para no duplicar /misiones.
-  const allProgress = useProgressStore((s) => s.progress)
-  const missionState = useMissionState()
-  const missionsAccepted = useGlobalMissionsStore((s) => s.accepted)
-  const missionsClaimed = useGlobalMissionsStore((s) => s.claimed)
-  const acceptMission = useGlobalMissionsStore((s) => s.acceptMission)
-  const claimMissionReward = useGlobalMissionsStore((s) => s.claimReward)
-
-  const topSideQuests = useMemo(() => {
-    const courseMissions = Object.keys(allProgress).flatMap((courseId) =>
-      (COURSE_MISSIONS[courseId] ?? []).map((m) => ({ ...m, _completed: evaluateMission(m, missionState) }))
-    )
-    const globalMissions = GLOBAL_MISSIONS.map((m) => ({ ...m, _completed: evaluateMission(m, missionState) }))
-    const rank = (m) => (missionsAccepted.includes(m.id) && m._completed ? 0 : missionsAccepted.includes(m.id) ? 1 : 2)
-    return [...courseMissions, ...globalMissions]
-      .filter((m) => !missionsClaimed.includes(m.id))
-      .sort((a, b) => rank(a) - rank(b))
-      .slice(0, 3)
-  }, [allProgress, missionState, missionsAccepted, missionsClaimed])
-
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
-  const visibleCampusLinks = CAMPUS_LINKS.filter((l) => !l.hideFor?.includes(profile?.age_profile))
-  // Perfil de edad "niños"/"abuelos" (profiles.age_profile) no ve el mundo VR
-  // en absoluto — /vr y /vr-templo ya están bloqueados a nivel de ruta
-  // (ProtectedRoute blockAgeProfiles), así que tampoco tiene sentido
-  // ofrecerle estos dos accesos directos desde el Dashboard.
   const vrAllowed = !['kids', 'seniors'].includes(profile?.age_profile)
-
-  const pendingActions = useMemo(
-    () => buildPendingActions({ tasks, projects, exams: pendingExams, hasAccessToCourse, courses }),
-    [tasks, projects, pendingExams, hasAccessToCourse]
-  )
-
-  const activeQuestMap = useQuestsStore((s) => s.active)
-  const activeQuests = useMemo(
-    () => Object.entries(activeQuestMap).map(([id, step]) => ({ quest: getQuestById(id), step })).filter((q) => q.quest),
-    [activeQuestMap]
-  )
-
-  const notifications = useNotificationsStore((s) => s.notifications)
-  const recentActivity = notifications.slice(0, 5)
-
-  // Curso(s) de hoy + puntos/racha — mismo cálculo que ProgressPage.jsx,
-  // traído al Dashboard como la pieza principal del hero (pedido explícito:
-  // "tu curso de hoy" con anillo de progreso grande, como en la referencia
-  // que mandó el usuario, no una barra de XP genérica).
-  const completedCourses = useMemo(() => courses.filter((c) => progressByCourse(c.id) === 100), [progressByCourse])
-  const enrolledCourses  = inProgress.length + completedCourses.length
-  const todayCourses     = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 2)
-  const topRegions = useMemo(
-    () => regions.filter((r) => r.total > 0)
-      .sort((a, b) => (b.completed + b.inProgress * 0.5) / b.total - (a.completed + a.inProgress * 0.5) / a.total)
-      .slice(0, 6),
-    [regions]
-  )
-  const xp    = useLevelStore((s) => s.xp)
-  const coins = useCurrencyStore((s) => s.coins)
-  const { isMaxLevel, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+      {patchNotesOpen && <PatchNotesModal open force onClose={() => setPatchNotesOpen(false)} />}
 
       <div>
         <h1 className="text-xl font-black text-text">
@@ -320,72 +139,20 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
       </div>
 
-      {/* Hero: columna izquierda = curso(s) de hoy (la pieza más grande e
-          importante), columna derecha = perfil + puntos + accesos rápidos.
-          Reemplaza la versión anterior (roster de Jugador/Oliver) — el
-          usuario pidió algo más parecido a un dashboard tipo Platzi, con
-          datos reales en vez de contenido de ejemplo. */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <section>
-          <p className="mb-3 text-sm font-extrabold text-text">{t('dashboard.promo.todayTitle')}</p>
-          {todayCourses.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {todayCourses.map((c) => (
-                <TodayCourseCard key={c.id} course={c} pct={progressByCourse(c.id) ?? 0} meta={CATEGORY_META[c.category] ?? CATEGORY_META.Otros} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-text-muted">
-              {t('dashboard.promo.todayEmpty')}
-            </div>
-          )}
-        </section>
-
-        <div className="flex flex-col gap-3">
-          <ProfileHeroCard enrolledCount={enrolledCourses} />
-
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-            <div className="min-w-0">
-              <p className="text-sm font-extrabold text-text">{t('dashboard.points.title')}</p>
-              <p className="text-lg font-black text-amber-400">🪙 {coins.toLocaleString()}</p>
-              <p className="text-[11px] text-text-muted">
-                {isMaxLevel ? t('dashboard.progress.totalXp', { xp: xp.toLocaleString() }) : `${xpIntoLevel}/${xpForNextLevel} XP`}
-              </p>
-            </div>
-            <Link to="/tienda" className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">
-              {t('dashboard.points.spend')}
-            </Link>
+      <section>
+        <p className="mb-3 text-sm font-extrabold text-text">{t('dashboard.promo.todayTitle')}</p>
+        {todayCourses.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {todayCourses.map((c) => (
+              <TodayCourseCard key={c.id} course={c} pct={progressByCourse(c.id) ?? 0} meta={CATEGORY_META[c.category] ?? CATEGORY_META.Otros} />
+            ))}
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Link to="/mascota" className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 p-3 transition hover:border-violet-500/40">
-              <p className="text-xl">🐾</p>
-              <p className="mt-1 text-xs font-bold text-text">{t('dashboard.promo.mascotTitle').replace('🐾 ', '')}</p>
-            </Link>
-            <Link to="/logros" className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/5 p-3 transition hover:border-amber-500/40">
-              <p className="text-xl">🏅</p>
-              <p className="mt-1 text-xs font-bold text-text">{t('dashboard.promo.achievementsSub', { n: completedCourses.length })}</p>
-            </Link>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-text-muted">
+            {t('dashboard.promo.todayEmpty')}
           </div>
-        </div>
-      </div>
-
-      {/* Avance por área — mismas "regiones" del mapa de aventura, mostradas
-          aquí como barras comparables (igual que en /progreso). Reemplaza
-          el anillo agregado único de la versión anterior por algo más
-          parecido a la sección "Learning activity" de la referencia, pero
-          con datos reales de progreso en vez de un gráfico inventado. */}
-      {topRegions.length > 0 && (
-        <section className="rounded-2xl border border-border bg-surface p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm font-extrabold text-text">{t('dashboard.snapshot.title')}</p>
-            <Link to="/progreso" className="text-xs font-semibold text-primary hover:underline">{t('dashboard.snapshot.seeMore')}</Link>
-          </div>
-          <div className="space-y-3">
-            {topRegions.map((r) => <RegionBar key={r.key} region={r} />)}
-          </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
           Sin git (algún checkout raro) cae al patch note curado como respaldo. */}
@@ -441,172 +208,16 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         </div>
       </div>
 
-      {/* Mapa de aventura + quest log — reemplaza los antiguos bloques
-          "Recomendadas para ti" / "Continúa aprendiendo" (listas de cursos
-          sin jerarquía) por un solo hub: el mapa navega a las mismas
-          academias/categorías de siempre, y el quest log es el mismo
-          sistema de misiones globales/de curso que ya alimenta /misiones,
-          solo que ahora visible y accionable sin salir del Inicio. */}
       <WorldMapSection regions={regions} />
-
-      <section>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <MainQuestCard
-            course={focusCourse}
-            pct={focusCourse ? progressByCourse(focusCourse.id) : null}
-            meta={focusCourse ? (CATEGORY_META[focusCourse.category] ?? CATEGORY_META.Otros) : null}
-            onClick={() => focusCourse && handleSelect(focusCourse)}
-          />
-          <div className="flex flex-col gap-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('dashboard.quest.sideLabel')}</p>
-            {topSideQuests.map((m) => (
-              <SideQuestRow
-                key={m.id}
-                mission={m}
-                accepted={missionsAccepted.includes(m.id)}
-                onAccept={acceptMission}
-                onClaim={claimMissionReward}
-              />
-            ))}
-            <DailyQuestRow />
-            <Link to="/misiones" className="text-center text-xs text-primary hover:underline">{t('dashboard.quest.seeBoard')}</Link>
-          </div>
-        </div>
-      </section>
-
-      {!focusCourse && topSideQuests.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-8 text-center">
-          <p className="text-3xl mb-2">📚</p>
-          <p className="text-sm font-semibold text-text mb-1">{t('dashboard.noCoursesTitle')}</p>
-          <p className="text-xs text-text-muted mb-4">{t('dashboard.noCoursesSub')}</p>
-          <button type="button" className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-background">
-            {t('dashboard.exploreSchools')}
-          </button>
-        </div>
-      )}
-
-      {/* Pendientes unificados — tareas + proyectos + exámenes en una sola
-          lista (buildPendingActions, src/utils/pendingActions.js), en vez
-          de solo tareas. Anuncios y mensajes viven en /anuncios (tablón +
-          buzón), para no repetir el mismo contenido aquí. */}
-      {pendingActions.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-amber-500/30 bg-surface">
-          <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
-            <h3 className="flex items-center gap-2 text-sm font-extrabold text-text">
-              <span>✅</span>{t('dashboard.myTasks')}
-            </h3>
-            <Link to="/mis-tareas" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
-          </div>
-          <div className="divide-y divide-border/60">
-            {pendingActions.slice(0, 5).map((action) => (
-              <Link key={action.id} to={action.href} className="flex items-start gap-3 px-4 py-2.5 hover:bg-surface-hover">
-                <span className="mt-0.5 shrink-0 text-sm">{action.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-text line-clamp-1">{action.title}</p>
-                  <p className="text-[11px] text-text-muted">
-                    {action.subtitle ?? {
-                      task: t('dashboard.quest.taskKindTask'),
-                      project: t('dashboard.quest.taskKindProject'),
-                      exam: t('dashboard.quest.taskKindExam'),
-                    }[action.kind]}
-                    {action.dueDate && ` · 📅 ${new Date(action.dueDate + 'T12:00:00').toLocaleDateString(lang, { day: 'numeric', month: 'short' })}`}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Misiones activas — invisibles en el dashboard hasta ahora, solo
-          se veían entrando manualmente a /misiones. */}
-      {vrAllowed && activeQuests.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-text">{t('dashboard.quest.activeMissionsLabel')}</h2>
-            <Link to="/misiones" className="text-xs text-primary hover:underline">{t('dashboard.seeAllF')}</Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {activeQuests.map(({ quest, step }) => (
-              <Link key={quest.id} to="/misiones"
-                className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-3 hover:border-primary">
-                <span className="text-xl">{quest.icon}</span>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-text line-clamp-1">{quest.title}</p>
-                  <p className="text-xs text-text-muted">{t('dashboard.quest.step', { step: step + 1, total: quest.steps.length })}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Actividad reciente — reusa las notificaciones que NotificationBell
-          ya carga (fetchNotifications/subscribeToNotifications se llaman
-          desde AppTopBar, sin fetch propio aquí). No incluye recompensas de
-          misiones ni de graduación de examen: esas otorgan XP/oro directo
-          (useQuestsStore.claimReward, grantGraduationRewards en
-          useExamsStore.js) sin insertar una fila en student_notifications. */}
-      {recentActivity.length > 0 && (
-        <section>
-          <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.quest.recentActivityLabel')}</h2>
-          <div className="divide-y divide-border rounded-2xl border border-border bg-surface">
-            {recentActivity.map((n) => (
-              <div key={n.id} className="flex items-start justify-between gap-3 px-4 py-2.5">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-text line-clamp-1">{n.title}</p>
-                  {n.body && <p className="text-[11px] text-text-muted line-clamp-1">{n.body}</p>}
-                </div>
-                {(n.xp_reward > 0 || n.gold_reward > 0) && (
-                  <span className="shrink-0 text-[11px] font-bold text-primary">
-                    {n.xp_reward > 0 && `+${n.xp_reward} XP`}{n.xp_reward > 0 && n.gold_reward > 0 ? ' · ' : ''}{n.gold_reward > 0 && `+${n.gold_reward} 🪙`}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Campus quick access — oculto por perfil de edad (profiles.age_profile,
-          asignado por el admin), mismo criterio que el nav de AppTopBar.jsx */}
-      {visibleCampusLinks.length > 0 && (
-      <section>
-        <h2 className="text-base font-extrabold text-text mb-3">🌍 {t('dashboard.sections.campus')}</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {visibleCampusLinks.map((l) => (
-            <Link key={l.to} to={l.to}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-primary hover:bg-surface-hover">
-              <span className="text-3xl">{l.icon}</span>
-              <span className="text-xs font-semibold text-text">{t(`nav.items.${l.key}`)}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-      )}
     </div>
   )
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const navigate          = useNavigate()
-  const progress          = useProgressStore((s) => s.progress)
-  const license           = useAuthStore((s) => s.license)
-  const profile           = useAuthStore((s) => s.profile)
-  const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
-  const tasks             = useTasksStore((s) => s.tasks)
-  const fetchTasks        = useTasksStore((s) => s.fetchMyTasks)
-  const projects          = useProjectsStore((s) => s.projects)
-  const fetchProjects     = useProjectsStore((s) => s.fetchMyProjects)
-  const pendingExams      = useExamsStore((s) => s.pendingExams)
-  const fetchPendingExams = useExamsStore((s) => s.fetchPendingExams)
-  const session           = useAuthStore((s) => s.session)
-
-  const [patchNotesOpen, setPatchNotesOpen] = useState(false)
-
-  useEffect(() => { fetchTasks(); fetchProjects() }, [fetchTasks, fetchProjects])
-  useEffect(() => { if (session?.user?.id) fetchPendingExams(session.user.id) }, [session?.user?.id, fetchPendingExams])
+  const progress = useProgressStore((s) => s.progress)
+  const license  = useAuthStore((s) => s.license)
+  const profile  = useAuthStore((s) => s.profile)
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -615,41 +226,14 @@ export default function DashboardPage() {
     return Math.round((done / total) * 100)
   }
 
-  const categories = useMemo(() => {
-    const groups = new Map()
-    for (const c of courses) {
-      const key = c.category ?? 'Otros'
-      if (!groups.has(key)) groups.set(key, [])
-      groups.get(key).push(c)
-    }
-    return Array.from(groups.entries())
-  }, [])
-
-  const handleSelect = (course) => { if (!course.locked) navigate(`/learn/${course.id}`) }
-
-  const tabProps = { categories, progressByCourse, hasAccessToCourse, handleSelect }
-
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <PageVideoModal pageKey="dashboard" />
-      {patchNotesOpen && <PatchNotesModal open force onClose={() => setPatchNotesOpen(false)} />}
 
       <AppTopBar />
 
-      {/* "Mi Progreso" ahora vive en su propia ruta (/progreso, ver
-          ProgressPage.jsx) en vez de ser una pestaña aquí — Inicio es la
-          única vista de esta página. */}
       <main className="flex-1">
-        <InicioTab
-          profile={profile}
-          license={license}
-          tasks={tasks}
-          projects={projects}
-          pendingExams={pendingExams}
-          patchNotesOpen={patchNotesOpen}
-          setPatchNotesOpen={setPatchNotesOpen}
-          {...tabProps}
-        />
+        <InicioTab profile={profile} license={license} progressByCourse={progressByCourse} />
       </main>
 
       <MascotCompanion />

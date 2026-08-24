@@ -48,6 +48,10 @@ const GROUPS = [
       { to: '/proyectos',  key: 'proyectos', label: 'Proyectos',  icon: '📁' },
       { to: '/examenes',   key: 'examenes',  label: 'Exámenes',   icon: '📝' },
       { to: '/logros',    key: 'logros',    label: 'Logros',    icon: '🏅' },
+      // Antes vivía en "Comunidad" como "Chats" — es historial de
+      // conversaciones con la mascota IA, no mensajería entre alumnos, así
+      // que encaja mejor aquí (pedido explícito del usuario).
+      { to: '/chats', key: 'historialIA', label: 'Historial de conversaciones con la IA', icon: '💬', hideFor: ['kids'] },
     ],
   },
   {
@@ -82,7 +86,8 @@ const GROUPS = [
     icon: '💬',
     items: [
       { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥', hideFor: ['kids'] },
-      { to: '/chats',  key: 'chats',  label: 'Chats',  icon: '💬', hideFor: ['kids'] },
+      { to: '/buzon',  key: 'buzon',  label: 'Buzón',  icon: '📬', hideFor: ['kids'] },
+      { to: '/foro',   key: 'foro',   label: 'Foro',   icon: '🗣️', hideFor: ['kids'] },
     ],
   },
 ]

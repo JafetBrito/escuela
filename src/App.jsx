@@ -78,6 +78,8 @@ const MissionsBoardPage = lazy(() => import('./components/missions/MissionsBoard
 const ProgressPage = lazy(() => import('./components/dashboard/ProgressPage'))
 const NotesPage = lazy(() => import('./components/notes/NotesPage'))
 const FriendsPage = lazy(() => import('./components/friends/FriendsPage'))
+const MailboxPage = lazy(() => import('./components/mailbox/MailboxPage'))
+const ForoPage = lazy(() => import('./components/forum/ForoPage'))
 const SkillTreePage = lazy(() => import('./components/skills/SkillTreePage'))
 const MemeSharePage = lazy(() => import('./components/memes/MemeSharePage'))
 const RecruiterEntryPage = lazy(() => import('./components/auth/RecruiterEntryPage'))
@@ -345,6 +347,28 @@ export default function App() {
           element={
             <ProtectedRoute blockAgeProfiles={['kids']}>
               <ChatsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/buzon"
+          element={
+            <ProtectedRoute blockAgeProfiles={['kids']}>
+              <Suspense fallback={<RouteFallback />}>
+                <MailboxPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/foro"
+          element={
+            <ProtectedRoute blockAgeProfiles={['kids']}>
+              <Suspense fallback={<RouteFallback />}>
+                <ForoPage />
+              </Suspense>
             </ProtectedRoute>
           }
         />

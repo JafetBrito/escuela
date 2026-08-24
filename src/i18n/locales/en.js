@@ -48,6 +48,9 @@ export const en = {
       arena: 'Arena',
       amigos: 'Friends',
       chats: 'Chats',
+      historialIA: 'AI Conversation History',
+      buzon: 'Mailbox',
+      foro: 'Forum',
       tienda: 'Shop',
     },
     profile: {
@@ -294,7 +297,15 @@ export const en = {
     },
     friends: {
       title: '👥 Friends',
-      subtitle: 'Your campus buddies and your message inbox.',
+      subtitle: 'Your campus buddies — add friends and send a daily gift.',
+    },
+    mailbox: {
+      title: '📬 Mailbox',
+      subtitle: 'Your messages and notices.',
+    },
+    forum: {
+      title: '🗣️ Forum',
+      subtitle: 'Share something with the whole campus.',
     },
     settings: {
       title: '⚙️ Settings',

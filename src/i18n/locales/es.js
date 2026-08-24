@@ -52,6 +52,9 @@ export const es = {
       arena: 'Arena',
       amigos: 'Amigos',
       chats: 'Chats',
+      historialIA: 'Historial de conversaciones con la IA',
+      buzon: 'Buzón',
+      foro: 'Foro',
       tienda: 'Tienda',
     },
     profile: {
@@ -298,7 +301,15 @@ export const es = {
     },
     friends: {
       title: '👥 Amigos',
-      subtitle: 'Tus compañeros del campus y tu buzón de mensajes.',
+      subtitle: 'Tus compañeros del campus — agrega amigos y envíales un regalo diario.',
+    },
+    mailbox: {
+      title: '📬 Buzón',
+      subtitle: 'Tus mensajes y avisos.',
+    },
+    forum: {
+      title: '🗣️ Foro',
+      subtitle: 'Comparte algo con todo el campus.',
     },
     settings: {
       title: '⚙️ Ajustes',
