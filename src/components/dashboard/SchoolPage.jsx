@@ -48,7 +48,10 @@ export default function SchoolPage() {
     return Math.round((done / total) * 100)
   }
 
-  const handleSelect = (course) => { if (!course.locked) navigate(`/learn/${course.id}`) }
+  // gameRoute: cursos experimentales que ocurren dentro de un juego 2D en
+  // vez del flujo normal de texto/video (ver course-phishing-2d) — navegan
+  // directo a su propia página de juego, no a /learn/:id.
+  const handleSelect = (course) => { if (!course.locked) navigate(course.gameRoute ?? `/learn/${course.id}`) }
 
   if (!category) {
     return (

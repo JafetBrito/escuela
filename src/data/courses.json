@@ -671,6 +671,18 @@
     "locked": false
   },
   {
+    "id": "course-phishing-2d",
+    "title": "Protégete del Phishing (curso interactivo)",
+    "description": "Experimento: el mismo curso de siempre, pero dentro de un mundo 2D — camina por una oficina y resuelve en cada escritorio una situación real de phishing (remitentes falsos, enlaces, urgencia, adjuntos y más).",
+    "icon": "🎣",
+    "color": "#d97706",
+    "category": "Ciberseguridad",
+    "subcategory": "Seguridad Personal",
+    "difficulty": "principiante",
+    "locked": false,
+    "gameRoute": "/games/phishing-office"
+  },
+  {
     "id": "course-ciberseguridad",
     "title": "Fundamentos de Ciberseguridad",
     "description": "Los conceptos esenciales para proteger sistemas y datos: amenazas comunes, criptografía básica, seguridad de redes y buenas prácticas que todo desarrollador debería conocer. Próximamente.",
