@@ -1,0 +1,11 @@
+Assets used in "Protégete del Phishing" (curso 2D experimental)
+
+- roguelikeSheet_transparent.png — Kenney "Roguelike/RPG Pack" (kenney.nl/assets/roguelike-rpg-pack)
+- roguelikeChar_transparent.png — Kenney "Roguelike Characters" pack (kenney.nl/assets/roguelike-characters)
+
+Ambos paquetes son de Kenney (www.kenney.nl), licencia Creative Commons Zero
+(CC0) — uso libre en proyectos personales y comerciales, sin necesidad de
+atribución (se deja este archivo como buena práctica, no por obligación).
+Ver LICENSE_kenney.txt para el texto completo de la licencia.
+
+Tile size: 16×16px, 1px de margen entre tiles (mismo grid en ambos sheets).
