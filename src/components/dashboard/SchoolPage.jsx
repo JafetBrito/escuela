@@ -9,6 +9,7 @@ import AppTopBar from '../shared/AppTopBar'
 import NpcChatPanel from '../shared/NpcChatPanel'
 import SchoolTeacherViewport from '../mascot/SchoolTeacherViewport'
 import { CourseCard } from './DashboardPage'
+import CyberSecurityHero from './CyberSecurityHero'
 
 // Página dedicada por escuela (/escuela/:slug) — reemplaza la lista plana que
 // vivía dentro de EscuelasTab. La mitad izquierda agrupa los cursos de la
@@ -79,13 +80,17 @@ export default function SchoolPage() {
       <div className="flex flex-1 flex-col lg:flex-row lg:overflow-hidden">
         {/* ── Mitad izquierda: cursos por subcategoría ─────────────────── */}
         <div className="flex-1 lg:overflow-y-auto">
-          <div className={`bg-gradient-to-r ${meta.gradient} px-6 py-8`}>
-            <p className="text-5xl drop-shadow-sm">{meta.icon}</p>
-            <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">Escuela de {category}</h1>
-            <p className="mt-1 text-sm text-background/80">
-              {groups.reduce((n, [, list]) => n + list.length, 0)} cursos disponibles
-            </p>
-          </div>
+          {category === 'Ciberseguridad' ? (
+            <CyberSecurityHero courseCount={groups.reduce((n, [, list]) => n + list.length, 0)} />
+          ) : (
+            <div className={`bg-gradient-to-r ${meta.gradient} px-6 py-8`}>
+              <p className="text-5xl drop-shadow-sm">{meta.icon}</p>
+              <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">Escuela de {category}</h1>
+              <p className="mt-1 text-sm text-background/80">
+                {groups.reduce((n, [, list]) => n + list.length, 0)} cursos disponibles
+              </p>
+            </div>
+          )}
 
           <div className="mx-auto max-w-3xl px-4 py-6">
             {groups.map(([subcategory, list]) => (

@@ -180,6 +180,25 @@ body {
   }
 }
 
+/* Banderas flotando en el hero de la Academia de Idiomas — sube/baja suave,
+   sin girar ni desplazarse lateral, para que se lean como "constelación"
+   quieta en vez de distraer. */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[float_6s_ease-in-out_infinite\] { animation: none; }
+}
+
+/* Barrido de radar del hero de la Academia de Ciberseguridad. */
+@keyframes radar-sweep {
+  0%   { top: 0%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }

@@ -3,8 +3,60 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { GUIAS } from '../../data/guiasRegistry'
 
+// Modal que muestra el recurso externo SIN salir de la plataforma (la URL/
+// ruta del navegador nunca cambia). Si el sitio permite ser embebido
+// (`link.embeddable`, verificado con curl -I contra X-Frame-Options/CSP
+// frame-ancestors — ver guiasRegistry.js) se muestra en un <iframe>; si no,
+// la mayoría de sitios de documentación oficiales lo bloquean por su propia
+// política de seguridad, así que se ofrece igual el botón de pestaña nueva
+// en vez de un iframe en blanco.
+function GuideViewerModal({ link, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5">
+        <button
+          onClick={onClose}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:text-text"
+        >
+          ← Volver a Guías
+        </button>
+        <p className="truncate text-sm font-semibold text-text">{link.icon} {link.title}</p>
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-primary hover:underline"
+        >
+          Abrir en pestaña nueva ↗
+        </a>
+      </div>
+
+      {link.embeddable ? (
+        <iframe src={link.url} title={link.title} className="flex-1 border-0 bg-white" />
+      ) : (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <span className="text-4xl">🔒</span>
+          <p className="font-bold text-text">Este sitio no permite mostrarse dentro de la plataforma</p>
+          <p className="max-w-md text-sm text-text-muted">
+            {link.title} bloquea que otras páginas lo muestren embebido (es una política de seguridad del propio sitio, no algo que podamos cambiar). Ábrelo en una pestaña nueva.
+          </p>
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:bg-primary-hover"
+          >
+            Abrir {link.title} ↗
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function GuiasPage() {
   const [active, setActive] = useState(null) // null = show all
+  const [viewing, setViewing] = useState(null) // link actualmente abierto en el modal
 
   const visible = active ? GUIAS.filter((g) => g.id === active) : GUIAS
 
@@ -62,21 +114,20 @@ export default function GuiasPage() {
                   {/* Links */}
                   <div className="grid gap-px bg-border sm:grid-cols-2">
                     {cat.links.map((link) => (
-                      <a
+                      <button
                         key={link.url}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-start gap-3 bg-surface p-4 transition-colors hover:bg-background"
+                        type="button"
+                        onClick={() => setViewing(link)}
+                        className="group flex items-start gap-3 bg-surface p-4 text-left transition-colors hover:bg-background"
                       >
                         <span className="mt-0.5 text-2xl">{link.icon}</span>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-text group-hover:text-primary">
-                            {link.title} <span className="text-[10px] text-text-muted">↗</span>
+                            {link.title}
                           </p>
                           <p className="mt-0.5 text-xs leading-relaxed text-text-muted">{link.desc}</p>
                         </div>
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -86,6 +137,8 @@ export default function GuiasPage() {
 
         </div>
       </main>
+
+      {viewing && <GuideViewerModal link={viewing} onClose={() => setViewing(null)} />}
 
       <MascotCompanion />
     </div>

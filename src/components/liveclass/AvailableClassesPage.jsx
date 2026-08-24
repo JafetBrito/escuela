@@ -110,7 +110,13 @@ function ClassPlayer({ cls, mode, onBack }) {
           </div>
         </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,900px)_minmax(380px,1fr)] lg:items-start">
+          {/* Antes el video tenía ancho libre (minmax(0,1fr)) y el Hub un
+              ancho fijo de 400px — en pantallas grandes el video se
+              disparaba enorme y el Hub quedaba angosto y apretado a su
+              lado ("no se ve bien en computadora"). Ahora el video tiene un
+              tope razonable (900px, sigue siendo grande) y el Hub crece con
+              el espacio que sobra en vez de quedarse fijo. */}
           <div className="min-w-0">
             <VideoPlayer videoId={cls.demo_video_id} />
           </div>
@@ -120,7 +126,7 @@ function ClassPlayer({ cls, mode, onBack }) {
               Ahora crece con su contenido y usa el scroll normal de la
               página; sticky sigue funcionando mientras quepa en el viewport. */}
           <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
               <span className="text-lg">🎯</span>
               <p className="text-sm font-extrabold text-text">Hub de la clase</p>
               <span className="ml-auto flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
@@ -156,7 +162,7 @@ export default function AvailableClassesPage() {
       <AppTopBar />
 
       <main className="flex-1 px-4 py-8 md:px-8">
-        <div className={`mx-auto ${openClassEntry?.mode === 'sideBySide' ? 'max-w-7xl' : 'max-w-3xl'}`}>
+        <div className={`mx-auto ${openClassEntry?.mode === 'sideBySide' ? 'max-w-[1400px]' : 'max-w-3xl'}`}>
           {!openClassEntry && (
             <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
               <h1 className="text-3xl font-extrabold text-white">🎬 Clases Disponibles</h1>
