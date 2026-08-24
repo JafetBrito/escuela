@@ -147,6 +147,14 @@ export const en = {
       view: 'View →',
       noMascot: "You don't have a pet yet — create one here",
       createMascot: 'Create →',
+      noClass: "You haven't picked a class yet — pick one here",
+      createClass: 'Pick →',
+      playerLabel: 'You',
+      oliverLabel: 'Oliver',
+    },
+    snapshot: {
+      title: '📊 Your progress',
+      seeMore: 'See full progress →',
     },
   },
   languageAcademy: {

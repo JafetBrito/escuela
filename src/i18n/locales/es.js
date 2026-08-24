@@ -151,6 +151,14 @@ export const es = {
       view: 'Ver →',
       noMascot: 'Aún no tienes una mascota — créala aquí',
       createMascot: 'Crear →',
+      noClass: 'Aún no elegiste tu clase — créala aquí',
+      createClass: 'Elegir →',
+      playerLabel: 'Tú',
+      oliverLabel: 'Oliver',
+    },
+    snapshot: {
+      title: '📊 Tu avance',
+      seeMore: 'Ver progreso completo →',
     },
   },
   languageAcademy: {

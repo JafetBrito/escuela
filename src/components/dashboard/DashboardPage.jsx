@@ -9,7 +9,6 @@ import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useGameStore } from '../../stores/useGameStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
@@ -27,6 +26,7 @@ import { GLOBAL_MISSIONS, evaluateMission } from '../../data/globalMissionsRegis
 import { COURSE_MISSIONS } from '../../data/courseMissionsRegistry'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { buildRegions } from '../../utils/regions'
+import ProgressRing from '../shared/ProgressRing'
 
 // ── Sidebar nav data ──────────────────────────────────────────────────────────
 // Accesos rápidos de la pestaña Inicio (subconjunto de los 4 mundos principales).
@@ -276,10 +276,6 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
   // ofrecerle estos dos accesos directos desde el Dashboard.
   const vrAllowed = !['kids', 'seniors'].includes(profile?.age_profile)
 
-  const playerTP = useGameStore((s) => s.player.talentPoints)
-  const oliverTP = useGameStore((s) => s.oliver.talentPoints)
-  const totalTP = (playerTP ?? 0) + (oliverTP ?? 0)
-
   const pendingActions = useMemo(
     () => buildPendingActions({ tasks, projects, exams: pendingExams, hasAccessToCourse, courses }),
     [tasks, projects, pendingExams, hasAccessToCourse]
@@ -293,6 +289,19 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
 
   const notifications = useNotificationsStore((s) => s.notifications)
   const recentActivity = notifications.slice(0, 5)
+
+  // Resumen de avance — un solo anillo agregado (misma fórmula ponderada que
+  // RegionBar/ProgressPage.jsx: completadas + en progreso*0.5, sobre el total),
+  // reusando el memo `regions` de más abajo en vez de recalcular nada nuevo.
+  const overallPct = useMemo(() => {
+    const withCourses = regions.filter((r) => r.total > 0)
+    const total = withCourses.reduce((sum, r) => sum + r.total, 0)
+    if (total === 0) return 0
+    const done = withCourses.reduce((sum, r) => sum + r.completed + r.inProgress * 0.5, 0)
+    return Math.round((done / total) * 100)
+  }, [regions])
+  const tasksPending = tasks.filter((tk) => tk.status === 'pendiente').length
+  const tasksGraded  = tasks.filter((tk) => tk.status === 'revisada').length
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
@@ -310,17 +319,22 @@ function InicioTab({ profile, license, categories, progressByCourse, hasAccessTo
         <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
       </div>
 
-      {vrAllowed && totalTP > 0 && (
-        <Link to="/arbol" className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 transition hover:bg-amber-500/15">
-          <div>
-            <p className="text-sm font-bold text-text">
-              🌳 {totalTP === 1 ? t('dashboard.quest.talentOne') : t('dashboard.quest.talentMany', { n: totalTP })}
-            </p>
-            <p className="text-xs text-text-muted">{t('dashboard.quest.talentUse')}</p>
+      {/* Resumen de avance — anillo general + contadores rápidos, con enlace
+          a /progreso para el detalle curso-por-curso y calificaciones. */}
+      <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
+        <ProgressRing pct={overallPct} accent="var(--color-primary)" size={64} stroke={6} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-extrabold text-text">{t('dashboard.snapshot.title')}</p>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
+            <span>📚 {inProgress.length} {t('dashboard.progress.coursesInProgress').toLowerCase()}</span>
+            <span>⏳ {tasksPending} {t('dashboard.progress.pending').toLowerCase()}</span>
+            <span>✅ {tasksGraded} {t('dashboard.progress.graded').toLowerCase()}</span>
           </div>
-          <span className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-background">{t('dashboard.quest.talentGoTree')}</span>
+        </div>
+        <Link to="/progreso" className="shrink-0 text-xs font-semibold text-primary hover:underline">
+          {t('dashboard.snapshot.seeMore')}
         </Link>
-      )}
+      </div>
 
       {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
           Sin git (algún checkout raro) cae al patch note curado como respaldo. */}

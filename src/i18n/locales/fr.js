@@ -130,6 +130,14 @@ export const fr = {
       view: 'Voir →',
       noMascot: 'Tu n’as pas encore de mascotte — crée-la ici',
       createMascot: 'Créer →',
+      noClass: 'Tu n’as pas encore choisi ta classe — choisis-la ici',
+      createClass: 'Choisir →',
+      playerLabel: 'Toi',
+      oliverLabel: 'Oliver',
+    },
+    snapshot: {
+      title: '📊 Ta progression',
+      seeMore: 'Voir toute la progression →',
     },
   },
   landing: {

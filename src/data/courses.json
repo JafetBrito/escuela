@@ -101,6 +101,17 @@
     "locked": false
   },
   {
+    "id": "course-ingles-a1",
+    "title": "Inglés desde Cero (A1): Tu Primer Paso",
+    "description": "El primer curso de la Academia de Idiomas: inglés general nivel A1 (Marco Común Europeo), explicado 100% desde el español. 39 clases — desde el abecedario hasta comparativos, con vocabulario real, gramática esencial y las trampas más comunes que comete un hispanohablante al empezar.",
+    "icon": "🇬🇧",
+    "color": "#38bdf8",
+    "category": "Idiomas",
+    "subcategory": "Inglés",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
     "id": "course-009",
     "title": "Fundamentos de Programación",
     "description": "Aprende a pensar como programador: variables, control de flujo, funciones y estructuras de datos — la base que necesitas antes de aprender cualquier lenguaje.",
