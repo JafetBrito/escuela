@@ -3,6 +3,7 @@ import { useGameStore } from '../../stores/useGameStore'
 import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { getAvailableEquipment, SLOT_META } from '../../data/equipmentRegistry'
+import ObjetosBagPanel from '../mascot/ObjetosBagPanel'
 
 const OWNER_TABS = [
   { id: 'avatar', label: 'Avatar', icon: '⚔️', owner: 'player' },
@@ -101,10 +102,13 @@ export default function BagsPanel({ onClose }) {
         ))}
       </div>
 
-      <div className="p-3" style={{ colorScheme: 'dark' }}>
+      <div className="max-h-[60vh] overflow-y-auto p-3" style={{ colorScheme: 'dark' }}>
         <EquipmentBagGrid owner={owner} />
         <p className="mt-2 text-center text-[10px] text-white/25">Toca un objeto para equiparlo o quitarlo.</p>
         <p className="mt-1 text-center text-[9px] italic text-white/20">🔧 Próximamente: poder/velocidad afectarán tus estadísticas.</p>
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <ObjetosBagPanel owner={owner} onActivate={onClose} />
+        </div>
       </div>
     </div>
   )

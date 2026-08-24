@@ -9,6 +9,7 @@ import { useCollectionStore } from '../../stores/useCollectionStore'
 import { useGalleryStore } from '../../stores/useGalleryStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { useBagStore } from '../../stores/useBagStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
@@ -39,6 +40,7 @@ const STORES = [
   useGalleryStore,
   useCurrencyStore,
   useShopStore,
+  useBagStore,
   useSettingsStore,
   useLevelStore,
   useLibraryStore,

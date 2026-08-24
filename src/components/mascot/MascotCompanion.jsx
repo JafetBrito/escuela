@@ -369,9 +369,14 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
                 // Fuera de VR, "Objetos" muestra lo comprado en la Tienda + recompensas.
                 <ObjetosBagPanel onActivate={() => setOpen(false)} />
               ) : (
-                <div className="flex flex-col gap-2">
-                  <EquipmentBagGrid owner={entity.owner} />
-                  <p className="text-center text-[10px] text-text-muted">Toca un objeto para equiparlo o quitarlo.</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <EquipmentBagGrid owner={entity.owner} />
+                    <p className="text-center text-[10px] text-text-muted">Toca un objeto para equiparlo o quitarlo.</p>
+                  </div>
+                  <div className="border-t border-border pt-3">
+                    <ObjetosBagPanel owner={entity.owner} onActivate={() => setOpen(false)} />
+                  </div>
                 </div>
               )
             )}

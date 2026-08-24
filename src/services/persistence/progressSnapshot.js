@@ -9,6 +9,7 @@ import { useCollectionStore } from '../../stores/useCollectionStore'
 import { useGalleryStore } from '../../stores/useGalleryStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { useBagStore } from '../../stores/useBagStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
@@ -144,6 +145,8 @@ export function buildProgressSnapshot() {
     terminalRewards: useTerminalRewardsStore.getState(),
     voice: useVoiceStore.getState(),
     equippedItems: useEquipmentStore.getState().equipped,
+    bags: useBagStore.getState().bags,
+    bagsMigrated: useBagStore.getState().migrated,
     seen: useSeenStore.getState(),
     theme: useThemeStore.getState().theme,
     lastSaved: new Date().toISOString(),
@@ -186,6 +189,8 @@ export function applyProgressSnapshot(snapshot) {
   useGalleryStore.getState().loadShots(snapshot.gallery ?? [])
   useCurrencyStore.getState().loadCoins(snapshot.coins)
   useShopStore.getState().loadPurchased(snapshot.purchasedItems ?? [])
+  useBagStore.getState().loadBags(snapshot.bags, snapshot.bagsMigrated)
+  useBagStore.getState().runMigrationIfNeeded(snapshot.purchasedItems ?? [])
   useChatHistoryStore.getState().loadHistory(snapshot.chatHistory ?? {})
   useLevelStore.getState().loadXp(snapshot.xp)
   useLibraryStore.getState().loadLastLocations(snapshot.libraryLocations ?? {})

@@ -1,15 +1,21 @@
-import { useShopStore } from '../../stores/useShopStore'
+import { useBagStore } from '../../stores/useBagStore'
 import { useCollectionStore } from '../../stores/useCollectionStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getShopItemById } from '../../data/shopRegistry'
 
 // Lista de OBJETOS del alumno (menú de curso). Reúne lo que el jugador posee:
-//   - Objetos comprados en la Tienda (useShopStore.purchased → SHOP_ITEMS).
+//   - Objetos comprados en la Tienda, ubicados en la bolsa de Avatar/Mascota
+//     (useBagStore → SHOP_ITEMS).
 //   - Recompensas de colección ganadas en misiones (useCollectionStore).
 // Cada objeto aparece completo en una fila (icono + nombre + descripción). Si
 // es interactivo — su id coincide con una clave de useItemEffectsStore que
 // algún componente consume (cámara, radio, temas, caja del TDAH…) — trae su
 // botón Activar/Desactivar en la misma fila.
+//
+// `owner` es opcional: pásalo ('player'|'oliver') donde ya exista un
+// selector Avatar/Mascota (dentro de VR) para filtrar a esa bolsa. Si se
+// omite (uso fuera de VR, donde no hay ese selector) se muestra la unión de
+// ambas bolsas — igual que el comportamiento de siempre.
 const MAX_ITEMS = 60
 const RARITY_COLOR = { common: '#9ca3af', rare: '#3b82f6', epic: '#a855f7', legendary: '#f59e0b' }
 
@@ -21,15 +27,18 @@ const ACTIVATABLE_IDS = new Set([
   'caja-tdah', 'libro', 'calculadora', 'linterna', 'lente-resumen',
 ])
 
-export default function ObjetosBagPanel({ onActivate }) {
-  const purchased = useShopStore((s) => s.purchased)
+export default function ObjetosBagPanel({ owner, onActivate }) {
+  const bags = useBagStore((s) => s.bags)
   const collection = useCollectionStore((s) => s.items)
   const activeItems = useItemEffectsStore((s) => s.activeItems)
   const toggleItem = useItemEffectsStore((s) => s.toggleItem)
 
-  // purchased puede incluir ids que no son SHOP_ITEMS (llaves de curso):
-  // getShopItemById los descarta (null) y filtramos, para no mostrar filas rotas.
-  const shopItems = purchased.map(getShopItemById).filter(Boolean)
+  // Sin `owner`: unión de ambas bolsas (vista de siempre, fuera de VR).
+  // Con `owner`: solo lo que está en esa bolsa.
+  const bagIds = owner
+    ? (bags[owner] ?? [])
+    : [...new Set([...(bags.player ?? []), ...(bags.oliver ?? [])])]
+  const shopItems = bagIds.map(getShopItemById).filter(Boolean)
   const items = [...shopItems, ...collection].slice(0, MAX_ITEMS)
 
   return (

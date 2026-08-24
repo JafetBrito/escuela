@@ -14,8 +14,8 @@ const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
 const COMMAND_PALETTE = [
   { cmd: '/help', desc: 'Ver esta ayuda' },
   { cmd: '/items', desc: 'Ids de objetos de la Tienda' },
-  { cmd: '/additem ', desc: 'Dar un objeto' },
-  { cmd: '/removeitem ', desc: 'Quitar un objeto' },
+  { cmd: '/additem ', desc: 'Dar un objeto a la bolsa de Avatar/Mascota' },
+  { cmd: '/removeitem ', desc: 'Quitar un objeto de una bolsa' },
   { cmd: '/addcoins ', desc: 'Dar cobre' },
   { cmd: '/setlevel ', desc: 'Fijar nivel' },
   { cmd: '/addxp ', desc: 'Dar XP (con aviso)' },
@@ -28,8 +28,8 @@ const COMMAND_PALETTE = [
 
 const HELP_LINES = [
   'Comandos disponibles:',
-  '  /additem <itemId>      — da un objeto (a ti o al jugador con /target)',
-  '  /removeitem <itemId>   — quita un objeto',
+  '  /additem <avatar|mascota> <itemId>    — da un objeto a esa bolsa (a ti o al jugador con /target)',
+  '  /removeitem <avatar|mascota> <itemId> — quita un objeto de esa bolsa',
   '  /addcoins <cantidad>   — da cobre (puede ser negativo)',
   '  /setlevel <nivel>      — fija el nivel (1-99), sin aviso de subida',
   '  /addxp <cantidad>      — da experiencia y muestra el aviso de subir de nivel',
@@ -176,7 +176,7 @@ export default function GmConsole({ open, onClose, playerPositionRef }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={busy}
-            placeholder="additem camara"
+            placeholder="additem avatar camara"
             className="flex-1 bg-transparent outline-none placeholder:text-[#39ff14]/30"
           />
           <button

@@ -20,6 +20,7 @@ export default function AdminCommandsPage() {
 
   const [giveTarget, setGiveTarget] = useState({ id: SELF_TARGET, label: 'yo (tú)' })
   const [giveTargetQuery, setGiveTargetQuery] = useState('')
+  const [giveOwner, setGiveOwner] = useState('avatar')
   const [giveSearch, setGiveSearch] = useState('')
   const [giveBusy, setGiveBusy] = useState(false)
   const [giveMsg, setGiveMsg] = useState('')
@@ -50,7 +51,7 @@ export default function AdminCommandsPage() {
     if (giveBusy) return
     setGiveBusy(true)
     try {
-      const msg = await runGmCommand(giveTarget.id, 'additem', [itemId])
+      const msg = await runGmCommand(giveTarget.id, 'additem', [giveOwner, itemId])
       setGiveMsg(`${msg} → ${giveTarget.label}`)
     } catch (err) {
       setGiveMsg(`❌ ${err.message}`)
@@ -112,6 +113,16 @@ export default function AdminCommandsPage() {
               className="rounded-lg border border-primary/40 px-3 py-1.5 text-sm font-semibold text-primary">
               🎯 Buscar
             </button>
+          </div>
+          <div className="mt-2 flex max-w-sm gap-2">
+            {[{ id: 'avatar', label: '⚔️ Avatar' }, { id: 'mascota', label: '🐾 Mascota' }].map((o) => (
+              <button key={o.id} type="button" onClick={() => setGiveOwner(o.id)}
+                className={`flex-1 rounded-lg border px-3 py-1.5 text-sm font-semibold ${
+                  giveOwner === o.id ? 'border-primary bg-primary/15 text-primary' : 'border-border text-text-muted'
+                }`}>
+                {o.label}
+              </button>
+            ))}
           </div>
           <input type="text" value={giveSearch} onChange={(e) => setGiveSearch(e.target.value)}
             placeholder="Buscar objeto…"

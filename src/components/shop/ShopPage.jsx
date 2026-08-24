@@ -18,12 +18,13 @@
  * ============================================================================
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
 import NpcViewport from '../mascot/NpcViewport'
 import NpcChatPanel from '../shared/NpcChatPanel'
+import BagChooserModal from './BagChooserModal'
 import { SHOP_ITEMS, SHOP_CATEGORIES, ITEM_RARITY } from '../../data/shopRegistry'
 import { useShopStore } from '../../stores/useShopStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
@@ -54,7 +55,7 @@ export default function ShopPage() {
   // 💰 Conexión con los Stores Globales
   const coins = useCurrencyStore((s) => s.coins)
   const purchased = useShopStore((s) => s.purchased)
-  const buyItem = useShopStore((s) => s.buyItem)
+  const [chooserItem, setChooserItem] = useState(null)
 
   /**
    * 🧹 FILTRO Y AGRUPACIÓN DE INVENTARIO (Memoizado por rendimiento)
@@ -198,7 +199,7 @@ export default function ShopPage() {
                             </span>
                           ) : (
                             <button
-                              onClick={() => buyItem(item.id)}
+                              onClick={() => setChooserItem(item)}
                               disabled={!canAfford}
                               className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                                 canAfford
@@ -219,6 +220,8 @@ export default function ShopPage() {
           })}
         </div>
       </main>
+
+      {chooserItem && <BagChooserModal item={chooserItem} onClose={() => setChooserItem(null)} />}
 
       {/* Mascota global que acompaña al usuario por toda la app */}
       <MascotCompanion />

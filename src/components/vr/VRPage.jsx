@@ -858,6 +858,12 @@ function AppleTree({ position }) {
 const COMPUTER_POS = new THREE.Vector3(-6, 0, 8)
 const COMPUTER_RADIUS = 2.2
 
+// Segunda terminal, cerca del spawn del campus principal ([0,0,-53]) — Gran
+// Aula ocupa z∈[-71,-53], así que este punto queda hacia la plaza abierta,
+// sin chocar con el edificio ni con la terminal original.
+const COMPUTER_POS_SPAWN = new THREE.Vector3(4, 0, -46)
+const COMPUTER_RADIUS_SPAWN = 2.2
+
 // 3D gift box that bobs in the air. Glows gold when claimable, grey when already
 // claimed today. Calls onNearChange(bool) as the player approaches/leaves.
 const REWARD_BOX_POS = new THREE.Vector3(6, 1.5, 8)
@@ -931,7 +937,7 @@ function DailyRewardBox({ playerPositionRef, onNearChange }) {
 // Desk + glowing monitor — the Programador class's terminal. Visible to
 // everyone (it's part of the shared multiplayer scene), but only reports
 // "near" so VRPage can gate the E-to-use prompt by class.
-function ComputerTerminal({ playerPositionRef, onNearChange }) {
+function ComputerTerminal({ playerPositionRef, onNearChange, position = COMPUTER_POS, radius = COMPUTER_RADIUS }) {
   const screenRef = useRef()
   const nearRef = useRef(false)
 
@@ -941,8 +947,8 @@ function ComputerTerminal({ playerPositionRef, onNearChange }) {
     }
     const pos = playerPositionRef?.current
     if (!pos) return
-    const flat = new THREE.Vector3(pos.x, COMPUTER_POS.y, pos.z)
-    const isNear = flat.distanceTo(COMPUTER_POS) <= COMPUTER_RADIUS
+    const flat = new THREE.Vector3(pos.x, position.y, pos.z)
+    const isNear = flat.distanceTo(position) <= radius
     if (isNear !== nearRef.current) {
       nearRef.current = isNear
       onNearChange?.(isNear)
@@ -950,7 +956,7 @@ function ComputerTerminal({ playerPositionRef, onNearChange }) {
   })
 
   return (
-    <group position={[COMPUTER_POS.x, COMPUTER_POS.y, COMPUTER_POS.z]}>
+    <group position={[position.x, position.y, position.z]}>
       {/* Desk */}
       <mesh position={[0, 0.4, 0]} castShadow>
         <boxGeometry args={[1.1, 0.08, 0.6]} />
@@ -1123,6 +1129,7 @@ function AbilityTesterPanel({ onUseSkill, onClose }) {
 // objetos de Tienda usan el mismo /additem que ya usa la GmConsole.
 function ChestPanel({ onClose }) {
   const [tab, setTab] = useState('equipo')
+  const [chestOwner, setChestOwner] = useState('avatar')
   const [feedback, setFeedback] = useState('')
 
   const takeEquipment = (item) => {
@@ -1132,7 +1139,7 @@ function ChestPanel({ onClose }) {
 
   const takeShopItem = async (item) => {
     try {
-      setFeedback(await runGmCommand(SELF_TARGET, 'additem', [item.id]))
+      setFeedback(await runGmCommand(SELF_TARGET, 'additem', [chestOwner, item.id]))
     } catch (err) {
       setFeedback(`❌ ${err.message}`)
     }
@@ -1161,6 +1168,20 @@ function ChestPanel({ onClose }) {
             🧰 Tienda ({SHOP_ITEMS.length})
           </button>
         </div>
+        {tab === 'tienda' && (
+          <div className="flex gap-2 border-b border-amber-500/20 px-4 py-2">
+            {[{ id: 'avatar', label: '⚔️ Avatar' }, { id: 'mascota', label: '🐾 Mascota' }].map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => setChestOwner(o.id)}
+                className={`rounded px-2 py-1 font-semibold ${chestOwner === o.id ? 'bg-amber-500/20 text-amber-300' : 'text-white/50 hover:text-white'}`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
         {feedback && <div className="border-b border-amber-500/20 px-4 py-1.5 text-amber-300">{feedback}</div>}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1987,6 +2008,7 @@ function World({
   onNearClassNodeChange,
   onNearDailyRewardChange,
   onNearComputerChange,
+  onNearComputer2Change,
   attackFiredAtRef,
   playerClass,
   onOpenVideoScreen,
@@ -2116,6 +2138,12 @@ function World({
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
       <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} />
+      <ComputerTerminal
+        playerPositionRef={playerPositionRef}
+        onNearChange={onNearComputer2Change}
+        position={COMPUTER_POS_SPAWN}
+        radius={COMPUTER_RADIUS_SPAWN}
+      />
       <LocalAttackBurst
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
@@ -2783,6 +2811,11 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
             <circle cx={COMPUTER_POS.x} cy={COMPUTER_POS.z} r="1.4" fill="#22c55e" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
             <text x={COMPUTER_POS.x} y={COMPUTER_POS.z + 0.5} fontSize="2.4" textAnchor="middle" dominantBaseline="middle">💻</text>
           </g>
+          <g>
+            <title>Terminal (clase Hacker)</title>
+            <circle cx={COMPUTER_POS_SPAWN.x} cy={COMPUTER_POS_SPAWN.z} r="1.4" fill="#22c55e" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
+            <text x={COMPUTER_POS_SPAWN.x} y={COMPUTER_POS_SPAWN.z + 0.5} fontSize="2.4" textAnchor="middle" dominantBaseline="middle">💻</text>
+          </g>
 
           {/* Announcements / video screen, north of the plaza */}
           <g>
@@ -3032,6 +3065,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [nearDailyReward, setNearDailyReward] = useState(false)
   const [nearComputer, setNearComputer] = useState(false)
   const [terminalOpen, setTerminalOpen] = useState(false)
+  const [nearComputer2, setNearComputer2] = useState(false)
+  const [terminal2Open, setTerminal2Open] = useState(false)
   const attackFiredAtRef = useRef(0)
   const isAdmin = useAuthStore((s) => s.isAdmin())
   const level = useLevelStore((s) => levelForXp(s.xp))
@@ -3187,6 +3222,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       if (e.key.toLowerCase() === 'e') {
         if (nearDailyReward) { setDailyRewardsOpen(true); return }
         if (nearComputer && (playerClass === 'programmer' || playerClass === 'hacker' || isAdmin)) { setTerminalOpen(true); return }
+        if (nearComputer2 && (playerClass === 'programmer' || playerClass === 'hacker' || isAdmin)) { setTerminal2Open(true); return }
         if (nearbyNpcId) {
           setActiveNpcId((cur) => (cur === nearbyNpcId ? null : nearbyNpcId))
           return
@@ -3199,7 +3235,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     }
     window.addEventListener('keydown', handleDown)
     return () => window.removeEventListener('keydown', handleDown)
-  }, [nearPortal, nearDailyReward, nearComputer, nearbyNpcId, isPrivateWorld, navigate, playerClass, isAdmin])
+  }, [nearPortal, nearDailyReward, nearComputer, nearComputer2, nearbyNpcId, isPrivateWorld, navigate, playerClass, isAdmin])
 
   // Muestra en el chat del mundo el resultado de un golpe/habilidad — mismo
   // formato para el "golpe" universal y para cualquier habilidad de la barra.
@@ -3418,6 +3454,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               onNearClassNodeChange={setNearClassNodeId}
               onNearDailyRewardChange={setNearDailyReward}
               onNearComputerChange={setNearComputer}
+              onNearComputer2Change={setNearComputer2}
               attackFiredAtRef={attackFiredAtRef}
               playerClass={playerClass}
               onOpenVideoScreen={() => setVideoScreenOpen(true)}
@@ -3472,6 +3509,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <button
             type="button"
             onClick={() => setTerminalOpen(true)}
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
+          >
+            🖥️ Pulsa E para usar la terminal
+          </button>
+        )}
+
+        {/* Segunda terminal, cerca del spawn */}
+        {nearComputer2 && !terminal2Open && (playerClass === 'programmer' || playerClass === 'hacker' || isAdmin) && (
+          <button
+            type="button"
+            onClick={() => setTerminal2Open(true)}
             className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
           >
             🖥️ Pulsa E para usar la terminal
@@ -3681,6 +3729,13 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <TerminalModal
             tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
             onClose={() => setTerminalOpen(false)}
+            playerPositionRef={playerPositionRef}
+          />
+        )}
+        {terminal2Open && (
+          <TerminalModal
+            tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
+            onClose={() => setTerminal2Open(false)}
             playerPositionRef={playerPositionRef}
           />
         )}

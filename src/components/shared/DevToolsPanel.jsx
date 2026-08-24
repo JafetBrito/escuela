@@ -132,6 +132,7 @@ export default function DevToolsPanel() {
   // pero con una cuadrícula buscable en vez de tener que saber el id de memoria).
   const [giveTarget, setGiveTarget] = useState({ id: SELF_TARGET, label: 'yo (tú)' })
   const [giveTargetQuery, setGiveTargetQuery] = useState('')
+  const [giveOwner, setGiveOwner] = useState('avatar')
   const [giveSearch, setGiveSearch] = useState('')
   const [giveBusy, setGiveBusy] = useState(false)
   const [giveMsg, setGiveMsg] = useState('')
@@ -197,7 +198,7 @@ export default function DevToolsPanel() {
     if (giveBusy) return
     setGiveBusy(true)
     try {
-      const msg = await runGmCommand(giveTarget.id, 'additem', [itemId])
+      const msg = await runGmCommand(giveTarget.id, 'additem', [giveOwner, itemId])
       setGiveMsg(`${msg} → ${giveTarget.label}`)
     } catch (err) {
       setGiveMsg(`❌ ${err.message}`)
@@ -271,6 +272,16 @@ export default function DevToolsPanel() {
                 className="rounded-lg border border-primary/40 px-2 py-1 text-xs font-semibold text-primary">
                 🎯
               </button>
+            </div>
+            <div className="mt-1.5 flex gap-1">
+              {[{ id: 'avatar', label: '⚔️ Avatar' }, { id: 'mascota', label: '🐾 Mascota' }].map((o) => (
+                <button key={o.id} type="button" onClick={() => setGiveOwner(o.id)}
+                  className={`flex-1 rounded-lg border px-2 py-1 text-[11px] font-semibold ${
+                    giveOwner === o.id ? 'border-primary bg-primary/15 text-primary' : 'border-border text-text-muted'
+                  }`}>
+                  {o.label}
+                </button>
+              ))}
             </div>
             <input type="text" value={giveSearch} onChange={(e) => setGiveSearch(e.target.value)}
               placeholder="Buscar objeto…"

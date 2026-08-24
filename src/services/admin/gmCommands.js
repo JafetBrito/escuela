@@ -1,5 +1,6 @@
 import { supabase } from '../supabase/client'
 import { useShopStore } from '../../stores/useShopStore'
+import { useBagStore, MAX_BAG_SLOTS } from '../../stores/useBagStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useLevelStore, XP_PER_LEVEL } from '../../stores/useLevelStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -7,6 +8,12 @@ import { getShopItemById, SHOP_ITEMS } from '../../data/shopRegistry'
 import { pushSnapshotToCloud } from '../persistence/autoSave'
 
 export const SELF_TARGET = 'yo'
+
+// additem/removeitem ahora requieren dueño ('avatar'|'mascota' de cara al
+// GM, mapeados a las claves internas 'player'/'oliver' que ya usa
+// useEquipmentStore/useGameStore) — ver plan del sistema de bolsas VR.
+const OWNER_ALIASES = { avatar: 'player', player: 'player', mascota: 'oliver', oliver: 'oliver' }
+const OWNER_LABEL = { player: 'Avatar', oliver: 'Mascota' }
 
 // Finds players by email or display_name — only works once the "profiles:
 // admin select all" RLS policy from schema.sql is applied, otherwise an
@@ -55,29 +62,52 @@ export async function runGmCommand(targetId, name, args) {
 
   switch (name) {
     case 'additem': {
-      if (!getShopItemById(arg)) throw new Error(`Objeto desconocido: ${arg}. Usa /items para ver la lista.`)
+      const owner = OWNER_ALIASES[(args[0] ?? '').toLowerCase()]
+      const itemId = args[1]
+      if (!owner) throw new Error('Dueño inválido — usa "avatar" o "mascota". Ej: /additem avatar camara')
+      if (!getShopItemById(itemId)) throw new Error(`Objeto desconocido: ${itemId ?? ''}. Usa /items para ver la lista.`)
+      const label = OWNER_LABEL[owner]
       if (isSelf) {
-        useShopStore.setState((s) => (s.purchased.includes(arg) ? s : { purchased: [...s.purchased, arg] }))
+        const bagStore = useBagStore.getState()
+        const already = bagStore.hasItem(owner, itemId)
+        if (!already && bagStore.spaceLeft(owner) <= 0) {
+          throw new Error(`❌ La bolsa de ${label} está llena (${MAX_BAG_SLOTS}/${MAX_BAG_SLOTS}).`)
+        }
+        useShopStore.setState((s) => (s.purchased.includes(itemId) ? s : { purchased: [...s.purchased, itemId] }))
+        if (!already) bagStore.addItem(owner, itemId)
         await pushSnapshotToCloud()
       } else {
         await mutateRemoteSnapshot(targetId, (snap) => {
           const purchasedItems = snap.purchasedItems ?? []
-          if (!purchasedItems.includes(arg)) snap.purchasedItems = [...purchasedItems, arg]
+          const bags = snap.bags ?? { player: [], oliver: [] }
+          const bag = bags[owner] ?? []
+          if (!bag.includes(itemId) && bag.length >= MAX_BAG_SLOTS) {
+            throw new Error(`❌ La bolsa de ${label} está llena (${MAX_BAG_SLOTS}/${MAX_BAG_SLOTS}).`)
+          }
+          if (!purchasedItems.includes(itemId)) snap.purchasedItems = [...purchasedItems, itemId]
+          if (!bag.includes(itemId)) snap.bags = { ...bags, [owner]: [...bag, itemId] }
         })
       }
-      return `✅ Objeto "${arg}" añadido.`
+      return `✅ Objeto "${itemId}" añadido a la bolsa de ${label}.`
     }
 
     case 'removeitem': {
+      const owner = OWNER_ALIASES[(args[0] ?? '').toLowerCase()]
+      const itemId = args[1]
+      if (!owner) throw new Error('Dueño inválido — usa "avatar" o "mascota". Ej: /removeitem avatar camara')
+      const label = OWNER_LABEL[owner]
       if (isSelf) {
-        useShopStore.setState((s) => ({ purchased: s.purchased.filter((id) => id !== arg) }))
+        useShopStore.setState((s) => ({ purchased: s.purchased.filter((id) => id !== itemId) }))
+        useBagStore.getState().removeItem(owner, itemId)
         await pushSnapshotToCloud()
       } else {
         await mutateRemoteSnapshot(targetId, (snap) => {
-          snap.purchasedItems = (snap.purchasedItems ?? []).filter((id) => id !== arg)
+          snap.purchasedItems = (snap.purchasedItems ?? []).filter((id) => id !== itemId)
+          const bags = snap.bags ?? { player: [], oliver: [] }
+          snap.bags = { ...bags, [owner]: (bags[owner] ?? []).filter((id) => id !== itemId) }
         })
       }
-      return `✅ Objeto "${arg}" eliminado.`
+      return `✅ Objeto "${itemId}" eliminado de la bolsa de ${label}.`
     }
 
     case 'addcoins': {
