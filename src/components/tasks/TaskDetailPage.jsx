@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ResourceGallery from '../shared/ResourceGallery'
 import GradeModal from './GradeModal'
+import TaskComposeModal from './TaskComposeModal'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { taskTypeOf } from '../../data/taskTypes'
@@ -96,6 +97,7 @@ export default function TaskDetailPage() {
   const [newQuestion, setNewQuestion] = useState('')
   const [grading, setGrading] = useState(false)
   const [viewingGrade, setViewingGrade] = useState(false)
+  const [composing, setComposing] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -154,13 +156,26 @@ export default function TaskDetailPage() {
     reader.readAsText(f)
   }
 
+  // Compartido entre el upload manual de .md y el editor "Redactar tarea"
+  // (TaskComposeModal) — los dos terminan produciendo un File y usando el
+  // mismo submitTaskFile, así que el paso final (marcar como entregada en el
+  // estado local) no debe duplicarse en dos lugares distintos.
+  const submitFile = async (uploadedFile) => {
+    const { error, patch } = await submitTaskFile(task.id, task.student_id, uploadedFile)
+    // Antes esto ponía submission_url: t.submission_url (el valor viejo, que
+    // en una primera entrega es undefined) en vez de la URL real que acaba
+    // de devolver la subida — la vista previa de la entrega no aparecía
+    // hasta recargar la página. patch ya trae la URL pública correcta.
+    if (!error) setTask((t) => ({ ...t, ...patch }))
+    return { error }
+  }
+
   const handleSubmitFile = async () => {
     if (!file) return
     setUploading(true)
-    const { error } = await submitTaskFile(task.id, task.student_id, file)
+    const { error } = await submitFile(file)
     setUploading(false)
     if (!error) {
-      setTask((t) => ({ ...t, status: 'entregada', submission_url: t.submission_url, submission_filename: file.name }))
       setFile(null)
       setFilePreview('')
     } else {
@@ -371,10 +386,16 @@ export default function TaskDetailPage() {
                     />
                   </div>
                 )}
-                <button type="button" onClick={handleSubmitFile} disabled={!file || uploading}
-                  className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
-                  {uploading ? 'Enviando…' : '📤 Entregar tarea'}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={handleSubmitFile} disabled={!file || uploading}
+                    className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+                    {uploading ? 'Enviando…' : '📤 Entregar tarea'}
+                  </button>
+                  <button type="button" onClick={() => setComposing(true)}
+                    className="rounded-lg border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10">
+                    ✍️ Redactar tarea
+                  </button>
+                </div>
               </div>
             ) : (
               <p className="text-sm text-text-muted">Sin entrega todavía.</p>
@@ -418,6 +439,14 @@ export default function TaskDetailPage() {
       )}
       {viewingGrade && (
         <GradeViewModal task={task} onClose={() => setViewingGrade(false)} />
+      )}
+      {composing && (
+        <TaskComposeModal
+          task={task}
+          studentId={task.student_id}
+          onClose={() => setComposing(false)}
+          onSubmit={submitFile}
+        />
       )}
     </div>
   )

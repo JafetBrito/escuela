@@ -47,14 +47,29 @@ export const useTasksStore = create((set, get) => ({
         updated_at: new Date().toISOString(),
       })
       .eq('id', taskId)
+    const patch = { status: 'entregada', submission_url: pub.publicUrl, submission_filename: file.name }
     if (!error) {
-      const patch = { status: 'entregada', submission_url: pub.publicUrl, submission_filename: file.name }
       set((s) => ({
         tasks: s.tasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
         allTasks: s.allTasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
       }))
     }
-    return { error }
+    return { error, patch }
+  },
+
+  // Sube una imagen suelta para insertarla dentro del cuerpo de una entrega
+  // redactada en el editor (TaskComposeModal) — mismo bucket 'task-submissions'
+  // que ya usa submitTaskFile (misma política de storage: alcanza con que el
+  // primer segmento de la ruta sea el uid del alumno, no importa cuántos
+  // subniveles tenga después), en una subcarpeta 'images/' aparte para no
+  // mezclarse con el .md final. Devuelve la URL pública para insertar
+  // ![alt](url) en el markdown.
+  uploadTaskImage: async (taskId, studentId, file) => {
+    const path = `${studentId}/${taskId}/images/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('task-submissions').upload(path, file, { upsert: true })
+    if (error) return { error }
+    const { data: pub } = supabase.storage.from('task-submissions').getPublicUrl(path)
+    return { url: pub.publicUrl }
   },
 
   // ── Preguntas por tarea ───────────────────────────────────────────────────
