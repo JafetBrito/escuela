@@ -36,7 +36,7 @@ export default function AcademiasPage() {
           </div>
 
           {/* Academias con casa propia */}
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               to="/academia-ia"
               className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-lime-600/20 to-emerald-500/10 p-5 transition hover:border-emerald-500/40"
@@ -65,6 +65,16 @@ export default function AcademiasPage() {
               <div>
                 <p className="font-extrabold text-text">{t('nav.items.academiaCiberseguridad')}</p>
                 <p className="text-xs text-text-muted">Ethical hacking, criptografía y más</p>
+              </div>
+            </Link>
+            <Link
+              to="/academia-china"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-red-600/20 to-amber-500/10 p-5 transition hover:border-red-500/40"
+            >
+              <span className="text-4xl">🐉</span>
+              <div>
+                <p className="font-extrabold text-text">{t('nav.items.academiaChina')}</p>
+                <p className="text-xs text-text-muted">Mandarín, caracteres y cultura china</p>
               </div>
             </Link>
           </div>

@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 门 (mén, puerta) — dos hojas de una puerta batiente lado a lado,
+       dentro de su marco: igual que las dos mitades simétricas del carácter. -->
+  <path d="M15 90 L15 15 L85 15 L85 90" fill="none" stroke="#78350f" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M50 15 L50 90" fill="none" stroke="#78350f" stroke-width="5"/>
+  <circle cx="42" cy="55" r="3" fill="#78350f"/>
+  <circle cx="58" cy="55" r="3" fill="#78350f"/>
+</svg>

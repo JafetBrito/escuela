@@ -40,6 +40,7 @@ import GitTerminalSim from './GitTerminalSim'
 import ApiTrackSelector from './ApiTrackSelector'
 import TrackContent from './TrackContent'
 import PhishingGame from './PhishingGame'
+import HanziPractice from './HanziPractice'
 import LessonSteps from './LessonSteps'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
@@ -162,7 +163,7 @@ export default function LearningInterface() {
   const hasVideo = Boolean(currentModule.videoId || currentModule.videoSrc)
   const hasActivity = Boolean(
     currentModule.quiz || currentModule.terminalSim || currentModule.trackSelector ||
-    currentModule.trackContent || currentModule.phishingGame,
+    currentModule.trackContent || currentModule.phishingGame || currentModule.hanziPractice,
   )
 
   const steps = []
@@ -204,6 +205,7 @@ export default function LearningInterface() {
             {currentModule.trackSelector && <ApiTrackSelector courseId={courseId} module={currentModule} />}
             {currentModule.trackContent && <TrackContent courseId={courseId} module={currentModule} />}
             {currentModule.phishingGame && <PhishingGame courseId={courseId} module={currentModule} />}
+            {currentModule.hanziPractice && <HanziPractice courseId={courseId} module={currentModule} />}
           </div>
         ),
       })

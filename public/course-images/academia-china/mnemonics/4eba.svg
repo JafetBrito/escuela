@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 人 (rén, persona) — una persona vista de lado, caminando: las dos
+       piernas abiertas son exactamente los dos trazos del carácter. -->
+  <circle cx="50" cy="22" r="9" fill="none" stroke="#1f2937" stroke-width="5"/>
+  <path d="M50 31 L50 52" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+  <path d="M50 52 L28 88" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+  <path d="M50 52 L72 88" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+</svg>

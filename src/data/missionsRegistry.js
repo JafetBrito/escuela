@@ -59,6 +59,18 @@ export const MISSION_TYPES = {
       description: 'Obtenido al superar el reto de conocimiento de una clase.',
     },
   },
+  hanzi: {
+    icon: '✍️',
+    label: 'Practica el trazo de los caracteres de esta clase',
+    reward: 3000,
+    itemReward: {
+      id: 'diploma-clase',
+      name: 'Diploma de Clase',
+      icon: '🎓',
+      rarity: 'rare',
+      description: 'Obtenido al superar el reto de conocimiento de una clase.',
+    },
+  },
 }
 
 export function getModuleMissions(module) {
@@ -73,6 +85,9 @@ export function getModuleMissions(module) {
   }
   if (module?.phishingGame) {
     missions.push({ id: 'phishing', type: 'phishing', ...MISSION_TYPES.phishing, ...(overrides.phishing ?? {}) })
+  }
+  if (module?.hanziPractice) {
+    missions.push({ id: 'hanzi', type: 'hanzi', ...MISSION_TYPES.hanzi, ...(overrides.hanzi ?? {}) })
   }
   if (!module?.noChat) {
     missions.push({ id: 'chat', type: 'chat', ...MISSION_TYPES.chat, ...(overrides.chat ?? {}) })

@@ -25,6 +25,7 @@ import SchoolPage from './components/dashboard/SchoolPage'
 import LanguageSyllabusPage from './components/dashboard/LanguageSyllabusPage'
 import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
 import AcademiaIAPage from './components/dashboard/AcademiaIAPage'
+import AcademiaChinaPage from './components/dashboard/AcademiaChinaPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
 import AcademiasPage from './components/dashboard/AcademiasPage'
 import ShopPage from './components/shop/ShopPage'
@@ -143,15 +144,40 @@ function SyncErrorBanner() {
   )
 }
 
-// El service worker acaba de detectar una versión nueva y está a punto de
-// recargar la página solo para aplicarla (ver onNeedRefresh en main.jsx) —
-// antes eso pasaba en silencio, sin ningún aviso.
+// El service worker acaba de detectar una versión nueva y va a recargar la
+// página sola para aplicarla (ver onNeedRefresh en main.jsx, se auto-hace a
+// los 4s) — antes eso pasaba en silencio o solo con un avisito chico; ahora
+// es un popup real con botón para no esperar, y las instrucciones de borrar
+// caché a mano por si la recarga automática no alcanza (celular con muy
+// poca señal, un service worker viejo atascado de antes de que existiera
+// este sistema, etc.) — pedido explícito: "las personas no saben borrar
+// caché".
 function UpdatingBanner() {
   const updating = useSwUpdateStore((s) => s.updating)
+  const updateFn = useSwUpdateStore((s) => s.updateFn)
   if (!updating) return null
   return (
-    <div className="fixed bottom-3 left-1/2 z-[999] -translate-x-1/2 rounded-lg border border-primary/40 bg-primary/15 px-3 py-1.5 text-xs text-primary shadow-lg">
-      🔄 Nueva versión disponible, actualizando…
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-sm rounded-2xl border border-primary/30 bg-surface p-5 text-center shadow-2xl">
+        <p className="text-3xl">🔄</p>
+        <p className="mt-2 font-extrabold text-text">Hay una versión nueva de Oliver Academy</p>
+        <p className="mt-1 text-sm text-text-muted">Se va a actualizar sola en unos segundos.</p>
+        <button
+          type="button"
+          onClick={() => updateFn?.()}
+          className="mt-4 w-full rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90"
+        >
+          Actualizar ahora
+        </button>
+        <details className="mt-3 text-left text-xs text-text-muted">
+          <summary className="cursor-pointer select-none font-semibold">¿Sigue sin actualizarse? Borra la caché manualmente</summary>
+          <ul className="mt-2 space-y-1.5 pl-1">
+            <li>💻 Windows/Linux: <strong>Ctrl + Shift + R</strong></li>
+            <li>💻 Mac: <strong>Cmd + Shift + R</strong></li>
+            <li>📱 Celular: abre los ajustes de tu navegador → Privacidad → Borrar datos de navegación → marca "imágenes y archivos en caché"</li>
+          </ul>
+        </details>
+      </div>
     </div>
   )
 }
@@ -282,6 +308,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AcademiaIAPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academia-china"
+          element={
+            <ProtectedRoute>
+              <AcademiaChinaPage />
             </ProtectedRoute>
           }
         />

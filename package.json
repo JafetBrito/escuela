@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.108.1",
     "chess.js": "^1.4.0",
     "epubjs": "^0.3.93",
+    "hanzi-writer": "^3.7.3",
     "html2canvas-pro": "^2.0.4",
     "marked": "^18.0.6",
     "pdfjs-dist": "^6.0.227",

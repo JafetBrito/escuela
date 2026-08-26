@@ -1,0 +1,6 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 田 (tián, campo de cultivo) — visto desde arriba, dividido en cuatro
+       parcelas: el cuadrado con la cruz interior del carácter. -->
+  <rect x="18" y="18" width="64" height="64" fill="none" stroke="#65a30d" stroke-width="5"/>
+  <path d="M50 18 L50 82 M18 50 L82 50" fill="none" stroke="#65a30d" stroke-width="5"/>
+</svg>

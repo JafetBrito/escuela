@@ -34,14 +34,25 @@ if (import.meta.env.PROD) {
       onRegisteredSW(_url, registration) {
         if (!registration) return
         setInterval(() => registration.update(), 60 * 1000)
+        // Además del poll cada 60s, revisa apenas la pestaña vuelve a
+        // primer plano — cubre el caso más común (dejaste la pestaña
+        // abierta/minimizada, se publicó un deploy, vuelves) sin esperar
+        // hasta un minuto completo.
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') registration.update()
+        })
       },
       onNeedRefresh() {
         // Antes esto recargaba en silencio — el alumno no tenía forma de
-        // saber por qué la página se reinició sola. Ahora avisa (ver
-        // UpdatingBanner en App.jsx) y le da un momento a ese aviso para
-        // pintar antes de recargar.
+        // saber por qué la página se reinició sola. Ahora muestra un popup
+        // (ver UpdateAvailableModal en App.jsx) con un botón para
+        // actualizar ya mismo y, por si la recarga automática no
+        // completara por lo que sea, las instrucciones de cómo borrar la
+        // caché a mano — y se auto-actualiza sola de todos modos a los
+        // pocos segundos si nadie toca nada.
+        useSwUpdateStore.getState().setUpdateFn(() => updateSW(true))
         useSwUpdateStore.getState().setUpdating(true)
-        setTimeout(() => updateSW(true), 1500)
+        setTimeout(() => updateSW(true), 4000)
       },
     })
   })

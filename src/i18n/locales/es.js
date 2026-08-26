@@ -33,6 +33,7 @@ export const es = {
       academiaIdiomas: 'Academia de Idiomas',
       academiaCiberseguridad: 'Academia de Ciberseguridad',
       academiaIA: 'Academia de IA',
+      academiaChina: 'Academia de China',
       academias: 'Escuelas',
       buscar: 'Buscar',
       mascota: 'Mi Equipo',

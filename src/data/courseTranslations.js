@@ -35,6 +35,16 @@ function mergeModule(base, override) {
           checkpoints: mergeArrayByIndex(base.terminalSim.checkpoints, override.terminalSim?.checkpoints),
         }
       : base.terminalSim,
+    // Sin esta rama, una traducción que solo trae mnemonicText traducido
+    // borraría hanzi/pinyin/mnemonicSvg de los caracteres no tocados —
+    // mergeArrayByIndex evita eso, igual que ya hace con terminalSim.checkpoints.
+    hanziPractice: base.hanziPractice
+      ? {
+          ...base.hanziPractice,
+          ...(override.hanziPractice ?? {}),
+          characters: mergeArrayByIndex(base.hanziPractice.characters, override.hanziPractice?.characters),
+        }
+      : base.hanziPractice,
   }
 }
 

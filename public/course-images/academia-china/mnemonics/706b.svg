@@ -1,0 +1,6 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 火 (huǒ, fuego) — una llama: la lengua central sube recta y las dos
+       de los costados se curvan hacia afuera, igual que los trazos del carácter. -->
+  <path d="M50 90 C40 90 34 78 40 66 C42 74 46 74 46 68 C46 58 50 50 50 40 C58 55 62 66 56 76 C62 74 64 66 62 58 C70 68 68 82 58 88 C55 90 53 90 50 90 Z"
+        fill="none" stroke="#dc2626" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

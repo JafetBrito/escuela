@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 女 (nǚ, mujer) — figura arrodillada con los brazos cruzados al
+       frente, la postura antigua que originó el carácter. -->
+  <circle cx="50" cy="20" r="8" fill="none" stroke="#be185d" stroke-width="5"/>
+  <path d="M50 28 L50 48" fill="none" stroke="#be185d" stroke-width="5" stroke-linecap="round"/>
+  <path d="M30 40 L50 48 L70 40" fill="none" stroke="#be185d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M50 48 L30 90 M50 48 L70 90 M35 78 L65 78" fill="none" stroke="#be185d" stroke-width="5" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,24 @@
+Datos de trazos de caracteres chinos (12 archivos, uno por carácter usado en
+"Caracteres y Escritura China" — Academia de China).
+
+Fuente: hanzi-writer-data (https://github.com/chanind/hanzi-writer-data),
+derivado a su vez del proyecto Make Me a Hanzi
+(https://github.com/skishore/makemeahanzi), que extrajo estos datos de
+tipografías de Arphic Technology Co., Ltd.
+
+Licencia: Arphic Public License (APL) — ver ARPHICPL.TXT en el repositorio
+de hanzi-writer-data. Permite redistribuir y modificar. No es la licencia
+MIT de la librería hanzi-writer (esa es aparte, del código JS); esta es
+específicamente la licencia de los DATOS.
+
+Solo se vendorizó el subconjunto de 12 caracteres usados hoy en el curso
+(no el set completo de ~9000 caracteres del repo original) — para agregar
+un carácter nuevo al curso más adelante, se descarga su archivo
+correspondiente de https://github.com/chanind/hanzi-writer-data/tree/master/data
+(nombrado por el carácter literal, ej. "火.json") y se guarda aquí como
+<codepoint-hex>.json (ej. 706b.json para 火 — ver HanziPractice.jsx).
+
+Archivos incluidos:
+  4eba.json (人)  53e3.json (口)  5973.json (女)  5b50.json (子)
+  5c71.json (山)  65e5.json (日)  6708.json (月)  6728.json (木)
+  6c34.json (水)  706b.json (火)  7530.json (田)  95e8.json (门)

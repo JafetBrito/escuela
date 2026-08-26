@@ -754,5 +754,27 @@
     "subcategory": "Fundamentos",
     "difficulty": "principiante",
     "locked": false
+  },
+  {
+    "id": "course-china-caracteres",
+    "title": "Caracteres y Escritura China",
+    "description": "Aprende tus primeros 12 caracteres chinos viendo su origen pictográfico real y practicando el trazo correcto de forma interactiva — persona, fuego, árbol, montaña, agua, sol, luna, boca, campo, puerta, mujer e hijo.",
+    "icon": "✍️",
+    "color": "#dc2626",
+    "category": "China",
+    "subcategory": "Escritura",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-china-cultura",
+    "title": "Cultura China: Fundamentos",
+    "description": "Geografía y pueblo, un repaso de miles de años de historia, los festivales más importantes del calendario lunar, y las costumbres de la mesa china — una introducción amplia a la cultura china más allá del idioma.",
+    "icon": "🏮",
+    "color": "#facc15",
+    "category": "China",
+    "subcategory": "Cultura",
+    "difficulty": "principiante",
+    "locked": false
   }
 ]

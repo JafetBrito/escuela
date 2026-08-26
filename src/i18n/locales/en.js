@@ -29,6 +29,7 @@ export const en = {
       academiaIdiomas: 'Language Academy',
       academiaCiberseguridad: 'Cybersecurity Academy',
       academiaIA: 'AI Academy',
+      academiaChina: 'China Academy',
       academias: 'Schools',
       buscar: 'Search',
       mascota: 'My Team',

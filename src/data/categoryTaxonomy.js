@@ -55,7 +55,7 @@ export const MAIN_CATEGORIES = [
     accent: '#eab308',
     subcategories: [
       { name: 'Filosofía', topics: ['Ética', 'Epistemología', 'Lógica Filosófica', 'Estética'], schoolCategories: ['Filosofía', 'Ética'] },
-      { name: 'Lenguas y Lingüística', topics: ['Adquisición de Idiomas', 'Fonética', 'Semántica', 'Traducción'], schoolCategories: ['Idiomas'] },
+      { name: 'Lenguas y Lingüística', topics: ['Adquisición de Idiomas', 'Fonética', 'Semántica', 'Traducción'], schoolCategories: ['Idiomas', 'China'] },
       { name: 'Literatura', topics: ['Literatura Clásica', 'Poesía', 'Narrativa', 'Ensayo'], schoolCategories: ['Literatura'] },
       { name: 'Artes Visuales', topics: ['Dibujo', 'Pintura', 'Escultura', 'Arte Digital y Modelado 3D', 'Fotografía'], schoolCategories: ['Arte'] },
       { name: 'Artes Escénicas y Música', topics: ['Teatro', 'Cinematografía', 'Teoría Musical', 'Composición'], schoolCategories: ['Artes Escénicas y Música'] },
