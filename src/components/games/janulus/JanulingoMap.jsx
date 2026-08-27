@@ -1,7 +1,9 @@
 import { getJanulusLevels } from '../../../data/matrixData'
+import { strings } from './janulusStrings'
 import VoiceSetupNotice from './VoiceSetupNotice'
 
-export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack, onHistory }) {
+export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack, onHistory, uiLang = 'es' }) {
+  const t = strings(uiLang)
   const all = getJanulusLevels(lang).map((l) => ({ ...l, locked: false }))
 
   return (
@@ -9,14 +11,14 @@ export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack,
       <div className="flex items-center border-b border-border bg-surface px-4 py-3">
         <button type="button" onClick={onBack}
           className="text-sm text-text-muted transition-colors hover:text-text">
-          ← Idiomas
+          {t.idiomasBack}
         </button>
         <div className="flex flex-1 items-center justify-center gap-2">
           <span className="text-lg">{langFlag}</span>
           <span className="font-bold">{langName}</span>
         </div>
         {onHistory
-          ? <button type="button" onClick={onHistory} className="text-sm text-primary transition-colors hover:opacity-80">📜 Historia</button>
+          ? <button type="button" onClick={onHistory} className="text-sm text-primary transition-colors hover:opacity-80">{t.historia}</button>
           : <span className="w-16" aria-hidden="true" />
         }
       </div>
@@ -25,7 +27,7 @@ export default function JanulingoMap({ lang, langName, langFlag, onPlay, onBack,
         <VoiceSetupNotice langCode={lang} langName={langName} />
 
         <p className="mb-8 text-center text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
-          Mapa de Niveles
+          {t.mapaNiveles}
         </p>
 
         {/* Zigzag path */}

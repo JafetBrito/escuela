@@ -1,15 +1,20 @@
 import { useState } from 'react'
+import { useI18n } from '../../../i18n'
 import { getJanulusLanguages, getJanulusLangData } from '../../../data/matrixData'
+import { strings } from './janulusStrings'
 import JanulingoMap    from './JanulingoMap'
 import JanulingoEngine from './JanulingoEngine'
 
 const TOTAL_ROUNDS = 8
 
 export default function JanulingoMain() {
-  const langs = getJanulusLanguages()
+  const { lang: uiLang } = useI18n()
+  const t = strings(uiLang)
+  const langs = getJanulusLanguages(uiLang)
+  const onlySpanish = uiLang === 'en'
 
   const [screen,     setScreen]     = useState('cover')   // cover | lang | history | map | playing | done
-  const [lang,       setLang]       = useState('en')
+  const [lang,       setLang]       = useState(onlySpanish ? 'es' : 'en')
   const [levelNum,   setLevelNum]   = useState(1)
   const [finalScore, setFinalScore] = useState(0)
 
@@ -23,20 +28,22 @@ export default function JanulingoMain() {
           <span style={{ fontSize: 80, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.6))' }}>🧩</span>
           <h1 className="text-5xl font-black tracking-tight text-text">Janulingo</h1>
           <p className="max-w-xs text-center text-sm text-text-muted">
-            Aprende idiomas ensamblando bloques de frases completas.
-            El método de <span className="font-semibold text-primary">Powell Janulus</span> — 42 idiomas dominados.
+            {t.tagline}{' '}
+            {uiLang === 'en'
+              ? <>The <span className="font-semibold text-primary">Powell Janulus</span> method — 42 languages mastered.</>
+              : <>El método de <span className="font-semibold text-primary">Powell Janulus</span> — 42 idiomas dominados.</>}
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => setScreen('lang')}
+          onClick={() => setScreen(onlySpanish ? 'map' : 'lang')}
           className="rounded-2xl border-b-4 border-primary/50 bg-primary px-10 py-3.5 text-lg font-black text-background shadow-xl transition-all hover:opacity-95 active:translate-y-1 active:border-b-0"
         >
-          Jugar →
+          {t.jugar}
         </button>
 
-        <p className="text-xs text-text-muted/40">🐱 Oliver te guiará con pistas</p>
+        <p className="text-xs text-text-muted/40">{t.oliverGuia}</p>
       </div>
     )
   }
@@ -50,7 +57,7 @@ export default function JanulingoMain() {
             className="text-sm text-text-muted transition-colors hover:text-text">
             ←
           </button>
-          <h2 className="text-xl font-black">Elige tu idioma</h2>
+          <h2 className="text-xl font-black">{t.eligeIdioma}</h2>
         </div>
 
         <div className="flex flex-wrap justify-center gap-4">
@@ -141,8 +148,9 @@ export default function JanulingoMain() {
         langName={langData.name}
         langFlag={langData.flag}
         onPlay={(level) => { setLevelNum(level); setScreen('playing') }}
-        onBack={() => setScreen('lang')}
+        onBack={() => setScreen(onlySpanish ? 'cover' : 'lang')}
         onHistory={getJanulusLangData(lang)?.history ? () => setScreen('history') : undefined}
+        uiLang={uiLang}
       />
     )
   }
@@ -155,6 +163,7 @@ export default function JanulingoMain() {
         levelNum={levelNum}
         onDone={(score) => { setFinalScore(score); setScreen('done') }}
         onBack={() => setScreen('map')}
+        uiLang={uiLang}
       />
     )
   }
@@ -168,31 +177,31 @@ export default function JanulingoMain() {
     <div className="flex h-full flex-col items-center justify-center gap-6 bg-background p-6 text-text">
       <div className="flex flex-col items-center gap-3 rounded-3xl border border-primary/30 bg-surface/80 px-10 py-8 shadow-2xl backdrop-blur-md">
         <span style={{ fontSize: 56 }}>{medal}</span>
-        <h2 className="text-2xl font-black text-text">¡Nivel completado!</h2>
+        <h2 className="text-2xl font-black text-text">{t.nivelCompletado}</h2>
         <p className="text-text-muted">
-          Puntuación:{' '}
+          {t.puntuacion}{' '}
           <span className="font-bold text-primary">{finalScore}</span> / {max}
         </p>
-        <p className="text-sm text-text-muted">{pct}% de efectividad</p>
+        <p className="text-sm text-text-muted">{pct}% {t.efectividad}</p>
         <div className="mt-3 flex gap-3">
           <button
             type="button"
             onClick={() => setScreen('map')}
             className="rounded-xl border border-border/60 bg-surface px-5 py-2 text-sm font-bold text-text-muted transition-colors hover:text-text"
           >
-            ← Mapa
+            {t.mapa}
           </button>
           <button
             type="button"
             onClick={() => setScreen('playing')}
             className="rounded-xl border-b-4 border-primary/50 bg-primary px-5 py-2 text-sm font-bold text-background transition-all active:translate-y-0.5 active:border-b-2 hover:opacity-90"
           >
-            ↺ Repetir
+            {t.repetir}
           </button>
         </div>
       </div>
       <p className="text-sm text-text-muted/50">
-        🐱 Powell Janulus dominaba 42 idiomas. ¡Tú vas por buen camino!
+        {t.powellFooter}
       </p>
     </div>
   )

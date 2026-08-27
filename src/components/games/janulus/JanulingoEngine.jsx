@@ -1,14 +1,15 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { getJanulusLevel, getSpeechLangJanulus } from '../../../data/matrixData'
 import { getPreferredVoiceURI } from './voicePrefs'
+import { strings } from './janulusStrings'
 import VerbAnimation from './VerbAnimation'
 
 const ROUNDS = 8
 
 const C = {
-  base:  { filled: 'border-blue-400/50 border-b-blue-600/80 bg-blue-500/15 text-blue-100',    dot: '🔵', label: 'Estructura' },
-  verb:  { filled: 'border-emerald-400/50 border-b-emerald-600/80 bg-emerald-500/15 text-emerald-100', dot: '🟢', label: 'Verbo' },
-  vocab: { filled: 'border-purple-400/50 border-b-purple-600/80 bg-purple-500/15 text-purple-100',    dot: '🟣', label: 'Objeto' },
+  base:  { filled: 'border-blue-400/50 border-b-blue-600/80 bg-blue-500/15 text-blue-100',    dot: '🔵', labelKey: 'estructura' },
+  verb:  { filled: 'border-emerald-400/50 border-b-emerald-600/80 bg-emerald-500/15 text-emerald-100', dot: '🟢', labelKey: 'verbo' },
+  vocab: { filled: 'border-purple-400/50 border-b-purple-600/80 bg-purple-500/15 text-purple-100',    dot: '🟣', labelKey: 'objeto' },
 }
 
 // Answer chips in blocks-mode used to be colored by `C[type]` too — since
@@ -23,9 +24,6 @@ const SPEEDS = [
   { rate: 0.75, icon: '🚶', label: '0.75×' },
   { rate: 1.0,  icon: '🏃', label: '1×' },
 ]
-
-// ponytail: UI language hardcoded to Spanish — change this constant when platform goes multilingual
-const UI_LANG = 'es-ES'
 
 function calcScore(learnMistakes, hintCount) {
   return Math.max(20, 100 - learnMistakes * 10 - hintCount * 15)
@@ -101,18 +99,18 @@ function doSpeak(text, langCode, rate) {
   synth.getVoices().length ? fire() : synth.addEventListener('voiceschanged', fire, { once: true })
 }
 
-function doSpeakUI(text, rate = 0.85) {
+function doSpeakUI(text, rate = 0.85, uiLangTag = 'es-ES') {
   const synth = window.speechSynthesis
   if (!synth) return
   synth.cancel()
   const fire = () => {
     const utt  = new SpeechSynthesisUtterance(text)
-    utt.lang   = UI_LANG
+    utt.lang   = uiLangTag
     utt.rate   = rate
     const all  = synth.getVoices()
-    const voice = all.find((v) => v.lang === UI_LANG)
+    const voice = all.find((v) => v.lang === uiLangTag)
       ?? all.find((v) => v.lang === 'es-MX')
-      ?? all.find((v) => v.lang.startsWith('es'))
+      ?? all.find((v) => v.lang.startsWith(uiLangTag.slice(0, 2)))
     if (voice) utt.voice = voice
     synth.speak(utt)
   }
@@ -129,14 +127,14 @@ function doSpeakEN(text, rate = 0.85) {
 // Word-exact match (not substring) so e.g. "porta" (door) never matches inside
 // "portar" (to carry/wear) — both are real words across the Catalan levels.
 function hasWord(sentence, word) {
-  return sentence.split(/[^a-zàèéíïòóúüçñ]+/).includes(word)
+  return sentence.split(/[^a-zàáèéíïòóúüçñ]+/).includes(word)
 }
 
 function getOliverPrompt(sentence) {
   const s = sentence.toLowerCase()
   const has = (w) => hasWord(s, w)
 
-  if (has('key') || has('clé') || has('clau') || has('chiave'))
+  if (has('key') || has('clé') || has('clau') || has('chiave') || has('llave'))
     return "You're locked out and can't find what you need to get back in. What do you reach for?"
   if (has('caixa') || has('cofre'))
     return "You're packing up your room and need somewhere to put your things. What do you grab?"
@@ -144,17 +142,21 @@ function getOliverPrompt(sentence) {
     return "The power just went out and it's pitch black. What do you reach for?"
   if (has('candle') || has('bougie') || has('espelma') || has('candela'))
     return "The lights flicker during the storm. What do you light instead?"
-  if (has('apple') || has('pomme') || has('poma') || has('mela') || has('sagarra'))
+  if (has('apple') || has('pomme') || has('poma') || has('mela') || has('sagarra') || has('manzana'))
+    return "You're hungry and there's a fruit bowl on the table. What do you grab?"
+  if (has('plátano') || has('platano'))
+    return "You're hungry and there's a fruit bowl on the table. What do you grab?"
+  if (has('mango'))
     return "You're hungry and there's a fruit bowl on the table. What do you grab?"
   if (has('water') || has('eau') || has('aigua') || has('acqua') || has('ura'))
     return "You've been out in the sun all afternoon and you're really thirsty. What do you ask for?"
-  if (has('pa') || has('pane') || has('ogia'))
+  if (has('pa') || has('pane') || has('ogia') || has('pan'))
     return "You stop by the bakery on your way home. What do you buy?"
   if (has('formatge') || has('cheese') || has('formaggio'))
     return "You're putting together a snack plate for some guests. What do you add?"
   if (has('suc') || has('juice') || has('succo'))
     return "It's breakfast time and you want something refreshing to drink. What do you pour?"
-  if (has('llet') || has('milk') || has('latte') || has('esnea'))
+  if (has('llet') || has('milk') || has('latte') || has('esnea') || has('leche'))
     return "You're making coffee and the fridge is almost empty. What do you check for?"
   if (has('cafè') || has('caffè'))
     return "You need a short break to recharge during a busy afternoon. What sounds good right now?"
@@ -162,29 +164,41 @@ function getOliverPrompt(sentence) {
     return "You're trying to eat healthier this week. What do you add to the shopping list?"
   if (has('pizza') || has('pasta'))
     return "You're deciding what to order for dinner with friends. What are you craving?"
-  if (has('arraultza'))
+  if (has('arraultza') || has('huevo'))
     return "You're making breakfast and there's almost nothing left in the fridge. What do you grab?"
+  if (has('mano'))
+    return "Someone needs an extra hand for a second. What are you offering?"
+  if (has('cara'))
+    return "You're getting ready in the morning. What do you check yourself in?"
+  if (has('pelo'))
+    return "You just got out of the shower. What do you need to dry first?"
+  if (has('ojos'))
+    return "You're trying to focus on something far away. What are you using?"
+  if (has('nariz'))
+    return "You catch a delicious smell coming from the kitchen. What do you notice it with?"
+  if (has('boca'))
+    return "You're about to try a new dish for the first time. What do you open?"
   if (has('pare') || has('father') || has('padre') || has('aita'))
     return "You're introducing your family to a new friend. Who do you point out first?"
   if (has('mare') || has('mother') || has('madre') || has('ama'))
     return "Someone asks who taught you to cook. Who do you mention?"
-  if (has('germà') || has('brother') || has('fratello') || has('anaia'))
+  if (has('germà') || has('brother') || has('fratello') || has('anaia') || has('hermano'))
     return "You're showing old photos to a friend. Who's the boy standing next to you?"
-  if (has('germana') || has('sister') || has('sorella') || has('ahizpa'))
+  if (has('germana') || has('sister') || has('sorella') || has('ahizpa') || has('hermana'))
     return "Someone asks who's in the photo with you. Who do you say it is?"
   if (has('avi') || has('àvia') || has('nonno') || has('nonna'))
     return "It's a family lunch and someone asks who's coming. Who do you mention?"
-  if (has('amic') || has('amiga') || has('friend') || has('amico') || has('amica') || has('laguna'))
+  if (has('amic') || has('amiga') || has('friend') || has('amico') || has('amica') || has('laguna') || has('amigo'))
     return "You're at a party and don't know anyone there. Who do you wish were with you?"
-  if (has('taula') || has('table') || has('tavolo') || has('mahaia'))
+  if (has('taula') || has('table') || has('tavolo') || has('mahaia') || has('mesa'))
     return "You're setting up dinner for a few friends. What do you pull more chairs around?"
-  if (has('cadira') || has('chair') || has('sedia') || has('aulkia'))
+  if (has('cadira') || has('chair') || has('sedia') || has('aulkia') || has('silla'))
     return "A guest just arrived and there's nowhere to sit. What do you bring over?"
   if (has('llit') || has('bed') || has('letto') || has('ohea'))
     return "It's been a long day and you're exhausted. Where are you headed?"
-  if (has('finestra') || has('window') || has('leihoa'))
+  if (has('finestra') || has('window') || has('leihoa') || has('ventana'))
     return "The room feels stuffy. What do you open to get some air?"
-  if (has('porta') || has('door') || has('atea'))
+  if (has('porta') || has('door') || has('atea') || has('puerta'))
     return "Someone's knocking. What do you go open?"
   if (has('sofà') || has('sofa') || has('divano'))
     return "You just got home and want to relax in front of the TV. Where do you sit?"
@@ -325,6 +339,11 @@ const CONV_SCENARIOS = {
     setting: 'Egin dezagun elkarrizketa txiki bat praktikatu duzun hori erabiliz.',
     outro:   'Bikaina! Euskaraz lehen benetako elkarrizketa egin duzu. ⛰️\n\nEuskarara ez da beste ezein hizkuntzarekin lotuta — 10.000 urteko historia du. Bloke batetik besterako, hizkuntzarik misteriotsuena ari zara ikasten.',
   },
+  es: {
+    intro:   '¡Usaste estas frases muy bien! Ahora veamos cómo suenan en una conversación normal de todos los días...',
+    setting: 'Vamos a charlar un poco usando lo que acabas de practicar.',
+    outro:   '¿Ves? Con solo 3 bloques, mantuviste una conversación real. Esa es la Técnica Janulus.\n\nPowell Janulus dominó 42 idiomas exactamente así — bloque a bloque. Tú ya empezaste. 🌟',
+  },
 }
 
 function buildConversationScript(sentences, lang) {
@@ -344,10 +363,11 @@ function buildConversationScript(sentences, lang) {
 
 // ── Shared sub-components ──────────────────────────────────────────────────────
 
-function SpeedStrip({ rate, setRate, onListen }) {
+function SpeedStrip({ rate, setRate, onListen, uiLang = 'es' }) {
+  const t = strings(uiLang)
   return (
     <div className="flex items-center justify-center gap-2 border-b border-border/30 bg-surface/40 px-4 py-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted/50">Vel.</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted/50">{t.vel}</span>
       {SPEEDS.map((s) => (
         <button key={s.rate} type="button" onClick={() => setRate(s.rate)}
           className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-all
@@ -367,10 +387,11 @@ function SpeedStrip({ rate, setRate, onListen }) {
   )
 }
 
-function TopBar({ onBack, roundIdx, score, flash }) {
+function TopBar({ onBack, roundIdx, score, flash, uiLang = 'es' }) {
+  const t = strings(uiLang)
   return (
     <div className="flex items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2.5">
-      <button type="button" onClick={onBack} className="text-xs text-text-muted hover:text-text">← Mapa</button>
+      <button type="button" onClick={onBack} className="text-xs text-text-muted hover:text-text">{t.mapa}</button>
       <div className="flex items-center gap-2">
         <div className="h-2 w-24 overflow-hidden rounded-full bg-border/40">
           <div className="h-full rounded-full bg-primary transition-all duration-500"
@@ -379,7 +400,7 @@ function TopBar({ onBack, roundIdx, score, flash }) {
         <span className="text-xs text-text-muted">{roundIdx + 1}/{ROUNDS}</span>
       </div>
       <div className="relative min-w-[3rem] text-right">
-        <span className="text-xs font-bold text-primary">{score} pts</span>
+        <span className="text-xs font-bold text-primary">{score} {t.pts}</span>
         {flash && (
           <span key={`fl-${roundIdx}`}
             className="absolute -top-4 right-0 animate-bounce text-[10px] font-black text-emerald-400">
@@ -391,7 +412,8 @@ function TopBar({ onBack, roundIdx, score, flash }) {
   )
 }
 
-function OliverBubble({ text, onRead, className = '' }) {
+function OliverBubble({ text, onRead, className = '', uiLang = 'es' }) {
+  const t = strings(uiLang)
   return (
     <div className={`flex w-full items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/08 px-4 py-3 ${className}`}>
       <span className="mt-0.5 shrink-0 text-2xl">🐱</span>
@@ -400,7 +422,7 @@ function OliverBubble({ text, onRead, className = '' }) {
         {onRead && (
           <button type="button" onClick={onRead}
             className="mt-1.5 flex items-center gap-1 text-[11px] text-amber-400/60 hover:text-amber-300">
-            🔊 Leer en voz alta
+            {t.leerVoz}
           </button>
         )}
       </div>
@@ -410,7 +432,8 @@ function OliverBubble({ text, onRead, className = '' }) {
 
 // ── Active user turn: type OR tap word tiles ──────────────────────────────────
 
-function ActiveUserTurn({ line, lang, rateRef, userInput, setUserInput, shake, inputRef, onSubmit }) {
+function ActiveUserTurn({ line, lang, rateRef, userInput, setUserInput, shake, inputRef, onSubmit, uiLang = 'es' }) {
+  const t = strings(uiLang)
   const tiles = useMemo(() => shuffle(line.expected.split(' ')), [line.expected])
 
   function appendWord(word) {
@@ -430,7 +453,7 @@ function ActiveUserTurn({ line, lang, rateRef, userInput, setUserInput, shake, i
             ref={inputRef}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Escribe o toca las palabras…"
+            placeholder={t.escribeTocaPalabras}
             autoComplete="off"
             spellCheck={false}
             className="flex-1 rounded-xl border border-primary/40 bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
@@ -458,7 +481,7 @@ function ActiveUserTurn({ line, lang, rateRef, userInput, setUserInput, shake, i
         </div>
 
         <div className="flex items-center gap-1.5 text-[10px] text-text-muted/40">
-          <span>Frase:</span>
+          <span>{t.frase}</span>
           <span className="font-mono text-primary/60">{line.expected}</span>
           <button type="button" onClick={() => doSpeak(line.expected, lang, rateRef.current)}
             className="hover:text-primary">🔊</button>
@@ -470,7 +493,9 @@ function ActiveUserTurn({ line, lang, rateRef, userInput, setUserInput, shake, i
 
 // ── Conversation Screen with typing ───────────────────────────────────────────
 
-function ConversationScreen({ sentences, lang, rate, onDone }) {
+function ConversationScreen({ sentences, lang, rate, onDone, uiLang = 'es' }) {
+  const t          = strings(uiLang)
+  const uiLangTag  = uiLang === 'en' ? 'en-US' : 'es-ES'
   const script     = buildConversationScript(sentences, lang)
   const rateRef    = useRef(rate)
   const inputRef   = useRef(null)
@@ -490,7 +515,7 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
   useEffect(() => {
     if (!line || line.role === 'user') return
     const fn = line.uiLang
-      ? () => doSpeakUI(line.text, rateRef.current)
+      ? () => doSpeakUI(line.text, rateRef.current, uiLangTag)
       : () => doSpeak(line.text, lang, rateRef.current)
     const t = setTimeout(fn, 350)
     return () => clearTimeout(t)
@@ -541,7 +566,7 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
   return (
     <div className="flex h-full flex-col bg-background text-text">
       <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-2.5">
-        <span className="text-sm font-bold">🗨️ Conversación de práctica</span>
+        <span className="text-sm font-bold">{t.conversacionPractica}</span>
         <span className="text-xs text-text-muted">{Math.min(idx + 1, script.length)}/{script.length}</span>
       </div>
 
@@ -568,6 +593,7 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
                 shake={shake}
                 inputRef={inputRef}
                 onSubmit={handleUserSubmit}
+                uiLang={uiLang}
               />
             )
           }
@@ -583,7 +609,7 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
                 <p className="text-sm leading-relaxed">{displayText}</p>
                 {!isUser && (
                   <button type="button"
-                    onClick={() => l.uiLang ? doSpeakUI(l.text, rateRef.current) : doSpeak(l.text, lang, rateRef.current)}
+                    onClick={() => l.uiLang ? doSpeakUI(l.text, rateRef.current, uiLangTag) : doSpeak(l.text, lang, rateRef.current)}
                     className="mt-1 text-[10px] text-text-muted/40 hover:text-primary">🔊</button>
                 )}
               </div>
@@ -597,12 +623,12 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
         {isDone ? (
           <button type="button" onClick={onDone}
             className="w-full rounded-xl border-b-4 border-primary/50 bg-primary py-3 text-sm font-bold text-background transition-all active:translate-y-0.5 active:border-b-2">
-            Ver mi puntuación 🏆
+            {t.verPuntuacion}
           </button>
         ) : line?.role === 'oliver' ? (
           <button type="button" onClick={advance}
             className="w-full rounded-xl border border-border/40 bg-surface py-3 text-sm font-semibold text-text-muted transition-colors hover:text-text">
-            Siguiente →
+            {t.siguiente}
           </button>
         ) : null /* narration auto-advances; user line shows own button */}
       </div>
@@ -612,8 +638,10 @@ function ConversationScreen({ sentences, lang, rate, onDone }) {
 
 // ── Main engine ────────────────────────────────────────────────────────────────
 
-export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
+export default function JanulingoEngine({ lang, levelNum, onDone, onBack, uiLang = 'es' }) {
   const ld = getJanulusLevel(lang, levelNum)
+  const t = strings(uiLang)
+  const uiLangTag = uiLang === 'en' ? 'en-US' : 'es-ES'
 
   const [rs, setRs] = useState(() => freshRS(ld))
   const { round, learnQueue, blocks, available, selected } = rs
@@ -667,8 +695,8 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
   // Auto-speak Oliver intro
   useEffect(() => {
     if (phase !== 'oliverIntro' || !ld?.oliversIntro) return
-    const t = setTimeout(() => doSpeakUI(ld.oliversIntro.message, rateRef.current), 900)
-    return () => clearTimeout(t)
+    const tm = setTimeout(() => doSpeakUI(ld.oliversIntro.message, rateRef.current, uiLangTag), 900)
+    return () => clearTimeout(tm)
   }, [phase]) // eslint-disable-line
 
   // Learn phase: speak WORD first (t=450), then Spanish definition (t=2500)
@@ -679,7 +707,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     const d    = item.type === 'verb' ? round.verb : round.vocab
     const t1   = setTimeout(() => doSpeak(item.text, lang, rateRef.current), 450)
     const defEs = d?.definition
-    const t2   = defEs ? setTimeout(() => doSpeakUI(defEs, rateRef.current), 2500) : null
+    const t2   = defEs ? setTimeout(() => doSpeakUI(defEs, rateRef.current, uiLangTag), 2500) : null
     return () => { clearTimeout(t1); if (t2) clearTimeout(t2) }
   }, [learnIdx, phase, celebration]) // eslint-disable-line
 
@@ -701,25 +729,25 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
     const { headline, message, technique, funFact } = ld.oliversIntro
     return (
       <div className="flex h-full flex-col bg-background text-text">
-        <SpeedStrip rate={rate} setRate={setRate} onListen={() => doSpeakUI(message, rateRef.current)} />
+        <SpeedStrip rate={rate} setRate={setRate} onListen={() => doSpeakUI(message, rateRef.current, uiLangTag)} uiLang={uiLang} />
         <div className="flex flex-1 flex-col items-center gap-5 overflow-auto px-4 py-6">
           <span style={{ fontSize: 72, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,.6))' }}>🐱</span>
           <h2 className="text-center text-2xl font-black">{headline}</h2>
           <div className="w-full max-w-md space-y-3 rounded-2xl border border-amber-400/25 bg-amber-400/08 p-5">
             <p className="whitespace-pre-line text-sm leading-relaxed">{message}</p>
             <div className="rounded-xl border border-primary/20 bg-primary/08 p-3">
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-primary/70">Técnica Janulus</p>
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-primary/70">{t.tecnicaJanulus}</p>
               <p className="whitespace-pre-line font-mono text-xs text-text-muted">{technique}</p>
             </div>
             <p className="text-xs font-semibold text-amber-400">{funFact}</p>
-            <button type="button" onClick={() => doSpeakUI(message, rateRef.current)}
+            <button type="button" onClick={() => doSpeakUI(message, rateRef.current, uiLangTag)}
               className="flex items-center gap-1.5 rounded-lg border border-amber-400/30 px-3 py-1.5 text-[11px] font-semibold text-amber-400/80 hover:text-amber-400">
-              🔊 Leer introducción
+              {t.leerIntro}
             </button>
           </div>
           <button type="button" onClick={() => setPhase('learn')}
             className="rounded-2xl border-b-4 border-primary/50 bg-primary px-10 py-3.5 text-lg font-black text-background shadow-xl transition-all hover:opacity-95 active:translate-y-1 active:border-b-2">
-            ¡Vamos! →
+            {t.vamos}
           </button>
         </div>
       </div>
@@ -734,6 +762,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
         lang={lang}
         rate={rate}
         onDone={() => onDone(scoreRef.current)}
+        uiLang={uiLang}
       />
     )
   }
@@ -846,8 +875,8 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
 
     return (
       <div className="flex h-full flex-col bg-background text-text">
-        <TopBar onBack={onBack} roundIdx={roundIdx} score={score} flash={flash} />
-        <SpeedStrip rate={rate} setRate={setRate} onListen={() => speak(currentItem?.text)} />
+        <TopBar onBack={onBack} roundIdx={roundIdx} score={score} flash={flash} uiLang={uiLang} />
+        <SpeedStrip rate={rate} setRate={setRate} onListen={() => speak(currentItem?.text)} uiLang={uiLang} />
 
         <div className="flex flex-1 flex-col items-center gap-3 overflow-auto px-4 py-4">
 
@@ -874,7 +903,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
           </div>
 
           <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
-            {isVerb ? 'Acción (verbo)' : 'Objeto'} · {learnIdx + 1}/{learnQueue.length}
+            {isVerb ? t.accionVerbo : t.objeto} · {learnIdx + 1}/{learnQueue.length}
           </p>
 
           {/* Animated visual */}
@@ -893,7 +922,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
           </div>
 
           <p className="text-center text-sm text-text-muted">
-            {isVerb ? '¿Cómo se llama esta acción?' : '¿Cómo se llama este objeto?'}
+            {isVerb ? t.comoLlamaAccion : t.comoLlamaObjeto}
           </p>
 
           {/* Definition card — Spanish + English, auto-spoken via useEffect */}
@@ -901,16 +930,16 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             <div className="flex w-full max-w-md items-start gap-2 rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5">
               <span className="mt-0.5 shrink-0 text-sm">📘</span>
               <div className="flex-1 space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Definición</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{t.definicion}</p>
 
-                {/* Spanish */}
+                {/* Primary language */}
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[12px] leading-relaxed text-text/90">🇪🇸 {learnData.definition}</p>
-                  <button type="button" onClick={() => doSpeakUI(learnData.definition, rateRef.current)}
+                  <p className="text-[12px] leading-relaxed text-text/90">{t.flag} {learnData.definition}</p>
+                  <button type="button" onClick={() => doSpeakUI(learnData.definition, rateRef.current, uiLangTag)}
                     className="shrink-0 text-[11px] text-text-muted/40 hover:text-primary">🔊</button>
                 </div>
 
-                {/* English */}
+                {/* English bonus (only present in the es-narration packs) */}
                 {learnData.definitionEn && (
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-[12px] leading-relaxed text-text/70">🇬🇧 {learnData.definitionEn}</p>
@@ -922,7 +951,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                 {/* Examples */}
                 {learnData.examples?.length > 0 && (
                   <div className="border-t border-primary/15 pt-2 space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">{t.ejemplos}</p>
                     {learnData.examples.map((ex, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <div className="flex-1">
@@ -944,10 +973,10 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             <div className="flex w-full max-w-md items-start gap-2 rounded-xl border border-border/20 bg-surface/50 px-3 py-2.5">
               <span className="mt-0.5 shrink-0 text-sm">📖</span>
               <div className="flex-1 space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted/40">Etimología</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted/40">{t.etimologia}</p>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] leading-relaxed text-text-muted/80">🇪🇸 {learnData.etymology}</p>
-                  <button type="button" onClick={() => doSpeakUI(learnData.etymology, rateRef.current)}
+                  <p className="text-[11px] leading-relaxed text-text-muted/80">{t.flag} {learnData.etymology}</p>
+                  <button type="button" onClick={() => doSpeakUI(learnData.etymology, rateRef.current, uiLangTag)}
                     className="shrink-0 text-[10px] text-text-muted/40 hover:text-primary">🔊</button>
                 </div>
                 {learnData.etymologyEn && (
@@ -964,16 +993,16 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
           {/* Celebration — word was spoken in handleLearnSubmit; everything else click-to-hear */}
           {celebration && (
             <div className="w-full max-w-md space-y-3">
-              <p className="text-center text-sm font-bold text-emerald-400">✅ ¡Correcto!</p>
+              <p className="text-center text-sm font-bold text-emerald-400">{t.correcto}</p>
 
               {/* Definition + examples recap */}
               {learnData?.definition && (
                 <div className="rounded-xl border border-primary/20 bg-primary/06 px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Definición</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{t.definicion}</p>
                   <div className="mt-1 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-[12px] leading-relaxed text-text/90">🇪🇸 {learnData.definition}</p>
-                      <button type="button" onClick={() => doSpeakUI(learnData.definition, rateRef.current)}
+                      <p className="text-[12px] leading-relaxed text-text/90">{t.flag} {learnData.definition}</p>
+                      <button type="button" onClick={() => doSpeakUI(learnData.definition, rateRef.current, uiLangTag)}
                         className="shrink-0 text-[11px] text-text-muted/40 hover:text-primary">🔊</button>
                     </div>
                     {learnData.definitionEn && (
@@ -985,7 +1014,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                     )}
                     {learnData.examples?.length > 0 && (
                       <div className="border-t border-primary/15 pt-2 space-y-1.5">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">Ejemplos</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-primary/50">{t.ejemplos}</p>
                         {learnData.examples.map((ex, i) => (
                           <div key={i} className="flex items-start gap-2">
                             <div className="flex-1">
@@ -1006,14 +1035,15 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
               {celebration.tip && (
                 <OliverBubble
                   text={celebration.tip}
-                  onRead={() => doSpeakUI(celebration.tip, rateRef.current)}
+                  onRead={() => doSpeakUI(celebration.tip, rateRef.current, uiLangTag)}
+                  uiLang={uiLang}
                 />
               )}
 
               <div className="flex justify-center">
                 <button type="button" onClick={advanceLearn}
                   className="rounded-xl border-b-4 border-primary/50 bg-primary px-6 py-2.5 text-sm font-bold text-background active:translate-y-0.5 active:border-b-2">
-                  Continuar →
+                  {t.continuar}
                 </button>
               </div>
             </div>
@@ -1028,7 +1058,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                   ref={learnRef}
                   value={learnInput}
                   onChange={(e) => setLearnInput(e.target.value)}
-                  placeholder="Escribe la palabra…"
+                  placeholder={t.escribePalabra}
                   autoComplete="off"
                   spellCheck={false}
                   className="flex-1 rounded-xl border border-border/50 bg-surface/60 px-4 py-2.5 text-sm font-medium text-text outline-none placeholder:text-text-muted/40 focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
@@ -1039,7 +1069,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                 </button>
               </form>
 
-              {learnShake && <p className="text-sm font-bold text-red-400">❌ Inténtalo de nuevo</p>}
+              {learnShake && <p className="text-sm font-bold text-red-400">{t.intentaloDeNuevo}</p>}
 
               {hintLetters > 0 && (
                 <p className="font-mono text-lg tracking-[0.3em] text-primary">{hintDisplay}</p>
@@ -1048,11 +1078,11 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
               <div className="flex gap-2">
                 <button type="button" onClick={handleLearnHint}
                   className="flex items-center gap-1.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400/20">
-                  💡 {hintLetters === 0 ? 'Pista' : hintLetters < (currentItem?.keyword.length ?? 99) ? 'Más' : '🔊 Escuchar'}
+                  💡 {hintLetters === 0 ? t.pista : hintLetters < (currentItem?.keyword.length ?? 99) ? t.mas : t.escuchar}
                 </button>
                 <button type="button" onClick={() => { setLearnMistakes((m) => m + 5); advanceLearn() }}
                   className="rounded-xl border border-border/25 px-3 py-1.5 text-xs text-text-muted/50 hover:text-text-muted">
-                  Saltar →
+                  {t.saltar}
                 </button>
               </div>
             </>
@@ -1065,8 +1095,8 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
   // ── Build phase ───────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col bg-background text-text">
-      <TopBar onBack={onBack} roundIdx={roundIdx} score={score} flash={flash} />
-      <SpeedStrip rate={rate} setRate={setRate} onListen={() => speak()} />
+      <TopBar onBack={onBack} roundIdx={roundIdx} score={score} flash={flash} uiLang={uiLang} />
+      <SpeedStrip rate={rate} setRate={setRate} onListen={() => speak()} uiLang={uiLang} />
 
       <div className="flex flex-1 flex-col items-center gap-3 overflow-auto px-4 py-4">
 
@@ -1101,12 +1131,12 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
         </div>
 
         <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted/50">
-          Construye la oración completa
+          {t.construyeOracion}
         </p>
 
         {/* Mode toggle */}
         <div className="flex overflow-hidden rounded-xl border border-border text-xs font-bold">
-          {[['type','✍️ Escribir'], ['blocks','🧩 Bloques']].map(([m, label]) => (
+          {[['type', t.escribirMode], ['blocks', t.bloquesMode]].map(([m, label]) => (
             <button key={m} type="button" onClick={() => setBuildMode(m)}
               className={`flex items-center gap-1.5 px-4 py-2 transition-colors
                 ${buildMode === m ? 'bg-primary text-background' : 'text-text-muted hover:text-text'}`}>
@@ -1124,7 +1154,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                 ref={typeRef}
                 value={typeAnswer}
                 onChange={(e) => setTypeAnswer(e.target.value)}
-                placeholder="Escribe la frase completa…"
+                placeholder={t.escribeFraseCompleta}
                 autoComplete="off"
                 spellCheck={false}
                 disabled={buildResult === 'correct'}
@@ -1139,13 +1169,13 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
               </button>
             </form>
 
-            {buildResult === 'correct' && <p className="text-center text-sm font-bold text-emerald-400">✅ ¡Perfecto!</p>}
-            {buildResult === 'wrong'   && <p className="text-center text-sm font-bold text-red-400">❌ Inténtalo de nuevo</p>}
+            {buildResult === 'correct' && <p className="text-center text-sm font-bold text-emerald-400">{t.perfecto}</p>}
+            {buildResult === 'wrong'   && <p className="text-center text-sm font-bold text-red-400">{t.intentaloDeNuevo}</p>}
 
             <div className="flex justify-center">
               <button type="button" onClick={handleBuildHint} disabled={!!buildResult}
                 className="flex items-center gap-1.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400/20 disabled:opacity-40">
-                💡 {buildHints === 0 ? 'Pista (escuchar)' : 'Revelar palabra'}
+                💡 {buildHints === 0 ? t.pistaEscuchar : t.revelarPalabra}
               </button>
             </div>
             {revealedSentence && (
@@ -1169,7 +1199,7 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
                       ${block ? `cursor-pointer ${c.filled} shadow-sm` : 'cursor-default border-dashed border-white/10 bg-transparent'}`}>
                     {block
                       ? <><span className="text-base">{block.emoji ?? ''}</span><span className="text-center text-[11px] leading-tight">{block.text}</span></>
-                      : <><span className="text-base">{c.dot}</span><span className="text-[10px] text-text-muted/40">{c.label}</span></>
+                      : <><span className="text-base">{c.dot}</span><span className="text-[10px] text-text-muted/40">{t[c.labelKey]}</span></>
                     }
                   </button>
                 )
@@ -1177,11 +1207,11 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
             </div>
 
             <p className="text-[10px] text-text-muted/40">
-              Orden: {C.base.dot} Estructura → {C.verb.dot} Verbo → {C.vocab.dot} Objeto
+              {t.ordenLabel} {C.base.dot} {t.estructura} → {C.verb.dot} {t.verbo} → {C.vocab.dot} {t.objeto}
             </p>
 
-            {buildResult === 'correct' && <p className="text-sm font-bold text-emerald-400">✅ ¡Correcto!</p>}
-            {buildResult === 'wrong'   && <p className="text-sm font-bold text-red-400">❌ Orden incorrecto</p>}
+            {buildResult === 'correct' && <p className="text-sm font-bold text-emerald-400">{t.correcto}</p>}
+            {buildResult === 'wrong'   && <p className="text-sm font-bold text-red-400">{t.ordenIncorrecto}</p>}
 
             <div className="flex flex-wrap justify-center gap-2">
               {available.map((b) => (
@@ -1194,17 +1224,16 @@ export default function JanulingoEngine({ lang, levelNum, onDone, onBack }) {
 
             <button type="button" onClick={handleBuildHint} disabled={!!buildResult}
               className="flex items-center gap-1.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-400/20 disabled:opacity-40">
-              🐱 Pista {buildHints > 0 && `(${buildHints})`}
+              {t.pistaGato} {buildHints > 0 && `(${buildHints})`}
             </button>
 
             {buildHints > 0 && (
               <OliverBubble
-                text={buildHints === 1
-                  ? 'Escucha la frase despacio. 🔊 El oído reconoce el orden antes que la mente.'
-                  : `La frase empieza con "${round.base.text}"… ¿qué va después?`}
+                text={buildHints === 1 ? t.hintBubble1 : t.hintBubble2(round.base.text)}
                 onRead={() => buildHints === 1
                   ? speak()
-                  : doSpeakUI(`La frase empieza con ${round.base.text}`, rateRef.current)}
+                  : doSpeakUI(t.fraseEmpieza(round.base.text), rateRef.current, uiLangTag)}
+                uiLang={uiLang}
               />
             )}
           </div>

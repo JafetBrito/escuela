@@ -5423,10 +5423,425 @@ export const JANULUS_DATA = {
       },
     ],
   },
+
+  // Único paquete "invertido": narración (definition/etymology/oliversTip/oliversIntro)
+  // en inglés, examples.s en español y examples.t en inglés — para usuarios con el
+  // sitio en inglés aprendiendo español. Ver getJanulusLanguages(uiLang).
+  es: {
+    name: 'Spanish',
+    flag: '🇪🇸',
+    speechLang: 'es-ES',
+    levels: [
+      {
+        level: 1,
+        name: 'First Tastes',
+        oliversIntro: {
+          headline: 'Level 1 · First Tastes! 🍎',
+          message: "We're starting with the basics: foods everyone recognizes right away. Powell Janulus always begins with concrete, visual words, because the brain retains them 3 times faster than abstract ones.",
+          technique: '🔵 Base + 🟢 Verb + 🟣 Object\n\n"Quiero" + "encontrar" + "una manzana"\n= Quiero encontrar una manzana',
+          funFact: '💡 Spanish has around 93,000 words in its official dictionary, but just 1,000 words cover about 85% of everyday speech. Let\'s start with the most visual ones!',
+        },
+        bases: [
+          { id: 'b1', text: 'Quiero' },
+          { id: 'b2', text: 'Necesito' },
+          { id: 'b3', text: 'Puedo' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'encontrar', emoji: '🔍', anim: 'search',
+            definition: 'To locate or discover something you\'re looking for.',
+            etymology: 'From Latin "in-" + "contra" (against, opposite) → Vulgar Latin "incontrare" (to come across, meet), which became Spanish "encontrar".',
+            examples: [
+              { s: 'Quiero encontrar una manzana.', t: 'I want to find an apple.' },
+              { s: '¿Puedes encontrar pan?', t: 'Can you find bread?' },
+            ],
+          },
+          {
+            id: 'v2', text: 'ver', emoji: '👁️', anim: 'blink',
+            definition: 'To perceive something with your eyes.',
+            etymology: 'From Latin "videre" (to see) — the same root as English words like "vision" and "video".',
+            examples: [
+              { s: 'Puedo ver una manzana.', t: 'I can see an apple.' },
+              { s: 'Quiero ver un plátano.', t: 'I want to see a banana.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'llevar', emoji: '💪', anim: 'lift',
+            definition: 'To carry or transport something from one place to another.',
+            etymology: 'From Latin "levare" (to lift, raise) — related to English "levitate" and "elevate".',
+            examples: [
+              { s: 'Necesito llevar pan.', t: 'I need to carry bread.' },
+              { s: '¿Puedes llevar un huevo?', t: 'Can you carry an egg?' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'una manzana', emoji: '🍎', keyword: 'manzana',
+            definition: 'A round fruit with red, green, or yellow skin and white flesh.',
+            etymology: 'From Latin "mattiana", a type of apple named after the Roman consul Matius.',
+            oliversTip: 'In English it\'s "apple", from Old English "æppel" — a completely different root from Spanish! Two unrelated word families for the same fruit. 🍎',
+            examples: [
+              { s: 'Quiero encontrar una manzana.', t: 'I want to find an apple.' },
+              { s: 'Puedo ver una manzana.', t: 'I can see an apple.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'un plátano', emoji: '🍌', keyword: 'plátano',
+            definition: 'A tropical fruit with yellow skin and sweet, creamy flesh.',
+            etymology: 'From Greek "platanos" (plane tree), applied to the banana plant because of its broad leaves.',
+            oliversTip: '"Banana" is nearly identical in English, Italian, German, and Catalan — one of the most universal words in the world! In Spanish, "plátano" took its own path. 🌍',
+            examples: [
+              { s: 'Quiero llevar un plátano.', t: 'I want to carry a banana.' },
+              { s: 'Necesito encontrar un plátano.', t: 'I need to find a banana.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'pan', emoji: '🍞', keyword: 'pan',
+            definition: 'A basic food made from flour, water, and yeast, baked in an oven.',
+            etymology: 'From Latin "panis" (bread) — related to English words like "company" (literally "those who share bread").',
+            examples: [
+              { s: 'Necesito pan.', t: 'I need bread.' },
+              { s: 'Puedo llevar pan.', t: 'I can carry bread.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'leche', emoji: '🥛', keyword: 'leche',
+            definition: 'A white nutritious liquid produced by mammals.',
+            etymology: 'From Latin "lac, lactis" (milk) — the same root as English "lactose" and "galaxy" (the Milky Way).',
+            oliversTip: 'Spanish "leche" and English "milk" come from two completely different ancient roots — Latin vs. Germanic! 🌌',
+            examples: [
+              { s: 'Necesito leche.', t: 'I need milk.' },
+              { s: 'Quiero encontrar leche.', t: 'I want to find milk.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'un huevo', emoji: '🥚', keyword: 'huevo',
+            definition: 'An oval object produced by birds, with a yolk and white inside a shell.',
+            etymology: 'From Latin "ovum" (egg) — the same root as English "oval" and "ovary".',
+            examples: [
+              { s: 'Quiero encontrar un huevo.', t: 'I want to find an egg.' },
+              { s: 'Puedo llevar un huevo.', t: 'I can carry an egg.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'un mango', emoji: '🥭', keyword: 'mango',
+            definition: 'A tropical fruit with sweet, juicy orange flesh.',
+            etymology: 'From Tamil "māṅkāy", through Portuguese "manga" — the same word traveled into English almost unchanged.',
+            examples: [
+              { s: 'Quiero encontrar un mango.', t: 'I want to find a mango.' },
+              { s: 'Puedo ver un mango.', t: 'I can see a mango.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 2,
+        name: 'My Body',
+        oliversIntro: {
+          headline: 'Level 2 · My Body 🙌',
+          message: 'Your body is always with you, and so is this vocabulary. Words you can point to while you say them are learned up to 4 times faster.',
+          technique: '🔵 Base + 🟢 Verb + 🟣 Object\n\n"Puedo" + "tocar" + "mi mano"\n= Puedo tocar mi mano',
+          funFact: '💡 Spanish has grammatical gender for every noun — "mano" (hand) is feminine even though it ends in -o, one of the few exceptions to the usual pattern!',
+        },
+        bases: [
+          { id: 'b1', text: 'Quiero' },
+          { id: 'b2', text: 'Necesito' },
+          { id: 'b3', text: 'Puedo' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'tocar', emoji: '👆', anim: 'pulse',
+            definition: 'To touch something with your hand or fingers.',
+            etymology: 'From Vulgar Latin "toccare", imitative in origin (echoing the sound of a light tap).',
+            examples: [
+              { s: 'Puedo tocar mi mano.', t: 'I can touch my hand.' },
+              { s: 'Quiero tocar mi pelo.', t: 'I want to touch my hair.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'lavar', emoji: '🧼', anim: 'swing',
+            definition: 'To clean something with water.',
+            etymology: 'From Latin "lavare" (to wash) — the same root as English "lavatory" and "laundry".',
+            examples: [
+              { s: 'Necesito lavar mi cara.', t: 'I need to wash my face.' },
+              { s: 'Quiero lavar mis ojos.', t: 'I want to wash my eyes.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'usar', emoji: '✋', anim: 'glow',
+            definition: 'To use or make use of something.',
+            etymology: 'From Latin "usare", frequentative of "uti" (to use) — related to English "usage" and "utilize".',
+            examples: [
+              { s: 'Puedo usar mi nariz.', t: 'I can use my nose.' },
+              { s: 'Necesito usar mi boca.', t: 'I need to use my mouth.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'mi mano', emoji: '🤚', keyword: 'mano',
+            definition: 'The part of your body at the end of your arm, used for holding things.',
+            etymology: 'From Latin "manus" (hand) — related to English "manual" and "manufacture" (literally "made by hand").',
+            examples: [
+              { s: 'Puedo tocar mi mano.', t: 'I can touch my hand.' },
+              { s: 'Quiero lavar mi mano.', t: 'I want to wash my hand.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'mi cara', emoji: '😊', keyword: 'cara',
+            definition: 'The front part of your head, with your eyes, nose, and mouth.',
+            etymology: 'From Late Latin "cara" (face), possibly from Celtic — a rare non-Latin root in Spanish\'s core vocabulary.',
+            examples: [
+              { s: 'Necesito lavar mi cara.', t: 'I need to wash my face.' },
+              { s: 'Puedo tocar mi cara.', t: 'I can touch my face.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'mi pelo', emoji: '💇', keyword: 'pelo',
+            definition: 'The fine strands that grow on your head and skin.',
+            etymology: 'From Latin "pilus" (hair) — the same root as English "pile" (as in carpet pile) and "depilatory".',
+            examples: [
+              { s: 'Quiero tocar mi pelo.', t: 'I want to touch my hair.' },
+              { s: 'Necesito lavar mi pelo.', t: 'I need to wash my hair.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'mis ojos', emoji: '👀', keyword: 'ojos',
+            definition: 'The organs you use to see with.',
+            etymology: 'From Latin "oculus" (eye) — related to English "ocular" and "binoculars".',
+            examples: [
+              { s: 'Quiero lavar mis ojos.', t: 'I want to wash my eyes.' },
+              { s: 'Puedo usar mis ojos.', t: 'I can use my eyes.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'mi nariz', emoji: '👃', keyword: 'nariz',
+            definition: 'The part of your face you breathe and smell through.',
+            etymology: 'From Latin "naris" (nostril) — related to English "nasal".',
+            examples: [
+              { s: 'Puedo usar mi nariz.', t: 'I can use my nose.' },
+              { s: 'Quiero tocar mi nariz.', t: 'I want to touch my nose.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'mi boca', emoji: '👄', keyword: 'boca',
+            definition: 'The opening in your face used for eating and speaking.',
+            etymology: 'From Latin "bucca" (cheek, later mouth) — related to English "bucket" via an unexpected path through Old French.',
+            examples: [
+              { s: 'Necesito usar mi boca.', t: 'I need to use my mouth.' },
+              { s: 'Puedo lavar mi boca.', t: 'I can wash my mouth.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 3,
+        name: 'Everyday Objects',
+        oliversIntro: {
+          headline: 'Level 3 · Everyday Objects 🔑',
+          message: "Now let's fill the room around you — the objects you reach for every single day.",
+          technique: '🔵 Base + 🟢 Verb + 🟣 Object\n\n"Quiero" + "abrir" + "una puerta"\n= Quiero abrir una puerta',
+          funFact: '💡 The verb "tener" (to have) is one of the most irregular verbs in Spanish — but it\'s also one of the most-used, so you\'ll see it again and again until it feels natural.',
+        },
+        bases: [
+          { id: 'b1', text: 'Quiero' },
+          { id: 'b2', text: 'Necesito' },
+          { id: 'b3', text: 'Puedo' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'abrir', emoji: '🚪', anim: 'rise',
+            definition: "To move something like a door or window so it's no longer closed.",
+            etymology: 'From Latin "aperire" (to open) — related to English "aperture".',
+            examples: [
+              { s: 'Quiero abrir una puerta.', t: 'I want to open a door.' },
+              { s: 'Puedo abrir una ventana.', t: 'I can open a window.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'buscar', emoji: '🔎', anim: 'search',
+            definition: 'To look for something you want to find.',
+            etymology: 'Origin uncertain, possibly from a pre-Roman Iberian word — one of Spanish\'s genuinely mysterious roots.',
+            examples: [
+              { s: 'Necesito buscar una llave.', t: 'I need to search for a key.' },
+              { s: 'Quiero buscar un libro.', t: 'I want to look for a book.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'tener', emoji: '🤲', anim: 'bounce',
+            definition: 'To have or possess something.',
+            etymology: 'From Latin "tenere" (to hold) — related to English "tenant" and "contain".',
+            examples: [
+              { s: 'Puedo tener una silla.', t: 'I can have a chair.' },
+              { s: 'Necesito tener una mesa.', t: 'I need to have a table.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'una llave', emoji: '🔑', keyword: 'llave',
+            definition: 'A small metal tool used to lock or unlock something.',
+            etymology: 'From Latin "clavis" (key) — related to English "clavicle" (shaped like an old key) and "conclave".',
+            examples: [
+              { s: 'Necesito buscar una llave.', t: 'I need to search for a key.' },
+              { s: 'Puedo tener una llave.', t: 'I can have a key.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'una silla', emoji: '🪑', keyword: 'silla',
+            definition: 'A piece of furniture you sit on.',
+            etymology: 'From Latin "sella" (seat) — related to English "saddle".',
+            examples: [
+              { s: 'Puedo tener una silla.', t: 'I can have a chair.' },
+              { s: 'Necesito buscar una silla.', t: 'I need to look for a chair.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'una puerta', emoji: '🚪', keyword: 'puerta',
+            definition: 'An opening you use to enter or leave a room or building.',
+            etymology: 'From Latin "porta" (gate, door) — related to English "port" and "portal".',
+            examples: [
+              { s: 'Quiero abrir una puerta.', t: 'I want to open a door.' },
+              { s: 'Puedo buscar una puerta.', t: 'I can look for a door.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'una mesa', emoji: '🍽️', keyword: 'mesa',
+            definition: 'A piece of furniture with a flat top, used for eating or working.',
+            etymology: 'From Latin "mensa" (table) — the same root behind "mesa" as an English geography term (flat-topped hill), borrowed straight from Spanish.',
+            examples: [
+              { s: 'Necesito tener una mesa.', t: 'I need to have a table.' },
+              { s: 'Puedo buscar una mesa.', t: 'I can look for a table.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'un libro', emoji: '📖', keyword: 'libro',
+            definition: 'A set of printed pages bound together, meant for reading.',
+            etymology: 'From Latin "liber" (the inner bark of a tree, used as writing material before paper) — related to English "library".',
+            examples: [
+              { s: 'Quiero buscar un libro.', t: 'I want to look for a book.' },
+              { s: 'Puedo abrir un libro.', t: 'I can open a book.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'una ventana', emoji: '🪟', keyword: 'ventana',
+            definition: 'An opening in a wall, usually with glass, that lets in light and air.',
+            etymology: 'From Latin "ventus" (wind) — a window is literally "the wind-place".',
+            examples: [
+              { s: 'Puedo abrir una ventana.', t: 'I can open a window.' },
+              { s: 'Necesito buscar una ventana.', t: 'I need to look for a window.' },
+            ],
+          },
+        ],
+      },
+      {
+        level: 4,
+        name: 'People & Family',
+        oliversIntro: {
+          headline: 'Level 4 · People & Family 👨‍👩‍👧‍👦',
+          message: 'The people you love are usually the first thing you want to be able to talk about in a new language.',
+          technique: '🔵 Base + 🟢 Verb + 🟣 Object\n\n"Quiero" + "visitar" + "a mi madre"\n= Quiero visitar a mi madre',
+          funFact: '💡 Notice the little word "a" before people in Spanish ("visitar A mi madre") — Spanish requires it before a specific person, a rule called the "personal a" that English doesn\'t have at all.',
+        },
+        bases: [
+          { id: 'b1', text: 'Quiero' },
+          { id: 'b2', text: 'Necesito' },
+          { id: 'b3', text: 'Puedo' },
+        ],
+        verbs: [
+          {
+            id: 'v1', text: 'conocer', emoji: '🤝', anim: 'think',
+            definition: 'To know or be familiar with a person (as opposed to knowing facts).',
+            etymology: 'From Latin "cognoscere" (to get to know) — related to English "cognition" and "recognize".',
+            examples: [
+              { s: 'Quiero conocer a mi amigo.', t: 'I want to meet my friend.' },
+              { s: 'Puedo conocer a mi hermano.', t: 'I can get to know my brother.' },
+            ],
+          },
+          {
+            id: 'v2', text: 'visitar', emoji: '🚗', anim: 'wander',
+            definition: 'To go see a person or place.',
+            etymology: 'From Latin "visitare", frequentative of "visere" (to go see) — related to English "visit" almost unchanged.',
+            examples: [
+              { s: 'Necesito visitar a mi padre.', t: 'I need to visit my father.' },
+              { s: 'Quiero visitar a mi madre.', t: 'I want to visit my mother.' },
+            ],
+          },
+          {
+            id: 'v3', text: 'llamar', emoji: '📞', anim: 'flash',
+            definition: 'To call someone, by phone or by voice.',
+            etymology: 'From Latin "clamare" (to shout, call out) — related to English "claim" and "exclaim".',
+            examples: [
+              { s: 'Puedo llamar a mi hermana.', t: 'I can call my sister.' },
+              { s: 'Necesito llamar a un amigo.', t: 'I need to call a friend.' },
+            ],
+          },
+        ],
+        vocab: [
+          {
+            id: 'w1', text: 'mi padre', emoji: '👨', keyword: 'padre',
+            definition: 'Your male parent.',
+            etymology: 'From Latin "pater" (father) — one of the oldest words in the whole Indo-European language family, related to English "father", "paternal", and "patriarch".',
+            examples: [
+              { s: 'Necesito visitar a mi padre.', t: 'I need to visit my father.' },
+              { s: 'Quiero llamar a mi padre.', t: 'I want to call my father.' },
+            ],
+          },
+          {
+            id: 'w2', text: 'mi madre', emoji: '👩', keyword: 'madre',
+            definition: 'Your female parent.',
+            etymology: 'From Latin "mater" (mother) — related to English "mother", "maternal", and "matrix" (this very game\'s namesake!).',
+            examples: [
+              { s: 'Quiero visitar a mi madre.', t: 'I want to visit my mother.' },
+              { s: 'Puedo conocer a mi madre.', t: 'I can get to know my mother.' },
+            ],
+          },
+          {
+            id: 'w3', text: 'mi hermano', emoji: '👦', keyword: 'hermano',
+            definition: 'Your male sibling.',
+            etymology: 'From Latin "germanus" (full brother, of the same parents) — the same root as the word "germane" in English.',
+            examples: [
+              { s: 'Quiero conocer a mi hermano.', t: 'I want to meet my brother.' },
+              { s: 'Puedo llamar a mi hermano.', t: 'I can call my brother.' },
+            ],
+          },
+          {
+            id: 'w4', text: 'mi hermana', emoji: '👧', keyword: 'hermana',
+            definition: 'Your female sibling.',
+            etymology: 'From the same Latin root as "hermano" ("germanus"), simply with the feminine ending "-a".',
+            examples: [
+              { s: 'Puedo llamar a mi hermana.', t: 'I can call my sister.' },
+              { s: 'Necesito visitar a mi hermana.', t: 'I need to visit my sister.' },
+            ],
+          },
+          {
+            id: 'w5', text: 'un amigo', emoji: '🧑', keyword: 'amigo',
+            definition: 'A person you like and enjoy spending time with (male or mixed group).',
+            etymology: 'From Latin "amicus" (friend), from "amare" (to love) — related to English "amicable" and "amiable".',
+            examples: [
+              { s: 'Necesito llamar a un amigo.', t: 'I need to call a friend.' },
+              { s: 'Quiero conocer a un amigo.', t: 'I want to get to know a friend.' },
+            ],
+          },
+          {
+            id: 'w6', text: 'una amiga', emoji: '👩‍🦰', keyword: 'amiga',
+            definition: 'A person you like and enjoy spending time with (female).',
+            etymology: 'Same root as "amigo" ("amicus"), with the feminine ending "-a".',
+            examples: [
+              { s: 'Quiero visitar a una amiga.', t: 'I want to visit a friend.' },
+              { s: 'Puedo conocer a una amiga.', t: 'I can meet a friend.' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 }
 
-export function getJanulusLanguages() {
-  return Object.entries(JANULUS_DATA).map(([code, l]) => ({ code, name: l.name, flag: l.flag }))
+export function getJanulusLanguages(uiLang = 'es') {
+  const keys = uiLang === 'en' ? ['es'] : Object.keys(JANULUS_DATA).filter((k) => k !== 'es')
+  return keys.map((code) => { const l = JANULUS_DATA[code]; return { code, name: l.name, flag: l.flag } })
 }
 export function getJanulusLevels(langCode) {
   return (JANULUS_DATA[langCode]?.levels ?? []).map((l) => ({ level: l.level, name: l.name }))

@@ -61,8 +61,20 @@ function FeaturedAlphaBanner({ to, icon, title, badge, badgeColor, description, 
   )
 }
 
-function GameCard({ game }) {
+// Solo Janulus tiene traducción de tarjeta propia por ahora (enseña español
+// desde el sitio en inglés) — gamesRegistry.js en sí no se toca, afectaría a
+// los otros ~15 juegos sin necesidad.
+const CARD_OVERRIDES = {
+  'janulus-matrices': {
+    en: { title: 'Janulingo (Learn Spanish)', description: 'Learn Spanish by assembling complete sentence blocks — the Powell Janulus method.' },
+  },
+}
+
+function GameCard({ game, lang }) {
   const available = Boolean(game.file) || game.type === 'component'
+  const override = CARD_OVERRIDES[game.id]?.[lang]
+  const title = override?.title ?? game.title
+  const description = override?.description ?? game.description
   return (
     <div
       className={`group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-transform ${
@@ -77,8 +89,8 @@ function GameCard({ game }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h2 className="text-base font-bold text-text">{game.title}</h2>
-        <p className="flex-1 text-sm text-text-muted">{game.description}</p>
+        <h2 className="text-base font-bold text-text">{title}</h2>
+        <p className="flex-1 text-sm text-text-muted">{description}</p>
 
         {available ? (
           <Link
@@ -101,7 +113,7 @@ function GameCard({ game }) {
 }
 
 export default function GamesPage() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const ageProfile = useAuthStore((s) => s.profile?.age_profile)
   const [activeCategory, setActiveCategory] = useState(null)
 
@@ -208,7 +220,7 @@ export default function GamesPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {selected.games.map((game) => <GameCard key={game.id} game={game} />)}
+                {selected.games.map((game) => <GameCard key={game.id} game={game} lang={lang} />)}
               </div>
             </div>
           )}
