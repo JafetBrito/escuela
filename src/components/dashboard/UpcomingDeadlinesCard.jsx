@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { dueInfo, URGENCY_LABEL } from '../../utils/taskDue'
+import { useI18n } from '../../i18n'
 
 // Sustituto honesto del "periodo actual con fechas de evaluación" de la
 // referencia — este proyecto no tiene una entidad de calendario académico,
@@ -8,6 +9,7 @@ import { dueInfo, URGENCY_LABEL } from '../../utils/taskDue'
 const SHOWN = 2
 
 export default function UpcomingDeadlinesCard({ pendingTasks }) {
+  const { t } = useI18n()
   const sorted = [...pendingTasks].sort((a, b) => {
     if (!a.due_date && !b.due_date) return 0
     if (!a.due_date) return 1
@@ -19,13 +21,13 @@ export default function UpcomingDeadlinesCard({ pendingTasks }) {
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">📅 Próximas entregas</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{t('dashboard.summary.upcomingDeadlines')}</p>
       {shown.length === 0 ? (
-        <p className="mt-2 text-sm text-text-muted">No tienes tareas pendientes. 🎉</p>
+        <p className="mt-2 text-sm text-text-muted">{t('dashboard.summary.noPendingTasks')}</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {shown.map((task) => {
-            const due = dueInfo(task.due_date, task.status)
+            const due = dueInfo(task.due_date, task.status, t)
             return (
               <li key={task.id} className="min-w-0">
                 <p className="truncate text-sm font-semibold text-text">{task.title}</p>
@@ -35,9 +37,9 @@ export default function UpcomingDeadlinesCard({ pendingTasks }) {
           })}
         </ul>
       )}
-      {rest > 0 && <p className="mt-1.5 text-xs text-text-muted">+{rest} pendientes más</p>}
+      {rest > 0 && <p className="mt-1.5 text-xs text-text-muted">{t('dashboard.summary.morePending', { n: rest })}</p>}
       <Link to="/mis-tareas" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">
-        Ver todas mis tareas →
+        {t('dashboard.summary.seeAllTasksLink')}
       </Link>
     </div>
   )

@@ -1,21 +1,29 @@
 // Vencimiento de tareas — extraído de TasksPage.jsx (donde vivía privado y
 // duplicado) para que UpcomingDeadlinesCard.jsx (Dashboard) pueda mostrar la
 // misma info de "próxima a vencer" sin reinventar la lógica de urgencia.
-export function dueInfo(dueDate, status) {
+//
+// `t` (de useI18n()) es opcional: TasksPage.jsx en sí todavía no pasó por
+// i18n (SUBJECTS, GROUPS, etc. siguen en español), así que sus llamadas sin
+// `t` se quedan en español exactamente como antes. El Dashboard sí pasa `t`.
+export function dueInfo(dueDate, status, t) {
   if (!dueDate) return null
   const due  = new Date(dueDate + 'T12:00:00')
   const now  = new Date()
   const diff = Math.ceil((due - now) / 86_400_000)
+  const locale = t ? t('taskDue.dateLocale') : 'es-MX'
+  const fmtDate = () => due.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
 
-  if (status !== 'pendiente') {
-    return { text: due.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }), urgency: 'none' }
+  if (status !== 'pendiente') return { text: fmtDate(), urgency: 'none' }
+  if (diff < 0) {
+    const n = Math.abs(diff)
+    const text = t ? (n === 1 ? t('taskDue.overdueOne') : t('taskDue.overdueMany', { n })) : `Venció hace ${n} día${n === 1 ? '' : 's'}`
+    return { text, urgency: 'overdue' }
   }
-  if (diff < 0)  return { text: `Venció hace ${Math.abs(diff)} día${Math.abs(diff) === 1 ? '' : 's'}`, urgency: 'overdue' }
-  if (diff === 0) return { text: '¡Vence hoy!', urgency: 'today' }
-  if (diff === 1) return { text: 'Vence mañana', urgency: 'soon' }
-  if (diff <= 3)  return { text: `Vence en ${diff} días`, urgency: 'soon' }
-  if (diff <= 7)  return { text: `Vence en ${diff} días`, urgency: 'week' }
-  return { text: due.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }), urgency: 'later' }
+  if (diff === 0) return { text: t ? t('taskDue.today') : '¡Vence hoy!', urgency: 'today' }
+  if (diff === 1) return { text: t ? t('taskDue.tomorrow') : 'Vence mañana', urgency: 'soon' }
+  if (diff <= 3)  return { text: t ? t('taskDue.inDays', { n: diff }) : `Vence en ${diff} días`, urgency: 'soon' }
+  if (diff <= 7)  return { text: t ? t('taskDue.inDays', { n: diff }) : `Vence en ${diff} días`, urgency: 'week' }
+  return { text: fmtDate(), urgency: 'later' }
 }
 
 export const URGENCY_LABEL = {

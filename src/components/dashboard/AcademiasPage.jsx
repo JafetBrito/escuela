@@ -4,6 +4,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import courses from '../../data/courses.json'
 import { MAIN_CATEGORIES } from '../../data/categoryTaxonomy'
+import { localizeCategoryName } from '../../data/categoryTranslations'
 import { useI18n } from '../../i18n'
 
 // Punto de entrada único para "escuelas" — antes Escuelas (categorías
@@ -14,7 +15,7 @@ import { useI18n } from '../../i18n'
 // propia siguen siendo sus propias páginas (/academia-idiomas,
 // /escuela/ciberseguridad), aquí solo son la puerta de entrada.
 export default function AcademiasPage() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const navigate = useNavigate()
 
   const withCounts = useMemo(() => MAIN_CATEGORIES.map((m) => {
@@ -31,8 +32,8 @@ export default function AcademiasPage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-4xl">
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">🏫 Academias</h1>
-            <p className="mt-1 text-sm font-medium text-white/85">Todas las escuelas de Oliver Academy, en un solo lugar.</p>
+            <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('dashboard.academias.title')}</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">{t('dashboard.academias.subtitle')}</p>
           </div>
 
           {/* Academias con casa propia */}
@@ -44,7 +45,7 @@ export default function AcademiasPage() {
               <span className="text-4xl">🧠</span>
               <div>
                 <p className="font-extrabold text-text">{t('nav.items.academiaIA')}</p>
-                <p className="text-xs text-text-muted">Herramientas de IA y Prompt Engineering, por niveles</p>
+                <p className="text-xs text-text-muted">{t('dashboard.academias.iaBlurb')}</p>
               </div>
             </Link>
             <Link
@@ -54,7 +55,7 @@ export default function AcademiasPage() {
               <span className="text-4xl">🌍</span>
               <div>
                 <p className="font-extrabold text-text">{t('nav.items.academiaIdiomas')}</p>
-                <p className="text-xs text-text-muted">Aprende cualquier idioma desde el tuyo</p>
+                <p className="text-xs text-text-muted">{t('dashboard.academias.idiomasBlurb')}</p>
               </div>
             </Link>
             <Link
@@ -64,7 +65,7 @@ export default function AcademiasPage() {
               <span className="text-4xl">🔐</span>
               <div>
                 <p className="font-extrabold text-text">{t('nav.items.academiaCiberseguridad')}</p>
-                <p className="text-xs text-text-muted">Ethical hacking, criptografía y más</p>
+                <p className="text-xs text-text-muted">{t('dashboard.academias.ciberBlurb')}</p>
               </div>
             </Link>
             <Link
@@ -74,7 +75,7 @@ export default function AcademiasPage() {
               <span className="text-4xl">🐉</span>
               <div>
                 <p className="font-extrabold text-text">{t('nav.items.academiaChina')}</p>
-                <p className="text-xs text-text-muted">Mandarín, caracteres y cultura china</p>
+                <p className="text-xs text-text-muted">{t('dashboard.academias.chinaBlurb')}</p>
               </div>
             </Link>
           </div>
@@ -94,9 +95,9 @@ export default function AcademiasPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-3xl drop-shadow-sm">{m.icon}</span>
                     <div>
-                      <p className="text-base font-extrabold text-background drop-shadow-sm">{m.title}</p>
+                      <p className="text-base font-extrabold text-background drop-shadow-sm">{localizeCategoryName(m.title, lang)}</p>
                       <p className="text-xs font-medium text-background/70">
-                        {m.count} {m.count === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')} · {m.subcategories.length} subcategorías
+                        {m.count} {m.count === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')} · {m.subcategories.length} {t('dashboard.academias.subcategoriesCount')}
                       </p>
                     </div>
                   </div>
@@ -109,7 +110,7 @@ export default function AcademiasPage() {
                       to={`/escuela-categoria/${m.id}`}
                       className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-text-muted transition hover:border-primary hover:text-primary"
                     >
-                      {s.name} <span className="opacity-60">· {s.count}</span>
+                      {localizeCategoryName(s.name, lang)} <span className="opacity-60">· {s.count}</span>
                     </Link>
                   ))}
                 </div>

@@ -1,11 +1,13 @@
 import { useI18n } from '../../i18n'
+import { localizeCourseCatalog } from '../../data/courseCatalogTranslations'
 
 // Course card (compact) — usado también por MainCategoryPage.jsx y
 // SchoolPage.jsx (`import { CourseCard } from './DashboardPage'`, que
 // re-exporta este archivo). Extraído de DashboardPage.jsx sin cambios de
 // comportamiento para que ese archivo se enfoque solo en la página.
-export default function CourseCard({ course, pct, owned, accent, onClick }) {
-  const { t } = useI18n()
+export default function CourseCard({ course: rawCourse, pct, owned, accent, onClick }) {
+  const { t, lang } = useI18n()
+  const course = localizeCourseCatalog(rawCourse, lang)
   return (
     <button
       type="button"

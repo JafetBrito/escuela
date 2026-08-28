@@ -6,6 +6,8 @@ import { MAIN_CATEGORIES, getMainCategory } from '../../data/categoryTaxonomy'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useProgressStore } from '../../stores/useProgressStore'
+import { useI18n } from '../../i18n'
+import { localizeCategoryName, localizeTopics } from '../../data/categoryTranslations'
 import AppTopBar from '../shared/AppTopBar'
 import { CourseCard } from './DashboardPage'
 
@@ -18,6 +20,7 @@ export default function MainCategoryPage() {
   const navigate = useNavigate()
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
   const progress = useProgressStore((s) => s.progress)
+  const { t, lang } = useI18n()
 
   const mainCategory = getMainCategory(id)
   const index = MAIN_CATEGORIES.findIndex((m) => m.id === id)
@@ -47,9 +50,9 @@ export default function MainCategoryPage() {
         <AppTopBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
           <p className="text-4xl">🏫</p>
-          <p className="text-lg font-bold">Esta categoría no existe.</p>
+          <p className="text-lg font-bold">{t('dashboard.school.categoryNotFound')}</p>
           <Link to="/dashboard?tab=escuelas" className="text-sm text-primary hover:underline">
-            ← Volver a Escuelas
+            {t('dashboard.school.backToSchools')}
           </Link>
         </div>
       </div>
@@ -64,18 +67,18 @@ export default function MainCategoryPage() {
       <main className="flex-1">
         <div className={`bg-gradient-to-r ${mainCategory.gradient} px-6 py-8`}>
           <Link to="/dashboard?tab=escuelas" className="text-sm font-semibold text-background/80 hover:text-background hover:underline">
-            ← Volver a Escuelas
+            {t('dashboard.school.backToSchools')}
           </Link>
           <p className="mt-3 text-5xl drop-shadow-sm">{mainCategory.icon}</p>
-          <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">{mainCategory.title}</h1>
-          <p className="mt-1 text-sm text-background/80">{totalCourses} cursos en {sections.length} subcategorías</p>
+          <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">{localizeCategoryName(mainCategory.title, lang)}</h1>
+          <p className="mt-1 text-sm text-background/80">{t('dashboard.school.coursesInSubcategories', { total: totalCourses, count: sections.length })}</p>
 
           <div className="mt-4 flex gap-2">
             <Link to={`/escuela-categoria/${prevCategory.id}`} className="flex items-center gap-1.5 rounded-lg bg-black/15 px-3 py-1.5 text-xs font-bold text-background hover:bg-black/25">
-              ← {prevCategory.icon} {prevCategory.title}
+              ← {prevCategory.icon} {localizeCategoryName(prevCategory.title, lang)}
             </Link>
             <Link to={`/escuela-categoria/${nextCategory.id}`} className="flex items-center gap-1.5 rounded-lg bg-black/15 px-3 py-1.5 text-xs font-bold text-background hover:bg-black/25">
-              {nextCategory.icon} {nextCategory.title} →
+              {nextCategory.icon} {localizeCategoryName(nextCategory.title, lang)} →
             </Link>
           </div>
         </div>
@@ -87,14 +90,14 @@ export default function MainCategoryPage() {
             return (
               <section key={sub.name} className="mb-8 rounded-2xl border-l-4 pl-4" style={{ borderColor: subAccent }}>
                 <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider" style={{ color: subAccent }}>
-                  {subIcon && <span className="text-base normal-case">{subIcon}</span>} {sub.name}
+                  {subIcon && <span className="text-base normal-case">{subIcon}</span>} {localizeCategoryName(sub.name, lang)}
                 </h2>
 
                 {sub.courses.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-border bg-surface p-4">
-                    <p className="text-sm font-semibold text-text">🔒 Próximamente</p>
+                    <p className="text-sm font-semibold text-text">{t('languageAcademy.soon')}</p>
                     {sub.topics.length > 0 && (
-                      <p className="mt-1 text-xs text-text-muted">Cubrirá: {sub.topics.join(', ')}.</p>
+                      <p className="mt-1 text-xs text-text-muted">{t('dashboard.school.willCover', { topics: localizeTopics(sub.topics, lang).join(', ') })}</p>
                     )}
                   </div>
                 ) : (

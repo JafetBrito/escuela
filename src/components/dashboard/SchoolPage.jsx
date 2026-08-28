@@ -5,6 +5,8 @@ import { CATEGORY_META, getCategoryBySlug } from '../../data/categoryMeta'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useProgressStore } from '../../stores/useProgressStore'
+import { useI18n } from '../../i18n'
+import { localizeCategoryName } from '../../data/categoryTranslations'
 import AppTopBar from '../shared/AppTopBar'
 import NpcChatPanel from '../shared/NpcChatPanel'
 import SchoolTeacherViewport from '../mascot/SchoolTeacherViewport'
@@ -26,6 +28,7 @@ export default function SchoolPage() {
   const navigate = useNavigate()
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
   const progress = useProgressStore((s) => s.progress)
+  const { t, lang } = useI18n()
 
   const category = getCategoryBySlug(slug)
   const meta = CATEGORY_META[category] ?? CATEGORY_META.Otros
@@ -41,6 +44,8 @@ export default function SchoolPage() {
     }
     return Array.from(bySub.entries())
   }, [category])
+
+  const categoryName = localizeCategoryName(category, lang)
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -60,9 +65,9 @@ export default function SchoolPage() {
         <AppTopBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
           <p className="text-4xl">🏫</p>
-          <p className="text-lg font-bold">Esta escuela no existe.</p>
+          <p className="text-lg font-bold">{t('dashboard.school.notFound')}</p>
           <button type="button" onClick={() => navigate('/dashboard')} className="text-sm text-primary hover:underline">
-            ← Volver a Escuelas
+            {t('dashboard.school.backToSchools')}
           </button>
         </div>
       </div>
@@ -85,9 +90,9 @@ export default function SchoolPage() {
           ) : (
             <div className={`bg-gradient-to-r ${meta.gradient} px-6 py-8`}>
               <p className="text-5xl drop-shadow-sm">{meta.icon}</p>
-              <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">Escuela de {category}</h1>
+              <h1 className="mt-2 text-2xl font-black text-background drop-shadow-sm">{t('dashboard.school.schoolOf', { category: categoryName })}</h1>
               <p className="mt-1 text-sm text-background/80">
-                {groups.reduce((n, [, list]) => n + list.length, 0)} cursos disponibles
+                {groups.reduce((n, [, list]) => n + list.length, 0)} {t('dashboard.school.coursesAvailable')}
               </p>
             </div>
           )}
@@ -96,7 +101,7 @@ export default function SchoolPage() {
             {groups.map(([subcategory, list]) => (
               <section key={subcategory ?? 'general'} className="mb-8">
                 {subcategory && (
-                  <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-text-muted">{subcategory}</h2>
+                  <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-text-muted">{localizeCategoryName(subcategory, lang)}</h2>
                 )}
                 <div className="grid gap-3 sm:grid-cols-2">
                   {list.map((course) => (
@@ -120,9 +125,9 @@ export default function SchoolPage() {
           <SchoolTeacherViewport mascotId={meta.teacherMascotId} className="h-64 shrink-0 lg:h-80" />
           <div className="flex flex-1 flex-col gap-2 border-t border-border p-4">
             <p className="text-sm font-bold text-text">
-              {meta.teacherName} · Profesor de {category}
+              {meta.teacherName} · {t('dashboard.school.teacherOf', { category: categoryName })}
             </p>
-            <p className="text-xs text-text-muted">Pregúntale sobre los cursos de esta escuela, cuál te conviene empezar, o cualquier duda del tema.</p>
+            <p className="text-xs text-text-muted">{t('dashboard.school.askAboutCourses')}</p>
             <NpcChatPanel
               npcId={`escuela-${slug}`}
               npcName={meta.teacherName}

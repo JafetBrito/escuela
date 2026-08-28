@@ -202,6 +202,7 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { t } = useI18n()
   const progress = useProgressStore((s) => s.progress)
   const license  = useAuthStore((s) => s.license)
   const profile  = useAuthStore((s) => s.profile)
@@ -237,7 +238,7 @@ export default function DashboardPage() {
   const pendingTasks = tasks.filter((t) => t.status === 'pendiente')
 
   const profileSummary = {
-    displayName: profile?.display_name ?? 'Estudiante',
+    displayName: profile?.display_name ?? t('dashboard.defaultStudent'),
     role: license?.role,
     mascotEmoji,
     level,
