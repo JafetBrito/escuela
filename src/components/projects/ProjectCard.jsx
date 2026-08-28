@@ -1,13 +1,19 @@
-const STATUS_STYLE = {
-  en_progreso: { label: 'En progreso', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-  completado:  { label: 'Completado',  cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+import { useI18n } from '../../i18n'
+
+const STATUS_CLS = {
+  en_progreso: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  completado:  'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
 }
 
 // Tarjeta de proyecto reutilizada por ProjectsPage (alumno) y
 // AdminProjectsPage — mismo componente, `showOwner` agrega el nombre del
 // alumno dueño (vista "(todos)" del admin).
 export default function ProjectCard({ project, showOwner = false, onClick }) {
-  const status = STATUS_STYLE[project.status] ?? STATUS_STYLE.en_progreso
+  const { t } = useI18n()
+  const status = {
+    cls: STATUS_CLS[project.status] ?? STATUS_CLS.en_progreso,
+    label: project.status === 'completado' ? t('pages.projects.statusBareCompleted') : t('pages.projects.statusBareInProgress'),
+  }
   const isAssigned = project.assigned_by && project.assigned_by !== project.student_id
 
   return (
@@ -20,7 +26,7 @@ export default function ProjectCard({ project, showOwner = false, onClick }) {
         <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${status.cls}`}>{status.label}</span>
         {isAssigned && (
           <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-            🎓 Asignado
+            {t('pages.projects.assigned')}
           </span>
         )}
       </div>
@@ -35,7 +41,7 @@ export default function ProjectCard({ project, showOwner = false, onClick }) {
       )}
 
       <p className="mt-auto text-[11px] text-text-muted/60">
-        Actualizado {new Date(project.updated_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+        {t('pages.projects.updatedOn', { date: new Date(project.updated_at).toLocaleDateString(t('pages.projects.dateLocale'), { day: 'numeric', month: 'short' }) })}
       </p>
     </button>
   )

@@ -2,6 +2,7 @@ import { useBagStore } from '../../stores/useBagStore'
 import { useCollectionStore } from '../../stores/useCollectionStore'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { getShopItemById } from '../../data/shopRegistry'
+import { useI18n } from '../../i18n'
 
 // Lista de OBJETOS del alumno (menú de curso). Reúne lo que el jugador posee:
 //   - Objetos comprados en la Tienda, ubicados en la bolsa de Avatar/Mascota
@@ -28,6 +29,7 @@ const ACTIVATABLE_IDS = new Set([
 ])
 
 export default function ObjetosBagPanel({ owner, onActivate }) {
+  const { t } = useI18n()
   const bags = useBagStore((s) => s.bags)
   const collection = useCollectionStore((s) => s.items)
   const activeItems = useItemEffectsStore((s) => s.activeItems)
@@ -44,13 +46,13 @@ export default function ObjetosBagPanel({ owner, onActivate }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-text-muted">🎒 Objetos</p>
+        <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('pages.mascotHome.objetosHeader')}</p>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{items.length}/{MAX_ITEMS}</span>
       </div>
 
       {items.length === 0 ? (
         <p className="py-6 text-center text-xs text-text-muted">
-          Vacío. Compra objetos en la Tienda o gánalos completando misiones — aparecerán aquí.
+          {t('pages.mascotHome.objetosEmpty')}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -96,11 +98,11 @@ export default function ObjetosBagPanel({ owner, onActivate }) {
                         : 'bg-primary text-background hover:bg-primary-hover'
                     }`}
                   >
-                    {active ? '✓ Desactivar' : '⚡ Activar'}
+                    {active ? t('pages.mascotHome.itemDeactivate') : t('pages.mascotHome.itemActivate')}
                   </button>
                 ) : (
                   <span className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-[10px] font-bold text-text-muted">
-                    Colección
+                    {t('pages.mascotHome.collection')}
                   </span>
                 )}
               </li>

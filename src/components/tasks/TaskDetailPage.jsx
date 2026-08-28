@@ -6,13 +6,18 @@ import GradeModal from './GradeModal'
 import TaskComposeModal from './TaskComposeModal'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { taskTypeOf } from '../../data/taskTypes'
+import { taskTypeOf, localizeTaskTypeLabel } from '../../data/taskTypes'
 import { renderMarkdown } from '../../utils/markdown'
+import { useI18n } from '../../i18n'
+import { localizeCategoryName } from '../../data/categoryTranslations'
+import { localizeCourseCatalog } from '../../data/courseCatalogTranslations'
 
-const STATUS_META = {
-  pendiente: { label: 'Pendiente', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-  entregada: { label: '✓ Entregada', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
-  revisada:  { label: '★ Revisada', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+function buildStatusMeta(t) {
+  return {
+    pendiente: { label: t('pages.tasks.statusPending'), cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+    entregada: { label: t('pages.tasks.statusDelivered'), cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
+    revisada:  { label: t('pages.tasks.statusReviewed'), cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+  }
 }
 
 function SectionCard({ icon, title, children }) {
@@ -28,18 +33,19 @@ function SectionCard({ icon, title, children }) {
 // ahora se ve al hacer click, como pidió el usuario ("en la calificación
 // puedas ver como un popup de tus resultados y comentarios").
 function GradeViewModal({ task, onClose }) {
+  const { t } = useI18n()
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl border border-emerald-500/25 bg-surface p-5" onClick={(e) => e.stopPropagation()}>
-        <p className="text-xs font-bold uppercase tracking-wide text-text-muted">📊 Calificación</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{t('pages.taskDetail.gradeModalTitle')}</p>
         <p className="mt-1 text-3xl font-extrabold text-emerald-400">{task.grade}/{task.grade_max ?? 10}</p>
         {task.feedback && (
           <div className="mt-3 rounded-xl bg-surface-hover p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">💬 Comentarios del profesor</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">{t('pages.taskDetail.gradeModalComments')}</p>
             <p className="mt-1 text-sm leading-relaxed text-text">{task.feedback}</p>
           </div>
         )}
-        <button type="button" onClick={onClose} className="mt-4 w-full rounded-lg border border-border py-2 text-sm text-text-muted hover:text-text">Cerrar</button>
+        <button type="button" onClick={onClose} className="mt-4 w-full rounded-lg border border-border py-2 text-sm text-text-muted hover:text-text">{t('pages.taskDetail.close')}</button>
       </div>
     </div>
   )
@@ -49,6 +55,7 @@ function GradeViewModal({ task, onClose }) {
 // público (task-submissions) y lo renderiza. Componente aparte porque el
 // fetch depende de la URL, no del ciclo de vida de la página completa.
 function SubmissionPreview({ url }) {
+  const { t } = useI18n()
   const [md, setMd] = useState(null)
 
   useEffect(() => {
@@ -58,7 +65,7 @@ function SubmissionPreview({ url }) {
     return () => { cancelled = true }
   }, [url])
 
-  if (md === null) return <p className="text-xs text-text-muted">Cargando entrega…</p>
+  if (md === null) return <p className="text-xs text-text-muted">{t('pages.taskDetail.loadingSubmission')}</p>
   return (
     <div
       className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-text
@@ -72,6 +79,7 @@ function SubmissionPreview({ url }) {
 }
 
 export default function TaskDetailPage() {
+  const { t, lang } = useI18n()
   const { id } = useParams()
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
@@ -116,7 +124,7 @@ export default function TaskDetailPage() {
     return (
       <div className="flex min-h-screen flex-col bg-background text-text">
         <AppTopBar />
-        <div className="flex flex-1 items-center justify-center text-text-muted">Cargando…</div>
+        <div className="flex flex-1 items-center justify-center text-text-muted">{t('pages.tasks.loadingGeneric')}</div>
       </div>
     )
   }
@@ -126,15 +134,16 @@ export default function TaskDetailPage() {
       <div className="flex min-h-screen flex-col bg-background text-text">
         <AppTopBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-text-muted">
-          <p>No encontramos esta tarea.</p>
-          <Link to="/mis-tareas" className="text-primary hover:underline">← Mis Tareas</Link>
+          <p>{t('pages.taskDetail.notFound')}</p>
+          <Link to="/mis-tareas" className="text-primary hover:underline">{t('pages.taskDetail.backToTasks')}</Link>
         </div>
       </div>
     )
   }
 
   const type = taskTypeOf(task.type)
-  const status = STATUS_META[task.status] ?? STATUS_META.pendiente
+  const statusMeta = buildStatusMeta(t)
+  const status = statusMeta[task.status] ?? statusMeta.pendiente
   const hasGrade = task.grade != null
   const isViewerOwner = session?.user?.id === task.student_id
   const viewingAsAdmin = isAdmin?.() && !isViewerOwner
@@ -147,7 +156,7 @@ export default function TaskDetailPage() {
     setFilePreview('')
     if (!f) return
     if (!f.name.toLowerCase().endsWith('.md') && f.type !== 'text/markdown') {
-      setFileError('Solo se aceptan archivos Markdown (.md).')
+      setFileError(t('pages.taskDetail.mdOnlyError'))
       return
     }
     setFile(f)
@@ -161,7 +170,7 @@ export default function TaskDetailPage() {
   // mismo submitTaskFile, así que el paso final (marcar como entregada en el
   // estado local) no debe duplicarse en dos lugares distintos.
   const submitFile = async (uploadedFile) => {
-    const { error, patch } = await submitTaskFile(task.id, task.student_id, uploadedFile)
+    const { error, patch } = await submitTaskFile(task.id, task.student_id, uploadedFile, task)
     // Antes esto ponía submission_url: t.submission_url (el valor viejo, que
     // en una primera entrega es undefined) en vez de la URL real que acaba
     // de devolver la subida — la vista previa de la entrega no aparecía
@@ -186,7 +195,7 @@ export default function TaskDetailPage() {
   const handleAskQuestion = async (e) => {
     e.preventDefault()
     if (!newQuestion.trim()) return
-    await askTaskQuestion(task.id, session?.user?.id, newQuestion.trim())
+    await askTaskQuestion(task.id, session?.user?.id, newQuestion.trim(), task)
     setNewQuestion('')
   }
 
@@ -208,11 +217,11 @@ export default function TaskDetailPage() {
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-3xl space-y-4">
-          <Link to="/mis-tareas" className="inline-block text-sm text-text-muted hover:text-primary">← Mis Tareas</Link>
+          <Link to="/mis-tareas" className="inline-block text-sm text-text-muted hover:text-primary">{t('pages.taskDetail.backToTasks')}</Link>
 
           {viewingAsAdmin && (
             <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
-              👁️ Estás viendo la tarea de un alumno como administrador.
+              {t('pages.taskDetail.viewingAsAdmin')}
             </div>
           )}
 
@@ -225,7 +234,7 @@ export default function TaskDetailPage() {
                 </span>
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: type.color }}>
-                    {type.label}{task.subject ? ` · ${task.subject}` : ''}
+                    {localizeTaskTypeLabel(task.type, lang)}{task.subject ? ` · ${localizeCategoryName(task.subject, lang)}` : ''}
                   </p>
                   <h1 className="text-lg font-extrabold text-text">{task.title}</h1>
                 </div>
@@ -247,8 +256,8 @@ export default function TaskDetailPage() {
             <div className="space-y-3 px-5 py-4">
               {task.due_date && (
                 <p className="text-sm text-text-muted">
-                  📅 {task.type === 'examen' ? 'Fecha del examen' : 'Fecha límite'}: {new Date(task.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  {task.type === 'examen' && details.time ? ` a las ${details.time}` : ''}
+                  📅 {task.type === 'examen' ? t('pages.taskDetail.examDate') : t('pages.taskDetail.dueDate')}: {new Date(task.due_date + 'T12:00:00').toLocaleDateString(t('pages.taskDetail.dateLocale'), { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {task.type === 'examen' && details.time ? t('pages.taskDetail.atTime', { time: details.time }) : ''}
                 </p>
               )}
             </div>
@@ -258,12 +267,12 @@ export default function TaskDetailPage() {
           {details.linkedLesson && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/70">🎓 Clase relacionada</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/70">{t('pages.taskDetail.linkedLesson')}</p>
                 <p className="mt-0.5 font-bold text-text">{details.linkedLesson.moduleTitle}</p>
                 <p className="text-xs text-text-muted">{details.linkedLesson.courseTitle}</p>
               </div>
               <button type="button" onClick={handleGoToLesson} className="shrink-0 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">
-                Ir a la clase →
+                {t('pages.taskDetail.goToLesson')}
               </button>
             </div>
           )}
@@ -274,26 +283,26 @@ export default function TaskDetailPage() {
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{details.linkedMission.icon ?? '📜'}</span>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">Misión relacionada</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">{t('pages.taskDetail.linkedMission')}</p>
                   <p className="font-bold text-text">{details.linkedMission.title}</p>
                 </div>
               </div>
               <Link to="/misiones" className="shrink-0 rounded-xl border border-violet-500/40 px-4 py-2 text-sm font-bold text-violet-400 hover:bg-violet-500/10">
-                Ver en Misiones →
+                {t('pages.taskDetail.seeInMissions')}
               </Link>
             </div>
           )}
 
           {/* Instrucciones */}
           {task.description && (
-            <SectionCard icon="📋" title="Instrucciones">
+            <SectionCard icon="📋" title={t('pages.taskDetail.instructions')}>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{task.description}</p>
             </SectionCard>
           )}
 
           {/* Detalles de examen */}
           {task.type === 'examen' && (details.duration_minutes || details.modality || details.topics) && (
-            <SectionCard icon="📊" title="Detalles del examen">
+            <SectionCard icon="📊" title={t('pages.taskDetail.examDetails')}>
               <div className="flex flex-wrap gap-4 text-sm text-text">
                 {details.duration_minutes && <span>⏱️ <strong>{details.duration_minutes} min</strong></span>}
                 {details.modality && <span>📍 <strong>{details.modality}</strong></span>}
@@ -306,7 +315,7 @@ export default function TaskDetailPage() {
 
           {/* Entregables del proyecto */}
           {task.type === 'proyecto' && details.deliverables?.length > 0 && (
-            <SectionCard icon="📁" title="Entregables">
+            <SectionCard icon="📁" title={t('pages.taskDetail.deliverables')}>
               <ul className="space-y-1.5">
                 {details.deliverables.map((d, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-text">
@@ -319,7 +328,7 @@ export default function TaskDetailPage() {
 
           {/* Mini-lección embebida */}
           {details.notesMd && (
-            <SectionCard icon="📝" title="Contenido de apoyo">
+            <SectionCard icon="📝" title={t('pages.taskDetail.supportContent')}>
               <div
                 className="text-sm text-text [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_p]:mb-2 [&_ul]:mb-2 [&_ul]:ml-5 [&_ul]:list-disc [&_code]:rounded [&_code]:bg-black/30 [&_code]:px-1"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(details.notesMd) }}
@@ -329,57 +338,60 @@ export default function TaskDetailPage() {
 
           {/* Recursos */}
           {details.resources?.length > 0 && (
-            <SectionCard icon="📎" title="Recursos">
+            <SectionCard icon="📎" title={t('pages.taskDetail.resources')}>
               <ResourceGallery resources={details.resources} />
             </SectionCard>
           )}
 
           {/* Cursos recomendados */}
           {details.recommendedCourses?.length > 0 && (
-            <SectionCard icon="🎯" title="Cursos recomendados">
+            <SectionCard icon="🎯" title={t('pages.taskDetail.recommendedCourses')}>
               <div className="flex flex-wrap gap-2">
-                {details.recommendedCourses.map((c) => (
-                  <Link
-                    key={c.id}
-                    to={`/learn/${c.id}`}
-                    className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-hover px-3 py-1.5 text-sm text-text hover:border-primary/50"
-                  >
-                    <span>{c.icon}</span> {c.title}
-                  </Link>
-                ))}
+                {details.recommendedCourses.map((rc) => {
+                  const c = localizeCourseCatalog(rc, lang)
+                  return (
+                    <Link
+                      key={c.id}
+                      to={`/learn/${c.id}`}
+                      className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-hover px-3 py-1.5 text-sm text-text hover:border-primary/50"
+                    >
+                      <span>{c.icon}</span> {c.title}
+                    </Link>
+                  )
+                })}
               </div>
             </SectionCard>
           )}
 
           {/* Entrega */}
-          <SectionCard icon="📤" title="Entrega">
+          <SectionCard icon="📤" title={t('pages.taskDetail.submission')}>
             {task.submission_url ? (
               <div className="space-y-2">
                 <p className="text-sm text-text">
                   📄 <strong>{task.submission_filename}</strong>{' '}
-                  <a href={task.submission_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Descargar ↗</a>
+                  <a href={task.submission_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t('pages.taskDetail.download')}</a>
                 </p>
                 <SubmissionPreview url={task.submission_url} />
                 {viewingAsAdmin && task.status !== 'revisada' && (
                   <button type="button" onClick={() => setGrading(true)} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">
-                    📝 Calificar
+                    {t('pages.taskDetail.grade')}
                   </button>
                 )}
                 {viewingAsAdmin && task.status === 'revisada' && (
                   <button type="button" onClick={() => setGrading(true)} className="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:text-text">
-                    ✏️ Editar calificación
+                    {t('pages.taskDetail.editGrade')}
                   </button>
                 )}
               </div>
             ) : isViewerOwner && task.status === 'pendiente' ? (
               <div className="space-y-2">
-                <p className="text-xs text-text-muted">Sube tu entrega en formato Markdown (.md) — no se aceptan PDF.</p>
+                <p className="text-xs text-text-muted">{t('pages.taskDetail.uploadHint')}</p>
                 <input type="file" accept=".md,text/markdown" onChange={handleFileChange}
                   className="block w-full text-sm text-text file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary" />
                 {fileError && <p className="text-xs text-danger">{fileError}</p>}
                 {filePreview && (
                   <div>
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-text-muted/70">Vista previa</p>
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-text-muted/70">{t('pages.taskDetail.preview')}</p>
                     <div
                       className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-text [&_p]:mb-2 [&_h1]:font-bold [&_h2]:font-bold"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(filePreview) }}
@@ -389,32 +401,32 @@ export default function TaskDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={handleSubmitFile} disabled={!file || uploading}
                     className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
-                    {uploading ? 'Enviando…' : '📤 Entregar tarea'}
+                    {uploading ? t('pages.taskDetail.sending') : t('pages.taskDetail.submitTask')}
                   </button>
                   <button type="button" onClick={() => setComposing(true)}
                     className="rounded-lg border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10">
-                    ✍️ Redactar tarea
+                    {t('pages.taskDetail.composeTask')}
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-text-muted">Sin entrega todavía.</p>
+              <p className="text-sm text-text-muted">{t('pages.taskDetail.noSubmissionYet')}</p>
             )}
           </SectionCard>
 
           {/* Preguntas */}
-          <SectionCard icon="❓" title="Preguntas">
+          <SectionCard icon="❓" title={t('pages.taskDetail.questions')}>
             <div className="space-y-2">
-              {taskQuestions.length === 0 && <p className="text-sm text-text-muted">Sin preguntas todavía.</p>}
+              {taskQuestions.length === 0 && <p className="text-sm text-text-muted">{t('pages.taskDetail.noQuestionsYet')}</p>}
               {taskQuestions.map((q) => (
                 <div key={q.id} className="rounded-xl bg-surface-hover px-3 py-2">
                   <p className="text-sm text-text">❓ {q.question}</p>
                   {q.answered ? (
                     <p className="mt-1 text-sm text-emerald-400">💬 {q.answer}</p>
                   ) : viewingAsAdmin ? (
-                    <AnswerInline question={q} onAnswer={answerTaskQuestion} />
+                    <AnswerInline question={q} onAnswer={(qId, ans) => answerTaskQuestion(qId, ans, task)} />
                   ) : (
-                    <p className="mt-1 text-xs text-text-muted">Esperando respuesta…</p>
+                    <p className="mt-1 text-xs text-text-muted">{t('pages.taskDetail.awaitingAnswer')}</p>
                   )}
                 </div>
               ))}
@@ -424,10 +436,10 @@ export default function TaskDetailPage() {
                 <input
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
-                  placeholder="Escribe tu duda…"
+                  placeholder={t('pages.taskDetail.askPlaceholder')}
                   className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                 />
-                <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Enviar</button>
+                <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">{t('pages.taskDetail.send')}</button>
               </form>
             )}
           </SectionCard>
@@ -453,6 +465,7 @@ export default function TaskDetailPage() {
 }
 
 function AnswerInline({ question, onAnswer }) {
+  const { t } = useI18n()
   const [answer, setAnswer] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -469,11 +482,11 @@ function AnswerInline({ question, onAnswer }) {
       <input
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
-        placeholder="Responder…"
+        placeholder={t('pages.taskDetail.answerPlaceholder')}
         className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-text outline-none focus:border-primary"
       />
       <button type="submit" disabled={busy} className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-background disabled:opacity-50">
-        Responder
+        {t('pages.taskDetail.answer')}
       </button>
     </form>
   )

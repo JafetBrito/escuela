@@ -3,15 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useProjectsStore } from '../../stores/useProjectsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useI18n } from '../../i18n'
 import ProjectCard from './ProjectCard'
 
-const TABS = [
-  { key: 'todos', label: '📁 Todos' },
-  { key: 'en_progreso', label: '🟡 En progreso' },
-  { key: 'completado', label: '✅ Completados' },
-]
-
 function NewProjectModal({ onClose, onCreate }) {
+  const { t } = useI18n()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [busy, setBusy] = useState(false)
@@ -27,36 +23,36 @@ function NewProjectModal({ onClose, onCreate }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl">
-        <h2 className="font-extrabold text-text">Nuevo proyecto</h2>
+        <h2 className="font-extrabold text-text">{t('pages.projects.newProjectTitle')}</h2>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="text-[10px] font-bold uppercase text-text-muted">Título *</label>
+            <label className="text-[10px] font-bold uppercase text-text-muted">{t('pages.projects.titleLabel')}</label>
             <input
               required
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Mi novela de ciencia ficción"
+              placeholder={t('pages.projects.titlePlaceholder')}
               className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold uppercase text-text-muted">Descripción</label>
+            <label className="text-[10px] font-bold uppercase text-text-muted">{t('pages.projects.descriptionLabel')}</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="¿De qué trata este proyecto?"
+              placeholder={t('pages.projects.descriptionPlaceholder')}
               className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary resize-none"
             />
           </div>
         </div>
         <div className="mt-4 flex gap-2">
           <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm text-text-muted hover:text-text">
-            Cancelar
+            {t('pages.projects.cancel')}
           </button>
           <button type="submit" disabled={busy || !title.trim()} className="flex-1 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background disabled:opacity-50">
-            {busy ? 'Creando…' : '+ Crear proyecto'}
+            {busy ? t('pages.projects.creating') : t('pages.projects.createProject')}
           </button>
         </div>
       </form>
@@ -65,6 +61,7 @@ function NewProjectModal({ onClose, onCreate }) {
 }
 
 export default function ProjectsPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
   const projects = useProjectsStore((s) => s.projects)
@@ -74,6 +71,12 @@ export default function ProjectsPage() {
 
   const [tab, setTab] = useState('todos')
   const [creating, setCreating] = useState(false)
+
+  const TABS = [
+    { key: 'todos', label: t('pages.projects.tabAll') },
+    { key: 'en_progreso', label: t('pages.projects.tabInProgress') },
+    { key: 'completado', label: t('pages.projects.tabCompletedPlural') },
+  ]
 
   useEffect(() => { fetchMyProjects() }, [fetchMyProjects])
 
@@ -99,9 +102,9 @@ export default function ProjectsPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-8 shadow-lg">
             <div>
-              <h1 className="text-3xl font-extrabold text-white">📁 Mis Proyectos</h1>
+              <h1 className="text-3xl font-extrabold text-white">{t('pages.projects.title')}</h1>
               <p className="mt-1 text-sm font-medium text-white/85">
-                Organiza tus proyectos con notas, checklist y recursos — como una libreta de trabajo.
+                {t('pages.projects.subtitle')}
               </p>
             </div>
             <button
@@ -109,7 +112,7 @@ export default function ProjectsPage() {
               onClick={() => setCreating(true)}
               className="shrink-0 rounded-xl bg-white px-4 py-2 text-sm font-bold text-violet-700 hover:opacity-90"
             >
-              + Nuevo proyecto
+              {t('pages.projects.newProject')}
             </button>
           </div>
 
@@ -130,18 +133,18 @@ export default function ProjectsPage() {
 
           <div className="mt-6">
             {loading ? (
-              <p className="py-10 text-center text-sm text-text-muted">Cargando…</p>
+              <p className="py-10 text-center text-sm text-text-muted">{t('pages.tasks.loadingGeneric')}</p>
             ) : filtered.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-10 text-center">
                 <p className="text-3xl mb-2">📁</p>
-                <p className="text-sm font-semibold text-text mb-1">Sin proyectos todavía</p>
-                <p className="text-xs text-text-muted mb-4">Crea tu primer proyecto para empezar a organizarlo.</p>
+                <p className="text-sm font-semibold text-text mb-1">{t('pages.projects.emptyTitle')}</p>
+                <p className="text-xs text-text-muted mb-4">{t('pages.projects.emptyHint')}</p>
                 <button
                   type="button"
                   onClick={() => setCreating(true)}
                   className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-background"
                 >
-                  + Nuevo proyecto
+                  {t('pages.projects.newProject')}
                 </button>
               </div>
             ) : (

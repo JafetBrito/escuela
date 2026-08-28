@@ -3,7 +3,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ResourceGallery from '../shared/ResourceGallery'
 import { useProjectsStore } from '../../stores/useProjectsStore'
+import { useNotificationsStore } from '../../stores/useNotificationsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useI18n } from '../../i18n'
 
 const MOODS = ['😀', '🙂', '😐', '😕', '😣']
 const rid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -18,6 +20,7 @@ function SectionCard({ icon, title, children }) {
 }
 
 export default function ProjectDetailPage() {
+  const { t } = useI18n()
   const { id } = useParams()
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
@@ -36,6 +39,7 @@ export default function ProjectDetailPage() {
   const [checklist, setChecklist] = useState([])
   const [resources, setResources] = useState([])
   const [ownerId, setOwnerId] = useState(null)
+  const [assignedBy, setAssignedBy] = useState(null)
 
   const [newChecklistText, setNewChecklistText] = useState('')
   const [newResource, setNewResource] = useState({ label: '', url: '' })
@@ -55,6 +59,7 @@ export default function ProjectDetailPage() {
       setChecklist(data.checklist ?? [])
       setResources(data.resources ?? [])
       setOwnerId(data.student_id)
+      setAssignedBy(data.assigned_by)
       setLoading(false)
     })
     return () => { cancelled = true }
@@ -67,12 +72,21 @@ export default function ProjectDetailPage() {
     setSaving(true)
     const { error } = await updateProject(id, { title, description, status, notes, checklist, resources })
     setSaving(false)
-    setSavedMsg(error ? `❌ ${error.message}` : '✅ Guardado')
+    setSavedMsg(error ? `❌ ${error.message}` : t('pages.projects.saved'))
     setTimeout(() => setSavedMsg(''), 2500)
+    // Solo el alumno dueño notifica al admin — si el admin es quien edita
+    // (viewingAsAdmin) no tiene sentido que se notifique a sí mismo.
+    if (!error && isViewerOwner && assignedBy) {
+      const studentName = useAuthStore.getState().profile?.display_name
+      useNotificationsStore.getState().notifyAdminProjectUpdated(
+        { id, student_id: ownerId, assigned_by: assignedBy, title },
+        studentName,
+      )
+    }
   }
 
   const handleDelete = async () => {
-    if (!window.confirm('¿Eliminar este proyecto? Esta acción no se puede deshacer.')) return
+    if (!window.confirm(t('pages.projects.deleteConfirm'))) return
     await deleteProject(id)
     navigate('/proyectos')
   }
@@ -103,7 +117,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="flex min-h-screen flex-col bg-background text-text">
         <AppTopBar />
-        <div className="flex flex-1 items-center justify-center text-text-muted">Cargando…</div>
+        <div className="flex flex-1 items-center justify-center text-text-muted">{t('pages.tasks.loadingGeneric')}</div>
       </div>
     )
   }
@@ -113,8 +127,8 @@ export default function ProjectDetailPage() {
       <div className="flex min-h-screen flex-col bg-background text-text">
         <AppTopBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-text-muted">
-          <p>No encontramos este proyecto.</p>
-          <Link to="/proyectos" className="text-primary hover:underline">← Mis Proyectos</Link>
+          <p>{t('pages.projects.notFound')}</p>
+          <Link to="/proyectos" className="text-primary hover:underline">{t('pages.projects.backToProjects')}</Link>
         </div>
       </div>
     )
@@ -126,11 +140,11 @@ export default function ProjectDetailPage() {
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-3xl space-y-4">
-          <Link to="/proyectos" className="inline-block text-sm text-text-muted hover:text-primary">← Mis Proyectos</Link>
+          <Link to="/proyectos" className="inline-block text-sm text-text-muted hover:text-primary">{t('pages.projects.backToProjects')}</Link>
 
           {viewingAsAdmin && (
             <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
-              👁️ Estás viendo el proyecto de un alumno como administrador.
+              {t('pages.projects.viewingAsAdmin')}
             </div>
           )}
 
@@ -139,21 +153,21 @@ export default function ProjectDetailPage() {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Título del proyecto"
+              placeholder={t('pages.projects.projectTitlePlaceholder')}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-lg font-bold text-text outline-none focus:border-primary"
             />
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción del proyecto…"
+              placeholder={t('pages.projects.projectDescPlaceholder')}
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
             />
             <div className="flex flex-wrap items-center gap-2">
-              <label className="text-[10px] font-bold uppercase text-text-muted">Estado:</label>
+              <label className="text-[10px] font-bold uppercase text-text-muted">{t('pages.projects.statusLabel')}</label>
               {[
-                { key: 'en_progreso', label: '🟡 En progreso' },
-                { key: 'completado', label: '✅ Completado' },
+                { key: 'en_progreso', label: t('pages.projects.tabInProgress') },
+                { key: 'completado', label: t('pages.projects.statusSwitchCompleted') },
               ].map((s) => (
                 <button
                   key={s.key}
@@ -170,14 +184,14 @@ export default function ProjectDetailPage() {
           </div>
 
           {/* Notas */}
-          <SectionCard icon="🧠" title="Notas">
+          <SectionCard icon="🧠" title={t('pages.projects.notes')}>
             <div className="space-y-2">
               {notes.map((n) => (
                 <div key={n.id} className="grid grid-cols-1 gap-1.5 rounded-xl border border-border/60 p-2 sm:grid-cols-[1fr_110px_120px_60px_auto]">
                   <input
                     value={n.text}
                     onChange={(e) => updateNote(n.id, 'text', e.target.value)}
-                    placeholder="Pensamiento / nota…"
+                    placeholder={t('pages.projects.notePlaceholder')}
                     className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
                   />
                   <input
@@ -189,7 +203,7 @@ export default function ProjectDetailPage() {
                   <input
                     value={n.category}
                     onChange={(e) => updateNote(n.id, 'category', e.target.value)}
-                    placeholder="Categoría"
+                    placeholder={t('pages.projects.categoryPlaceholder')}
                     className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
                   />
                   <select
@@ -203,15 +217,15 @@ export default function ProjectDetailPage() {
                   <button type="button" onClick={() => removeNote(n.id)} className="rounded-lg border border-danger/30 px-2 text-xs text-danger hover:bg-danger/10">🗑️</button>
                 </div>
               ))}
-              {notes.length === 0 && <p className="text-xs text-text-muted">Sin notas todavía.</p>}
+              {notes.length === 0 && <p className="text-xs text-text-muted">{t('pages.projects.noNotesYet')}</p>}
               <button type="button" onClick={addNote} className="rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-text-muted hover:text-primary">
-                + Agregar nota
+                {t('pages.projects.addNote')}
               </button>
             </div>
           </SectionCard>
 
           {/* Checklist */}
-          <SectionCard icon="✅" title="Checklist">
+          <SectionCard icon="✅" title={t('pages.projects.checklist')}>
             <div className="space-y-1.5">
               {checklist.map((c) => (
                 <div key={c.id} className="flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2">
@@ -220,13 +234,13 @@ export default function ProjectDetailPage() {
                   <button type="button" onClick={() => removeChecklistItem(c.id)} className="text-xs text-danger hover:opacity-70">🗑️</button>
                 </div>
               ))}
-              {checklist.length === 0 && <p className="text-xs text-text-muted">Sin pendientes todavía.</p>}
+              {checklist.length === 0 && <p className="text-xs text-text-muted">{t('pages.projects.noPendingYet')}</p>}
               <div className="flex gap-2 pt-1">
                 <input
                   value={newChecklistText}
                   onChange={(e) => setNewChecklistText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addChecklistItem() } }}
-                  placeholder="Nuevo pendiente…"
+                  placeholder={t('pages.projects.newPendingPlaceholder')}
                   className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                 />
                 <button type="button" onClick={addChecklistItem} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background">+</button>
@@ -235,7 +249,7 @@ export default function ProjectDetailPage() {
           </SectionCard>
 
           {/* Recursos */}
-          <SectionCard icon="📎" title="Recursos">
+          <SectionCard icon="📎" title={t('pages.projects.resources')}>
             <div className="space-y-1.5">
               {resources.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2">
@@ -247,7 +261,7 @@ export default function ProjectDetailPage() {
                 <input
                   value={newResource.label}
                   onChange={(e) => setNewResource((r) => ({ ...r, label: e.target.value }))}
-                  placeholder="Título del recurso"
+                  placeholder={t('pages.projects.resourceTitlePlaceholder')}
                   className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                 />
                 <input
@@ -256,13 +270,13 @@ export default function ProjectDetailPage() {
                   placeholder="https://…"
                   className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                 />
-                <button type="button" onClick={addResource} className="shrink-0 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background">+ Agregar</button>
+                <button type="button" onClick={addResource} className="shrink-0 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background">{t('pages.projects.addResource')}</button>
               </div>
             </div>
 
             {resources.length > 0 && (
               <div className="mt-4 border-t border-border/60 pt-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted/70">Vista previa</p>
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted/70">{t('pages.projects.preview')}</p>
                 <ResourceGallery resources={resources} />
               </div>
             )}
@@ -276,7 +290,7 @@ export default function ProjectDetailPage() {
               disabled={saving}
               className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-background disabled:opacity-50"
             >
-              {saving ? 'Guardando…' : '💾 Guardar cambios'}
+              {saving ? t('pages.projects.saving') : t('pages.projects.saveChanges')}
             </button>
             {savedMsg && <span className="text-xs text-text-muted">{savedMsg}</span>}
             <button
@@ -284,7 +298,7 @@ export default function ProjectDetailPage() {
               onClick={handleDelete}
               className="ml-auto rounded-xl border border-danger/30 px-4 py-2.5 text-sm font-semibold text-danger hover:bg-danger/10"
             >
-              🗑️ Eliminar proyecto
+              {t('pages.projects.deleteProject')}
             </button>
           </div>
         </div>

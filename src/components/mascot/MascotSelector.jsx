@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom'
 import { MASCOTS } from '../../data/mascotRegistry'
 import { useMascotStore } from '../../stores/useMascotStore'
+import { useI18n } from '../../i18n'
 
 // Lets the student switch between the 3D models that have a real `modelPath`
 // (the primitive shapes from early prototyping are intentionally excluded)
 // AND that the user has already unlocked. Locked models live in la Tienda.
 export default function MascotSelector() {
+  const { t } = useI18n()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const selectMascot = useMascotStore((s) => s.selectMascot)
   const unlockedMascots = useMascotStore((s) => s.unlockedMascots)
@@ -48,9 +50,9 @@ export default function MascotSelector() {
           className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-3 text-sm text-text-muted transition-colors hover:border-primary/40 hover:text-text"
         >
           <span>
-            🔒 Hay {lockedCount} mascota{lockedCount > 1 ? 's' : ''} más esperándote en la Tienda.
+            {lockedCount === 1 ? t('pages.mascotHome.moreMascotsOne') : t('pages.mascotHome.moreMascotsMany', { n: lockedCount })}
           </span>
-          <span className="font-semibold text-primary">Ir a la Tienda →</span>
+          <span className="font-semibold text-primary">{t('pages.mascotHome.goToShopArrow')}</span>
         </Link>
       )}
     </div>

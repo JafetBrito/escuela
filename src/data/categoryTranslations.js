@@ -44,6 +44,17 @@ export const CATEGORY_NAME_EN = {
   Música: 'Music',
   Ciencias: 'Sciences',
 
+  // TasksPage.jsx SUBJECTS keys not already covered above (task.subject is a
+  // free-text DB value shared with these category/topic names for several
+  // subjects — reusing this same dictionary avoids a second lookup table)
+  Geografía: 'Geography',
+  General: 'General',
+
+  // utils/regions.js SPECIAL_REGIONS titles (Dashboard "world map" + Progress
+  // region bars) — distinct from the plain category names above
+  'Academia de IA': 'AI Academy',
+  'Academia de Idiomas': 'Language Academy',
+
   // categoryTaxonomy.js region titles
   'Ciencias Formales': 'Formal Sciences',
   'Ciencias Naturales': 'Natural Sciences',

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
 import { useNotificationsStore } from './useNotificationsStore'
+import { useAuthStore } from './useAuthStore'
 
 export const useTasksStore = create((set, get) => ({
   // ── Student view ──────────────────────────────────────────────────────────
@@ -32,7 +33,10 @@ export const useTasksStore = create((set, get) => ({
   // {student_id}/{task_id}/{filename}, ver migration_011.sql) y marca la
   // tarea como entregada en el mismo update. Reemplaza al antiguo submitTask
   // que solo cambiaba el status sin capturar ninguna entrega real.
-  submitTaskFile: async (taskId, studentId, file) => {
+  // `task` es el objeto completo ya cargado en el componente que llama
+  // (TaskDetailPage tiene `task.assigned_by`/`task.title` en su estado local
+  // desde fetchTask) — se usa solo para notificar al admin, es opcional.
+  submitTaskFile: async (taskId, studentId, file, task) => {
     const path = `${studentId}/${taskId}/${file.name}`
     const { error: upErr } = await supabase.storage.from('task-submissions').upload(path, file, { upsert: true })
     if (upErr) return { error: upErr }
@@ -53,6 +57,13 @@ export const useTasksStore = create((set, get) => ({
         tasks: s.tasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
         allTasks: s.allTasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
       }))
+      if (task?.assigned_by) {
+        const studentName = useAuthStore.getState().profile?.display_name
+        useNotificationsStore.getState().notifyAdminTaskSubmitted(
+          { id: taskId, student_id: studentId, assigned_by: task.assigned_by, title: task.title },
+          studentName,
+        )
+      }
     }
     return { error, patch }
   },
@@ -84,17 +95,32 @@ export const useTasksStore = create((set, get) => ({
     set({ taskQuestions: data ?? [] })
   },
 
-  askTaskQuestion: async (taskId, studentId, question) => {
+  // `task` (opcional, igual que en submitTaskFile) solo se usa para
+  // notificar al admin que asignó la tarea.
+  askTaskQuestion: async (taskId, studentId, question, task) => {
     const { data, error } = await supabase
       .from('task_questions')
       .insert({ task_id: taskId, student_id: studentId, question })
       .select()
       .single()
-    if (!error) set((s) => ({ taskQuestions: [...s.taskQuestions, data] }))
+    if (!error) {
+      set((s) => ({ taskQuestions: [...s.taskQuestions, data] }))
+      if (task?.assigned_by) {
+        const studentName = useAuthStore.getState().profile?.display_name
+        useNotificationsStore.getState().notifyAdminTaskQuestion(
+          { id: taskId, student_id: studentId, assigned_by: task.assigned_by, title: task.title },
+          studentName,
+          question,
+        )
+      }
+    }
     return { error }
   },
 
-  answerTaskQuestion: async (questionId, answer) => {
+  // `task` (opcional) solo se usa para avisarle al alumno que su pregunta
+  // tiene respuesta — el insert de notificación aquí ya lo hace un admin
+  // (política "notifications: admin creates" existente, sin cambios de RLS).
+  answerTaskQuestion: async (questionId, answer, task) => {
     const { error } = await supabase
       .from('task_questions')
       .update({ answer, answered: true })
@@ -103,6 +129,7 @@ export const useTasksStore = create((set, get) => ({
       set((s) => ({
         taskQuestions: s.taskQuestions.map((q) => q.id === questionId ? { ...q, answer, answered: true } : q),
       }))
+      if (task) useNotificationsStore.getState().notifyTaskQuestionAnswered(task)
     }
     return { error }
   },
@@ -133,6 +160,9 @@ export const useTasksStore = create((set, get) => ({
       .single()
     if (!error) {
       set((s) => ({ allTasks: [data, ...s.allTasks] }))
+      if (payload.assigned_by && payload.assigned_by !== payload.student_id) {
+        useNotificationsStore.getState().notifyTaskAssigned(data)
+      }
     }
     return { data, error }
   },

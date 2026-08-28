@@ -14,6 +14,8 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { buildRegions } from '../../utils/regions'
 import { useI18n } from '../../i18n'
+import { localizeCourseCatalog } from '../../data/courseCatalogTranslations'
+import { localizeCategoryName } from '../../data/categoryTranslations'
 import { MASCOTS } from '../../data/mascotRegistry'
 import TodayCourseCard from '../shared/TodayCourseCard'
 import RegionBar from '../shared/RegionBar'
@@ -50,14 +52,13 @@ function DataTable({ columns, children, empty }) {
   )
 }
 
-const SECTIONS = [
-  { id: 'cursos',         label: 'Cursos',         icon: '📚' },
-  { id: 'calificaciones', label: 'Calificaciones', icon: '📝' },
-  { id: 'logros',         label: 'Logros',         icon: '🏅' },
-]
-
 export default function ProgressPage() {
-  const { t }       = useI18n()
+  const { t, lang }  = useI18n()
+  const SECTIONS = [
+    { id: 'cursos',         label: t('dashboard.progress.sectionCursos'),         icon: '📚' },
+    { id: 'calificaciones', label: t('dashboard.progress.sectionCalificaciones'), icon: '📝' },
+    { id: 'logros',         label: t('dashboard.progress.sectionLogros'),         icon: '🏅' },
+  ]
   const session     = useAuthStore((s) => s.session)
   const profile     = useAuthStore((s) => s.profile)
   const progress    = useProgressStore((s) => s.progress)
@@ -78,7 +79,7 @@ export default function ProgressPage() {
     return Math.round((done / total) * 100)
   }, [progress])
 
-  const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Estudiante'
+  const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || t('dashboard.defaultStudent')
   const avatarEmoji = MASCOTS.find((m) => m.id === selectedMascotId)?.icon ?? '👤'
 
   const completedCourses = useMemo(() => courses.filter((c) => progressByCourse(c.id) === 100), [progressByCourse])
@@ -86,7 +87,7 @@ export default function ProgressPage() {
   const enrolledCourses  = [...inProgress, ...completedCourses]
   const todayCourses     = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 2)
 
-  const regions = useMemo(() => buildRegions(courses, progressByCourse), [progressByCourse])
+  const regions = useMemo(() => buildRegions(courses, progressByCourse, lang), [progressByCourse, lang])
   const topRegions = useMemo(
     () => regions.filter((r) => r.total > 0).sort((a, b) => (b.completed + b.inProgress * 0.5) / b.total - (a.completed + a.inProgress * 0.5) / a.total).slice(0, 6),
     [regions]
@@ -108,15 +109,15 @@ export default function ProgressPage() {
 
           {/* Saludo */}
           <div>
-            <h1 className="text-2xl font-black text-text">Hola, {displayName} 👋</h1>
-            <p className="text-sm text-text-muted mt-0.5">Este es tu avance en Oliver Academy.</p>
+            <h1 className="text-2xl font-black text-text">{t('dashboard.progress.greeting', { name: displayName })}</h1>
+            <p className="text-sm text-text-muted mt-0.5">{t('dashboard.progress.subtitle')}</p>
           </div>
 
           {/* Tu curso de hoy — anillos circulares en vez de barras, como en
               el resto del panel. */}
           {todayCourses.length > 0 && (
             <section>
-              <h2 className="text-base font-extrabold text-text mb-3">🎯 Tu curso de hoy</h2>
+              <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.promo.todayTitle')}</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {todayCourses.map((c) => (
                   <TodayCourseCard key={c.id} course={c} pct={progressByCourse(c.id) ?? 0} meta={CATEGORY_META[c.category] ?? CATEGORY_META.Otros} />
@@ -133,15 +134,21 @@ export default function ProgressPage() {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-text">{displayName}</p>
-                <p className="text-xs text-text-muted">Nivel {level} · {enrolledCourses.length} curso{enrolledCourses.length === 1 ? '' : 's'}</p>
+                <p className="text-xs text-text-muted">
+                  {enrolledCourses.length === 1
+                    ? t('dashboard.progress.levelCoursesOne', { level })
+                    : t('dashboard.progress.levelCoursesMany', { level, count: enrolledCourses.length })}
+                </p>
               </div>
             </div>
             <div className="flex items-center justify-between rounded-2xl border border-primary/30 bg-primary/10 p-4">
               <div>
                 <p className="text-lg font-black text-primary">{xp.toLocaleString()} XP</p>
-                <p className="text-xs text-text-muted">🪙 {coins.toLocaleString()} monedas · {isMaxLevel ? 'nivel máximo' : `${xpForNextLevel - xpIntoLevel} XP para subir`}</p>
+                <p className="text-xs text-text-muted">
+                  {t('dashboard.progress.coinsLabel', { coins: coins.toLocaleString() })} · {isMaxLevel ? t('dashboard.summary.maxLevelReached') : t('dashboard.summary.xpToLevelUp', { xp: xpForNextLevel - xpIntoLevel })}
+                </p>
               </div>
-              <Link to="/tienda" className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Gastar →</Link>
+              <Link to="/tienda" className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">{t('dashboard.progress.spend')}</Link>
             </div>
           </div>
 
@@ -149,13 +156,17 @@ export default function ProgressPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Link to="/mascota" className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 p-4 transition hover:border-violet-500/40">
               <p className="text-2xl">🐾</p>
-              <p className="mt-1 text-sm font-bold text-text">Habla con tu mascota</p>
-              <p className="text-xs text-text-muted">Resuelve dudas y gana misiones de chat</p>
+              <p className="mt-1 text-sm font-bold text-text">{t('dashboard.progress.talkToMascot')}</p>
+              <p className="text-xs text-text-muted">{t('dashboard.promo.mascotSub')}</p>
             </Link>
             <Link to="/logros" className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/5 p-4 transition hover:border-amber-500/40">
               <p className="text-2xl">🏅</p>
-              <p className="mt-1 text-sm font-bold text-text">Tus logros</p>
-              <p className="text-xs text-text-muted">{completedCourses.length} curso{completedCourses.length === 1 ? '' : 's'} completado{completedCourses.length === 1 ? '' : 's'}</p>
+              <p className="mt-1 text-sm font-bold text-text">{t('dashboard.progress.achievementsTitle')}</p>
+              <p className="text-xs text-text-muted">
+                {completedCourses.length === 1
+                  ? t('dashboard.progress.achievementsCoursesOne')
+                  : t('dashboard.progress.achievementsCoursesMany', { count: completedCourses.length })}
+              </p>
             </Link>
           </div>
 
@@ -163,7 +174,7 @@ export default function ProgressPage() {
               Dashboard, mostradas aquí como barras comparables. */}
           {topRegions.length > 0 && (
             <section className="rounded-2xl border border-border bg-surface p-4">
-              <h2 className="text-base font-extrabold text-text mb-4">📊 Tu avance por área</h2>
+              <h2 className="text-base font-extrabold text-text mb-4">{t('dashboard.snapshot.title')}</h2>
               <div className="space-y-3">
                 {topRegions.map((r) => <RegionBar key={r.key} region={r} />)}
               </div>
@@ -179,18 +190,22 @@ export default function ProgressPage() {
             </div>
 
             {activeSection === 'cursos' && (
-              <DataTable columns={['Curso', 'Categoría', 'Progreso', 'Estado']} empty={enrolledCourses.length === 0 ? 'Aún no te has inscrito a ningún curso. Explora las escuelas para empezar.' : null}>
+              <DataTable
+                columns={[t('dashboard.progress.colCourse'), t('dashboard.progress.colCategory'), t('dashboard.progress.colProgress'), t('dashboard.progress.colStatus')]}
+                empty={enrolledCourses.length === 0 ? t('dashboard.progress.noEnrolledCourses') : null}
+              >
                 {enrolledCourses.map((c) => {
                   const pct  = progressByCourse(c.id)
                   const meta = CATEGORY_META[c.category] ?? CATEGORY_META.Otros
+                  const course = localizeCourseCatalog(c, lang)
                   return (
                     <tr key={c.id} className="cursor-default transition-colors hover:bg-surface-hover">
                       <td className="px-4 py-3">
                         <Link to={`/learn/${c.id}`} className="flex items-center gap-2 font-medium text-text hover:text-primary">
-                          <span>{c.icon}</span>{c.title}
+                          <span>{course.icon}</span>{course.title}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-text-muted">{c.category}</td>
+                      <td className="px-4 py-3 text-text-muted">{localizeCategoryName(c.category, lang)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-24 rounded-full bg-surface-hover">
@@ -201,8 +216,8 @@ export default function ProgressPage() {
                       </td>
                       <td className="px-4 py-3">
                         {pct === 100
-                          ? <span className="text-xs font-semibold text-emerald-400">Completado</span>
-                          : <span className="text-xs font-semibold text-amber-400">En curso</span>}
+                          ? <span className="text-xs font-semibold text-emerald-400">{t('dashboard.progress.statusCompleted')}</span>
+                          : <span className="text-xs font-semibold text-amber-400">{t('dashboard.progress.statusInProgress')}</span>}
                       </td>
                     </tr>
                   )
@@ -222,7 +237,10 @@ export default function ProgressPage() {
                     <span className="text-xs font-bold text-primary">{t('dashboard.progress.average', { pct: avgGrade })}</span>
                   )}
                 </div>
-                <DataTable columns={['Tarea', 'Calificación', '%', 'Comentario']} empty={graded.length === 0 ? t('dashboard.progress.noTasks') : null}>
+                <DataTable
+                  columns={[t('dashboard.progress.colTask'), t('dashboard.progress.colGrade'), t('dashboard.progress.colPercent'), t('dashboard.progress.colComment')]}
+                  empty={graded.length === 0 ? t('dashboard.progress.noTasks') : null}
+                >
                   {graded.map((task) => {
                     const pct   = Math.round((task.grade / task.grade_max) * 100)
                     const color = pct >= 80 ? 'text-emerald-400' : pct >= 60 ? 'text-amber-400' : 'text-red-400'

@@ -1,14 +1,16 @@
 import { PLAYER_AVATARS } from '../../stores/useGameStore'
+import { useI18n } from '../../i18n'
 
 // Pure visual skin/look selection for the avatar. No class badges here —
 // shared by MascotHomePage and the floating mascot menu (MascotCompanion).
 export default function AvatarApparelGrid({ avatarId, onSelect }) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="text-xs font-black uppercase tracking-widest text-text-muted">Aspecto visual</p>
+        <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('pages.mascotHome.visualLook')}</p>
         <p className="mt-1 text-xs text-text-muted">
-          Elige la apariencia de tu avatar en el mundo VR. Solo cambia lo visual, nunca tu clase.
+          {t('pages.mascotHome.visualLookHint')}
         </p>
       </div>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">

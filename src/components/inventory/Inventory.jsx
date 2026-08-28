@@ -21,6 +21,7 @@ import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { pushNoteToNotion } from '../../services/notion/notionClient'
+import { useI18n } from '../../i18n'
 import NoteModal from './NoteModal'
 
 /**
@@ -31,6 +32,7 @@ import NoteModal from './NoteModal'
  * @param {string} [props.moduleTitle] - El título legible del módulo actual.
  */
 export default function Inventory({ className = '', moduleId, moduleTitle }) {
+  const { t } = useI18n()
   // --- 1. CONEXIÓN A ESTADOS GLOBALES (ZUSTAND) ---
   const items = useInventoryStore((s) => s.items)
   const addItem = useInventoryStore((s) => s.addItem)
@@ -88,19 +90,19 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
     
     // Validación 1: ¿Están configuradas las llaves?
     if (!notionConnected || !notionDatabaseId) {
-      setNotionStatus((s) => ({ ...s, [item.id]: 'Configura tu integración de Notion en Ajustes' }))
+      setNotionStatus((s) => ({ ...s, [item.id]: t('pages.inventory.notionConfigureHint') }))
       setTimeout(() => setNotionStatus((s) => ({ ...s, [item.id]: null })), 4000)
       return
     }
 
     // Proceso de envío
-    setNotionStatus((s) => ({ ...s, [item.id]: 'Enviando…' }))
+    setNotionStatus((s) => ({ ...s, [item.id]: t('pages.inventory.sending') }))
     const notionApiKey = await useAiCredentialsStore.getState().getApiKeyForProvider('notion')
     const result = await pushNoteToNotion({ notionApiKey, notionDatabaseId }, item)
-    
+
     setNotionStatus((s) => ({
       ...s,
-      [item.id]: result.ok ? 'Enviado a Notion ✅' : `Error: ${result.error}`,
+      [item.id]: result.ok ? t('pages.inventory.sentToNotion') : t('pages.inventory.errorPrefix', { error: result.error }),
     }))
     
     // Limpia el mensaje después de 4 segundos
@@ -138,7 +140,7 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
             <p className="truncate text-primary">{item.url}</p>
           )}
           {item.text && <p className="truncate text-text">{item.text}</p>}
-          {!item.text && !item.url && <p className="text-text-muted italic">(vacío)</p>}
+          {!item.text && !item.url && <p className="text-text-muted italic">{t('pages.inventory.emptyItem')}</p>}
           
           {/* Metadatos (Ej: Si estamos en la vista global, decimos de qué clase viene) */}
           {!moduleId && item.moduleTitle && (
@@ -157,8 +159,8 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
         <button
           onClick={(e) => handleSendToNotion(e, item)}
           className="text-text-muted transition-colors hover:text-primary"
-          aria-label="Enviar a Notion"
-          title="Enviar a Notion"
+          aria-label={t('pages.inventory.sendToNotion')}
+          title={t('pages.inventory.sendToNotion')}
         >
           📓
         </button>
@@ -168,7 +170,7 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
             removeItem(item.id)
           }}
           className="text-text-muted transition-colors hover:text-danger"
-          aria-label="Eliminar"
+          aria-label={t('pages.inventory.delete')}
         >
           ✕
         </button>
@@ -182,20 +184,20 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
       
       {/* 🟢 SECCIÓN: FORMULARIO DE CREACIÓN */}
       <div className="tech-card p-4">
-        <p className="tech-label mb-3">// Nueva entrada</p>
+        <p className="tech-label mb-3">{t('pages.inventory.newEntry')}</p>
         <form onSubmit={handleAdd} className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
-            
+
             {/* Selector: ¿Nota o Link? */}
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
               className="tech-input rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
             >
-              <option value="note">📝 Nota</option>
-              <option value="link">🔗 Link</option>
+              <option value="note">{t('pages.inventory.noteOption')}</option>
+              <option value="link">{t('pages.inventory.linkOption')}</option>
             </select>
-            
+
             {/* Selector de Alcance (SOLO visible en Modo "Clase") */}
             {moduleId && (
               <select
@@ -203,11 +205,11 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
                 onChange={(e) => setScope(e.target.value)}
                 className="tech-input rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
               >
-                <option value="module">Esta clase</option>
-                <option value="general">General</option>
+                <option value="module">{t('pages.inventory.thisClass')}</option>
+                <option value="general">{t('pages.inventory.general')}</option>
               </select>
             )}
-            
+
             {/* Input para URL (SOLO si el tipo es Link) */}
             {type === 'link' && (
               <input
@@ -222,14 +224,14 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={type === 'note' ? 'Escribe tu nota…' : 'Descripción del link (opcional)'}
+            placeholder={type === 'note' ? t('pages.inventory.notePlaceholder') : t('pages.inventory.linkDescPlaceholder')}
             className="h-20 resize-none rounded-lg border border-border bg-background p-2 text-sm text-text outline-none focus:border-primary"
           />
           <button
             type="submit"
             className="self-start rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
           >
-            + Agregar
+            {t('pages.inventory.add')}
           </button>
         </form>
       </div>
@@ -237,9 +239,9 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
       {/* 🟢 SECCIÓN: LISTA DE NOTAS (Modo Clase) */}
       {moduleId && (
         <div className="flex flex-col gap-2">
-          <p className="tech-label">// Notas de esta clase</p>
+          <p className="tech-label">{t('pages.inventory.classNotesHeader')}</p>
           {moduleItems.length === 0 ? (
-            <p className="text-sm text-text-muted">Aún no tienes notas para esta clase.</p>
+            <p className="text-sm text-text-muted">{t('pages.inventory.noClassNotes')}</p>
           ) : (
             <div className="flex flex-col gap-2">{moduleItems.map(renderItem)}</div>
           )}
@@ -248,9 +250,9 @@ export default function Inventory({ className = '', moduleId, moduleTitle }) {
 
       {/* 🟢 SECCIÓN: LISTA DE NOTAS (Modo Global) */}
       <div className="flex flex-col gap-2">
-        <p className="tech-label">{moduleId ? '// Notas generales' : '// Tu inventario'}</p>
+        <p className="tech-label">{moduleId ? t('pages.inventory.generalNotesHeader') : t('pages.inventory.inventoryHeader')}</p>
         {generalItems.length === 0 ? (
-          <p className="text-sm text-text-muted">No hay notas generales por ahora.</p>
+          <p className="text-sm text-text-muted">{t('pages.inventory.noGeneralNotes')}</p>
         ) : (
           <div className="flex flex-col gap-2">{generalItems.map(renderItem)}</div>
         )}

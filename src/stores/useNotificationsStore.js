@@ -14,6 +14,10 @@ function notificationUrl(n) {
   if (n.chess_invite_id) return '/games/mishi-jedrez'
   if (n.trivia_invite_id) return `/games/quiz-rapido?invite=${n.trivia_invite_id}`
   if (n.class_id) return `/mis-clases/${n.class_id}`
+  // admin_id presente = esta fila es para el profesor (alumno entregó/preguntó/
+  // actualizó), no para el alumno — va a la vista de admin, no a la del alumno.
+  if (n.admin_id && n.task_id) return `/admin/tareas?student=${n.student_id}`
+  if (n.admin_id && n.project_id) return `/admin/proyectos?student=${n.student_id}`
   if (n.project_id) return `/proyectos/${n.project_id}`
   if (n.task_id) return `/mis-tareas/${n.task_id}`
   return null
@@ -41,11 +45,17 @@ export const useNotificationsStore = create((set, get) => ({
   loading: false,
   _channel: null,
 
-  fetchNotifications: async () => {
+  // `userId` cubre ambas direcciones con un solo filtro: para un alumno
+  // solo hay filas con student_id = su uid; para un admin, las nuevas filas
+  // dirigidas a él tienen admin_id = su uid (ver migration_047.sql). No
+  // depende de saber el rol de quien pregunta.
+  fetchNotifications: async (userId) => {
+    if (!userId) return
     set({ loading: true })
     const { data } = await supabase
       .from('student_notifications')
       .select('*')
+      .or(`student_id.eq.${userId},admin_id.eq.${userId}`)
       .order('created_at', { ascending: false })
       .limit(30)
     set({ notifications: data ?? [], loading: false })
@@ -55,22 +65,24 @@ export const useNotificationsStore = create((set, get) => ({
     ;(data ?? []).forEach(claimReward)
   },
 
-  // Suscripción en vivo por alumno — cuando llega una notificación nueva
-  // (ej. el admin asigna/inicia una clase) se agrega al instante, suena un
-  // ping Y se lee en voz alta (título + cuerpo), sin esperar a que el
-  // usuario abra/recargue la campanita.
-  subscribeToNotifications: (studentId) => {
-    if (!studentId || get()._channel) return
+  // Suscripción en vivo por usuario — cuando llega una notificación nueva
+  // (ej. el admin asigna/inicia una clase, o un alumno entrega/pregunta) se
+  // agrega al instante, suena un ping Y se lee en voz alta (título + cuerpo),
+  // sin esperar a que el usuario abra/recargue la campanita. Dos `.on()` en
+  // el mismo canal porque el filtro de postgres_changes no soporta OR.
+  subscribeToNotifications: (userId) => {
+    if (!userId || get()._channel) return
+    const handleInsert = (payload) => {
+      set((s) => ({ notifications: [payload.new, ...s.notifications] }))
+      playNotificationSound()
+      speak([payload.new.title, payload.new.body].filter(Boolean).join('. '))
+      showSystemNotification({ title: payload.new.title, body: payload.new.body, url: notificationUrl(payload.new) })
+      claimReward(payload.new)
+    }
     const channel = supabase
-      .channel(`student_notifications:${studentId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_notifications', filter: `student_id=eq.${studentId}` },
-        (payload) => {
-          set((s) => ({ notifications: [payload.new, ...s.notifications] }))
-          playNotificationSound()
-          speak([payload.new.title, payload.new.body].filter(Boolean).join('. '))
-          showSystemNotification({ title: payload.new.title, body: payload.new.body, url: notificationUrl(payload.new) })
-          claimReward(payload.new)
-        })
+      .channel(`student_notifications:${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_notifications', filter: `student_id=eq.${userId}` }, handleInsert)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'student_notifications', filter: `admin_id=eq.${userId}` }, handleInsert)
       .subscribe()
     set({ _channel: channel })
   },
@@ -165,5 +177,69 @@ export const useNotificationsStore = create((set, get) => ({
         body: cls.title,
       }))
     )
+  },
+
+  // Usado por useTasksStore.createTask cuando un admin asigna una tarea.
+  notifyTaskAssigned: async (task) => {
+    await supabase.from('student_notifications').insert({
+      student_id: task.student_id,
+      task_id: task.id,
+      title: 'Se te asignó una nueva tarea',
+      body: task.title,
+    })
+  },
+
+  // Usado por useTasksStore.submitTaskFile — notifica al profesor que
+  // asignó la tarea cuando el alumno la entrega. Requiere la política RLS
+  // "notifications: student notifies task admin" (migration_047.sql): el
+  // insert es hecho por el propio alumno, no por un admin.
+  notifyAdminTaskSubmitted: async (task, studentName) => {
+    if (!task.assigned_by) return
+    await supabase.from('student_notifications').insert({
+      student_id: task.student_id,
+      admin_id: task.assigned_by,
+      task_id: task.id,
+      title: '📤 Nueva entrega',
+      body: `${studentName ?? 'Un alumno'} entregó "${task.title}"`,
+    })
+  },
+
+  // Usado por useTasksStore.askTaskQuestion — misma dirección que arriba.
+  notifyAdminTaskQuestion: async (task, studentName, question) => {
+    if (!task.assigned_by) return
+    await supabase.from('student_notifications').insert({
+      student_id: task.student_id,
+      admin_id: task.assigned_by,
+      task_id: task.id,
+      title: '❓ Nueva pregunta',
+      body: `${studentName ?? 'Un alumno'} preguntó sobre "${task.title}": ${question}`,
+    })
+  },
+
+  // Usado por useTasksStore.answerTaskQuestion — el admin ya puede insertar
+  // (política "notifications: admin creates" existente), avisa al alumno
+  // que su duda tiene respuesta.
+  notifyTaskQuestionAnswered: async (task) => {
+    await supabase.from('student_notifications').insert({
+      student_id: task.student_id,
+      task_id: task.id,
+      title: '💬 Respondieron tu pregunta',
+      body: `"${task.title}"`,
+    })
+  },
+
+  // Usado por useProjectsStore.updateProject cuando el alumno (no el admin)
+  // actualiza un proyecto que le fue asignado — mismo criterio que
+  // notifyAdminTaskSubmitted, requiere "notifications: student notifies
+  // project admin" (migration_047.sql).
+  notifyAdminProjectUpdated: async (project, studentName) => {
+    if (!project.assigned_by || project.assigned_by === project.student_id) return
+    await supabase.from('student_notifications').insert({
+      student_id: project.student_id,
+      admin_id: project.assigned_by,
+      project_id: project.id,
+      title: '📁 Proyecto actualizado',
+      body: `${studentName ?? 'Un alumno'} actualizó "${project.title}"`,
+    })
   },
 }))

@@ -85,7 +85,7 @@ export { default as CourseCard } from './CourseCard'
 // (memoria) — la 3ª ronda lo redujo a casi nada por duplicar /progreso; este
 // cambio no revierte esa decisión, agrega resúmenes que antes no existían.
 function InicioTab({ profile, license, progressByCourse, profileSummary, trajectory, badges, pendingTasks }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
   const latest = PATCH_NOTES[0]
 
@@ -95,7 +95,7 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
   }), [progressByCourse])
 
   const todayCourses = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 2)
-  const regions = useMemo(() => buildRegions(courses, progressByCourse), [progressByCourse])
+  const regions = useMemo(() => buildRegions(courses, progressByCourse, lang), [progressByCourse, lang])
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
   const vrAllowed = !['kids', 'seniors'].includes(profile?.age_profile)
 

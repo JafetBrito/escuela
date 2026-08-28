@@ -20,6 +20,7 @@
 
 import { useState } from 'react'
 import { useInventoryStore } from '../../stores/useInventoryStore'
+import { useI18n } from '../../i18n'
 
 /**
  * Tipado de las Props para evitar que este modal crashee por recibir datos incompletos.
@@ -37,6 +38,7 @@ import { useInventoryStore } from '../../stores/useInventoryStore'
  * @param {Function} props.onClose - Función callback del padre para desmontar el modal.
  */
 export default function NoteModal({ item, onClose }) {
+  const { t } = useI18n()
   // --- 1. ACCIONES DEL ESTADO GLOBAL ---
   const updateItem = useInventoryStore((s) => s.updateItem)
   const removeItem = useInventoryStore((s) => s.removeItem)
@@ -80,13 +82,13 @@ export default function NoteModal({ item, onClose }) {
         {/* CABECERA */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <p className="tech-label text-sm">
-            {item.type === 'link' ? '🔗 Link' : '📝 Nota'}
-            {item.moduleTitle ? ` — ${item.moduleTitle}` : ' — General'}
+            {item.type === 'link' ? t('pages.inventory.linkOption') : t('pages.inventory.noteOption')}
+            {item.moduleTitle ? ` — ${item.moduleTitle}` : ` — ${t('pages.inventory.general')}`}
           </p>
-          <button 
-            onClick={onClose} 
-            className="text-text-muted hover:text-text" 
-            aria-label="Cerrar modal"
+          <button
+            onClick={onClose}
+            className="text-text-muted hover:text-text"
+            aria-label={t('pages.inventory.closeModal')}
           >
             ✕
           </button>
@@ -105,32 +107,32 @@ export default function NoteModal({ item, onClose }) {
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Escribe tu nota…"
+            placeholder={t('pages.inventory.notePlaceholder')}
             className="h-40 resize-none rounded-lg border border-border bg-background p-3 text-sm text-text outline-none focus:border-primary"
           />
         </div>
 
         {/* PIE DEL MODAL (Acciones) */}
         <div className="flex items-center justify-between border-t border-border px-5 py-3">
-          <button 
-            onClick={handleDelete} 
+          <button
+            onClick={handleDelete}
             className="text-sm text-text-muted hover:text-danger"
           >
-            Eliminar
+            {t('pages.inventory.delete')}
           </button>
-          
+
           <div className="flex gap-2">
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="rounded-lg border border-border px-3 py-1.5 text-sm text-text"
             >
-              Cancelar
+              {t('pages.inventory.cancel')}
             </button>
-            <button 
-              onClick={handleSave} 
+            <button
+              onClick={handleSave}
               className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-background hover:bg-primary-hover"
             >
-              Guardar
+              {t('pages.inventory.save')}
             </button>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import { EQUIPMENT_SLOTS, SLOT_META, getEquipmentForSlot } from '../../data/equipmentRegistry'
+import { useI18n } from '../../i18n'
 
 // ─── Skill tree data ─────────────────────────────────────────────────────────
 
@@ -80,8 +81,8 @@ export const OLIVER_SKILL_TREE = {
 // Labels/icons derive from the tier's own levelReq/cost instead of a fixed
 // tier-number lookup, since classes can now have more than 3 tiers (see the
 // 'hacker' tree above).
-function tierLabel(tierDef) {
-  return tierDef.levelReq <= 1 ? 'Base' : `Nivel ${tierDef.levelReq}`
+function tierLabel(tierDef, t) {
+  return tierDef.levelReq <= 1 ? t('pages.characterTree.tierBase') : t('pages.characterTree.tierLevel', { n: tierDef.levelReq })
 }
 function tierIcon(tierDef) {
   if (tierDef.comingSoon) return '🔒'
@@ -92,6 +93,7 @@ function tierIcon(tierDef) {
 // ─── Skill card ──────────────────────────────────────────────────────────────
 
 function SkillCard({ skill, isUnlocked, levelOk, levelReq, cost, talentPoints, onUnlock, classColor }) {
+  const { t } = useI18n()
   const canUnlock = !isUnlocked && cost > 0 && levelOk && talentPoints >= cost
 
   let statusNode
@@ -99,26 +101,26 @@ function SkillCard({ skill, isUnlocked, levelOk, levelReq, cost, talentPoints, o
     statusNode = (
       <span className="rounded-full px-2 py-0.5 text-[9px] font-black text-white"
         style={{ background: classColor }}>
-        ✓ Activa
+        {t('pages.characterTree.statusActive')}
       </span>
     )
   } else if (cost === 0) {
-    statusNode = <span className="text-[9px] text-text-muted">🔒 Selecciona la clase</span>
+    statusNode = <span className="text-[9px] text-text-muted">{t('pages.characterTree.statusSelectClass')}</span>
   } else if (!levelOk) {
     statusNode = (
       <span className="rounded-full border px-2 py-0.5 text-[9px] font-bold text-text-muted"
         style={{ borderColor: 'var(--color-border)' }}>
-        🔒 Requiere Nv.{levelReq}
+        {t('pages.characterTree.statusRequiresLevel', { n: levelReq })}
       </span>
     )
   } else if (talentPoints < cost) {
-    statusNode = <span className="text-[9px] text-text-muted">✨ Sin puntos</span>
+    statusNode = <span className="text-[9px] text-text-muted">{t('pages.characterTree.statusNoPoints')}</span>
   } else {
     statusNode = (
       <button type="button" onClick={() => onUnlock(skill.id, cost)}
         className="rounded-full px-2 py-0.5 text-[9px] font-black text-white transition-all hover:scale-105 active:scale-95"
         style={{ background: `linear-gradient(135deg, ${classColor}, ${classColor}cc)` }}>
-        Desbloquear · {cost}✨
+        {t('pages.characterTree.unlockButton', { cost })}
       </button>
     )
   }
@@ -159,29 +161,30 @@ function SkillCard({ skill, isUnlocked, levelOk, levelReq, cost, talentPoints, o
 // ─── Tier row ────────────────────────────────────────────────────────────────
 
 function TierRow({ tierDef, unlockedSkills, level, talentPoints, onUnlock, classColor }) {
+  const { t } = useI18n()
   const levelOk = level >= tierDef.levelReq
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <span className="text-xl">{tierIcon(tierDef)}</span>
         <div>
-          <p className="text-sm font-black text-text">{tierLabel(tierDef)}</p>
+          <p className="text-sm font-black text-text">{tierLabel(tierDef, t)}</p>
           {tierDef.levelReq > 1 && (
             <p className="text-[10px]" style={{ color: levelOk ? classColor : 'var(--color-text-muted)' }}>
-              {levelOk ? '✓ Nivel alcanzado' : `Requiere nivel ${tierDef.levelReq}`}
+              {levelOk ? t('pages.characterTree.levelReached') : t('pages.characterTree.requiresLevel', { n: tierDef.levelReq })}
             </p>
           )}
         </div>
         {tierDef.cost > 0 && (
           <span className="ml-auto rounded-full border px-2 py-0.5 text-[10px] font-bold"
             style={{ borderColor: `${classColor}55`, color: classColor }}>
-            {tierDef.cost} pt de talento
+            {t('pages.characterTree.talentPointsCost', { n: tierDef.cost })}
           </span>
         )}
       </div>
       {tierDef.comingSoon ? (
         <div className="rounded-2xl border border-dashed border-border p-4 text-center text-xs text-text-muted">
-          🔒 Próximamente — nuevas habilidades para niveles {tierDef.levelReq}-99
+          {t('pages.characterTree.comingSoonSkills', { from: tierDef.levelReq })}
         </div>
       ) : (
         <div className="grid gap-3"
@@ -222,13 +225,14 @@ export function StatBar5({ val, color }) {
 // equipped weapon also drives the 'V' "usar arma" action in the VR world
 // (see VRPage.jsx).
 function EquipmentSection({ owner, classId, level, classColor }) {
+  const { t } = useI18n()
   const slots = EQUIPMENT_SLOTS[owner]
   const equipped = useEquipmentStore((s) => s.equipped[owner])
   const equip = useEquipmentStore((s) => s.equip)
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface/60 p-3">
-      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🎒 Equipo</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{t('pages.characterTree.equipmentHeader')}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         {slots.map((slot) => {
           const meta = SLOT_META[slot]
@@ -238,7 +242,7 @@ function EquipmentSection({ owner, classId, level, classColor }) {
             <div key={slot} className="flex flex-col gap-2 rounded-xl border border-border p-3">
               <p className="text-[10px] font-bold text-text-muted">{meta.icon} {meta.label}</p>
               {items.length === 0 ? (
-                <p className="text-[10px] text-text-muted">Sin objetos para este slot todavía</p>
+                <p className="text-[10px] text-text-muted">{t('pages.characterTree.noItemsForSlot')}</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {items.map((it) => {
@@ -247,7 +251,7 @@ function EquipmentSection({ owner, classId, level, classColor }) {
                     return (
                       <button key={it.id} type="button" disabled={locked}
                         onClick={() => equip(owner, slot, isEquipped ? null : it.id)}
-                        title={`${it.name} — ${it.description}${locked ? ` (Requiere Nv.${it.requiredLevel})` : ''}`}
+                        title={`${it.name} — ${it.description}${locked ? t('pages.characterTree.itemRequiresLevelSuffix', { n: it.requiredLevel }) : ''}`}
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-xl transition-all disabled:cursor-not-allowed"
                         style={{
                           borderColor: isEquipped ? classColor : 'var(--color-border)',
@@ -272,6 +276,7 @@ function EquipmentSection({ owner, classId, level, classColor }) {
 // owner: 'player' | 'oliver'
 
 export default function CharacterTree({ owner, hideEquipment = false, hideTiers = false }) {
+  const { t } = useI18n()
   const isPlayer    = owner === 'player'
   const classId     = useGameStore((s) => s[owner].class)
   const skills      = useGameStore((s) => s[owner].skills)
@@ -290,7 +295,7 @@ export default function CharacterTree({ owner, hideEquipment = false, hideTiers 
   function handleUnlock(skillId, cost) {
     spendTalent(owner, skillId, cost)
     const sk = SKILL_REGISTRY[skillId]
-    setToast(`✨ ${sk?.name ?? skillId} desbloqueada`)
+    setToast(t('pages.characterTree.skillUnlockedToast', { name: sk?.name ?? skillId }))
     setTimeout(() => setToast(null), 2200)
   }
 
@@ -298,15 +303,15 @@ export default function CharacterTree({ owner, hideEquipment = false, hideTiers 
     return (
       <div className="flex flex-col items-center gap-5 py-12 text-center">
         <span className="text-5xl">{isPlayer ? '⚔️' : '🐱'}</span>
-        <p className="font-bold text-text">{isPlayer ? 'Sin clase de personaje' : 'Sin clase de Oliver'}</p>
+        <p className="font-bold text-text">{isPlayer ? t('pages.characterTree.noPlayerClass') : t('pages.characterTree.noOliverClass')}</p>
         <p className="max-w-xs text-sm text-text-muted">
           {isPlayer
-            ? 'Selecciona tu clase durante la creación de cuenta.'
-            : 'La clase de Oliver se elige junto con la del personaje.'}
+            ? t('pages.characterTree.selectClassDuringSignup')
+            : t('pages.characterTree.oliverClassChosenWithPlayer')}
         </p>
         <button type="button" onClick={() => navigate('/crear-cuenta')}
           className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white">
-          Crear cuenta
+          {t('pages.mascotHome.createAccount')}
         </button>
       </div>
     )
@@ -327,9 +332,9 @@ export default function CharacterTree({ owner, hideEquipment = false, hideTiers 
       {/* Summary chips */}
       <div className="flex flex-wrap gap-2">
         {[
-          { icon: '✨', label: 'Puntos talento', value: talentPts, color: clsDef.color },
-          { icon: '🌟', label: 'Nivel',          value: `Nv.${level}`, color: 'var(--color-text)' },
-          { icon: '⚔️', label: 'Habilidades',   value: `${totalUnlocked}/${totalSkills}`, color: 'var(--color-text)' },
+          { icon: '✨', label: t('pages.characterTree.talentPointsLabel'), value: talentPts, color: clsDef.color },
+          { icon: '🌟', label: t('pages.characterTree.levelLabel'),        value: `${t('dashboard.hero.levelAbbr')}${level}`, color: 'var(--color-text)' },
+          { icon: '⚔️', label: t('pages.characterTree.skillsLabel'),      value: `${totalUnlocked}/${totalSkills}`, color: 'var(--color-text)' },
         ].map(({ icon, label, value, color }) => (
           <div key={label} className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-1.5">
             <span className="text-base">{icon}</span>
@@ -340,7 +345,7 @@ export default function CharacterTree({ owner, hideEquipment = false, hideTiers 
           </div>
         ))}
         {talentPts === 0 && totalUnlocked < totalSkills && (
-          <p className="self-center text-xs text-text-muted">Sube de nivel para ganar puntos ✨</p>
+          <p className="self-center text-xs text-text-muted">{t('pages.characterTree.levelUpForPoints')}</p>
         )}
       </div>
 
@@ -369,7 +374,7 @@ export default function CharacterTree({ owner, hideEquipment = false, hideTiers 
           </div>
 
           <p className="rounded-xl bg-surface/60 px-4 py-3 text-xs text-text-muted">
-            💡 Cada nivel te da 1 punto de talento ✨ — úsalo para desbloquear la siguiente habilidad de tu árbol.
+            {t('pages.characterTree.talentHint')}
           </p>
         </>
       )}

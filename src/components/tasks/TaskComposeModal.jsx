@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { renderMarkdown } from '../../utils/markdown'
+import { useI18n } from '../../i18n'
 
 // Editor "redactar tarea" — alternativa a subir un .md ya hecho: escribes el
 // título y el cuerpo aquí mismo, insertas imágenes/links con un par de
@@ -10,6 +11,7 @@ import { renderMarkdown } from '../../utils/markdown'
 // archivo. Dos paneles lado a lado en escritorio (editor + vista previa en
 // vivo); en móvil se apilan uno debajo del otro.
 export default function TaskComposeModal({ task, studentId, onClose, onSubmit }) {
+  const { t } = useI18n()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
@@ -36,9 +38,9 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
   }
 
   const handleInsertLink = () => {
-    const url = window.prompt('Enlace (URL):')
+    const url = window.prompt(t('pages.taskCompose.linkUrlPrompt'))
     if (!url) return
-    const label = window.prompt('Texto del enlace (opcional):', url) || url
+    const label = window.prompt(t('pages.taskCompose.linkTextPrompt'), url) || url
     insertAtCursor(`[${label}](${url})`)
   }
 
@@ -50,12 +52,12 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
     setError('')
     const { url, error: upErr } = await useTasksStore.getState().uploadTaskImage(task.id, studentId, file)
     setUploadingImage(false)
-    if (upErr) { setError(`❌ No se pudo subir la imagen: ${upErr.message}`); return }
+    if (upErr) { setError(t('pages.taskCompose.imageUploadError', { message: upErr.message })); return }
     insertAtCursor(`\n![${file.name}](${url})\n`)
   }
 
   const handleSubmit = async () => {
-    if (!body.trim()) { setError('Escribe algo antes de enviar.'); return }
+    if (!body.trim()) { setError(t('pages.taskCompose.emptyBodyError')); return }
     setBusy(true)
     setError('')
     const markdown = `# ${title.trim() || task.title}\n\n${body}`
@@ -71,7 +73,7 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
       <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-text-muted">✍️ Redactar tarea</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{t('pages.taskCompose.header')}</p>
             <p className="truncate text-sm text-text-muted">{task.title}</p>
           </div>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-text">✕</button>
@@ -81,7 +83,7 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={`Título (opcional — por defecto usa "${task.title}")`}
+            placeholder={t('pages.taskCompose.titlePlaceholder', { title: task.title })}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold text-text outline-none focus:border-primary"
           />
 
@@ -90,19 +92,19 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
               el resto de la app (vista previa de entregas, lecciones,
               recursos), sin depender de una librería de edición nueva. */}
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => insertAtCursor('**', '**')} title="Negrita" className="rounded-lg border border-border px-2.5 py-1.5 text-sm font-bold text-text hover:border-primary/50">B</button>
-            <button type="button" onClick={() => insertAtCursor('*', '*')} title="Cursiva" className="rounded-lg border border-border px-2.5 py-1.5 text-sm italic text-text hover:border-primary/50">I</button>
-            <button type="button" onClick={() => insertAtCursor('## ')} title="Encabezado" className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-text hover:border-primary/50">H2</button>
-            <button type="button" onClick={() => insertAtCursor('- ')} title="Lista" className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-text hover:border-primary/50">• Lista</button>
+            <button type="button" onClick={() => insertAtCursor('**', '**')} title={t('pages.taskCompose.bold')} className="rounded-lg border border-border px-2.5 py-1.5 text-sm font-bold text-text hover:border-primary/50">B</button>
+            <button type="button" onClick={() => insertAtCursor('*', '*')} title={t('pages.taskCompose.italic')} className="rounded-lg border border-border px-2.5 py-1.5 text-sm italic text-text hover:border-primary/50">I</button>
+            <button type="button" onClick={() => insertAtCursor('## ')} title={t('pages.taskCompose.heading')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-text hover:border-primary/50">H2</button>
+            <button type="button" onClick={() => insertAtCursor('- ')} title={t('pages.taskCompose.list')} className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-text hover:border-primary/50">{t('pages.taskCompose.list')}</button>
             <span className="mx-1 h-5 w-px bg-border" />
-            <button type="button" onClick={handleInsertLink} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-primary hover:border-primary/50">🔗 Enlace</button>
+            <button type="button" onClick={handleInsertLink} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-primary hover:border-primary/50">{t('pages.taskCompose.link')}</button>
             <button
               type="button"
               onClick={() => imageInputRef.current?.click()}
               disabled={uploadingImage}
               className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-primary hover:border-primary/50 disabled:opacity-50"
             >
-              {uploadingImage ? 'Subiendo…' : '🖼️ Imagen'}
+              {uploadingImage ? t('pages.taskCompose.uploading') : t('pages.taskCompose.image')}
             </button>
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleInsertImageFile} className="hidden" />
           </div>
@@ -117,12 +119,12 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
               ref={textareaRef}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Escribe tu entrega aquí — puedes usar Markdown, o simplemente escribir párrafos normales."
+              placeholder={t('pages.taskCompose.bodyPlaceholder')}
               rows={14}
               className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 font-mono text-sm text-text outline-none focus:border-primary"
             />
             <div className="min-h-[280px] overflow-y-auto rounded-xl border border-border bg-background px-4 py-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted/70">Vista previa</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted/70">{t('pages.taskCompose.preview')}</p>
               {body.trim() ? (
                 <div
                   className="text-sm text-text
@@ -132,7 +134,7 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
                   dangerouslySetInnerHTML={{ __html: renderMarkdown(`# ${title.trim() || task.title}\n\n${body}`) }}
                 />
               ) : (
-                <p className="text-xs text-text-muted">Aquí verás cómo se ve tu entrega mientras escribes.</p>
+                <p className="text-xs text-text-muted">{t('pages.taskCompose.previewEmptyHint')}</p>
               )}
             </div>
           </div>
@@ -142,7 +144,7 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
 
         <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
           <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:text-text">
-            Cancelar
+            {t('pages.taskCompose.cancel')}
           </button>
           <button
             type="button"
@@ -150,7 +152,7 @@ export default function TaskComposeModal({ task, studentId, onClose, onSubmit })
             disabled={busy || !body.trim()}
             className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? 'Enviando…' : '📤 Enviar entrega'}
+            {busy ? t('pages.taskCompose.sending') : t('pages.taskCompose.submitSubmission')}
           </button>
         </div>
       </div>

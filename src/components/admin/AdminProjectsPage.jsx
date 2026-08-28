@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
+import { supabase } from '../../services/supabase/client'
 import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 import { useProjectsStore } from '../../stores/useProjectsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -45,6 +46,19 @@ export default function AdminProjectsPage() {
     setSelectedStudent(match)
     fetchAllProjects(match.id)
   }, [searchParams, students, selectedStudent, isAdmin, fetchAllProjects])
+
+  // Actualizaciones de cualquier alumno mientras el admin tiene esta página
+  // abierta (ver migration_047.sql, agrega student_projects a supabase_realtime).
+  const selectedStudentRef = useRef(null)
+  useEffect(() => { selectedStudentRef.current = selectedStudent }, [selectedStudent])
+  useEffect(() => {
+    if (!isAdmin?.()) return
+    const channel = supabase
+      .channel('admin-projects-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_projects' }, () => fetchAllProjects(selectedStudentRef.current?.id ?? null))
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [isAdmin, fetchAllProjects])
 
   if (!isAdmin?.()) {
     return (

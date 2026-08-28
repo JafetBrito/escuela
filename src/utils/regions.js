@@ -1,5 +1,6 @@
 import { CATEGORY_META } from '../data/categoryMeta'
 import { MAIN_CATEGORIES } from '../data/categoryTaxonomy'
+import { localizeCategoryName } from '../data/categoryTranslations'
 
 // "Regiones" compartidas entre el Mapa de Aventura (DashboardPage) y las
 // barras de avance por área (ProgressPage): las 3 academias con página
@@ -19,16 +20,16 @@ function buildRegion({ key, title, to, icon, gradient, accent, regionCourses, pr
   return { key, title, to, icon, gradient, accent, total, inProgress, completed, state }
 }
 
-export function buildRegions(courses, progressByCourse) {
+export function buildRegions(courses, progressByCourse, lang = 'es') {
   const specials = SPECIAL_REGIONS.map((r) => {
     const meta = CATEGORY_META[r.category] ?? CATEGORY_META.Otros
     const regionCourses = courses.filter((c) => c.category === r.category)
-    return buildRegion({ key: r.key, title: r.title, to: r.to, icon: meta.icon, gradient: meta.gradient, accent: meta.accent, regionCourses, progressByCourse })
+    return buildRegion({ key: r.key, title: localizeCategoryName(r.title, lang), to: r.to, icon: meta.icon, gradient: meta.gradient, accent: meta.accent, regionCourses, progressByCourse })
   })
   const macro = MAIN_CATEGORIES.map((m) => {
     const cats = m.subcategories.flatMap((s) => s.schoolCategories)
     const regionCourses = courses.filter((c) => cats.includes(c.category))
-    return buildRegion({ key: m.id, title: m.title, to: `/escuela-categoria/${m.id}`, icon: m.icon, gradient: m.gradient, accent: m.accent, regionCourses, progressByCourse })
+    return buildRegion({ key: m.id, title: localizeCategoryName(m.title, lang), to: `/escuela-categoria/${m.id}`, icon: m.icon, gradient: m.gradient, accent: m.accent, regionCourses, progressByCourse })
   })
   return [...specials, ...macro]
 }

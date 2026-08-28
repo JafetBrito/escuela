@@ -11,6 +11,10 @@ function notificationMeta(n) {
   if (n.trivia_invite_id) return { icon: '🎯', ring: 'bg-fuchsia-500/15 text-fuchsia-400' }
   if (n.hospital_invite_id) return { icon: '🏥', ring: 'bg-emerald-500/15 text-emerald-400' }
   if (n.class_id) return { icon: '🎓', ring: 'bg-sky-500/15 text-sky-400' }
+  // admin_id presente = fila dirigida al profesor (entrega/pregunta/
+  // actualización de un alumno), no al alumno — distinguirla del resto.
+  if (n.admin_id && n.task_id) return { icon: '📤', ring: 'bg-rose-500/15 text-rose-400' }
+  if (n.admin_id && n.project_id) return { icon: '📁', ring: 'bg-rose-500/15 text-rose-400' }
   if (n.project_id) return { icon: '📁', ring: 'bg-amber-500/15 text-amber-400' }
   if (n.task_id) return { icon: '📋', ring: 'bg-emerald-500/15 text-emerald-400' }
   return { icon: '🔔', ring: 'bg-primary/15 text-primary' }
@@ -46,7 +50,7 @@ export default function NotificationBell() {
 
   const unread = notifications.filter((n) => !n.read_at).length
 
-  useEffect(() => { fetchNotifications() }, [fetchNotifications])
+  useEffect(() => { if (userId) fetchNotifications(userId) }, [fetchNotifications, userId])
 
   useEffect(() => {
     if (!userId) return
@@ -79,6 +83,10 @@ export default function NotificationBell() {
       navigate(`/games/cyber-range-hospital?invite=${n.hospital_invite_id}`)
     } else if (n.class_id) {
       navigate(`/mis-clases/${n.class_id}`)
+    } else if (n.admin_id && n.task_id) {
+      navigate(`/admin/tareas?student=${n.student_id}`)
+    } else if (n.admin_id && n.project_id) {
+      navigate(`/admin/proyectos?student=${n.student_id}`)
     } else if (n.project_id) {
       navigate(`/proyectos/${n.project_id}`)
     } else if (n.task_id) {

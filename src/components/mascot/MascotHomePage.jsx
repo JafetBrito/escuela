@@ -31,17 +31,19 @@ export const GLOBAL_LEVEL_CAP = 250
 export const ENTITY_LEVEL_CAP = 50
 
 // ─── Sub-tab registry ─────────────────────────────────────────────────────────
-const SUB_TAB_META = {
-  clase:       { label: 'Clase',       icon: '🎴' },
-  apariencia:  { label: 'Apariencia',  icon: '🎨' },
-  habilidades: { label: 'Habilidades', icon: '🌳' },
-  objetos:     { label: 'Objetos',     icon: '🎒' },
-  notas:       { label: 'Notas',       icon: '📝' },
-  chat:        { label: 'Chat',        icon: '💬' },
-  aspecto:     { label: 'Aspecto',     icon: '🎭' },
-  prompt:      { label: 'Prompt',      icon: '🧠' },
-  libros:      { label: 'Libros',      icon: '📚' },
-  galeria:     { label: 'Galería',     icon: '🖼️' },
+function buildSubTabMeta(t) {
+  return {
+    clase:       { label: t('pages.mascotHome.tabClase'),       icon: '🎴' },
+    apariencia:  { label: t('pages.mascotHome.tabApariencia'),  icon: '🎨' },
+    habilidades: { label: t('pages.mascotHome.tabHabilidades'), icon: '🌳' },
+    objetos:     { label: t('pages.mascotHome.tabObjetos'),     icon: '🎒' },
+    notas:       { label: t('pages.mascotHome.tabNotas'),       icon: '📝' },
+    chat:        { label: t('pages.mascotHome.tabChat'),        icon: '💬' },
+    aspecto:     { label: t('pages.mascotHome.tabAspecto'),     icon: '🎭' },
+    prompt:      { label: t('pages.mascotHome.tabPrompt'),      icon: '🧠' },
+    libros:      { label: t('pages.mascotHome.tabLibros'),      icon: '📚' },
+    galeria:     { label: t('pages.mascotHome.tabGaleria'),     icon: '🖼️' },
+  }
 }
 
 // ─── Entity config ────────────────────────────────────────────────────────────
@@ -59,9 +61,9 @@ function getSubTabsForEntity(entityId, hasCamera) {
   ]
 }
 
-function buildEntities({ mascotName, hasCamera }) {
+function buildEntities({ mascotName, hasCamera, t }) {
   return [
-    { id: 'avatar',  label: 'Avatar',    icon: '⚔️', owner: 'player', type: 'avatar' },
+    { id: 'avatar',  label: t('pages.mascotHome.avatarLabel'), icon: '⚔️', owner: 'player', type: 'avatar' },
     { id: 'mascota', label: mascotName,  icon: '🐾', owner: 'oliver', type: 'mascot' },
     // Future: { id: 'dragon', label: 'Dragón', icon: '🐉', owner: 'dragon', type: 'mascot' }
   ]
@@ -84,6 +86,7 @@ function viewportBg(accentColor) {
 
 // ─── CappedXpBar ─────────────────────────────────────────────────────────────
 function CappedXpBar({ accentColor }) {
+  const { t } = useI18n()
   const xp = useLevelStore((s) => s.xp)
   const { level: rawLevel, xpIntoLevel, xpForNextLevel } = levelProgress(xp)
   const displayLevel = Math.min(rawLevel, ENTITY_LEVEL_CAP)
@@ -94,7 +97,7 @@ function CappedXpBar({ accentColor }) {
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-1">
         <span className="flex items-center gap-1.5 text-xs font-black text-white">
-          ⭐ Nv.&nbsp;{displayLevel}
+          ⭐ {t('dashboard.hero.levelAbbr')}&nbsp;{displayLevel}
           <span className="font-normal text-white/50">/ {ENTITY_LEVEL_CAP}</span>
           {isCapped && (
             <span className="rounded-full px-1.5 text-[9px] font-black"
@@ -102,8 +105,8 @@ function CappedXpBar({ accentColor }) {
           )}
         </span>
         <span className="text-[9px] text-white/40 whitespace-nowrap">
-          {isCapped ? 'cap activo' : `${xpIntoLevel}/${xpForNextLevel}`}
-          <span className="ml-1 text-white/25">·&nbsp;máx&nbsp;{GLOBAL_LEVEL_CAP}</span>
+          {isCapped ? t('pages.mascotHome.capActive') : `${xpIntoLevel}/${xpForNextLevel}`}
+          <span className="ml-1 text-white/25">·&nbsp;{t('pages.mascotHome.maxSuffix')}&nbsp;{GLOBAL_LEVEL_CAP}</span>
         </span>
       </div>
       <div className="h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
@@ -161,6 +164,7 @@ function SubTabBar({ tabs, active, onChange, accentColor }) {
 // ─── Hero card — IDENTICAL structure for every entity ─────────────────────────
 // Both Avatar and Mascot render: [Viewport] → [Info bar + CappedXpBar]
 function EntityHeroCard({ entity, cls, oCls, avatar, accentColor }) {
+  const { t } = useI18n()
   const isAvatar = entity.type === 'avatar'
   const entityCls = isAvatar ? cls : oCls
 
@@ -237,7 +241,7 @@ function EntityHeroCard({ entity, cls, oCls, avatar, accentColor }) {
                 {entityCls.icon} {entityCls.name}
               </p>
             ) : (
-              <p className="text-[10px] text-text-muted">Sin clase asignada</p>
+              <p className="text-[10px] text-text-muted">{t('pages.mascotHome.noClassAssigned')}</p>
             )}
           </div>
           <div className="w-44 shrink-0">
@@ -253,18 +257,19 @@ function EntityHeroCard({ entity, cls, oCls, avatar, accentColor }) {
 // Shows the player's class as the primary insignia and the linked Oliver class
 // as a secondary card. Separated from Apariencia to prevent badge mixing.
 function AvatarClassInsigniaGrid({ cls, oCls, navigate }) {
+  const { t } = useI18n()
   if (!cls) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/40 p-8 text-center">
         <span className="text-5xl">🎴</span>
-        <p className="font-black text-text">Sin clase asignada</p>
-        <p className="text-sm text-text-muted">Completa la creación de cuenta para elegir tu clase RPG.</p>
+        <p className="font-black text-text">{t('pages.mascotHome.noClassAssigned')}</p>
+        <p className="text-sm text-text-muted">{t('pages.mascotHome.completeAccountForClass')}</p>
         <button
           type="button"
           onClick={() => navigate('/crear-cuenta')}
           className="rounded-xl bg-primary px-6 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 active:scale-95"
         >
-          Crear cuenta
+          {t('pages.mascotHome.createAccount')}
         </button>
       </div>
     )
@@ -309,7 +314,7 @@ function AvatarClassInsigniaGrid({ cls, oCls, navigate }) {
           style={{ borderColor: `${cls.color}22`, background: `${cls.color}08` }}
         >
           <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-text-muted">
-            Estadísticas de clase
+            {t('pages.mascotHome.classStats')}
           </p>
           <div className="grid grid-cols-3 gap-x-6 gap-y-3 sm:grid-cols-5">
             {Object.entries(cls.stats).map(([stat, val]) => (
@@ -326,7 +331,7 @@ function AvatarClassInsigniaGrid({ cls, oCls, navigate }) {
           className="border-t px-5 py-3"
           style={{ borderColor: `${cls.color}18`, background: `${cls.color}06` }}
         >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Aura pasiva</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">{t('pages.mascotHome.passiveAura')}</p>
           <p className="mt-1 text-sm font-semibold" style={{ color: cls.color }}>
             ✦ {cls.passiveAura?.replace(/_/g, ' ')}
           </p>
@@ -355,7 +360,7 @@ function AvatarClassInsigniaGrid({ cls, oCls, navigate }) {
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
-              Clase de tu mascota (vinculada)
+              {t('pages.mascotHome.linkedMascotClass')}
             </p>
             <p className="mt-0.5 text-sm font-black" style={{ color: oCls.color }}>{oCls.name}</p>
             <p className="text-xs text-text-muted">{oCls.description}</p>
@@ -368,6 +373,7 @@ function AvatarClassInsigniaGrid({ cls, oCls, navigate }) {
 
 // ─── Prompt sub-tab ───────────────────────────────────────────────────────────
 function PromptTab({ displayName }) {
+  const { t } = useI18n()
   const purchased          = useShopStore((s) => s.purchased)
   const customInstructions = useSettingsStore((s) => s.customInstructions)
   const setCustomInst      = useSettingsStore((s) => s.setCustomInstructions)
@@ -386,9 +392,9 @@ function PromptTab({ displayName }) {
       >
         <span className="text-2xl">{activeItem ? activeItem.icon : '🐱'}</span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">Personalidad activa</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">{t('pages.mascotHome.activePersonality')}</p>
           <p className="text-sm font-black text-text">
-            {activeItem ? activeItem.name : `Tutor predeterminado de ${displayName}`}
+            {activeItem ? activeItem.name : t('pages.mascotHome.defaultTutorOf', { name: displayName })}
           </p>
         </div>
         {activeItem && (
@@ -397,7 +403,7 @@ function PromptTab({ displayName }) {
             onClick={() => setCustomInst(DEFAULT_CUSTOM_INSTRUCTIONS)}
             className="shrink-0 rounded-xl border border-border px-3 py-1.5 text-xs font-bold text-text-muted transition hover:border-red-400 hover:text-red-400"
           >
-            Restablecer
+            {t('pages.mascotHome.reset')}
           </button>
         )}
       </div>
@@ -405,14 +411,14 @@ function PromptTab({ displayName }) {
       {promptItems.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/40 p-8 text-center">
           <span className="text-4xl">🧠</span>
-          <p className="font-bold text-text">Sin personalidades desbloqueadas</p>
-          <p className="text-sm text-text-muted">Compra personalidades de IA en la Tienda.</p>
+          <p className="font-bold text-text">{t('pages.mascotHome.noPersonalitiesUnlocked')}</p>
+          <p className="text-sm text-text-muted">{t('pages.mascotHome.buyPersonalitiesHint')}</p>
           <button
             type="button"
             onClick={() => window.location.assign('/tienda')}
             className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white"
           >
-            Ir a la Tienda
+            {t('pages.mascotHome.goToShop')}
           </button>
         </div>
       ) : (
@@ -440,7 +446,7 @@ function PromptTab({ displayName }) {
                     <p className="text-sm font-black text-text">{item.name}</p>
                     {isActive && (
                       <span className="rounded-full bg-violet-500 px-2 py-0.5 text-[9px] font-black text-white">
-                        ✓ Activa
+                        {t('pages.mascotHome.active')}
                       </span>
                     )}
                   </div>
@@ -463,7 +469,7 @@ function PromptTab({ displayName }) {
                     boxShadow: isActive ? 'none' : '0 4px 12px #a855f744',
                   }}
                 >
-                  {isActive ? 'Desactivar' : 'Activar'}
+                  {isActive ? t('pages.mascotHome.deactivate') : t('pages.mascotHome.activate')}
                 </button>
               </div>
             )
@@ -477,6 +483,7 @@ function PromptTab({ displayName }) {
 // ─── Unified EntityViewer ──────────────────────────────────────────────────────
 // key={entity.id} in the parent resets local sub-tab state on entity switch.
 function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
+  const { t } = useI18n()
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
   const avatarId    = useGameStore((s) => s.player.avatarId)
@@ -491,8 +498,9 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
   const isAvatar    = entity.type === 'avatar'
   const accentColor = isAvatar ? (cls?.color ?? avatar.color) : (oCls?.color ?? '#a855f7')
 
+  const subTabMeta = buildSubTabMeta(t)
   const subTabIds = getSubTabsForEntity(entity.id, hasCamera)
-  const tabs      = subTabIds.map((id) => ({ id, ...SUB_TAB_META[id] }))
+  const tabs      = subTabIds.map((id) => ({ id, ...subTabMeta[id] }))
   const [subTab, setSubTab] = useState(tabs[0].id)
 
   return (
@@ -537,7 +545,7 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
       {subTab === 'objetos' && (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
-            Inventario de {isAvatar ? avatar.label : displayMascotName}
+            {t('pages.mascotHome.inventoryOf', { name: isAvatar ? avatar.label : displayMascotName })}
           </p>
           <ObjetosBagPanel />
         </div>
@@ -554,7 +562,7 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
           }}
         >
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-text-muted">
-            Notas y enlaces guardados
+            {t('pages.mascotHome.notesAndLinks')}
           </p>
           <Inventory />
         </div>
@@ -568,7 +576,7 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
       {subTab === 'chat' && (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
-            Chat con {displayMascotName}
+            {t('pages.mascotHome.chatWith', { name: displayMascotName })}
           </p>
           <ChatTab className="h-80" />
         </div>
@@ -585,13 +593,13 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
           }}
         >
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Modelo 3D</p>
-            <p className="mt-1 text-xs text-text-muted">Elige el personaje 3D que te acompañará.</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{t('pages.mascotHome.model3d')}</p>
+            <p className="mt-1 text-xs text-text-muted">{t('pages.mascotHome.model3dHint')}</p>
             <div className="mt-3"><MascotSelector /></div>
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Atuendo</p>
-            <p className="mt-1 text-xs text-text-muted">Solo cambia la apariencia. No afecta tu avatar.</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{t('pages.mascotHome.outfit')}</p>
+            <p className="mt-1 text-xs text-text-muted">{t('pages.mascotHome.outfitHint')}</p>
             <div className="mt-3"><SkinSelector /></div>
           </div>
         </div>
@@ -604,7 +612,7 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
       {subTab === 'libros' && (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
-            Libros de {displayMascotName}
+            {t('pages.mascotHome.booksOf', { name: displayMascotName })}
           </p>
           <BooksPanel />
         </div>
@@ -613,7 +621,7 @@ function EntityViewer({ entity, navigate, displayMascotName, hasCamera }) {
       {/* Galería */}
       {subTab === 'galeria' && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Galería de fotos</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{t('pages.mascotHome.photoGallery')}</p>
           <GalleryPanel />
         </div>
       )}
@@ -640,7 +648,7 @@ export default function MascotHomePage() {
   const oCls   = oliverClass ? OLIVER_CLASSES[oliverClass] : null
   const avatar = PLAYER_AVATARS.find((a) => a.id === avatarId) || PLAYER_AVATARS[0]
 
-  const entities    = buildEntities({ mascotName: displayMascotName, hasCamera })
+  const entities    = buildEntities({ mascotName: displayMascotName, hasCamera, t })
   const [activeId, setActiveId] = useState(entities[0].id)
   const activeEntity = entities.find((e) => e.id === activeId) ?? entities[0]
 

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useTasksStore } from '../../stores/useTasksStore'
-import { taskTypeOf } from '../../data/taskTypes'
+import { taskTypeOf, localizeTaskTypeLabel } from '../../data/taskTypes'
 import { dueInfo, classifyTask, URGENCY_LABEL } from '../../utils/taskDue'
+import { useI18n } from '../../i18n'
+import { localizeCategoryName } from '../../data/categoryTranslations'
 
 // ── Subject config ─────────────────────────────────────────────────────────────
 const SUBJECTS = {
@@ -48,13 +50,15 @@ function gradeColor(pct) {
   return '#ef4444'
 }
 
-const GROUPS = [
-  { key: 'overdue', label: '⚠️ Vencidas',          cls: 'text-red-400 border-red-500/20' },
-  { key: 'urgent',  label: '🔥 Urgente — 48 hrs',   cls: 'text-amber-400 border-amber-500/20' },
-  { key: 'week',    label: '📅 Esta semana',         cls: 'text-yellow-400 border-yellow-500/20' },
-  { key: 'later',   label: '📚 Más adelante',        cls: 'text-text-muted border-border/40' },
-  { key: 'done',    label: '✅ Entregadas y revisadas', cls: 'text-emerald-400 border-emerald-500/20' },
-]
+function buildGroups(t) {
+  return [
+    { key: 'overdue', label: t('pages.tasks.groupOverdue'), cls: 'text-red-400 border-red-500/20' },
+    { key: 'urgent',  label: t('pages.tasks.groupUrgent'),  cls: 'text-amber-400 border-amber-500/20' },
+    { key: 'week',    label: t('pages.tasks.groupWeek'),    cls: 'text-yellow-400 border-yellow-500/20' },
+    { key: 'later',   label: t('pages.tasks.groupLater'),   cls: 'text-text-muted border-border/40' },
+    { key: 'done',    label: t('pages.tasks.groupDone'),    cls: 'text-emerald-400 border-emerald-500/20' },
+  ]
+}
 
 // ── GPA ring ───────────────────────────────────────────────────────────────────
 function GpaRing({ value, max = 10 }) {
@@ -86,11 +90,12 @@ function GpaRing({ value, max = 10 }) {
 
 // ── Task card ──────────────────────────────────────────────────────────────────
 function TaskCard({ task, onOpen }) {
+  const { t, lang } = useI18n()
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const subj    = subjectOf(task.subject)
   const type    = taskTypeOf(task.type)
-  const due     = dueInfo(task.due_date, task.status)
+  const due     = dueInfo(task.due_date, task.status, t)
   const hasGrade = task.grade != null
   const gradePct = hasGrade ? task.grade / (task.grade_max ?? 10) : null
 
@@ -109,34 +114,34 @@ function TaskCard({ task, onOpen }) {
             className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
             style={{ backgroundColor: `${type.color}18`, color: type.color, border: `1px solid ${type.color}30` }}
           >
-            {type.icon} {type.label}
+            {type.icon} {localizeTaskTypeLabel(task.type, lang)}
           </span>
           <span
             className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold"
             style={{ backgroundColor: `${subj.color}18`, color: subj.color, border: `1px solid ${subj.color}30` }}
           >
-            {subj.icon} {task.subject ?? 'General'}
+            {subj.icon} {localizeCategoryName(task.subject ?? 'General', lang)}
           </span>
 
           {/* Status badge */}
           {task.status === 'pendiente' && due?.urgency === 'overdue' && (
             <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-bold text-red-400">
-              Vencida
+              {t('pages.tasks.statusOverdue')}
             </span>
           )}
           {task.status === 'pendiente' && due?.urgency !== 'overdue' && (
             <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-400">
-              Pendiente
+              {t('pages.tasks.statusPending')}
             </span>
           )}
           {task.status === 'entregada' && (
             <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-bold text-blue-400">
-              ✓ Entregada
+              {t('pages.tasks.statusDelivered')}
             </span>
           )}
           {task.status === 'revisada' && (
             <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
-              ★ Revisada
+              {t('pages.tasks.statusReviewed')}
             </span>
           )}
 
@@ -166,7 +171,11 @@ function TaskCard({ task, onOpen }) {
           </p>
         )}
         {task.type === 'proyecto' && task.details?.deliverables?.length > 0 && (
-          <p className="mt-1.5 text-xs font-semibold text-purple-400/90">📦 {task.details.deliverables.length} entregable{task.details.deliverables.length === 1 ? '' : 's'}</p>
+          <p className="mt-1.5 text-xs font-semibold text-purple-400/90">
+            {task.details.deliverables.length === 1
+              ? t('pages.tasks.deliverableCountOne')
+              : t('pages.tasks.deliverableCountMany', { n: task.details.deliverables.length })}
+          </p>
         )}
 
         {/* Grade bar (when graded) */}
@@ -198,13 +207,13 @@ function TaskCard({ task, onOpen }) {
                 onClick={() => setFeedbackOpen((v) => !v)}
                 className="rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10"
               >
-                💬 {feedbackOpen ? 'Ocultar' : 'Ver comentarios'}
+                💬 {feedbackOpen ? t('pages.tasks.hideComments') : t('pages.tasks.viewComments')}
               </button>
             )}
             {task.status === 'pendiente' && (
               <span className="rounded-lg px-3 py-1.5 text-xs font-bold text-background transition"
                 style={{ backgroundColor: subj.color }}>
-                Abrir para entregar →
+                {t('pages.tasks.openToSubmit')}
               </span>
             )}
           </div>
@@ -215,7 +224,7 @@ function TaskCard({ task, onOpen }) {
       {feedbackOpen && task.feedback && (
         <div className="border-t border-border/50 bg-surface-hover px-4 py-3">
           <p className="mb-1 text-[10px] font-extrabold uppercase tracking-widest" style={{ color: subj.color }}>
-            Comentarios del profesor
+            {t('pages.tasks.teacherComments')}
           </p>
           <p className="text-sm leading-relaxed text-text">{task.feedback}</p>
         </div>
@@ -226,14 +235,15 @@ function TaskCard({ task, onOpen }) {
 
 // ── Grades view ────────────────────────────────────────────────────────────────
 function GradesView({ tasks }) {
-  const graded = tasks.filter((t) => t.grade != null)
+  const { t, lang } = useI18n()
+  const graded = tasks.filter((tk) => tk.grade != null)
 
   // Group by subject
   const bySubject = {}
-  for (const t of graded) {
-    const key = t.subject ?? 'General'
+  for (const tk of graded) {
+    const key = tk.subject ?? 'General'
     if (!bySubject[key]) bySubject[key] = []
-    bySubject[key].push(t)
+    bySubject[key].push(tk)
   }
 
   const subjects = Object.entries(bySubject).map(([subj, ts]) => {
@@ -250,8 +260,8 @@ function GradesView({ tasks }) {
       <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
         <span className="text-5xl">📊</span>
         <div>
-          <p className="font-bold text-text">Sin calificaciones aún</p>
-          <p className="mt-1 text-sm text-text-muted">Aquí aparecerán tus calificaciones cuando tu profesor las registre.</p>
+          <p className="font-bold text-text">{t('pages.tasks.noGradesYet')}</p>
+          <p className="mt-1 text-sm text-text-muted">{t('pages.tasks.gradesNoneHint')}</p>
         </div>
       </div>
     )
@@ -267,10 +277,10 @@ function GradesView({ tasks }) {
         <div className="flex flex-wrap items-center gap-6">
           <GpaRing value={overallAvg * 10} />
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-white/30">Promedio general</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-white/30">{t('pages.tasks.overallAverage')}</p>
             <p className="text-3xl font-extrabold text-white">{(overallAvg * 10).toFixed(2)}<span className="text-lg text-white/40">/10</span></p>
             <p className="mt-0.5 text-sm font-bold" style={{ color: gradeColor(overallAvg) }}>
-              {letterGrade(overallAvg)} — {graded.length} {graded.length === 1 ? 'tarea calificada' : 'tareas calificadas'}
+              {letterGrade(overallAvg)} — {graded.length === 1 ? t('pages.tasks.gradedTaskOne') : t('pages.tasks.gradedTaskMany', { n: graded.length })}
             </p>
           </div>
         </div>
@@ -284,8 +294,8 @@ function GradesView({ tasks }) {
             <div className="flex items-center justify-between px-4 py-3" style={{ background: `${cfg.color}08` }}>
               <div className="flex items-center gap-2">
                 <span className="text-lg">{cfg.icon}</span>
-                <span className="font-bold text-text">{subj}</span>
-                <span className="text-xs text-text-muted">— {ts.length} {ts.length === 1 ? 'tarea' : 'tareas'}</span>
+                <span className="font-bold text-text">{localizeCategoryName(subj, lang)}</span>
+                <span className="text-xs text-text-muted">— {ts.length === 1 ? t('pages.tasks.taskCountOne') : t('pages.tasks.taskCountMany', { n: ts.length })}</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
@@ -308,24 +318,24 @@ function GradesView({ tasks }) {
 
             {/* Individual tasks */}
             <div className="divide-y divide-border/40">
-              {ts.sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0)).map((t) => {
-                const tPct = t.grade / (t.grade_max ?? 10)
+              {ts.sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0)).map((tk) => {
+                const tPct = tk.grade / (tk.grade_max ?? 10)
                 return (
-                  <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <div key={tk.id} className="flex items-center gap-3 px-4 py-2.5">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-text">{t.title}</p>
-                      {t.due_date && (
+                      <p className="truncate text-sm font-semibold text-text">{tk.title}</p>
+                      {tk.due_date && (
                         <p className="text-[11px] text-text-muted">
-                          {new Date(t.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' })}
+                          {new Date(tk.due_date + 'T12:00:00').toLocaleDateString(t('pages.tasks.dateLocale'), { day:'numeric', month:'short', year:'numeric' })}
                         </p>
                       )}
                     </div>
-                    {t.feedback && (
-                      <span className="shrink-0 rounded-full border border-primary/20 px-2 py-0.5 text-[10px] text-primary" title={t.feedback}>💬</span>
+                    {tk.feedback && (
+                      <span className="shrink-0 rounded-full border border-primary/20 px-2 py-0.5 text-[10px] text-primary" title={tk.feedback}>💬</span>
                     )}
                     <div className="shrink-0 text-right">
                       <p className="text-sm font-extrabold" style={{ color: gradeColor(tPct) }}>
-                        {t.grade}/{t.grade_max ?? 10}
+                        {tk.grade}/{tk.grade_max ?? 10}
                       </p>
                       <p className="text-[10px] font-bold" style={{ color: gradeColor(tPct) }}>{letterGrade(tPct)}</p>
                     </div>
@@ -354,6 +364,7 @@ function GradesView({ tasks }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function TasksPage() {
+  const { t, lang }   = useI18n()
   const navigate      = useNavigate()
   const tasks        = useTasksStore((s) => s.tasks)
   const loading      = useTasksStore((s) => s.loading)
@@ -384,7 +395,7 @@ export default function TasksPage() {
 
   // "done" (entregada/revisada) vive en su propia pestaña "Completadas" —
   // no se mezcla con las tareas activas para que quede claro qué falta hacer.
-  const grouped = GROUPS
+  const grouped = buildGroups(t)
     .filter((g) => g.key !== 'done')
     .map((g) => ({
       ...g,
@@ -429,9 +440,9 @@ export default function TasksPage() {
 
               {/* Text stats */}
               <div className="flex-1">
-                <h1 className="text-2xl font-extrabold text-white">Mis Tareas</h1>
+                <h1 className="text-2xl font-extrabold text-white">{t('pages.tasks.title')}</h1>
                 <p className="mt-0.5 text-sm text-white/50">
-                  {avgVal != null ? `Promedio general: ${avgVal.toFixed(1)}/10 · ${letterGrade(avgPct)}` : 'Sin calificaciones aún'}
+                  {avgVal != null ? t('pages.tasks.avgGeneral', { avg: avgVal.toFixed(1), letter: letterGrade(avgPct) }) : t('pages.tasks.noGradesYet')}
                 </p>
 
                 {/* Completion bar */}
@@ -442,7 +453,7 @@ export default function TasksPage() {
                       style={{ width: `${completionPct}%` }}
                     />
                   </div>
-                  <span className="shrink-0 text-xs font-bold text-white/50">{completionPct}% completado</span>
+                  <span className="shrink-0 text-xs font-bold text-white/50">{t('pages.tasks.completedPct', { pct: completionPct })}</span>
                 </div>
               </div>
 
@@ -450,15 +461,15 @@ export default function TasksPage() {
               <div className="flex gap-3">
                 <div className="flex flex-col items-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5">
                   <span className="text-xl font-extrabold text-amber-400">{pending}</span>
-                  <span className="text-[10px] font-semibold text-amber-500/70">Pendientes</span>
+                  <span className="text-[10px] font-semibold text-amber-500/70">{t('pages.tasks.pending')}</span>
                 </div>
                 <div className="flex flex-col items-center rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5">
                   <span className="text-xl font-extrabold text-blue-400">{delivered}</span>
-                  <span className="text-[10px] font-semibold text-blue-500/70">Entregadas</span>
+                  <span className="text-[10px] font-semibold text-blue-500/70">{t('pages.tasks.delivered')}</span>
                 </div>
                 <div className="flex flex-col items-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5">
                   <span className="text-xl font-extrabold text-emerald-400">{reviewed}</span>
-                  <span className="text-[10px] font-semibold text-emerald-500/70">Revisadas</span>
+                  <span className="text-[10px] font-semibold text-emerald-500/70">{t('pages.tasks.reviewed')}</span>
                 </div>
               </div>
             </div>
@@ -467,9 +478,9 @@ export default function TasksPage() {
           {/* ── Tabs ─────────────────────────────────────────────────── */}
           <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
             {[
-              { key: 'tasks',     label: '📋 Por realizar',        badge: pending > 0 ? pending : null },
-              { key: 'submitted', label: '📤 Enviadas / Por revisión', badge: delivered > 0 ? delivered : null },
-              { key: 'grades',    label: '⭐ Calificadas',          badge: reviewed > 0 ? reviewed : null },
+              { key: 'tasks',     label: t('pages.tasks.tabTasks'),     badge: pending > 0 ? pending : null },
+              { key: 'submitted', label: t('pages.tasks.tabSubmitted'), badge: delivered > 0 ? delivered : null },
+              { key: 'grades',    label: t('pages.tasks.tabGrades'),    badge: reviewed > 0 ? reviewed : null },
             ].map(({ key, label, badge }) => (
               <button
                 key={key}
@@ -499,7 +510,7 @@ export default function TasksPage() {
               <aside className="hidden w-52 shrink-0 md:block">
                 <div className="sticky top-4 rounded-2xl border border-border bg-surface p-3">
                   <p className="mb-2 px-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted/60">
-                    Materias
+                    {t('pages.tasks.subjectsLabel')}
                   </p>
 
                   <button
@@ -509,13 +520,13 @@ export default function TasksPage() {
                       activeSubject === 'all' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
                     }`}
                   >
-                    <span>📚 Todas</span>
+                    <span>{t('pages.tasks.allSubjects')}</span>
                     <span className="rounded-full bg-surface-hover px-2 py-0.5 text-xs">{tasks.length}</span>
                   </button>
 
                   {subjects.map((subj) => {
                     const cfg = subjectOf(subj)
-                    const cnt = tasks.filter((t) => t.subject === subj).length
+                    const cnt = tasks.filter((tk) => tk.subject === subj).length
                     const active = activeSubject === subj
                     return (
                       <button
@@ -527,7 +538,7 @@ export default function TasksPage() {
                         }`}
                         style={active ? { backgroundColor: `${cfg.color}20`, color: cfg.color } : {}}
                       >
-                        <span>{cfg.icon} {subj}</span>
+                        <span>{cfg.icon} {localizeCategoryName(subj, lang)}</span>
                         <span
                           className="rounded-full px-2 py-0.5 text-xs"
                           style={active ? { backgroundColor: `${cfg.color}30`, color: cfg.color } : { backgroundColor: 'var(--color-surface-hover)' }}
@@ -549,14 +560,14 @@ export default function TasksPage() {
                 loading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                    <p className="text-sm text-text-muted">Cargando tareas…</p>
+                    <p className="text-sm text-text-muted">{t('pages.tasks.loadingTasks')}</p>
                   </div>
                 ) : grouped.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
                     <span className="text-5xl">🎉</span>
                     <div>
-                      <p className="font-bold text-text">¡Todo al día!</p>
-                      <p className="mt-1 text-sm text-text-muted">No tienes tareas activas en esta categoría.</p>
+                      <p className="font-bold text-text">{t('pages.tasks.allCaughtUpTitle')}</p>
+                      <p className="mt-1 text-sm text-text-muted">{t('pages.tasks.allCaughtUpHint')}</p>
                     </div>
                   </div>
                 ) : (
@@ -565,7 +576,9 @@ export default function TasksPage() {
                       <section key={group.key}>
                         <div className={`mb-3 flex items-center gap-3 border-b pb-2 ${group.cls}`}>
                           <h2 className="text-sm font-extrabold">{group.label}</h2>
-                          <span className="text-xs font-bold opacity-60">{group.tasks.length} {group.tasks.length === 1 ? 'tarea' : 'tareas'}</span>
+                          <span className="text-xs font-bold opacity-60">
+                            {group.tasks.length === 1 ? t('pages.tasks.taskCountOne') : t('pages.tasks.taskCountMany', { n: group.tasks.length })}
+                          </span>
                         </div>
                         <div className="space-y-3">
                           {group.tasks.map((task) => (
@@ -583,14 +596,14 @@ export default function TasksPage() {
                 loading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                    <p className="text-sm text-text-muted">Cargando…</p>
+                    <p className="text-sm text-text-muted">{t('pages.tasks.loadingGeneric')}</p>
                   </div>
                 ) : submittedTasks.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface py-20 text-center">
                     <span className="text-5xl">📭</span>
                     <div>
-                      <p className="font-bold text-text">Nada en espera de revisión</p>
-                      <p className="mt-1 text-sm text-text-muted">Cuando entregues una tarea, aparecerá aquí mientras tu profesor la califica.</p>
+                      <p className="font-bold text-text">{t('pages.tasks.nothingPendingReview')}</p>
+                      <p className="mt-1 text-sm text-text-muted">{t('pages.tasks.nothingPendingReviewHint')}</p>
                     </div>
                   </div>
                 ) : (
@@ -607,7 +620,7 @@ export default function TasksPage() {
                 loading ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                    <p className="text-sm text-text-muted">Cargando calificaciones…</p>
+                    <p className="text-sm text-text-muted">{t('pages.tasks.loadingGrades')}</p>
                   </div>
                 ) : (
                   <GradesView tasks={tasks} />

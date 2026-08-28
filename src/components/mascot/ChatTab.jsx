@@ -3,16 +3,17 @@ import ChatPanel from '../chat/ChatPanel'
 import { useChatStore } from '../../stores/useChatStore'
 import { useChatHistoryStore, todayKey } from '../../stores/useChatHistoryStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
+import { useI18n } from '../../i18n'
 
 // Same normalization used by ChatsPage: old snapshots stored a plain array
 // of messages per day, new ones store { label, messages, archivedAt }.
-function getSessions(raw) {
+function getSessions(raw, t) {
   if (!Array.isArray(raw) || raw.length === 0) return []
   const legacyMessages = raw.filter((item) => item?.role)
   const sessions = raw.filter((item) => item?.messages)
   const result = []
   if (legacyMessages.length > 0) {
-    result.push({ label: 'Conversación', messages: legacyMessages, archivedAt: null })
+    result.push({ label: t('pages.mascotHome.conversationLabel'), messages: legacyMessages, archivedAt: null })
   }
   result.push(...sessions)
   return result
@@ -21,6 +22,7 @@ function getSessions(raw) {
 // Chat tab for the mascot menu: lets the user pick between continuing the
 // current conversation, starting a fresh one, or browsing previous chats.
 export default function ChatTab({ courseId, module, className = '' }) {
+  const { t } = useI18n()
   const [view, setView] = useState('menu')
   const [openDay, setOpenDay] = useState(null)
   const [pendingPrefill, setPendingPrefill] = useState('')
@@ -48,7 +50,7 @@ export default function ChatTab({ courseId, module, className = '' }) {
           onClick={() => setView('menu')}
           className="self-start text-xs font-semibold text-text-muted transition-colors hover:text-text"
         >
-          ← Menú
+          {t('pages.mascotHome.backToMenu')}
         </button>
         <ChatPanel courseId={courseId} module={module} prefill={pendingPrefill} autoSend={pendingAutoSend} className="h-full flex-1 border-0" />
       </div>
@@ -59,12 +61,12 @@ export default function ChatTab({ courseId, module, className = '' }) {
     const today = todayKey()
     const conversations = {}
     for (const day of Object.keys(chatHistory)) {
-      conversations[day] = getSessions(chatHistory[day])
+      conversations[day] = getSessions(chatHistory[day], t)
     }
     if (messages.length > 0) {
       conversations[today] = [
         ...(conversations[today] ?? []),
-        { label: 'Conversación actual', messages, archivedAt: null, current: true },
+        { label: t('pages.mascotHome.currentConversationLabel'), messages, archivedAt: null, current: true },
       ]
     }
     const days = Object.keys(conversations)
@@ -77,11 +79,11 @@ export default function ChatTab({ courseId, module, className = '' }) {
           onClick={() => setView('menu')}
           className="self-start text-xs font-semibold text-text-muted transition-colors hover:text-text"
         >
-          ← Menú
+          {t('pages.mascotHome.backToMenu')}
         </button>
 
         {days.length === 0 ? (
-          <p className="text-sm text-text-muted">Todavía no hay chats guardados.</p>
+          <p className="text-sm text-text-muted">{t('pages.mascotHome.noSavedChats')}</p>
         ) : (
           <div className="flex flex-col gap-2 overflow-y-auto">
             {days.map((day) => {
@@ -94,9 +96,9 @@ export default function ChatTab({ courseId, module, className = '' }) {
                     className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
                   >
                     <span className="font-semibold text-text">
-                      {day} {day === today ? '(hoy)' : ''}
+                      {day} {day === today ? t('pages.mascotHome.today') : ''}
                       <span className="ml-2 text-xs font-normal text-text-muted">
-                        {sessions.length} chat{sessions.length > 1 ? 's' : ''}
+                        {sessions.length === 1 ? t('pages.mascotHome.chatCountOne') : t('pages.mascotHome.chatCountMany', { n: sessions.length })}
                       </span>
                     </span>
                     <span className="text-text-muted">{isOpen ? '▲' : '▼'}</span>
@@ -109,7 +111,7 @@ export default function ChatTab({ courseId, module, className = '' }) {
                             {session.current ? '🟢 ' : '💬 '}
                             {session.label}{' '}
                             <span className="font-normal text-text-muted">
-                              ({session.messages.length} mensajes)
+                              {session.messages.length === 1 ? t('pages.mascotHome.messageCountOne') : t('pages.mascotHome.messageCountMany', { n: session.messages.length })}
                             </span>
                           </p>
                           <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
@@ -147,7 +149,7 @@ export default function ChatTab({ courseId, module, className = '' }) {
           onClick={() => setView('current')}
           className="w-full max-w-xs rounded-xl border border-primary bg-primary/10 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
         >
-          ▶️ Continuar chat actual
+          {t('pages.mascotHome.continueCurrentChat')}
         </button>
       )}
       <button
@@ -157,13 +159,13 @@ export default function ChatTab({ courseId, module, className = '' }) {
         }}
         className="w-full max-w-xs rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
       >
-        🆕 Nuevo chat
+        {t('pages.mascotHome.newChat')}
       </button>
       <button
         onClick={() => setView('history')}
         className="w-full max-w-xs rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-text transition-colors hover:border-primary/40"
       >
-        📜 Chats anteriores
+        {t('pages.mascotHome.previousChats')}
       </button>
     </div>
   )

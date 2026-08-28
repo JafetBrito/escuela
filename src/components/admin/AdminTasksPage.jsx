@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
+import { supabase } from '../../services/supabase/client'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -73,6 +74,21 @@ export default function AdminTasksPage() {
     setSelectedStudent(match)
     fetchAllTasks(match.id)
   }, [searchParams, students, selectedStudent, isAdmin, fetchAllTasks])
+
+  // Entregas/preguntas nuevas de cualquier alumno mientras el admin tiene
+  // esta página abierta — sin esto solo se ve al recargar a mano (ver
+  // migration_047.sql, que agrega estas tablas a supabase_realtime).
+  const selectedStudentRef = useRef(null)
+  useEffect(() => { selectedStudentRef.current = selectedStudent }, [selectedStudent])
+  useEffect(() => {
+    if (!isAdmin?.()) return
+    const channel = supabase
+      .channel('admin-tasks-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'student_tasks' }, () => fetchAllTasks(selectedStudentRef.current?.id ?? null))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_questions' }, () => fetchAllTasks(selectedStudentRef.current?.id ?? null))
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [isAdmin, fetchAllTasks])
 
   if (!isAdmin?.()) {
     return (

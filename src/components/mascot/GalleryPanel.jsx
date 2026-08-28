@@ -1,6 +1,8 @@
 import { useGalleryStore } from '../../stores/useGalleryStore'
+import { useI18n } from '../../i18n'
 
 export default function GalleryPanel() {
+  const { t } = useI18n()
   const shots = useGalleryStore((s) => s.shots)
   const updateShotLabel = useGalleryStore((s) => s.updateShotLabel)
   const removeShot = useGalleryStore((s) => s.removeShot)
@@ -8,13 +10,12 @@ export default function GalleryPanel() {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-text-muted">
-        Capturas guardadas con tu objeto Cámara. Etiquétalas para encontrarlas después.
+        {t('pages.mascotHome.galleryIntro')}
       </p>
 
       {shots.length === 0 && (
         <p className="text-sm text-text-muted">
-          Aún no tienes capturas. Activa la Cámara en tus Objetos y usa el botón flotante 📸 para
-          tomar una.
+          {t('pages.mascotHome.galleryEmpty')}
         </p>
       )}
 
@@ -26,13 +27,13 @@ export default function GalleryPanel() {
               <input
                 value={shot.label}
                 onChange={(e) => updateShotLabel(shot.id, e.target.value)}
-                placeholder="Etiqueta…"
+                placeholder={t('pages.mascotHome.tagPlaceholder')}
                 className="flex-1 rounded-lg border border-border bg-surface px-2 py-1 text-sm text-text outline-none focus:border-primary"
               />
               <button
                 onClick={() => removeShot(shot.id)}
                 className="shrink-0 text-text-muted hover:text-danger"
-                aria-label="Eliminar captura"
+                aria-label={t('pages.mascotHome.deleteCapture')}
               >
                 ✕
               </button>
@@ -46,7 +47,7 @@ export default function GalleryPanel() {
                 download={`${(shot.label || 'captura').trim().replace(/\s+/g, '-')}.png`}
                 className="shrink-0 rounded-lg border border-primary px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
               >
-                ⬇️ Descargar
+                {t('pages.mascotHome.download')}
               </a>
             </div>
           </div>

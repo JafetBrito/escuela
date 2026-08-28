@@ -10,3 +10,11 @@ export const TASK_TYPES = {
 export function taskTypeOf(type) {
   return TASK_TYPES[type] ?? TASK_TYPES.tarea
 }
+
+// `type` (tarea/proyecto/examen) es el valor de BD, no se traduce — solo su
+// `.label` de vista. Mismo criterio que SUBJECTS en TasksPage.jsx.
+const TASK_TYPE_LABEL_EN = { tarea: 'Task', proyecto: 'Project', examen: 'Exam' }
+export function localizeTaskTypeLabel(type, lang) {
+  if (lang !== 'en') return taskTypeOf(type).label
+  return TASK_TYPE_LABEL_EN[type] ?? TASK_TYPE_LABEL_EN.tarea
+}

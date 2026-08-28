@@ -15,7 +15,7 @@ import { supabase } from '../../services/supabase/client'
 const GIFT_AMOUNT_LABEL = '1,000 🪙' // ver migration_043.sql (send_daily_gift)
 
 // ─── Online dot ─────────────────────────────────────────────────────────────
-function OnlineDot({ online }) {
+function OnlineDot({ online, t }) {
   return (
     <span
       className="inline-block h-2.5 w-2.5 rounded-full"
@@ -23,7 +23,7 @@ function OnlineDot({ online }) {
         background: online ? '#22c55e' : '#6b7280',
         boxShadow: online ? '0 0 6px #22c55e88' : 'none',
       }}
-      title={online ? 'En línea (en VR)' : 'Desconectado'}
+      title={online ? t('pages.friends.onlineTitle') : t('pages.friends.offlineTitle')}
     />
   )
 }
@@ -63,7 +63,7 @@ export default function FriendsPage() {
     const { data, error } = await supabase.rpc('send_daily_gift', { p_recipient_name: name })
     setGiftBusy(null)
     if (error) {
-      setGiftResult({ name, ok: false, message: 'No se pudo enviar el regalo. Intenta de nuevo.' })
+      setGiftResult({ name, ok: false, message: t('pages.friends.giftError') })
       return
     }
     setGiftResult({ name, ok: data?.ok, message: data?.message ?? '' })
@@ -91,14 +91,14 @@ export default function FriendsPage() {
 
         {/* Friends list */}
         <div className="mb-6">
-          <p className="mb-2 text-sm font-bold text-text">Lista de amigos ({friends.length})</p>
+          <p className="mb-2 text-sm font-bold text-text">{t('pages.friends.listCount', { count: friends.length })}</p>
           <div className="rounded-2xl border border-border bg-surface">
             {friends.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
                 <span className="text-4xl">🤝</span>
                 <p className="text-sm text-text-muted">
-                  Aún no tienes amigos agregados.<br />
-                  En el campus VR, acércate a otro jugador y selecciona "Agregar amigo".
+                  {t('pages.friends.emptyTitle')}<br />
+                  {t('pages.friends.emptyHint')}
                 </p>
               </div>
             ) : (
@@ -116,10 +116,10 @@ export default function FriendsPage() {
                       <div className="flex flex-1 flex-col gap-0.5 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="truncate font-semibold text-text">{name}</span>
-                          <OnlineDot online={online} />
-                          {online && <span className="text-[10px] font-medium text-green-500">en VR</span>}
+                          <OnlineDot online={online} t={t} />
+                          {online && <span className="text-[10px] font-medium text-green-500">{t('pages.friends.onlineInVr')}</span>}
                         </div>
-                        <span className="text-xs text-text-muted">{online ? 'Conectado al Campus' : 'Desconectado'}</span>
+                        <span className="text-xs text-text-muted">{online ? t('pages.friends.connectedToCampus') : t('pages.friends.disconnected')}</span>
                       </div>
 
                       <div className="flex shrink-0 gap-1.5">
@@ -127,7 +127,7 @@ export default function FriendsPage() {
                           type="button"
                           onClick={() => handleGift(name)}
                           disabled={giftBusy === name}
-                          title={`Enviar tu regalo diario (${GIFT_AMOUNT_LABEL})`}
+                          title={t('pages.friends.sendGiftTitle', { amount: GIFT_AMOUNT_LABEL })}
                           className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 disabled:opacity-50"
                         >
                           {giftBusy === name ? '…' : '🎁'}
@@ -144,7 +144,7 @@ export default function FriendsPage() {
                         {confirmRemove === name ? (
                           <div className="flex gap-1">
                             <button type="button" onClick={() => { removeFriend(name); setConfirmRemove(null) }} className="rounded-lg bg-red-500/10 px-2 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/20">
-                              Confirmar
+                              {t('pages.friends.confirm')}
                             </button>
                             <button type="button" onClick={() => setConfirmRemove(null)} className="rounded-lg border border-border px-2 py-1.5 text-xs text-text-muted hover:text-text">✕</button>
                           </div>
@@ -162,20 +162,20 @@ export default function FriendsPage() {
           </div>
           {friends.length > 0 && (
             <p className="mt-2 text-[11px] text-text-muted">
-              🎁 Puedes enviar un regalo de {GIFT_AMOUNT_LABEL} a un amigo una vez al día.
+              {t('pages.friends.giftHint', { amount: GIFT_AMOUNT_LABEL })}
             </p>
           )}
         </div>
 
         {/* Add friend */}
         <div className="rounded-2xl border border-border bg-surface p-5">
-          <p className="mb-3 text-sm font-bold text-text">➕ Agregar amigo por nombre</p>
+          <p className="mb-3 text-sm font-bold text-text">{t('pages.friends.addByName')}</p>
           <form onSubmit={handleAdd} className="flex gap-2">
             <input
               type="text"
               value={newName}
               onChange={e => setNewName(e.target.value)}
-              placeholder="Nombre en el campus VR…"
+              placeholder={t('pages.friends.namePlaceholder')}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
             />
             <button
@@ -183,11 +183,11 @@ export default function FriendsPage() {
               disabled={!newName.trim()}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:bg-primary-hover disabled:opacity-50"
             >
-              Agregar
+              {t('pages.friends.add')}
             </button>
           </form>
           <p className="mt-2 text-[11px] text-text-muted">
-            El nombre debe coincidir con el que aparece sobre el personaje en el mundo VR.
+            {t('pages.friends.nameHint')}
           </p>
         </div>
       </main>

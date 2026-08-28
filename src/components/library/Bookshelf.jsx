@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { getEpubCoverUrl } from '../../utils/epubCover'
+import { useI18n } from '../../i18n'
 
 // Hash determinista del id — libros con distinto ancho para que la repisa
 // no se vea uniforme, como una de verdad, sin que cambie de un render a
@@ -29,6 +30,7 @@ const SHELF_BACKGROUND = {
 // no (todavía cargando, sin portada, o es un pdf/html) cae al lomo de
 // color + ícono de siempre.
 function BookCover({ book }) {
+  const { t } = useI18n()
   const openBook = useLibraryStore((s) => s.openBook)
   const hash = hashStr(book.id)
   const width = 82 + (hash % 23) // 82–104
@@ -73,7 +75,7 @@ function BookCover({ book }) {
         <p className="text-xs font-bold text-text">{book.title}</p>
         <p className="text-[10px] text-text-muted">{book.author}</p>
         <p className="mt-1 text-[10px] leading-snug text-text-muted">{book.description}</p>
-        <p className="mt-1 text-[10px] font-semibold text-primary">📖 Leer</p>
+        <p className="mt-1 text-[10px] font-semibold text-primary">{t('pages.bookshelf.read')}</p>
       </div>
     </button>
   )
@@ -84,11 +86,12 @@ function BookCover({ book }) {
 // en /estanteria (BookshelfPage) como en el panel de Libros de la mascota
 // (BooksPanel), para que ambos se vean igual.
 export default function Bookshelf({ books, emptyHint }) {
+  const { t } = useI18n()
   if (books.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border p-8 text-center">
         <p className="text-3xl mb-2">📚</p>
-        <p className="text-sm text-text-muted">{emptyHint ?? 'Todavía no tienes libros disponibles.'}</p>
+        <p className="text-sm text-text-muted">{emptyHint ?? t('pages.bookshelf.emptyDefault')}</p>
       </div>
     )
   }
