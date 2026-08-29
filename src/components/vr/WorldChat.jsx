@@ -49,7 +49,7 @@ export function MicButton({ onTranscript }) {
     if (listening) { recogRef.current?.stop(); setListening(false); return }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     const r = new SR()
-    r.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; r.continuous = false; r.interimResults = false
+    r.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; r.continuous = false; r.interimResults = false
     r.onresult = (e) => {
       const t = Array.from(e.results).map(res => res[0].transcript).join(' ')
       onTranscript(t)

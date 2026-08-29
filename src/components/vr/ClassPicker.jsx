@@ -65,12 +65,54 @@ const OLIVER_CLASS_LINES_IT = {
   druid:    'Druido, maestro delle forme. Anch\'io ho tante forme: addormentato, affamato e caotico. 🌿',
 }
 
+// Versió en català de les mateixes frases — mateix criteri que
+// vrNpcTranslations.js (lookup paral·lel per id, l'original no es toca mai).
+const OLIVER_CLASS_LINES_CA = {
+  warrior:  'Guerrer? Això és cosa meva — lluitar amb urpes esmolades. Encara que jo faig servir les potes. ⚔️🐱',
+  paladin:  'Paladí, força i llum en un. Jo també sóc font de llum (la que et bloqueja el son a les 3 de la matinada). 🛡️',
+  hunter:   'Caçador. Rastrejar preses… igual que jo quan aguaito el cursor del ratolí durant hores. 🏹',
+  rogue:    'Pícaro, eh? Sigil·lós i astut, tal com quan m\'apropo sense fer soroll i t\'espanto. 🗡️',
+  priest:   'Sacerdot, el que sosté l\'equip. Jo sostinc el sofà. Una gran responsabilitat. ✨',
+  shaman:   'Xaman, el que parla amb els elements! Jo li parlo al pinso i mai em respon. ⚡',
+  mage:     'Mag, el pensador de llarg abast. Jo també predic coses… com quan em donaràs tonyina. 🔮',
+  warlock:  'Bruixot… invoques ombres i dimonis. Jo invoco atenció a les 3 de la matinada. Bàsicament el mateix. 🌑',
+  druid:    'Druida, mestre de les formes. Jo també tinc moltes formes: adormit, famolenc i caòtic. 🌿',
+}
+
+// 日本語版の同じセリフ — vrNpcTranslations.js と同じ方針（idによる並行ルック
+// アップ、オリジナルには一切触れない）。
+const OLIVER_CLASS_LINES_JA = {
+  warrior:  '戦士？それは僕の得意分野だ — 鋭い爪で戦うのさ。まあ僕は肉球を使うけどね。⚔️🐱',
+  paladin:  '聖騎士、力と光が一つになった存在。僕も光源だよ（朝3時に君の眠りを妨げるやつね）。🛡️',
+  hunter:   '狩人。獲物を追う…僕がマウスカーソルを何時間も狙っているのと同じだね。🏹',
+  rogue:    '盗賊、へえ？忍び足で狡猾、まさに僕が音を立てずに近づいて君を驚かせるときと同じだ。🗡️',
+  priest:   '司祭、チームを支える存在。僕はソファを支えているよ。大きな責任だ。✨',
+  shaman:   'シャーマン、精霊と話す者！僕はおやつに話しかけるけど、絶対返事してくれないんだ。⚡',
+  mage:     '魔法使い、長期的に考える者。僕も予知するよ…君がいつマグロをくれるかとかね。🔮',
+  warlock:  '魔術師…影と悪魔を召喚するんだね。僕は朝3時に注目を召喚するよ。基本的に同じだ。🌑',
+  druid:    'ドルイド、姿を変える達人。僕にもたくさんの姿があるよ：寝ている、腹ペコ、そしてカオス。🌿',
+}
+
+// 同じセリフの中国語（簡体字）版 — vrNpcTranslations.js と同じ方針（idによる
+// 並行ルックアップ、オリジナルには触れない）。
+const OLIVER_CLASS_LINES_ZH = {
+  warrior:  '战士？那可是我的强项——用锋利的爪子战斗。虽然我用的是爪垫。⚔️🐱',
+  paladin:  '圣骑士，力量与光明合一。我也是一种光源哦（凌晨3点让你睡不着的那种）。🛡️',
+  hunter:   '猎人。追踪猎物……就像我盯着鼠标光标一追就是好几个小时一样。🏹',
+  rogue:    '盗贼，是吗？潜行又狡猾，就像我悄无声息地靠近然后吓你一跳的时候。🗡️',
+  priest:   '牧师，维系团队的人。我维系着沙发。责任重大啊。✨',
+  shaman:   '萨满，和元素对话的人！我跟猫粮说话，它可从来不回答我。⚡',
+  mage:     '法师，长远思考的人。我也会预知一些事情……比如你什么时候给我金枪鱼。🔮',
+  warlock:  '术士……你召唤阴影和恶魔。我在凌晨3点召唤别人的注意力。基本上是一回事。🌑',
+  druid:    '德鲁伊，变形大师。我也有很多形态：睡着的、饿肚子的，还有一团乱的。🌿',
+}
+
 export default function ClassPicker({ isAdmin, onSelect, onClose }) {
   const { t, lang } = useI18n()
   const classes = Object.values(PLAYER_CLASSES).filter((c) => c.id !== 'hacker' || isAdmin)
   const [selectedId, setSelectedId] = useState(classes[0]?.id ?? null)
   const cls = PLAYER_CLASSES[selectedId]
-  const oliverLine = (lang === 'en' ? OLIVER_CLASS_LINES_EN : lang === 'fr' ? OLIVER_CLASS_LINES_FR : lang === 'it' ? OLIVER_CLASS_LINES_IT : OLIVER_CLASS_LINES)[selectedId]
+  const oliverLine = (lang === 'en' ? OLIVER_CLASS_LINES_EN : lang === 'fr' ? OLIVER_CLASS_LINES_FR : lang === 'it' ? OLIVER_CLASS_LINES_IT : lang === 'ca' ? OLIVER_CLASS_LINES_CA : lang === 'ja' ? OLIVER_CLASS_LINES_JA : lang === 'zh' ? OLIVER_CLASS_LINES_ZH : OLIVER_CLASS_LINES)[selectedId]
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col select-none" style={{ background: 'linear-gradient(160deg,#0a0407 0%,#140a12 100%)' }}>

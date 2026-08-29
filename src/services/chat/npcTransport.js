@@ -22,7 +22,13 @@ export async function sendNpcMessage({ npcPrompt, content, history = [], lang = 
         ? `(demo) ${content ? `Reçu : "${content}". ` : ''}Connecte une IA dans Paramètres → Cœur pour vraiment me parler.`
         : lang === 'it'
           ? `(demo) ${content ? `Ricevuto: "${content}". ` : ''}Collega un'IA in Impostazioni → Nucleo per parlare davvero con me.`
-          : `(demo) ${content ? `Recibí: "${content}". ` : ''}Conecta una IA en Ajustes → Núcleo para hablar conmigo de verdad.`
+          : lang === 'ca'
+            ? `(demo) ${content ? `Rebut: "${content}". ` : ''}Connecta una IA a Configuració → Nucli per parlar de veritat amb mi.`
+            : lang === 'ja'
+              ? `（デモ）${content ? `受信：「${content}」。` : ''}設定 → コアでAIを接続すると本当に会話できます。`
+              : lang === 'zh'
+                ? `（演示）${content ? `收到："${content}"。` : ''}在设置 → 核心中连接一个 AI，才能真正和我对话。`
+                : `(demo) ${content ? `Recibí: "${content}". ` : ''}Conecta una IA en Ajustes → Núcleo para hablar conmigo de verdad.`
   }
 
   const provider = getProviderById(connection.providerId)
@@ -34,7 +40,13 @@ export async function sendNpcMessage({ npcPrompt, content, history = [], lang = 
         ? 'Impossible de lire ta connexion IA — vérifie Paramètres → Cœur.'
         : lang === 'it'
           ? "Non è stato possibile leggere la tua connessione IA — controlla Impostazioni → Nucleo."
-          : 'No pude leer tu conexión de IA — revisa Ajustes → Núcleo.'
+          : lang === 'ca'
+            ? 'No s\'ha pogut llegir la teva connexió d\'IA — comprova Configuració → Nucli.'
+            : lang === 'ja'
+              ? 'AI接続を読み取れませんでした — 設定 → コアを確認してください。'
+              : lang === 'zh'
+                ? '无法读取你的 AI 连接——请检查设置 → 核心。'
+                : 'No pude leer tu conexión de IA — revisa Ajustes → Núcleo.'
   }
 
   const messages = [

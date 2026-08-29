@@ -167,14 +167,180 @@ export const QUEST_TEXT_IT = {
   },
 }
 
-// Deep-merges the EN/FR/IT override on top of the original quest only when
-// lang is 'en', 'fr' or 'it': title/description at the top level, then each
-// step's `prompt` merged in by position, and (for the one quest with them)
-// each checkpoint's text fields merged in by position too. Everything else
-// (npcId, type, check, validate) always comes from the original `quest`.
+// Catalan overrides for chained quests — same pattern as QUEST_TEXT_EN above,
+// translated from the Spanish original instead.
+export const QUEST_TEXT_CA = {
+  'bienvenida-campus': {
+    title: 'Benvingut al Campus',
+    description: 'Troba els guies prop de la Gran Aula i mostra el teu progrés.',
+    steps: [
+      { prompt: 'Benvingut! Parla amb el Mag Novell perquè avaluï el teu progrés.' },
+      { prompt: 'Arriba al nivell 2 i torna a veure\'m.' },
+      { prompt: 'Ho has aconseguit! Recull la teva recompensa.' },
+    ],
+  },
+  'circulo-confianza': {
+    title: 'Cercle de Confiança',
+    description: 'Connecta amb altres estudiants del campus.',
+    steps: [
+      { prompt: 'Per créixer al campus necessites aliats. Parla amb la Guineu Missatgera.' },
+      { prompt: 'Afegeix almenys un amic des de la pàgina d\'Amics.' },
+      { prompt: 'Molt bé! Recull la teva recompensa.' },
+    ],
+  },
+  'bash-basico': {
+    title: 'Primers Passos en Bash',
+    description: 'BashMishi t\'ensenya les teves primeres comandes de terminal.',
+    steps: [
+      { prompt: 'Meu! Sóc BashMishi 🐾. Et vaig a ensenyar a parlar amb l\'ordinador fent servir Bash. Preparat per al teu primer terminal?' },
+      {
+        // terminal step — only checkpoints' text fields are overridden below;
+        // `validate` keeps running against the raw input either way.
+        checkpoints: [
+          {
+            instruction: 'Per començar, fes servir "echo" per mostrar un missatge en pantalla.',
+            placeholder: 'echo "Hola Món"',
+            success: '"echo" mostra text al terminal — és la primera cosa que aprèn tot programador.',
+            hint: 'Escriu la paraula "echo" seguida d\'un missatge, per exemple: echo "Hola Món"',
+          },
+          {
+            instruction: 'Ara escriu un comentari que expliqui què fa el teu script. En Bash, els comentaris comencen amb "#" i l\'ordinador els ignora — són per a les persones.',
+            placeholder: '# Aquest script saluda l\'usuari',
+            success: 'Molt bé! Els comentaris no s\'executen, però ajuden altres a entendre el codi més endavant.',
+            hint: 'La línia ha de començar amb el símbol #, per exemple: # Aquest script saluda l\'usuari',
+          },
+          {
+            instruction: 'Últim pas: combina "read" per demanar el nom de l\'usuari i "echo" per saludar-lo fent servir aquesta variable. Exemple:\nread -p "Com et dius? " nom\necho "Hola, $nom"',
+            placeholder: 'read -p "Com et dius? " nom\necho "Hola, $nom"',
+            success: 'Excel·lent! Acabes de combinar entrada (read) i sortida (echo) fent servir una variable. Això és un programa de veritat.',
+            hint: 'Necessites una línia amb "read" que desi el nom en una variable, i una altra amb "echo" que faci servir aquesta variable amb "$".',
+          },
+        ],
+      },
+      { prompt: 'Ho has aconseguit! 🎉 Això és només el començament — aviat obrirem tot un món Bash. Per ara, recull la teva recompensa.' },
+    ],
+  },
+}
+
+// Japanese overrides for chained quests — same pattern as QUEST_TEXT_EN
+// above, translated from the Spanish original instead.
+export const QUEST_TEXT_JA = {
+  'bienvenida-campus': {
+    title: 'キャンパスへようこそ',
+    description: 'グランドホール近くのガイドたちに会い、進捗を見せよう。',
+    steps: [
+      { prompt: 'ようこそ！新米魔導士に話しかけて、君の進捗を評価してもらおう。' },
+      { prompt: 'レベル2に到達したら、また会いに来てね。' },
+      { prompt: 'よくやった！報酬を受け取ろう。' },
+    ],
+  },
+  'circulo-confianza': {
+    title: '信頼の輪',
+    description: 'キャンパスの他の生徒とつながろう。',
+    steps: [
+      { prompt: 'キャンパスで成長するには仲間が必要だ。伝令のキツネに話しかけよう。' },
+      { prompt: 'フレンドページから少なくとも一人フレンドを追加しよう。' },
+      { prompt: 'よくできました！報酬を受け取ろう。' },
+    ],
+  },
+  'bash-basico': {
+    title: 'Bashのはじめの一歩',
+    description: 'バッシュミシがターミナルの最初のコマンドを教えてくれる。',
+    steps: [
+      { prompt: 'ニャー！僕はバッシュミシ 🐾。Bashを使ってコンピューターと話す方法を教えてあげよう。最初のターミナルの準備はいい？' },
+        {
+          // terminal step — only checkpoints' text fields are overridden below;
+          // `validate` keeps running against the raw input either way.
+          checkpoints: [
+            {
+              instruction: 'まずは"echo"を使って画面にメッセージを表示してみよう。',
+              placeholder: 'echo "こんにちは世界"',
+              success: '"echo"はターミナルにテキストを表示する — すべてのプログラマーが最初に学ぶことだ。',
+              hint: '"echo"という単語の後にメッセージを続けて入力しよう。例：echo "こんにちは世界"',
+            },
+            {
+              instruction: '次はスクリプトが何をするかを説明するコメントを書いてみよう。Bashではコメントは"#"で始まり、コンピューターは無視する — 人間のためのものだ。',
+              placeholder: '# このスクリプトはユーザーに挨拶します',
+              success: 'よくできた！コメントは実行されないが、後で他の人がコードを理解するのに役立つよ。',
+              hint: '行は#記号で始める必要がある。例：# このスクリプトはユーザーに挨拶します',
+            },
+            {
+              instruction: '最後のステップ："read"でユーザーの名前を尋ね、"echo"でその変数を使って挨拶しよう。例：\nread -p "お名前は？ " name\necho "こんにちは、$name"',
+              placeholder: 'read -p "お名前は？ " name\necho "こんにちは、$name"',
+              success: '素晴らしい！変数を使って入力（read）と出力（echo）を組み合わせたね。これは本物のプログラムだ。',
+              hint: '名前を変数に格納する"read"の行と、"$"でその変数を使う"echo"の行が必要だよ。',
+            },
+          ],
+        },
+      { prompt: 'やったね！🎉 これはまだ始まりに過ぎない — もうすぐBashの世界を丸ごと公開するよ。今のところは報酬を受け取ってね。' },
+    ],
+  },
+}
+
+// Chinese (Simplified) overrides for chained quests — same pattern as
+// QUEST_TEXT_EN above, translated from the Spanish original instead.
+export const QUEST_TEXT_ZH = {
+  'bienvenida-campus': {
+    title: '欢迎来到校园',
+    description: '在大礼堂附近见见向导，展示你的进度。',
+    steps: [
+      { prompt: '欢迎！去和新手法师聊聊，让他评估一下你的进度。' },
+      { prompt: '达到2级后再来找我。' },
+      { prompt: '你做到了！领取你的奖励吧。' },
+    ],
+  },
+  'circulo-confianza': {
+    title: '信任圈',
+    description: '和校园里的其他学生建立联系。',
+    steps: [
+      { prompt: '要在校园里成长，你需要盟友。去和送信狐狸聊聊。' },
+      { prompt: '在好友页面至少添加一位好友。' },
+      { prompt: '做得好！领取你的奖励吧。' },
+    ],
+  },
+  'bash-basico': {
+    title: 'Bash 的第一步',
+    description: 'BashMishi 教你第一批终端命令。',
+    steps: [
+      { prompt: '喵！我是 BashMishi 🐾。我要教你用 Bash 和电脑对话。准备好上你的第一堂终端课了吗？' },
+        {
+          // terminal step — only checkpoints' text fields are overridden below;
+          // `validate` keeps running against the raw input either way.
+          checkpoints: [
+            {
+              instruction: '首先，用 "echo" 在屏幕上打印一条消息。',
+              placeholder: 'echo "你好，世界"',
+              success: '"echo" 会把文本打印到终端——这是每个程序员学的第一件事。',
+              hint: '输入单词 "echo"，后面跟一条消息，例如：echo "你好，世界"',
+            },
+            {
+              instruction: '现在写一条注释，说明你的脚本是做什么的。在 Bash 里，注释以 "#" 开头，电脑会忽略它们——它们是写给人看的。',
+              placeholder: '# 这个脚本会向用户问好',
+              success: '做得好！注释不会被执行，但能帮助别人以后理解这段代码。',
+              hint: '这一行必须以 # 符号开头，例如：# 这个脚本会向用户问好',
+            },
+            {
+              instruction: '最后一步：结合使用 "read" 来询问用户的名字，再用 "echo" 通过这个变量向他问好。例如：\nread -p "你叫什么名字？" name\necho "你好，$name"',
+              placeholder: 'read -p "你叫什么名字？" name\necho "你好，$name"',
+              success: '太棒了！你刚刚用一个变量结合了输入（read）和输出（echo）。这就是一个真正的程序。',
+              hint: '你需要一行用 "read" 把名字存进变量，另一行用 "echo" 通过 "$" 使用这个变量。',
+            },
+          ],
+        },
+      { prompt: '你做到了！🎉 这仅仅是开始——我们很快会开放一整个 Bash 的世界。现在，先去领取你的奖励吧。' },
+    ],
+  },
+}
+
+// Deep-merges the EN/FR/IT/CA/JA/ZH override on top of the original quest
+// only when lang is 'en', 'fr', 'it', 'ca', 'ja' or 'zh': title/description
+// at the top level, then each step's `prompt` merged in by position, and
+// (for the one quest with them) each checkpoint's text fields merged in by
+// position too. Everything else (npcId, type, check, validate) always comes
+// from the original `quest`.
 export function localizeQuest(quest, lang) {
   if (!quest) return quest
-  const overrides = lang === 'en' ? QUEST_TEXT_EN[quest.id] : lang === 'fr' ? QUEST_TEXT_FR[quest.id] : lang === 'it' ? QUEST_TEXT_IT[quest.id] : null
+  const overrides = lang === 'en' ? QUEST_TEXT_EN[quest.id] : lang === 'fr' ? QUEST_TEXT_FR[quest.id] : lang === 'it' ? QUEST_TEXT_IT[quest.id] : lang === 'ca' ? QUEST_TEXT_CA[quest.id] : lang === 'ja' ? QUEST_TEXT_JA[quest.id] : lang === 'zh' ? QUEST_TEXT_ZH[quest.id] : null
   if (!overrides) return quest
   return {
     ...quest,

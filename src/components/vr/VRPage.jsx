@@ -1104,6 +1104,81 @@ const BUG_PUZZLES_IT = [
   },
 ]
 
+// Catalan version of BUG_PUZZLES, same order/length/`answer` index — see
+// BUG_PUZZLES_EN above.
+const BUG_PUZZLES_CA = [
+  {
+    code: 'function suma(a, b) {\n  retun a + b\n}',
+    options: ['Falta punt i coma', '"retun" està mal escrit (hauria de ser "return")', 'Els paràmetres estan al revés'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ['El bucle es passa de l\'array (off-by-one)', 'No es declara mai "arr"', 'No hi ha cap bug'],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['Falta la funció giveAccess', 'Fa servir "=" en comptes de "==" (assignació, no comparació)', 'Falta un "else"'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['Falta el valor inicial a reduce (falla amb una llista buida)', '"reduce" no existeix', '"items" hauria de ser un objecte'],
+    answer: 0,
+  },
+]
+
+// Japanese version of BUG_PUZZLES, same order/length/`answer` index — see
+// BUG_PUZZLES_EN above.
+const BUG_PUZZLES_JA = [
+  {
+    code: 'function tasu(a, b) {\n  retun a + b\n}',
+    options: ['セミコロンが抜けている', '"retun"のスペルミス（正しくは"return"）', '引数の順番が逆になっている'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ['ループが配列の範囲を超えている（off-by-one）', '"arr"が宣言されていない', 'バグはない'],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['giveAccess関数が抜けている', '"=="ではなく"="を使っている（比較ではなく代入）', '"else"が抜けている'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['reduceの初期値が抜けている（空のリストで失敗する）', '"reduce"は存在しない', '"items"はオブジェクトであるべき'],
+    answer: 0,
+  },
+]
+
+// Chinese (Simplified) version of BUG_PUZZLES, same order/length/`answer`
+// index — see BUG_PUZZLES_EN above.
+const BUG_PUZZLES_ZH = [
+  {
+    code: 'function add(a, b) {\n  retun a + b\n}',
+    options: ['缺少分号', '"retun" 拼写错误（应该是 "return"）', '参数顺序颠倒了'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ['循环越过了数组范围（off-by-one）', '从未声明 "arr"', '没有任何 bug'],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['缺少 giveAccess 函数', '用了 "=" 而不是 "=="（赋值而非比较）', '缺少 "else"'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['reduce 缺少初始值（空数组会报错）', '"reduce" 不存在', '"items" 应该是一个对象'],
+    answer: 0,
+  },
+]
+
 // Tiered content for the Programador's computer:
 // - 'basic'  → anyone with class===programmer: a find-the-bug puzzle.
 // - 'hacker' → programmer who reached level 10 (the same level the rest of
@@ -1116,7 +1191,7 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
   const [selected, setSelected] = useState(null)
   const [result, setResult] = useState(null)
   const canClaim = useTerminalRewardsStore((s) => s.canClaim())
-  const puzzle = (lang === 'en' ? BUG_PUZZLES_EN : lang === 'fr' ? BUG_PUZZLES_FR : lang === 'it' ? BUG_PUZZLES_IT : BUG_PUZZLES)[puzzleIdx]
+  const puzzle = (lang === 'en' ? BUG_PUZZLES_EN : lang === 'fr' ? BUG_PUZZLES_FR : lang === 'it' ? BUG_PUZZLES_IT : lang === 'ca' ? BUG_PUZZLES_CA : lang === 'ja' ? BUG_PUZZLES_JA : lang === 'zh' ? BUG_PUZZLES_ZH : BUG_PUZZLES)[puzzleIdx]
 
   if (tier === 'admin') return <GmConsole open onClose={onClose} playerPositionRef={playerPositionRef} />
 
@@ -1399,7 +1474,7 @@ function VrNpc({ npc, playerPositionRef }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
     window.speechSynthesis.speak(utt)
   }, [npc.dialogue, lang])
 
@@ -1472,7 +1547,13 @@ function IdleNpc({ config, playerPositionRef }) {
               ? `${config.aiPrompt} Réponds en français, quelle que soit la langue des instructions ci-dessus.`
               : lang === 'it'
                 ? `${config.aiPrompt} Rispondi in italiano, indipendentemente dalla lingua delle istruzioni sopra.`
-                : config.aiPrompt
+                : lang === 'ca'
+                  ? `${config.aiPrompt} Respon en català, independentment de l'idioma de les instruccions anteriors.`
+                  : lang === 'ja'
+                    ? `${config.aiPrompt} 上記の指示がどの言語で書かれていても、必ず日本語で返答してください。`
+                    : lang === 'zh'
+                      ? `${config.aiPrompt} 无论上面的指令用什么语言写的，请务必用中文回复。`
+                      : config.aiPrompt
           const reply = await sendNpcMessage({
             npcPrompt,
             content: lang === 'en'
@@ -1481,7 +1562,13 @@ function IdleNpc({ config, playerPositionRef }) {
                 ? 'Dis quelque chose de bref, spontané et dans le personnage (une seule phrase courte).'
                 : lang === 'it'
                   ? 'Di\' qualcosa di breve, spontaneo e nel personaggio (una sola frase corta).'
-                  : 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
+                  : lang === 'ca'
+                    ? 'Digues alguna cosa breu, espontània i dins del personatge (una sola frase curta).'
+                    : lang === 'ja'
+                      ? '簡潔で自然な、キャラクターに合った一言を言ってください（短い一文で）。'
+                      : lang === 'zh'
+                        ? '说一句简短、自然、符合角色设定的话（一句话就好）。'
+                        : 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
             lang,
           })
           if (reply) text = reply.trim()
@@ -1500,7 +1587,7 @@ function IdleNpc({ config, playerPositionRef }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
   }, [config, lang])
 
@@ -1946,7 +2033,7 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
     return () => window.speechSynthesis.cancel()
   }, [cfg, line, lang])
@@ -3293,7 +3380,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const utt = new SpeechSynthesisUtterance(clean)
     const isOwnMessage = last.authorId === playerId
     const isMascotActive = isOwnMessage && useVrCharacterStore.getState().activeChar === 'mascot'
-    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'
     utt.rate = isMascotActive ? 1.15 : 1.0
     utt.pitch = isMascotActive ? 1.45 : 1.0
     window.speechSynthesis.speak(utt)
