@@ -20,7 +20,9 @@ export async function sendNpcMessage({ npcPrompt, content, history = [], lang = 
       ? `(demo) ${content ? `Got: "${content}". ` : ''}Connect an AI in Settings → Core to really talk to me.`
       : lang === 'fr'
         ? `(demo) ${content ? `Reçu : "${content}". ` : ''}Connecte une IA dans Paramètres → Cœur pour vraiment me parler.`
-        : `(demo) ${content ? `Recibí: "${content}". ` : ''}Conecta una IA en Ajustes → Núcleo para hablar conmigo de verdad.`
+        : lang === 'it'
+          ? `(demo) ${content ? `Ricevuto: "${content}". ` : ''}Collega un'IA in Impostazioni → Nucleo per parlare davvero con me.`
+          : `(demo) ${content ? `Recibí: "${content}". ` : ''}Conecta una IA en Ajustes → Núcleo para hablar conmigo de verdad.`
   }
 
   const provider = getProviderById(connection.providerId)
@@ -30,7 +32,9 @@ export async function sendNpcMessage({ npcPrompt, content, history = [], lang = 
       ? 'Could not read your AI connection — check Settings → Core.'
       : lang === 'fr'
         ? 'Impossible de lire ta connexion IA — vérifie Paramètres → Cœur.'
-        : 'No pude leer tu conexión de IA — revisa Ajustes → Núcleo.'
+        : lang === 'it'
+          ? "Non è stato possibile leggere la tua connessione IA — controlla Impostazioni → Nucleo."
+          : 'No pude leer tu conexión de IA — revisa Ajustes → Núcleo.'
   }
 
   const messages = [
