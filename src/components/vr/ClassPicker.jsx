@@ -37,12 +37,40 @@ const OLIVER_CLASS_LINES_EN = {
   druid:    'Druid, master of shapeshifting. I also have many shapes: asleep, hungry, and chaotic. 🌿',
 }
 
+// Version en français des mêmes lignes — même critère que
+// vrNpcTranslations.js (lookup parallèle par id, l'original n'est jamais touché).
+const OLIVER_CLASS_LINES_FR = {
+  warrior:  'Guerrier ? C\'est mon truc — se battre avec des griffes acérées. Sauf que moi j\'utilise mes pattes. ⚔️🐱',
+  paladin:  'Paladin, force et lumière en un seul. Moi aussi je suis une source de lumière (celle qui t\'empêche de dormir à 3h du matin). 🛡️',
+  hunter:   'Chasseur. Traquer des proies… un peu comme moi quand je guette le curseur de la souris pendant des heures. 🏹',
+  rogue:    'Voleur, hein ? Furtif et rusé, tout comme quand je m\'approche sans bruit pour te faire peur. 🗡️',
+  priest:   'Prêtre, celui qui soude l\'équipe. Moi je soude le canapé. Une lourde responsabilité. ✨',
+  shaman:   'Chaman, celui qui parle aux éléments ! Moi je parle à ma croquette et elle ne répond jamais. ⚡',
+  mage:     'Mage, celui qui pense à long terme. Moi aussi je prédis des choses… comme le moment où tu vas me donner du thon. 🔮',
+  warlock:  'Démoniste… tu invoques des ombres et des démons. Moi j\'invoque de l\'attention à 3h du matin. En gros, c\'est pareil. 🌑',
+  druid:    'Druide, maître des formes. Moi aussi j\'ai plein de formes : endormi, affamé et chaotique. 🌿',
+}
+
+// Versione in italiano delle stesse battute — stesso criterio di
+// vrNpcTranslations.js (lookup parallelo per id, l'originale non si tocca mai).
+const OLIVER_CLASS_LINES_IT = {
+  warrior:  'Guerriero? È il mio pane — combattere con artigli affilati. Anche se io uso le zampe. ⚔️🐱',
+  paladin:  'Paladino, forza e luce in uno. Anch\'io sono una fonte di luce (quella che ti impedisce di dormire alle 3 del mattino). 🛡️',
+  hunter:   'Cacciatore. Braccare prede… proprio come me quando do la caccia al cursore del mouse per ore. 🏹',
+  rogue:    'Ladro, eh? Furtivo e astuto, proprio come quando mi avvicino senza far rumore e ti spavento. 🗡️',
+  priest:   'Sacerdote, quello che tiene unita la squadra. Io tengo unito il divano. Una grande responsabilità. ✨',
+  shaman:   'Sciamano, quello che parla con gli elementi! Io parlo con la crocchetta e lei non risponde mai. ⚡',
+  mage:     'Mago, il pensatore a lungo raggio. Anch\'io predico le cose… tipo quando mi darai il tonno. 🔮',
+  warlock:  'Stregone… evochi ombre e demoni. Io evoco attenzione alle 3 del mattino. Praticamente la stessa cosa. 🌑',
+  druid:    'Druido, maestro delle forme. Anch\'io ho tante forme: addormentato, affamato e caotico. 🌿',
+}
+
 export default function ClassPicker({ isAdmin, onSelect, onClose }) {
   const { t, lang } = useI18n()
   const classes = Object.values(PLAYER_CLASSES).filter((c) => c.id !== 'hacker' || isAdmin)
   const [selectedId, setSelectedId] = useState(classes[0]?.id ?? null)
   const cls = PLAYER_CLASSES[selectedId]
-  const oliverLine = (lang === 'en' ? OLIVER_CLASS_LINES_EN : OLIVER_CLASS_LINES)[selectedId]
+  const oliverLine = (lang === 'en' ? OLIVER_CLASS_LINES_EN : lang === 'fr' ? OLIVER_CLASS_LINES_FR : lang === 'it' ? OLIVER_CLASS_LINES_IT : OLIVER_CLASS_LINES)[selectedId]
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col select-none" style={{ background: 'linear-gradient(160deg,#0a0407 0%,#140a12 100%)' }}>

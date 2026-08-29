@@ -443,7 +443,7 @@ function DayNightClock() {
     return () => clearInterval(id)
   }, [])
   const h = now.getHours()
-  const label = now.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-MX', { hour: '2-digit', minute: '2-digit' })
+  const label = now.toLocaleTimeString(lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-MX', { hour: '2-digit', minute: '2-digit' })
   const icon = h >= 20 || h < 5 ? '🌙' : h < 7 ? '🌅' : h < 17 ? '☀️' : '🌇'
   return (
     <div

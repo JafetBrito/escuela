@@ -159,7 +159,10 @@ export default function LearningInterface() {
   // --- 9. PASOS DE LA CLASE (video → lección → actividad → recursos) ---
   // Solo se arma para módulos "normales" (video/texto) — vr/slideshow/audio/
   // embed son piezas autocontenidas, no tiene sentido meterlas en pasos.
-  const isSteppable = currentModule.type === 'text' || currentModule.type === 'video'
+  // Módulos sin `type` (cursos viejos como course-001) deben caer aquí también
+  // — antes había un catch-all que los trataba como video/texto por defecto;
+  // se perdió al agregar el gating explícito y sus videos dejaron de mostrarse.
+  const isSteppable = !currentModule.type || currentModule.type === 'text' || currentModule.type === 'video'
   const hasVideo = Boolean(currentModule.videoId || currentModule.videoSrc)
   const hasActivity = Boolean(
     currentModule.quiz || currentModule.terminalSim || currentModule.trackSelector ||

@@ -1054,6 +1054,56 @@ const BUG_PUZZLES_EN = [
   },
 ]
 
+// French version of BUG_PUZZLES, same order/length/`answer` index — see
+// BUG_PUZZLES_EN above.
+const BUG_PUZZLES_FR = [
+  {
+    code: 'function addition(a, b) {\n  retour a + b\n}',
+    options: ['Point-virgule manquant', '"retour" est mal orthographié (devrait être "return")', 'Les paramètres sont inversés'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ['La boucle dépasse le tableau (off-by-one)', '"arr" n\'est jamais déclaré', "Il n'y a pas de bug"],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['La fonction giveAccess est manquante', 'Utilise "=" au lieu de "==" (affectation, pas comparaison)', 'Il manque un "else"'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['La valeur initiale de reduce est manquante (échoue sur une liste vide)', '"reduce" n\'existe pas', '"items" devrait être un objet'],
+    answer: 0,
+  },
+]
+
+// Italian version of BUG_PUZZLES, same order/length/`answer` index — see
+// BUG_PUZZLES_EN above.
+const BUG_PUZZLES_IT = [
+  {
+    code: 'function somma(a, b) {\n  ritorna a + b\n}',
+    options: ['Manca il punto e virgola', '"ritorna" è scritto in modo errato (dovrebbe essere "return")', 'I parametri sono invertiti'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ["Il ciclo supera l'array (off-by-one)", '"arr" non viene mai dichiarato', "Non c'è nessun bug"],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['Manca la funzione giveAccess', 'Usa "=" invece di "==" (assegnazione, non confronto)', 'Manca un "else"'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['Manca il valore iniziale in reduce (fallisce con una lista vuota)', '"reduce" non esiste', '"items" dovrebbe essere un oggetto'],
+    answer: 0,
+  },
+]
+
 // Tiered content for the Programador's computer:
 // - 'basic'  → anyone with class===programmer: a find-the-bug puzzle.
 // - 'hacker' → programmer who reached level 10 (the same level the rest of
@@ -1066,7 +1116,7 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
   const [selected, setSelected] = useState(null)
   const [result, setResult] = useState(null)
   const canClaim = useTerminalRewardsStore((s) => s.canClaim())
-  const puzzle = (lang === 'en' ? BUG_PUZZLES_EN : BUG_PUZZLES)[puzzleIdx]
+  const puzzle = (lang === 'en' ? BUG_PUZZLES_EN : lang === 'fr' ? BUG_PUZZLES_FR : lang === 'it' ? BUG_PUZZLES_IT : BUG_PUZZLES)[puzzleIdx]
 
   if (tier === 'admin') return <GmConsole open onClose={onClose} playerPositionRef={playerPositionRef} />
 
@@ -1349,7 +1399,7 @@ function VrNpc({ npc, playerPositionRef }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
     window.speechSynthesis.speak(utt)
   }, [npc.dialogue, lang])
 
@@ -1418,12 +1468,20 @@ function IdleNpc({ config, playerPositionRef }) {
         try {
           const npcPrompt = lang === 'en'
             ? `${config.aiPrompt} Respond in English no matter what language the instructions above are written in.`
-            : config.aiPrompt
+            : lang === 'fr'
+              ? `${config.aiPrompt} Réponds en français, quelle que soit la langue des instructions ci-dessus.`
+              : lang === 'it'
+                ? `${config.aiPrompt} Rispondi in italiano, indipendentemente dalla lingua delle istruzioni sopra.`
+                : config.aiPrompt
           const reply = await sendNpcMessage({
             npcPrompt,
             content: lang === 'en'
               ? 'Say something brief, spontaneous and in character (a single short sentence).'
-              : 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
+              : lang === 'fr'
+                ? 'Dis quelque chose de bref, spontané et dans le personnage (une seule phrase courte).'
+                : lang === 'it'
+                  ? 'Di\' qualcosa di breve, spontaneo e nel personaggio (una sola frase corta).'
+                  : 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
             lang,
           })
           if (reply) text = reply.trim()
@@ -1442,7 +1500,7 @@ function IdleNpc({ config, playerPositionRef }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
   }, [config, lang])
 
@@ -1888,7 +1946,7 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
     return () => window.speechSynthesis.cancel()
   }, [cfg, line, lang])
@@ -3235,7 +3293,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const utt = new SpeechSynthesisUtterance(clean)
     const isOwnMessage = last.authorId === playerId
     const isMascotActive = isOwnMessage && useVrCharacterStore.getState().activeChar === 'mascot'
-    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'
+    utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : 'es-ES'
     utt.rate = isMascotActive ? 1.15 : 1.0
     utt.pitch = isMascotActive ? 1.45 : 1.0
     window.speechSynthesis.speak(utt)

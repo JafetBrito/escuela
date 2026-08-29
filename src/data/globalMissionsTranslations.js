@@ -38,9 +38,83 @@ export const MISSION_TEXT_EN = {
   },
 }
 
+// French overrides for the same catalog — same pattern as MISSION_TEXT_EN
+// above, translated from the Spanish original instead.
+export const MISSION_TEXT_FR = {
+  'habla-con-mascota': {
+    title: 'Brise la glace',
+    description: 'Parle à ta mascotte au moins une fois pour activer son IA.',
+  },
+  'completa-una-clase': {
+    title: 'Premier pas',
+    description: 'Termine ton premier cours, quel qu\'il soit.',
+  },
+  'activa-objeto': {
+    title: 'Utilise ton équipement',
+    description: 'Active un objet interactif de ton inventaire.',
+  },
+  'compra-tienda': {
+    title: 'Séance de shopping',
+    description: 'Achète au moins un objet à la Boutique du campus.',
+  },
+  'lee-libro': {
+    title: 'Rat de bibliothèque',
+    description: 'Ouvre un livre de la Bibliothèque du campus.',
+  },
+  'cambia-apariencia': {
+    title: 'Nouveau look',
+    description: 'Change la peau ou la tenue de ta mascotte Oliver.',
+  },
+  'completa-cinco-clases': {
+    title: 'Sur une lancée',
+    description: 'Termine 5 cours, dans n\'importe quelle combinaison.',
+  },
+  'sube-nivel-5': {
+    title: 'Apprenant confirmé',
+    description: 'Atteins le niveau 5 d\'expérience sur la plateforme.',
+  },
+}
+
+// Italian overrides for the same catalog — same pattern as MISSION_TEXT_EN
+// above, translated from the Spanish original instead.
+export const MISSION_TEXT_IT = {
+  'habla-con-mascota': {
+    title: 'Rompi il ghiaccio',
+    description: 'Parla con la tua mascotte almeno una volta per attivare la sua IA.',
+  },
+  'completa-una-clase': {
+    title: 'Primo passo',
+    description: 'Completa la tua prima lezione da un corso qualsiasi.',
+  },
+  'activa-objeto': {
+    title: 'Usa il tuo equipaggiamento',
+    description: 'Attiva un oggetto interattivo dal tuo inventario.',
+  },
+  'compra-tienda': {
+    title: 'Sessione di shopping',
+    description: 'Compra almeno un oggetto nel Negozio del campus.',
+  },
+  'lee-libro': {
+    title: 'Topo di biblioteca',
+    description: 'Apri un libro dalla Biblioteca del campus.',
+  },
+  'cambia-apariencia': {
+    title: 'Nuovo look',
+    description: "Cambia la skin o l'abito della tua mascotte Oliver.",
+  },
+  'completa-cinco-clases': {
+    title: 'In serie',
+    description: 'Completa 5 lezioni in qualsiasi combinazione di corsi.',
+  },
+  'sube-nivel-5': {
+    title: 'Studente affermato',
+    description: "Raggiungi il livello 5 di esperienza sulla piattaforma.",
+  },
+}
+
 export function localizeMission(mission, lang) {
-  if (lang !== 'en' || !mission) return mission
-  const en = MISSION_TEXT_EN[mission.id]
-  if (!en) return mission
-  return { ...mission, title: en.title ?? mission.title, description: en.description ?? mission.description }
+  if (!mission) return mission
+  const overrides = lang === 'en' ? MISSION_TEXT_EN[mission.id] : lang === 'fr' ? MISSION_TEXT_FR[mission.id] : lang === 'it' ? MISSION_TEXT_IT[mission.id] : null
+  if (!overrides) return mission
+  return { ...mission, title: overrides.title ?? mission.title, description: overrides.description ?? mission.description }
 }
