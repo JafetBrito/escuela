@@ -3,6 +3,7 @@ import { useMobStore } from '../../stores/useMobStore'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { getMobType } from '../../data/mobRegistry'
 import { getVrNpcById, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
+import { useI18n } from '../../i18n'
 
 const IDLE_NPCS = { [OLIVER_NPC.id]: OLIVER_NPC, [EINSTEIN_NPC.id]: EINSTEIN_NPC, [JAFET_NPC.id]: JAFET_NPC }
 
@@ -18,6 +19,7 @@ function ThinBar({ pct, color }) {
 // useTargetStore + los onClick agregados en IdleNpc/VrNpc/MobMesh) y aquí se
 // muestra su nombre + vida en vivo, justo debajo del retrato del jugador.
 export default function TargetFrame() {
+  const { t } = useI18n()
   const target = useTargetStore((s) => s.target)
   const clearTarget = useTargetStore((s) => s.clearTarget)
   const mobs = useMobStore((s) => s.mobs)
@@ -32,17 +34,17 @@ export default function TargetFrame() {
     const type = getMobType(mob.typeId)
     name = type.name; icon = type.icon; color = type.color
     hp = mob.hp; maxHp = mob.maxHp; alive = mob.alive
-    subtitle = `Nv. ${type.level}`
+    subtitle = t('vr.hud.target.level', { level: type.level })
   } else if (target.kind === 'player') {
     const player = players[target.id]
     if (!player) { clearTarget(); return null }
-    name = player.name || 'Viajero'; icon = '🧑‍🚀'; color = '#38bdf8'
-    subtitle = 'Jugador'
+    name = player.name || t('vr.hud.target.traveler'); icon = '🧑‍🚀'; color = '#38bdf8'
+    subtitle = t('vr.hud.target.player')
   } else {
     const npc = IDLE_NPCS[target.id] ?? getVrNpcById(target.id)
     if (!npc) { clearTarget(); return null }
     name = npc.name; icon = npc.emoji ?? '🧑'; color = '#94a3b8'
-    subtitle = 'NPC'
+    subtitle = t('vr.hud.target.npc')
   }
 
   return (
@@ -60,7 +62,7 @@ export default function TargetFrame() {
         type="button"
         onClick={clearTarget}
         className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-black/70 text-[10px] text-white/70 hover:text-white"
-        title="Quitar objetivo"
+        title={t('vr.hud.target.clear')}
       >
         ✕
       </button>
@@ -74,7 +76,7 @@ export default function TargetFrame() {
         <div className="flex min-w-0 flex-col">
           <span className="truncate font-black text-white" style={{ fontSize: 11 }}>{name}</span>
           <span className="font-bold" style={{ fontSize: 9, color: `${color}` }}>
-            {alive ? subtitle : 'Derrotado'}
+            {alive ? subtitle : t('vr.hud.target.defeated')}
           </span>
         </div>
       </div>

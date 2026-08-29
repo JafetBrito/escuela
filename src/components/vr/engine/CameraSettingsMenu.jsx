@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { useVrSettingsStore } from '../../../stores/useVrSettingsStore'
-
-const TABS = [
-  { id: 'controles', label: 'Cámara', icon: '🎥' },
-  { id: 'interfaz', label: 'Interfaz', icon: '🖥️' },
-  { id: 'atajos', label: 'Atajos', icon: '⌨️' },
-]
+import { useI18n } from '../../../i18n'
 
 const CAMERA_DEFAULTS = {
   cameraDistance: 6.5, cameraHeight: 2.4, zoomMin: 1.2, zoomMax: 55, pitchMin: -0.6, pitchMax: 1.0, fov: 58,
@@ -18,6 +13,12 @@ const CAMERA_DEFAULTS = {
 // Reads/writes useVrSettingsStore directly, so it works identically in any
 // world without needing extra props.
 export function CameraSettingsMenu({ open, onClose }) {
+  const { t } = useI18n()
+  const TABS = [
+    { id: 'controles', label: t('vr.hud.cameraSettings.tabCamera'), icon: '🎥' },
+    { id: 'interfaz', label: t('vr.hud.cameraSettings.tabInterface'), icon: '🖥️' },
+    { id: 'atajos', label: t('vr.hud.cameraSettings.tabShortcuts'), icon: '⌨️' },
+  ]
   const [tab, setTab] = useState('controles')
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const setCameraMode = useVrSettingsStore((s) => s.setCameraMode)
@@ -48,8 +49,8 @@ export function CameraSettingsMenu({ open, onClose }) {
     <div className="absolute right-2 top-16 z-30 flex flex-col items-end gap-2 md:right-4 md:top-14">
       <div className="w-72 rounded-xl border border-border bg-surface/95 p-3 text-sm text-text shadow-xl backdrop-blur">
           <div className="mb-3 flex items-center justify-between">
-            <p className="font-semibold">⚙️ Ajustes</p>
-            <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
+            <p className="font-semibold">{t('vr.hud.cameraSettings.title')}</p>
+            <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.hud.cameraSettings.close')}>
               ✕
             </button>
           </div>
@@ -72,7 +73,7 @@ export function CameraSettingsMenu({ open, onClose }) {
 
           {tab === 'controles' && (
           <>
-          <p className="mb-1 text-xs font-semibold text-text-muted">Tipo de cámara</p>
+          <p className="mb-1 text-xs font-semibold text-text-muted">{t('vr.hud.cameraSettings.cameraType')}</p>
           <div className="mb-3 flex gap-2">
             <button
               type="button"
@@ -83,7 +84,7 @@ export function CameraSettingsMenu({ open, onClose }) {
                   : 'border border-border text-text-muted hover:text-text'
               }`}
             >
-              🎥 3ra persona
+              {t('vr.hud.cameraSettings.thirdPerson')}
             </button>
             <button
               type="button"
@@ -94,12 +95,12 @@ export function CameraSettingsMenu({ open, onClose }) {
                   : 'border border-border text-text-muted hover:text-text'
               }`}
             >
-              👁️ 1ra persona
+              {t('vr.hud.cameraSettings.firstPerson')}
             </button>
           </div>
 
           <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-mouse-sensitivity">
-            Sensibilidad del mouse: {mouseSensitivity.toFixed(1)}x
+            {t('vr.hud.cameraSettings.mouseSensitivity', { value: mouseSensitivity.toFixed(1) })}
           </label>
           <input
             id="vr-mouse-sensitivity"
@@ -119,11 +120,11 @@ export function CameraSettingsMenu({ open, onClose }) {
               onChange={(e) => setInvertY(e.target.checked)}
               className="accent-primary"
             />
-            Invertir vista vertical
+            {t('vr.hud.cameraSettings.invertY')}
           </label>
 
           <label className="mb-1 mt-3 block text-xs font-semibold text-text-muted" htmlFor="vr-fov">
-            Campo de visión (FOV): {fov}°
+            {t('vr.hud.cameraSettings.fov', { value: fov })}
           </label>
           <input
             id="vr-fov"
@@ -139,11 +140,11 @@ export function CameraSettingsMenu({ open, onClose }) {
           {cameraMode === 'third' && (
             <div className="mt-1 border-t border-border pt-3">
               <p className="mb-2 text-xs font-semibold text-text-muted">
-                Ajustes de cámara en 3ra persona
+                {t('vr.hud.cameraSettings.thirdPersonSettings')}
               </p>
 
               <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-cam-distance">
-                Distancia: {cameraDistance.toFixed(1)}
+                {t('vr.hud.cameraSettings.distance', { value: cameraDistance.toFixed(1) })}
               </label>
               <input
                 id="vr-cam-distance"
@@ -157,7 +158,7 @@ export function CameraSettingsMenu({ open, onClose }) {
               />
 
               <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-cam-height">
-                Altura: {cameraHeight.toFixed(1)}
+                {t('vr.hud.cameraSettings.height', { value: cameraHeight.toFixed(1) })}
               </label>
               <input
                 id="vr-cam-height"
@@ -171,7 +172,7 @@ export function CameraSettingsMenu({ open, onClose }) {
               />
 
               <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-zoom-min">
-                Zoom mínimo (más cerca): {zoomMin.toFixed(1)}
+                {t('vr.hud.cameraSettings.zoomMin', { value: zoomMin.toFixed(1) })}
               </label>
               <input
                 id="vr-zoom-min"
@@ -185,7 +186,7 @@ export function CameraSettingsMenu({ open, onClose }) {
               />
 
               <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-zoom-max">
-                Zoom máximo (más lejos): {zoomMax.toFixed(0)}
+                {t('vr.hud.cameraSettings.zoomMax', { value: zoomMax.toFixed(0) })}
               </label>
               <input
                 id="vr-zoom-max"
@@ -199,7 +200,7 @@ export function CameraSettingsMenu({ open, onClose }) {
               />
 
               <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-pitch-min">
-                Límite al mirar hacia abajo: {pitchMin.toFixed(2)}
+                {t('vr.hud.cameraSettings.pitchMin', { value: pitchMin.toFixed(2) })}
               </label>
               <input
                 id="vr-pitch-min"
@@ -213,7 +214,7 @@ export function CameraSettingsMenu({ open, onClose }) {
               />
 
               <label className="mb-1 block text-xs font-semibold text-text-muted" htmlFor="vr-pitch-max">
-                Límite al mirar hacia arriba: {pitchMax.toFixed(2)}
+                {t('vr.hud.cameraSettings.pitchMax', { value: pitchMax.toFixed(2) })}
               </label>
               <input
                 id="vr-pitch-max"
@@ -227,15 +228,14 @@ export function CameraSettingsMenu({ open, onClose }) {
               />
 
               <p className="text-xs text-text-muted">
-                💡 Sube "Límite al mirar hacia arriba" y aleja el zoom para ver los techos de los
-                edificios. Sube el "Zoom mínimo" si quieres acercarte más a tu personaje.
+                {t('vr.hud.cameraSettings.thirdPersonTip')}
               </p>
             </div>
           )}
 
           {cameraMode === 'first' && (
             <p className="mt-3 text-xs text-text-muted">
-              👁️ Modo primera persona: arrastra para mirar alrededor, W A S D para moverte.
+              {t('vr.hud.cameraSettings.firstPersonTip')}
             </p>
           )}
 
@@ -247,11 +247,11 @@ export function CameraSettingsMenu({ open, onClose }) {
                 onChange={(e) => setNoClip(e.target.checked)}
                 className="accent-primary"
               />
-              🚧 Atravesar paredes (noClip)
-              {noClip && <span className="ml-auto text-yellow-400">ACTIVO</span>}
+              {t('vr.hud.cameraSettings.noClip')}
+              {noClip && <span className="ml-auto text-yellow-400">{t('vr.hud.cameraSettings.noClipActive')}</span>}
             </label>
             <p className="text-[10px] text-text-muted -mt-1">
-              Actívalo si tu personaje quedó atrapado. Recuerda desactivarlo después.
+              {t('vr.hud.cameraSettings.noClipHint')}
             </p>
             <label className="flex items-center gap-2 text-xs font-semibold text-text-muted cursor-pointer">
               <input
@@ -260,7 +260,7 @@ export function CameraSettingsMenu({ open, onClose }) {
                 onChange={(e) => setNpcVoice(e.target.checked)}
                 className="accent-primary"
               />
-              🔊 Leer voces (NPCs y chat en voz alta)
+              {t('vr.hud.cameraSettings.npcVoice')}
             </label>
           </div>
           </>
@@ -269,9 +269,7 @@ export function CameraSettingsMenu({ open, onClose }) {
           {tab === 'interfaz' && (
             <div className="flex flex-col gap-3">
               <p className="text-xs text-text-muted">
-                El botón 👁️ de la barra lateral oculta TODA la interfaz (menús, chat, voz, mascota
-                flotante y controles táctiles) para tomar capturas limpias del mundo — vuelve a
-                presionarlo para mostrarla de nuevo.
+                {t('vr.hud.cameraSettings.interfaceHint')}
               </p>
               <button
                 type="button"
@@ -286,31 +284,20 @@ export function CameraSettingsMenu({ open, onClose }) {
                 }}
                 className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
               >
-                ↺ Restablecer cámara a valores por defecto
+                {t('vr.hud.cameraSettings.resetCamera')}
               </button>
               <p className="text-[10px] text-text-muted">
-                La barra de habilidades (abajo, al centro) se puede arrastrar para reposicionarla
-                — mantén presionado y suelta donde prefieras.
+                {t('vr.hud.cameraSettings.skillBarHint')}
               </p>
             </div>
           )}
 
           {tab === 'atajos' && (
             <div className="flex flex-col gap-1.5 text-xs text-text-muted">
-              {[
-                ['WASD / flechas', 'Moverse'],
-                ['R (mantener)', 'Correr (sprint)'],
-                ['Espacio', 'Saltar'],
-                ['Arrastrar / stick derecho', 'Mirar alrededor'],
-                ['Rueda / pellizco', 'Zoom de cámara'],
-                ['Enter / C', 'Abrir chat'],
-                ['M', 'Abrir mapa'],
-                ['E', 'Interactuar con NPCs/objetos'],
-                ['F', 'Habilidad de ataque (según tu clase)'],
-              ].map(([key, action]) => (
-                <div key={key} className="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-2 py-1.5">
-                  <span className="font-mono font-bold text-text">{key}</span>
-                  <span>{action}</span>
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-2 py-1.5">
+                  <span className="font-mono font-bold text-text">{t(`vr.hud.cameraSettings.shortcuts.${i}.0`)}</span>
+                  <span>{t(`vr.hud.cameraSettings.shortcuts.${i}.1`)}</span>
                 </div>
               ))}
             </div>

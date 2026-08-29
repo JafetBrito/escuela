@@ -1,17 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../../i18n'
 
-const TIPS = [
-  'Muévete con WASD · mira con el ratón · cámara con rueda del ratón.',
-  'Presiona E al estar cerca de un NPC para abrir su diálogo.',
-  'Presiona M para abrir el mapa del Campus y orientarte.',
-  'Completar un curso te da XP y monedas para subir de nivel.',
-  'Acepta misiones en /misiones — cada una tiene recompensas únicas.',
-  'El Anfiteatro tiene pantalla de video en vivo. ¡Activa el audio!',
-  'El campus es compartido — verás a otros estudiantes en tiempo real.',
-  'Presiona C para abrir el chat del mundo con otros jugadores.',
-  'Los portales te teletransportan a zonas especiales del campus.',
-  'Cada clase tiene habilidades únicas. Explora el Árbol del Mundo para elegir.',
-]
+const TIPS_COUNT = 10
 
 // Simulated loading steps – replaced with real useProgress in VrAssetProgress
 // once Canvas mounts. These just make the pre-canvas wait feel alive.
@@ -33,6 +23,7 @@ function requestFullscreen() {
 }
 
 export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
+  const { t } = useI18n()
   const [progress, setProgress] = useState(0)
   const [ready, setReady] = useState(false)
   const [visible, setVisible] = useState(true)
@@ -53,7 +44,7 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
 
   // Rotate tips every 3.5 s
   useEffect(() => {
-    const id = setInterval(() => setTipIndex((i) => (i + 1) % TIPS.length), 3500)
+    const id = setInterval(() => setTipIndex((i) => (i + 1) % TIPS_COUNT), 3500)
     return () => clearInterval(id)
   }, [])
 
@@ -151,7 +142,7 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
       {/* ── Progress bar ─────────────────────────────────────────── */}
       <div className="relative z-10 w-64 sm:w-80">
         <div className="mb-1.5 flex justify-between text-[11px] text-white/35">
-          <span>{ready ? 'Listo' : 'Preparando campus…'}</span>
+          <span>{ready ? t('vr.hud.loading.ready') : t('vr.hud.loading.preparing')}</span>
           <span className="font-semibold text-violet-400">{progress}%</span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
@@ -181,10 +172,10 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
             animation: ready ? 'ls-pulse 2.2s ease-in-out infinite' : 'none',
           }}
         >
-          ▶ Entrar al Campus
+          {t('vr.hud.loading.enter')}
         </button>
         <p className="mt-2 text-center text-[10px] text-white/25">
-          o presiona cualquier tecla
+          {t('vr.hud.loading.pressAnyKey')}
         </p>
       </div>
 
@@ -193,7 +184,7 @@ export default function VrLoadingScreen({ onEnter, worldName = 'Campus VR' }) {
         className="relative z-10 mt-8 max-w-xs rounded-xl border border-white/8 bg-white/5 px-4 py-2.5 text-center text-xs text-white/50"
         style={{ minHeight: 44 }}
       >
-        💡 {TIPS[tipIndex]}
+        💡 {t(`vr.hud.loading.tips.${tipIndex}`)}
       </div>
 
       <p className="absolute bottom-4 right-4 text-[10px] text-white/15">oliver.academy</p>

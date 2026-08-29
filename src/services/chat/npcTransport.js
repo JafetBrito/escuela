@@ -11,18 +11,22 @@ import { getProviderById } from '../../data/aiProviderRegistry'
 // Mago de Misiones, Jafet en el Árbol). Reuses whichever AI connection the
 // user has set as active in Ajustes → Núcleo, but with a fixed per-NPC
 // system prompt instead of the mascot's configurable personality.
-export async function sendNpcMessage({ npcPrompt, content, history = [] }) {
+export async function sendNpcMessage({ npcPrompt, content, history = [], lang = 'es' }) {
   const { activeCredentialId, temperature, maxTokens } = useSettingsStore.getState()
   const connection = useAiCredentialsStore.getState().connections.find((c) => c.id === activeCredentialId)
 
   if (!connection) {
-    return `(demo) ${content ? `Recibí: "${content}". ` : ''}Conecta una IA en Ajustes → Núcleo para hablar conmigo de verdad.`
+    return lang === 'en'
+      ? `(demo) ${content ? `Got: "${content}". ` : ''}Connect an AI in Settings → Core to really talk to me.`
+      : `(demo) ${content ? `Recibí: "${content}". ` : ''}Conecta una IA en Ajustes → Núcleo para hablar conmigo de verdad.`
   }
 
   const provider = getProviderById(connection.providerId)
   const apiKey = await useAiCredentialsStore.getState().getApiKeyForCall(connection.id)
   if (!apiKey) {
-    return 'No pude leer tu conexión de IA — revisa Ajustes → Núcleo.'
+    return lang === 'en'
+      ? 'Could not read your AI connection — check Settings → Core.'
+      : 'No pude leer tu conexión de IA — revisa Ajustes → Núcleo.'
   }
 
   const messages = [

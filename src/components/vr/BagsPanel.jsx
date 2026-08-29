@@ -4,17 +4,22 @@ import { useLevelStore, levelForXp } from '../../stores/useLevelStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { getAvailableEquipment, SLOT_META } from '../../data/equipmentRegistry'
 import ObjetosBagPanel from '../mascot/ObjetosBagPanel'
+import { useI18n } from '../../i18n'
 
-const OWNER_TABS = [
-  { id: 'avatar', label: 'Avatar', icon: '⚔️', owner: 'player' },
-  { id: 'mascota', label: 'Mascota', icon: '🐾', owner: 'oliver' },
-]
+function useOwnerTabs() {
+  const { t } = useI18n()
+  return [
+    { id: 'avatar', label: t('vr.hud.bagsPanel.avatarTab'), icon: '⚔️', owner: 'player' },
+    { id: 'mascota', label: t('vr.hud.bagsPanel.mascotTab'), icon: '🐾', owner: 'oliver' },
+  ]
+}
 
 // WoW-style bag grid — every item your class/level has unlocked, click to
 // equip/unequip. Shared by the VR HUD's floating BagsPanel (below) and the
 // "Bolsas" sub-tab inside the mascot menu (MascotCompanion.jsx) — same
 // registry/store, so equipping from either place stays in sync.
 export function EquipmentBagGrid({ owner }) {
+  const { t } = useI18n()
   const classId = useGameStore((s) => s[owner].class)
   const level = useLevelStore((s) => levelForXp(s.xp))
   const equipped = useEquipmentStore((s) => s.equipped[owner])
@@ -27,7 +32,7 @@ export function EquipmentBagGrid({ owner }) {
   const items = getAvailableEquipment(owner, classId, level)
 
   if (items.length === 0) {
-    return <p className="py-6 text-center text-xs text-text-muted">Sin objetos disponibles todavía.</p>
+    return <p className="py-6 text-center text-xs text-text-muted">{t('vr.hud.bagsPanel.noItems')}</p>
   }
 
   return (
@@ -39,7 +44,7 @@ export function EquipmentBagGrid({ owner }) {
             key={it.id}
             type="button"
             onClick={() => equip(owner, it.slot, isEquipped ? null : it.id)}
-            title={`${it.name} — ${SLOT_META[it.slot].label}\n${it.description}\n⚔️ Poder ${it.stats.power} · 🏃 Velocidad ${it.stats.speed} (próximamente activos)`}
+            title={t('vr.hud.bagsPanel.itemTooltip', { name: it.name, slot: SLOT_META[it.slot].label, desc: it.description, power: it.stats.power, speed: it.stats.speed })}
             className="flex aspect-square items-center justify-center rounded-lg border text-xl transition-all"
             style={{
               borderColor: isEquipped ? '#fbbf24' : 'var(--color-border)',
@@ -60,6 +65,8 @@ export function EquipmentBagGrid({ owner }) {
 // here, then check the result in the Personaje tab of the Avatar/Mascota
 // menu (MascotCompanion.jsx) or the HUD portrait card.
 export default function BagsPanel({ onClose }) {
+  const { t } = useI18n()
+  const OWNER_TABS = useOwnerTabs()
   const [tab, setTab] = useState('avatar')
   const owner = tab === 'avatar' ? 'player' : 'oliver'
 
@@ -78,9 +85,9 @@ export default function BagsPanel({ onClose }) {
       >
         <div className="flex items-center gap-2">
           <span className="text-xl">🎒</span>
-          <p className="text-sm font-black text-white">Bolsas</p>
+          <p className="text-sm font-black text-white">{t('vr.hud.bagsPanel.title')}</p>
         </div>
-        <button type="button" onClick={onClose} className="flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white" aria-label="Cerrar">
+        <button type="button" onClick={onClose} className="flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white" aria-label={t('vr.hud.bagsPanel.close')}>
           ✕
         </button>
       </div>
@@ -104,8 +111,8 @@ export default function BagsPanel({ onClose }) {
 
       <div className="max-h-[60vh] overflow-y-auto p-3" style={{ colorScheme: 'dark' }}>
         <EquipmentBagGrid owner={owner} />
-        <p className="mt-2 text-center text-[10px] text-white/25">Toca un objeto para equiparlo o quitarlo.</p>
-        <p className="mt-1 text-center text-[9px] italic text-white/20">🔧 Próximamente: poder/velocidad afectarán tus estadísticas.</p>
+        <p className="mt-2 text-center text-[10px] text-white/25">{t('vr.hud.bagsPanel.tapToEquip')}</p>
+        <p className="mt-1 text-center text-[9px] italic text-white/20">{t('vr.hud.bagsPanel.comingSoon')}</p>
         <div className="mt-3 border-t border-white/10 pt-3">
           <ObjetosBagPanel owner={owner} onActivate={onClose} />
         </div>

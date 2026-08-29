@@ -4,9 +4,11 @@ import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useIsTouchDevice } from './engine/input'
+import { useI18n } from '../../i18n'
 
 // ── Chat line ─────────────────────────────────────────────────────────────────
 function ChatLine({ message }) {
+  const { t } = useI18n()
   if (message.system) {
     return (
       <p className="text-amber-400">
@@ -17,14 +19,14 @@ function ChatLine({ message }) {
   if (message.whisperFrom) {
     return (
       <p className="italic text-fuchsia-400">
-        <span className="font-semibold">🔒 Susurro de {message.whisperFrom}:</span> {message.text}
+        <span className="font-semibold">{t('vr.hud.worldChat.whisperFrom', { name: message.whisperFrom })}</span> {message.text}
       </p>
     )
   }
   if (message.whisperTo) {
     return (
       <p className="italic text-fuchsia-400">
-        <span className="font-semibold">🔒 Susurro a {message.whisperTo}:</span> {message.text}
+        <span className="font-semibold">{t('vr.hud.worldChat.whisperTo', { name: message.whisperTo })}</span> {message.text}
       </p>
     )
   }
@@ -37,6 +39,7 @@ function ChatLine({ message }) {
 
 // ── Mic button ────────────────────────────────────────────────────────────────
 export function MicButton({ onTranscript }) {
+  const { t, lang } = useI18n()
   const [listening, setListening] = useState(false)
   const recogRef = useRef(null)
   const hasApi = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
@@ -46,7 +49,7 @@ export function MicButton({ onTranscript }) {
     if (listening) { recogRef.current?.stop(); setListening(false); return }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     const r = new SR()
-    r.lang = 'es-ES'; r.continuous = false; r.interimResults = false
+    r.lang = lang === 'en' ? 'en-US' : 'es-ES'; r.continuous = false; r.interimResults = false
     r.onresult = (e) => {
       const t = Array.from(e.results).map(res => res[0].transcript).join(' ')
       onTranscript(t)
@@ -59,7 +62,7 @@ export function MicButton({ onTranscript }) {
   return (
     <button
       type="button" onClick={toggle}
-      title={listening ? 'Detener micrófono' : 'Hablar (mic)'}
+      title={listening ? t('vr.hud.worldChat.stopMic') : t('vr.hud.worldChat.startMic')}
       className={`rounded-lg px-2 py-1.5 text-base transition-all ${
         listening ? 'bg-red-500/20 text-red-400 ring-1 ring-red-400 animate-pulse' : 'text-text-muted hover:text-text'
       }`}
@@ -71,6 +74,7 @@ export function MicButton({ onTranscript }) {
 
 // ── World chat panel ───────────────────────────────────────────────────────────
 export default function WorldChat({ open, onClose, onOpen, authorName, playerId, onSend, prefill }) {
+  const { t } = useI18n()
   const messages       = useWorldChatStore((s) => s.messages)
   const sendMessage    = useWorldChatStore((s) => s.sendMessage)
   const addSystemMessage = useWorldChatStore((s) => s.addSystemMessage)
@@ -131,7 +135,7 @@ export default function WorldChat({ open, onClose, onOpen, authorName, playerId,
           onSend?.(authorName, body, targetId)
           setTab('whispers')
         } else {
-          addSystemMessage(`No se encontró a "${targetName}" en el mundo.`)
+          addSystemMessage(t('vr.hud.worldChat.whisperTargetNotFound', { name: targetName }))
         }
       } else {
         sendMessage(authorName, trimmed, { authorId: playerId })
@@ -163,7 +167,7 @@ export default function WorldChat({ open, onClose, onOpen, authorName, playerId,
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-        <span className="text-xs text-text-muted">Chat</span>
+        <span className="text-xs text-text-muted">{t('vr.hud.worldChat.chat')}</span>
         {hasUnreadWhisper && <span className="h-2 w-2 rounded-full bg-fuchsia-400" />}
       </button>
     )
@@ -179,41 +183,41 @@ export default function WorldChat({ open, onClose, onOpen, authorName, playerId,
       <div className="mb-2 flex items-center gap-1 text-xs">
         <button type="button" onClick={() => setTab('general')}
           className={`flex-1 rounded-lg px-2 py-1 font-semibold transition-colors ${tab === 'general' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'}`}
-        >General</button>
+        >{t('vr.hud.worldChat.general')}</button>
         <button type="button" onClick={() => setTab('whispers')}
           className={`relative flex-1 rounded-lg px-2 py-1 font-semibold transition-colors ${tab === 'whispers' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'}`}
         >
-          Susurros
+          {t('vr.hud.worldChat.whispers')}
           {hasUnreadWhisper && <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-fuchsia-400" />}
         </button>
         <button type="button" onClick={() => setMinimized(true)}
           className="ml-1 rounded-lg px-2 py-1 text-base leading-none text-text-muted hover:text-text"
-          aria-label="Minimizar chat"
+          aria-label={t('vr.hud.worldChat.minimize')}
         >—</button>
       </div>
       <div className="mb-2 flex max-h-40 flex-col gap-1 overflow-y-auto text-xs">
         {visibleMessages.length > 0
           ? visibleMessages.slice(-12).map((m) => <ChatLine key={m.id} message={m} />)
-          : <p className="text-text-muted">{tab === 'whispers' ? 'Tus susurros aparecerán aquí.' : 'El chat global aparecerá aquí.'}</p>
+          : <p className="text-text-muted">{tab === 'whispers' ? t('vr.hud.worldChat.noWhispers') : t('vr.hud.worldChat.noGeneral')}</p>
         }
       </div>
       {open ? (
         <form onSubmit={handleSubmit} className="flex gap-1">
           <input
             ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown}
-            placeholder="Mensaje global, o /w nombre mensaje para susurrar…"
+            placeholder={t('vr.hud.worldChat.placeholder')}
             className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text outline-none focus:border-primary"
           />
-          {canUseVoice && <MicButton onTranscript={(t) => setText(prev => prev ? prev + ' ' + t : t)} />}
+          {canUseVoice && <MicButton onTranscript={(tr) => setText(prev => prev ? prev + ' ' + tr : tr)} />}
           <button type="submit" className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-background transition-colors hover:bg-primary-hover">
-            Enviar
+            {t('vr.hud.worldChat.send')}
           </button>
         </form>
       ) : (
         <button type="button" onClick={onOpen}
           className="w-full rounded-lg border border-dashed border-border px-2 py-1.5 text-left text-xs text-text-muted hover:border-primary hover:text-text"
         >
-          {isTouch ? 'Toca aquí para chatear…' : 'Pulsa C o toca aquí para chatear…'}
+          {isTouch ? t('vr.hud.worldChat.tapToChat') : t('vr.hud.worldChat.pressCToChat')}
         </button>
       )}
     </div>

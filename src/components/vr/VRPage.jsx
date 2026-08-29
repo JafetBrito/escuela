@@ -4,6 +4,7 @@ import { Html, useGLTF } from '@react-three/drei'
 import { Physics, RigidBody, CapsuleCollider, CuboidCollider, useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
 import { useNavigate } from 'react-router-dom'
+import { useI18n } from '../../i18n'
 import AppTopBar from '../shared/AppTopBar'
 import PageVideoModal from '../shared/PageVideoModal'
 import MascotMesh from '../mascot/MascotMesh'
@@ -12,10 +13,13 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
 import { getVrNpcById, VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
+import { localizeNpcDialogue } from '../../data/vrNpcTranslations'
 import { getGlobalMissionById, evaluateMission } from '../../data/globalMissionsRegistry'
+import { localizeMission } from '../../data/globalMissionsTranslations'
 import { useGlobalMissionsStore } from '../../stores/useGlobalMissionsStore'
 import { useMissionState } from '../../stores/useMissionState'
 import { getStartableQuestForNpc, getActiveQuestStepForNpc } from '../../data/questsRegistry'
+import { localizeQuest } from '../../data/questsTranslations'
 import { useQuestsStore } from '../../stores/useQuestsStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
@@ -135,6 +139,17 @@ const CAMPUS_ACADEMIC = [
   { pos: [56, 0, -8],   color: '#3a5a7a', w: 14, d: 12, h: 9,  label: '💡', name: 'Innovación' },
   { pos: [-64, 0, 0],   color: '#8b6234', w: 20, d: 18, h: 3,  label: '🏪', name: 'Mercado' },
 ]
+
+// CAMPUS_ACADEMIC entries above are the Spanish names used everywhere else
+// (position lookups, comments) — this only maps them to an i18n key for the
+// WorldMap SVG labels, keeping the array itself as the single source of truth.
+const CAMPUS_BUILDING_I18N_KEY = {
+  'Gran Aula': 'granAula',
+  Biblioteca: 'biblioteca',
+  'Ciencia + IA': 'cienciaIa',
+  Innovación: 'innovacion',
+  Mercado: 'mercado',
+}
 
 // How close the player needs to be to an NPC to interact with them.
 const INTERACT_RADIUS = 2.5
@@ -357,6 +372,7 @@ function TestGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
 // Renders the Anfiteatro world: theater geometry + YouTube screen iframe +
 // one center-stage NPC + exit portal back to campus.
 function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
+  const { t } = useI18n()
   const { model, groundRayHeight } = useAnfiteatroGround()
   const stageMascot = useMemo(() => getMascotById(9), [])  // director mascot on stage
 
@@ -380,7 +396,7 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
             width="690"
             height="420"
             src="https://www.youtube.com/embed/1y1qrh58MlA?autoplay=1&mute=1&rel=0&modestbranding=1"
-            title="Pantalla Anfiteatro"
+            title={t('vr.anfiteatroWorld.screenTitle')}
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -392,7 +408,7 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
       {/* Marquee sign text */}
       <Html position={[0, ANFI_H - 1.6, ANFI_HD + 1.8 + 0.5]} transform scale={0.06} distanceFactor={1} occlude={false}>
         <div style={{ width: '700px', textAlign: 'center', color: '#1a1020', fontWeight: 'bold', fontSize: '44px', fontFamily: 'serif', letterSpacing: 4, textShadow: '0 0 8px #0008' }}>
-          🎭 ANFITEATRO OLIVER 🎭
+          {t('vr.anfiteatroWorld.marquee')}
         </div>
       </Html>
 
@@ -403,7 +419,7 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
         </group>
         <Html position={[0, 0.9, 0]} center distanceFactor={10}>
           <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-            🎬 Director de Escena
+            {t('vr.anfiteatroWorld.directorLabel')}
           </div>
         </Html>
       </group>
@@ -424,7 +440,7 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
       <Portal
         position={ANFI_EXIT_PORTAL}
         color="#d946ef"
-        label="🌀 Salir al Campus"
+        label={t('vr.portalLabels.exitToCampus')}
         playerPositionRef={playerPositionRef}
         onNearbyChange={onNearPortalChange}
       />
@@ -435,6 +451,7 @@ function AnfiteatroWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, 
 
 // Renders El Árbol del Mundo: the class selection hub.
 function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onNearClassNodeChange }) {
+  const { t } = useI18n()
   const { model, groundRayHeight } = useWorldTreeGround()
 
   // Animate node spheres bobbing and rune rings rotating each frame
@@ -494,7 +511,7 @@ function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
       <Portal
         position={WT_EXIT_PORTAL}
         color="#22c55e"
-        label="🌀 Volver al Campus"
+        label={t('vr.portalLabels.backToCampus')}
         playerPositionRef={playerPositionRef}
         onNearbyChange={onNearPortalChange}
       />
@@ -516,6 +533,7 @@ function WorldTreeWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
 const STUN = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
 
 function useVoiceChat({ playerId, name, channelRef }) {
+  const { t } = useI18n()
   const [micActive, setMicActive] = useState(false)
   const [speaking, setSpeaking] = useState({})
   const [micError, setMicError] = useState(null)
@@ -674,10 +692,10 @@ function useVoiceChat({ playerId, name, channelRef }) {
         // Let everyone online know we have mic — they'll send us offers
         ch?.send({ type: 'broadcast', event: 'voice:ring', payload: { from: playerId, name } })
       } catch (err) {
-        setMicError('Sin acceso al micrófono: ' + (err?.message ?? err))
+        setMicError(t('vr.voicePanel.micErrorPrefix') + (err?.message ?? err))
       }
     }
-  }, [micActive, playerId, name, channelRef, closePeer])
+  }, [micActive, playerId, name, channelRef, closePeer, t])
 
   useEffect(() => () => {
     localStreamRef.current?.getTracks().forEach((t) => t.stop())
@@ -689,6 +707,7 @@ function useVoiceChat({ playerId, name, channelRef }) {
 
 // Mic toggle button + speaking player list, shown in the VR HUD.
 function VoicePanel({ playerId, name, channelRef }) {
+  const { t } = useI18n()
   const { micActive, speaking, micError, toggleMic } = useVoiceChat({ playerId, name, channelRef })
   const [open, setOpen] = useState(false)
   const speakingList = Object.values(speaking)
@@ -705,11 +724,11 @@ function VoicePanel({ playerId, name, channelRef }) {
             : 'bg-surface/90 text-text hover:bg-primary/30',
         ].join(' ')}
       >
-        {micActive ? '🎤 Hablando' : '🎙️ Voz'}
+        {micActive ? t('vr.voicePanel.toggleOn') : t('vr.voicePanel.toggleOff')}
       </button>
       {open && (
         <div className="w-56 rounded-xl border border-border bg-surface/95 p-3 text-xs text-text shadow-xl backdrop-blur">
-          <p className="mb-2 font-semibold">Chat de voz</p>
+          <p className="mb-2 font-semibold">{t('vr.voicePanel.title')}</p>
           <button
             type="button"
             onClick={toggleMic}
@@ -720,10 +739,10 @@ function VoicePanel({ playerId, name, channelRef }) {
                 : 'bg-primary text-background hover:bg-primary-hover',
             ].join(' ')}
           >
-            {micActive ? '🔴 Desactivar micrófono' : '🎙️ Activar micrófono'}
+            {micActive ? t('vr.voicePanel.micOn') : t('vr.voicePanel.micOff')}
           </button>
           {micError && <p className="mb-2 text-red-400">{micError}</p>}
-          <p className="mb-1 text-text-muted">Hablando ahora:</p>
+          <p className="mb-1 text-text-muted">{t('vr.voicePanel.speakingNow')}</p>
           {speakingList.length > 0 ? (
             speakingList.map((n) => (
               <p key={n} className="flex items-center gap-1 text-green-400">
@@ -731,10 +750,10 @@ function VoicePanel({ playerId, name, channelRef }) {
               </p>
             ))
           ) : (
-            <p className="text-text-muted italic">Nadie está hablando</p>
+            <p className="text-text-muted italic">{t('vr.voicePanel.nobodySpeaking')}</p>
           )}
           <p className="mt-2 text-[10px] text-text-muted">
-            El audio de voz viaja directamente entre navegadores.
+            {t('vr.voicePanel.hint')}
           </p>
         </div>
       )}
@@ -1009,6 +1028,32 @@ const BUG_PUZZLES = [
   },
 ]
 
+// English version of BUG_PUZZLES, same order/length/`answer` index so
+// TerminalModal can pick a puzzle index once and read it from whichever
+// array matches the site's language.
+const BUG_PUZZLES_EN = [
+  {
+    code: 'function add(a, b) {\n  retun a + b\n}',
+    options: ['Missing semicolon', '"retun" is misspelled (should be "return")', 'The parameters are swapped'],
+    answer: 1,
+  },
+  {
+    code: 'for (let i = 0; i <= 10; i++) {\n  arr[i] = i\n}',
+    options: ['The loop runs past the array (off-by-one)', '"arr" is never declared', "There's no bug"],
+    answer: 0,
+  },
+  {
+    code: 'if (user.role = "admin") {\n  giveAccess()\n}',
+    options: ['Missing the giveAccess function', 'Uses "=" instead of "==" (assignment, not comparison)', 'Missing an "else"'],
+    answer: 1,
+  },
+  {
+    code: 'const total = items.reduce((a, b) => a + b)',
+    options: ['Missing the initial value in reduce (fails on an empty list)', '"reduce" does not exist', '"items" should be an object'],
+    answer: 0,
+  },
+]
+
 // Tiered content for the Programador's computer:
 // - 'basic'  → anyone with class===programmer: a find-the-bug puzzle.
 // - 'hacker' → programmer who reached level 10 (the same level the rest of
@@ -1016,11 +1061,12 @@ const BUG_PUZZLES = [
 //   of the same puzzle, themed as breaking encryption.
 // - 'admin'  → the real GM console (way more power, admin-only).
 function TerminalModal({ tier, onClose, playerPositionRef }) {
+  const { t, lang } = useI18n()
   const [puzzleIdx] = useState(() => Math.floor(Math.random() * BUG_PUZZLES.length))
   const [selected, setSelected] = useState(null)
   const [result, setResult] = useState(null)
   const canClaim = useTerminalRewardsStore((s) => s.canClaim())
-  const puzzle = BUG_PUZZLES[puzzleIdx]
+  const puzzle = (lang === 'en' ? BUG_PUZZLES_EN : BUG_PUZZLES)[puzzleIdx]
 
   if (tier === 'admin') return <GmConsole open onClose={onClose} playerPositionRef={playerPositionRef} />
 
@@ -1038,17 +1084,17 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-md rounded-xl border border-primary/40 bg-black/95 font-mono text-sm text-[#39ff14] shadow-2xl">
         <div className="flex items-center justify-between border-b border-primary/30 px-4 py-2">
-          <span className="font-semibold">{tier === 'hacker' ? '🕶️ Terminal Hacker' : '🖥️ Terminal del Programador'}</span>
+          <span className="font-semibold">{tier === 'hacker' ? t('vr.terminalPuzzle.titleHacker') : t('vr.terminalPuzzle.titleBasic')}</span>
           <button type="button" onClick={onClose} className="text-text-muted hover:text-[#39ff14]">✕</button>
         </div>
         <div className="space-y-3 px-4 py-4">
           <p className="text-[#39ff14]/70">
             {tier === 'hacker'
-              ? '// Encriptación detectada. Encuentra la vulnerabilidad para romperla.'
-              : '// Depura el siguiente código.'}
+              ? t('vr.terminalPuzzle.commentHacker')
+              : t('vr.terminalPuzzle.commentBasic')}
           </p>
           <pre className="whitespace-pre-wrap rounded bg-[#001a08] p-3 text-xs text-[#39ff14]">{puzzle.code}</pre>
-          <p>¿Cuál es el bug?</p>
+          <p>{t('vr.terminalPuzzle.question')}</p>
           <div className="flex flex-col gap-2">
             {puzzle.options.map((opt, i) => (
               <button
@@ -1066,9 +1112,9 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
               </button>
             ))}
           </div>
-          {result === 'correct' && <p className="text-[#39ff14]">✅ ¡Correcto! +{reward.coins} 🪙 +{reward.xp} XP</p>}
-          {result === 'wrong' && <p className="text-red-400">❌ No es eso. Vuelve mañana para otro intento.</p>}
-          {result === 'claimed' && <p className="text-yellow-400">⏳ Ya usaste la terminal hoy. Vuelve mañana.</p>}
+          {result === 'correct' && <p className="text-[#39ff14]">{t('vr.terminalPuzzle.correct', { coins: reward.coins, xp: reward.xp })}</p>}
+          {result === 'wrong' && <p className="text-red-400">{t('vr.terminalPuzzle.wrong')}</p>}
+          {result === 'claimed' && <p className="text-yellow-400">{t('vr.terminalPuzzle.claimed')}</p>}
         </div>
       </div>
     </div>
@@ -1080,20 +1126,21 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
 // hotbar yet) routed through the exact same handleUseSkill() the real hotbar
 // calls, so testing an ability here behaves identically to using it live.
 function AbilityTesterPanel({ onUseSkill, onClose }) {
+  const { t } = useI18n()
   const groups = useMemo(() => {
     const byGroup = {}
     Object.values(SKILL_REGISTRY).forEach((skill) => {
-      const key = skill.requiredClass ?? (skill.owner === 'oliver' ? 'oliver (Mascota)' : 'General')
+      const key = skill.requiredClass ?? (skill.owner === 'oliver' ? t('vr.abilityTester.groupOliver') : t('vr.abilityTester.groupGeneral'))
       byGroup[key] = byGroup[key] ?? []
       byGroup[key].push(skill)
     })
     return Object.entries(byGroup).sort(([a], [b]) => a.localeCompare(b))
-  }, [])
+  }, [t])
 
   return (
     <div className="fixed right-4 top-16 z-[999] flex max-h-[75vh] w-80 flex-col rounded-xl border border-primary/40 bg-black/95 text-xs text-white shadow-2xl">
       <div className="flex items-center justify-between border-b border-primary/30 px-3 py-2">
-        <span className="font-semibold">🧪 Probar habilidades ({Object.keys(SKILL_REGISTRY).length})</span>
+        <span className="font-semibold">{t('vr.abilityTester.title', { count: Object.keys(SKILL_REGISTRY).length })}</span>
         <button type="button" onClick={onClose} className="text-white/50 hover:text-white">✕</button>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
@@ -1128,13 +1175,17 @@ function AbilityTesterPanel({ onUseSkill, onClose }) {
 // monedas. Equipo se pone en el store al toque (equip() no valida nada);
 // objetos de Tienda usan el mismo /additem que ya usa la GmConsole.
 function ChestPanel({ onClose }) {
+  const { t } = useI18n()
   const [tab, setTab] = useState('equipo')
   const [chestOwner, setChestOwner] = useState('avatar')
   const [feedback, setFeedback] = useState('')
 
   const takeEquipment = (item) => {
     useEquipmentStore.getState().equip(item.owner, item.slot, item.id)
-    setFeedback(`✅ Equipado: ${item.name} (${item.owner === 'oliver' ? 'Mascota' : 'Avatar'})`)
+    setFeedback(t('vr.chest.equippedFeedback', {
+      name: item.name,
+      owner: item.owner === 'oliver' ? t('vr.chest.ownerMascot') : t('vr.chest.ownerAvatar'),
+    }))
   }
 
   const takeShopItem = async (item) => {
@@ -1149,7 +1200,7 @@ function ChestPanel({ onClose }) {
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4">
       <div className="flex max-h-[80vh] w-full max-w-2xl flex-col rounded-xl border border-amber-500/40 bg-black/95 text-xs text-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-amber-500/30 px-4 py-3">
-          <span className="font-semibold text-amber-300">📦 Cofre — todos los objetos del juego</span>
+          <span className="font-semibold text-amber-300">{t('vr.chest.title')}</span>
           <button type="button" onClick={onClose} className="text-white/50 hover:text-white">✕</button>
         </div>
         <div className="flex gap-2 border-b border-amber-500/30 px-4 py-2">
@@ -1158,19 +1209,19 @@ function ChestPanel({ onClose }) {
             onClick={() => setTab('equipo')}
             className={`rounded px-2 py-1 font-semibold ${tab === 'equipo' ? 'bg-amber-500/20 text-amber-300' : 'text-white/50 hover:text-white'}`}
           >
-            ⚔️ Equipo ({EQUIPMENT_REGISTRY.length})
+            {t('vr.chest.equipTab', { count: EQUIPMENT_REGISTRY.length })}
           </button>
           <button
             type="button"
             onClick={() => setTab('tienda')}
             className={`rounded px-2 py-1 font-semibold ${tab === 'tienda' ? 'bg-amber-500/20 text-amber-300' : 'text-white/50 hover:text-white'}`}
           >
-            🧰 Tienda ({SHOP_ITEMS.length})
+            {t('vr.chest.shopTab', { count: SHOP_ITEMS.length })}
           </button>
         </div>
         {tab === 'tienda' && (
           <div className="flex gap-2 border-b border-amber-500/20 px-4 py-2">
-            {[{ id: 'avatar', label: '⚔️ Avatar' }, { id: 'mascota', label: '🐾 Mascota' }].map((o) => (
+            {[{ id: 'avatar', label: t('vr.chest.avatarOwner') }, { id: 'mascota', label: t('vr.chest.mascotOwner') }].map((o) => (
               <button
                 key={o.id}
                 type="button"
@@ -1197,7 +1248,7 @@ function ChestPanel({ onClose }) {
                     <span className="text-lg">{item.icon}</span>
                     <span className="font-semibold">{item.name}</span>
                     <span className="text-[10px] text-white/40">
-                      {item.owner === 'oliver' ? 'Mascota' : 'Avatar'} · {SLOT_META[item.slot]?.label}
+                      {item.owner === 'oliver' ? t('vr.chest.ownerMascot') : t('vr.chest.ownerAvatar')} · {SLOT_META[item.slot]?.label}
                     </span>
                   </button>
                 ))
@@ -1263,6 +1314,7 @@ function TestWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
 // has no mascotId (shouldn't happen, but keeps things from disappearing
 // silently if the registry entry is incomplete).
 function VrNpc({ npc, playerPositionRef }) {
+  const { lang } = useI18n()
   const mascot  = getMascotById(npc.mascotId)
   const facing  = Math.atan2(-npc.position[0], -npc.position[2])
   const npcPos  = useMemo(() => new THREE.Vector3(...npc.position), [npc.position])
@@ -1297,9 +1349,9 @@ function VrNpc({ npc, playerPositionRef }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
+    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
     window.speechSynthesis.speak(utt)
-  }, [npc.dialogue])
+  }, [npc.dialogue, lang])
 
   return (
     <group position={npc.position} rotation={[0, facing, 0]}
@@ -1347,6 +1399,7 @@ function VrNpc({ npc, playerPositionRef }) {
 
 // NPCs only speak when left-clicked — no auto-speech.
 function IdleNpc({ config, playerPositionRef }) {
+  const { lang } = useI18n()
   const mascot      = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
   const [bubbles, setBubbles] = useState([])
   const lineIndexRef = useRef(0)
@@ -1363,9 +1416,15 @@ function IdleNpc({ config, playerPositionRef }) {
       const hasConnection = useAiCredentialsStore.getState().connections.some((c) => c.id === activeCredentialId)
       if (hasConnection) {
         try {
+          const npcPrompt = lang === 'en'
+            ? `${config.aiPrompt} Respond in English no matter what language the instructions above are written in.`
+            : config.aiPrompt
           const reply = await sendNpcMessage({
-            npcPrompt: config.aiPrompt,
-            content: 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
+            npcPrompt,
+            content: lang === 'en'
+              ? 'Say something brief, spontaneous and in character (a single short sentence).'
+              : 'Comenta algo breve, espontáneo y en personaje (una sola frase corta).',
+            lang,
           })
           if (reply) text = reply.trim()
         } catch { /* fall through to static lines */ }
@@ -1383,9 +1442,9 @@ function IdleNpc({ config, playerPositionRef }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
+    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
-  }, [config])
+  }, [config, lang])
 
   return (
     <group position={config.position}
@@ -1493,6 +1552,7 @@ function LocalAttackBurst({ playerPositionRef, playerRotationRef, firedAtRef, co
 }
 
 function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
+  const { t } = useI18n()
   const group = useRef()
   const attackRingRef = useRef()
   const player = useVrPresenceStore((s) => s.players[id])
@@ -1539,7 +1599,7 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
       onClick={(e) => {
         e.stopPropagation()
         useTargetStore.getState().setTarget('player', id)
-        onSelectPlayer?.({ id, name: player?.name || 'Viajero' })
+        onSelectPlayer?.({ id, name: player?.name || t('vr.hud.target.traveler') })
       }}
     >
       <group scale={PLAYER_SCALE} position={[0, PLAYER_SCALE * MODEL_HALF_HEIGHT, 0]}>
@@ -1560,11 +1620,11 @@ function RemotePlayerMesh({ id, transformsRef, actionsRef, onSelectPlayer }) {
           onClick={(e) => {
             e.stopPropagation()
             useTargetStore.getState().setTarget('player', id)
-            onSelectPlayer?.({ id, name: player?.name || 'Viajero' })
+            onSelectPlayer?.({ id, name: player?.name || t('vr.hud.target.traveler') })
           }}
           className="cursor-pointer whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg transition-colors hover:bg-primary/30"
         >
-          {player?.name || 'Viajero'}
+          {player?.name || t('vr.hud.target.traveler')}
         </button>
       </Html>
       <BubbleStack bubbles={bubbles} baseY={PLAYER_HEIGHT + 1.1} color={colorFromId(id)} />
@@ -1687,6 +1747,7 @@ function Portal({ position, color, label, playerPositionRef, onNearbyChange }) {
 // simple enclosed Room ground with no NPCs, no remote players, and an exit
 // portal back to /vr (the campus).
 function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
+  const { t } = useI18n()
   const { model, groundRayHeight } = useRoomGround()
   return (
     <>
@@ -1710,7 +1771,7 @@ function RoomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, player
       <Portal
         position={ROOM_EXIT_PORTAL_POSITION}
         color="#7dd3fc"
-        label="🌀 Salir al Campus"
+        label={t('vr.portalLabels.exitToCampus')}
         playerPositionRef={playerPositionRef}
         onNearbyChange={onNearPortalChange}
       />
@@ -1811,7 +1872,8 @@ const IDLE_NPC_CONFIGS = {
 }
 
 function IdleNpcCard({ npcId, onClose, onChat }) {
-  const cfg  = IDLE_NPC_CONFIGS[npcId]
+  const { t, lang } = useI18n()
+  const cfg  = useMemo(() => localizeNpcDialogue(IDLE_NPC_CONFIGS[npcId], lang), [npcId, lang])
   const navigate = useNavigate()
   const line = useMemo(() => {
     if (!cfg) return ''
@@ -1826,10 +1888,10 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
     if (!clean) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(clean)
-    utt.lang = 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
+    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
     return () => window.speechSynthesis.cancel()
-  }, [cfg, line])
+  }, [cfg, line, lang])
 
   if (!cfg) return null
   return (
@@ -1849,7 +1911,7 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
         <div className="flex-1 min-w-0">
           <p className="font-black truncate" style={{ color: '#fcd34d' }}>{cfg.name}</p>
           <p className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            {cfg.shopAction ? 'Mercader · Campus' : 'NPC del Campus'}
+            {cfg.shopAction ? t('vr.idleNpcCard.merchantLabel') : t('vr.idleNpcCard.npcLabel')}
           </p>
         </div>
         <button type="button" onClick={onClose}
@@ -1876,7 +1938,7 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
             className="w-full rounded-xl py-2.5 text-sm font-bold transition active:scale-95"
             style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#1a0a00' }}
           >
-            🛒 Ver tienda
+            {t('vr.idleNpcCard.viewShop')}
           </button>
         )}
         <button
@@ -1885,12 +1947,12 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
           className="w-full rounded-xl py-2 text-xs font-bold transition active:scale-95"
           style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.4)', color: '#c4b5fd' }}
         >
-          💬 Iniciar chat
+          {t('vr.idleNpcCard.startChat')}
         </button>
         <button type="button" onClick={onClose}
           className="w-full rounded-xl py-1.5 text-xs font-semibold transition"
           style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Cerrar
+          {t('vr.idleNpcCard.close')}
         </button>
       </div>
     </div>
@@ -1904,6 +1966,7 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
 const PRESENTATION_VIDEO_URL = 'https://www.youtube.com/embed/1y1qrh58MlA?autoplay=1'
 
 function CampusVideoScreen({ onOpen }) {
+  const { t } = useI18n()
   const meshRef  = useRef()
   const glowRef  = useRef()
 
@@ -1952,14 +2015,14 @@ function CampusVideoScreen({ onOpen }) {
           onContextMenu={(e) => { e.preventDefault(); onOpen() }}
         >
           <span className="text-5xl">▶️</span>
-          <p className="text-white font-black text-sm drop-shadow">Video de presentación</p>
-          <p className="text-white/60 text-[10px]">Clic para ver</p>
+          <p className="text-white font-black text-sm drop-shadow">{t('vr.videoScreen.title')}</p>
+          <p className="text-white/60 text-[10px]">{t('vr.videoScreen.clickToView')}</p>
         </div>
       </Html>
       {/* Label */}
       <Html position={[0, 10.0, 0]} center distanceFactor={18}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-          🎬 Pantalla del Campus
+          {t('vr.videoScreen.screenLabel')}
         </div>
       </Html>
     </group>
@@ -1968,6 +2031,7 @@ function CampusVideoScreen({ onOpen }) {
 
 // Full-screen video modal opened from the campus screen or its right-click menu.
 function VideoScreenModal({ onClose }) {
+  const { t } = useI18n()
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm"
       onClick={onClose}>
@@ -1983,7 +2047,7 @@ function VideoScreenModal({ onClose }) {
             className="h-full w-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            title="Video de presentación"
+            title={t('vr.videoScreen.title')}
           />
         </div>
       </div>
@@ -2024,6 +2088,7 @@ function World({
   // so it always runs in the same order across renders of a mounted World
   // instance — testMode itself never flips mid-mount, only across a route
   // change that remounts this component fresh.
+  const { lang } = useI18n()
   const spawnedNpcs = useSpawnedNpcStore((s) => s.npcs)
 
   if (testMode) {
@@ -2032,7 +2097,7 @@ function World({
     // registries (vrNpcRegistry, mobRegistry) aren't touched, only the
     // position each is rendered at here.
     const linedNpcs = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, ...VR_NPCS].map((npc, i) => ({
-      ...npc,
+      ...localizeNpcDialogue(npc, lang),
       position: [i * 4 - 12, 0, 0],
     }))
     // NpcProximityTracker's default list (ALL_NPC_POSITIONS) uses each NPC's
@@ -2130,10 +2195,10 @@ function World({
         authorName={authorName}
         playerId={playerId}
       />
-      <IdleNpc config={OLIVER_NPC}    playerPositionRef={playerPositionRef} />
-      <IdleNpc config={EINSTEIN_NPC} playerPositionRef={playerPositionRef} />
-      <IdleNpc config={JAFET_NPC}    playerPositionRef={playerPositionRef} />
-      {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={npc} playerPositionRef={playerPositionRef} />)}
+      <IdleNpc config={localizeNpcDialogue(OLIVER_NPC, lang)}    playerPositionRef={playerPositionRef} />
+      <IdleNpc config={localizeNpcDialogue(EINSTEIN_NPC, lang)} playerPositionRef={playerPositionRef} />
+      <IdleNpc config={localizeNpcDialogue(JAFET_NPC, lang)}    playerPositionRef={playerPositionRef} />
+      {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={localizeNpcDialogue(npc, lang)} playerPositionRef={playerPositionRef} />)}
       <MobField />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
@@ -2161,8 +2226,11 @@ function NpcMissionCard({
   npcId, accepted, claimed, missionState, onAccept, onClaim, onClose, onBattle,
   questsActive, questsCompleted, onAcceptQuest, onAdvanceQuest, onClaimQuest, onOpenBashTerminal,
 }) {
-  const npc = getVrNpcById(npcId)
-  const mission = npc && getGlobalMissionById(npc.missionId)
+  const { t, lang } = useI18n()
+  const rawNpc = getVrNpcById(npcId)
+  const npc = rawNpc && localizeNpcDialogue(rawNpc, lang)
+  const rawMission = npc && getGlobalMissionById(npc.missionId)
+  const mission = rawMission && localizeMission(rawMission, lang)
   if (!npc) return null
 
   const isAccepted  = mission ? accepted.includes(mission.id) : false
@@ -2171,10 +2239,12 @@ function NpcMissionCard({
 
   // Quest encadenada (ver questsRegistry.js): a diferencia de `mission`
   // (una sola condición), aquí el NPC correcto cambia según el paso actual.
-  const startableQuest = npc.questId
+  const rawStartableQuest = npc.questId
     ? getStartableQuestForNpc(npc.id, questsActive, questsCompleted)
     : null
-  const activeStep = npc.questId ? getActiveQuestStepForNpc(npc.id, questsActive) : null
+  const startableQuest = rawStartableQuest && localizeQuest(rawStartableQuest, lang)
+  const rawActiveStep = npc.questId ? getActiveQuestStepForNpc(npc.id, questsActive) : null
+  const activeStep = rawActiveStep && { ...rawActiveStep, quest: localizeQuest(rawActiveStep.quest, lang), step: localizeQuest(rawActiveStep.quest, lang).steps[rawActiveStep.stepIndex] }
   const isLastStep = activeStep && activeStep.stepIndex === activeStep.quest.steps.length - 1
   const stepReady = activeStep?.step.type === 'talk' ||
     (activeStep?.step.type === 'condition' && activeStep.step.check(missionState))
@@ -2208,7 +2278,7 @@ function NpcMissionCard({
             </span>
           )}
           {!npc.battle && (
-            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>NPC Misiones</p>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('vr.missionCard.npcMissionsLabel')}</p>
           )}
         </div>
         <button type="button" onClick={onClose}
@@ -2230,7 +2300,7 @@ function NpcMissionCard({
       {mission && (
         <div className="p-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest"
-            style={{ color: 'rgba(255,255,255,0.35)' }}>📜 Misiones disponibles</p>
+            style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.missionCard.missionsAvailable')}</p>
           <div className="rounded-xl p-3"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
             {/* Mission title + icon */}
@@ -2255,24 +2325,24 @@ function NpcMissionCard({
               <button type="button" onClick={() => onAccept(mission.id)}
                 className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
                 style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
-                📜 Aceptar misión
+                {t('vr.missionCard.acceptMission')}
               </button>
             )}
             {isAccepted && !isCompleted && (
               <p className="text-center text-xs py-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                🕓 Misión en progreso…
+                {t('vr.missionCard.missionInProgress')}
               </p>
             )}
             {isAccepted && isCompleted && !isClaimed && (
               <button type="button" onClick={() => onClaim(mission.id)}
                 className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
                 style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                🎁 Reclamar recompensa
+                {t('vr.missionCard.claimReward')}
               </button>
             )}
             {isClaimed && (
               <p className="text-center text-xs font-bold py-1" style={{ color: '#4ade80' }}>
-                ✅ Misión completada
+                {t('vr.missionCard.missionCompleted')}
               </p>
             )}
           </div>
@@ -2283,7 +2353,7 @@ function NpcMissionCard({
       {npc.questId && (startableQuest || activeStep) && (
         <div className="p-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest"
-            style={{ color: 'rgba(255,255,255,0.35)' }}>🗺️ Misión de cadena</p>
+            style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.missionCard.chainMission')}</p>
           <div className="rounded-xl p-3"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
             {startableQuest ? (
@@ -2304,7 +2374,7 @@ function NpcMissionCard({
                 <button type="button" onClick={() => onAcceptQuest(startableQuest.id)}
                   className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
                   style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
-                  📜 Aceptar misión
+                  {t('vr.missionCard.acceptMission')}
                 </button>
               </>
             ) : (
@@ -2319,7 +2389,7 @@ function NpcMissionCard({
                     onClick={() => { onOpenBashTerminal(activeStep); onClose() }}
                     className="w-full rounded-lg py-2 text-sm font-bold text-white transition active:scale-95"
                     style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}>
-                    🖥️ Abrir terminal
+                    {t('vr.missionCard.openTerminal')}
                   </button>
                 ) : stepReady ? (
                   <button type="button" onClick={handleAdvanceStep}
@@ -2327,11 +2397,11 @@ function NpcMissionCard({
                     style={{ background: isLastStep
                       ? 'linear-gradient(135deg, #f59e0b, #d97706)'
                       : 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
-                    {isLastStep ? '🎁 Reclamar recompensa' : 'Continuar'}
+                    {isLastStep ? t('vr.missionCard.claimReward') : t('vr.missionCard.continueBtn')}
                   </button>
                 ) : (
                   <p className="text-center text-xs py-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    🕓 Misión en progreso…
+                    {t('vr.missionCard.missionInProgress')}
                   </p>
                 )}
               </>
@@ -2341,7 +2411,7 @@ function NpcMissionCard({
       )}
       {npc.questId && !startableQuest && !activeStep && (
         <p className="px-4 pb-3 text-xs italic" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Ya hiciste tu parte aquí. Vuelve cuando tengas progreso.
+          {t('vr.missionCard.alreadyDidYourPart')}
         </p>
       )}
 
@@ -2351,7 +2421,7 @@ function NpcMissionCard({
           <button type="button" onClick={() => { onBattle(npc); onClose() }}
             className="w-full rounded-xl py-2 text-sm font-bold transition active:scale-95"
             style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}>
-            ⚔️ ¡Desafiar a duelo!
+            {t('vr.missionCard.challengeDuel')}
           </button>
         </div>
       )}
@@ -2362,7 +2432,7 @@ function NpcMissionCard({
           <button type="button" onClick={onClose}
             className="w-full rounded-xl py-2 text-xs font-semibold transition"
             style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Cerrar
+            {t('vr.missionCard.close')}
           </button>
         </div>
       )}
@@ -2374,6 +2444,7 @@ function NpcMissionCard({
 // world: lets them whisper that player or add/remove them as a friend
 // (friends then show up in the Amigos tab of MascotCompanion).
 function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
+  const { t } = useI18n()
   const [comingSoon, setComingSoon] = useState('')
   if (!player) return null
 
@@ -2381,7 +2452,7 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
     <div className="absolute bottom-24 left-1/2 w-[calc(100%-2rem)] max-w-xs -translate-x-1/2 rounded-2xl border border-border bg-surface/95 p-4 text-sm text-text shadow-xl backdrop-blur sm:bottom-20">
       <div className="flex items-start justify-between gap-2">
         <p className="font-bold">👤 {player.name}</p>
-        <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
+        <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.playerMenu.close')}>
           ✕
         </button>
       </div>
@@ -2391,38 +2462,38 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
           onClick={onWhisper}
           className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
         >
-          🔒 Susurrar
+          {t('vr.playerMenu.whisper')}
         </button>
         <button
           type="button"
           onClick={onToggleFriend}
           className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
         >
-          {isFriend ? '✖️ Quitar amigo' : '➕ Agregar amigo'}
+          {isFriend ? t('vr.playerMenu.removeFriend') : t('vr.playerMenu.addFriend')}
         </button>
         {/* ponytail: seguir/colocar ícono piden pathing y un sistema de marcadores
             propio — placeholders honestos en lo que se justifica construirlos,
             mismo patrón que el botón de Arena. */}
         <button
           type="button"
-          onClick={() => setComingSoon('Inspeccionar equipo llega pronto 🔍')}
+          onClick={() => setComingSoon(t('vr.playerMenu.inspectComingSoon'))}
           className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
         >
-          🔍 Inspeccionar
+          {t('vr.playerMenu.inspect')}
         </button>
         <button
           type="button"
-          onClick={() => setComingSoon('Seguir jugadores llega pronto 🚶')}
+          onClick={() => setComingSoon(t('vr.playerMenu.followComingSoon'))}
           className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
         >
-          🚶 Seguir
+          {t('vr.playerMenu.follow')}
         </button>
         <button
           type="button"
-          onClick={() => setComingSoon('Los íconos de marcador llegan pronto 🔖')}
+          onClick={() => setComingSoon(t('vr.playerMenu.markerComingSoon'))}
           className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition-colors hover:border-primary hover:text-primary"
         >
-          🔖 Colocar ícono
+          {t('vr.playerMenu.placeMarker')}
         </button>
         {comingSoon && <p className="text-center text-xs text-text-muted">{comingSoon}</p>}
       </div>
@@ -2434,6 +2505,7 @@ function PlayerMenu({ player, isFriend, onWhisper, onToggleFriend, onClose }) {
 // a separate /amigos page (leaving the VR world entirely); now it's a popup
 // like Bolsas/Personaje, with online status derived from useVrPresenceStore.
 function FriendsPopup({ friends, players, onWhisper, onRemoveFriend, onClose }) {
+  const { t } = useI18n()
   const onlineNames = new Set(Object.values(players).map((p) => p.name))
 
   return (
@@ -2444,15 +2516,14 @@ function FriendsPopup({ friends, players, onWhisper, onRemoveFriend, onClose }) 
     >
       <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-base font-bold text-text">👥 Amigos</p>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar">
+          <p className="text-base font-bold text-text">{t('vr.friendsPopup.title')}</p>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.friendsPopup.close')}>
             ✕
           </button>
         </div>
         {friends.length === 0 ? (
           <p className="py-6 text-center text-xs text-text-muted">
-            Aún no tienes amigos agregados. Toca el nombre de otro jugador en el mundo y elige
-            "Agregar amigo".
+            {t('vr.friendsPopup.empty')}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -2471,13 +2542,13 @@ function FriendsPopup({ friends, players, onWhisper, onRemoveFriend, onClose }) 
                       onClick={() => onWhisper(name)}
                       className="rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-background transition-colors hover:bg-primary-hover disabled:opacity-30"
                     >
-                      🔒 Susurrar
+                      {t('vr.friendsPopup.whisper')}
                     </button>
                     <button
                       type="button"
                       onClick={() => onRemoveFriend(name)}
                       className="rounded-lg border border-border px-2 py-1 text-xs text-text-muted hover:text-text"
-                      aria-label={`Quitar a ${name}`}
+                      aria-label={t('vr.friendsPopup.removeAria', { name })}
                     >
                       ✖️
                     </button>
@@ -2496,6 +2567,7 @@ function FriendsPopup({ friends, players, onWhisper, onRemoveFriend, onClose }) 
 // (and doubles as a "next up" teaser) instead of dropping the player into a
 // half-built page when they tap ⚔️.
 function ArenaConfirmPopup({ onClose }) {
+  const { t } = useI18n()
   return (
     <div
       className="absolute inset-0 z-40 flex items-center justify-center p-4"
@@ -2504,17 +2576,16 @@ function ArenaConfirmPopup({ onClose }) {
     >
       <div className="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-5 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <p className="text-4xl">⚔️</p>
-        <p className="mt-2 text-base font-bold text-text">¿Quieres ir al mundo de batalla?</p>
+        <p className="mt-2 text-base font-bold text-text">{t('vr.arenaConfirm.question')}</p>
         <p className="mt-1 text-xs text-text-muted">
-          La Arena PvP dentro del mundo VR todavía está en construcción — pronto podrás retar a
-          otros estudiantes en tiempo real ahí mismo.
+          {t('vr.arenaConfirm.detail')}
         </p>
         <button
           type="button"
           onClick={onClose}
           className="mt-4 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
         >
-          Entendido, avísame cuando esté lista
+          {t('vr.arenaConfirm.confirm')}
         </button>
       </div>
     </div>
@@ -2525,13 +2596,14 @@ function ArenaConfirmPopup({ onClose }) {
 // Full-screen transport picker: 4 world cards (2 available, 2 locked future
 // destinations). Opened by clicking/pressing E at the campus portal.
 const TRANSPORT_WORLDS = [
-  { id: 'campus',     emoji: '🏫', name: 'Campus Principal', desc: 'El mundo universitario',     available: true,  path: '/vr' },
-  { id: 'room',       emoji: '🏠', name: 'Mi Room',           desc: 'Tu espacio privado',         available: true,  path: '/vr/room' },
-  { id: 'anfiteatro', emoji: '🎭', name: 'Anfiteatro',        desc: 'Teatro con pantalla en vivo', available: true,  path: '/vr/anfiteatro' },
-  { id: 'ciudad',     emoji: '🌆', name: 'Ciudad',            desc: 'Próximamente…',              available: false, path: null },
+  { id: 'campus',     emoji: '🏫', available: true,  path: '/vr' },
+  { id: 'room',       emoji: '🏠', available: true,  path: '/vr/room' },
+  { id: 'anfiteatro', emoji: '🎭', available: true,  path: '/vr/anfiteatro' },
+  { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
 function TransportMenu({ onNavigate, onClose }) {
+  const { t } = useI18n()
   return (
     <div
       className="absolute inset-0 z-40 flex items-center justify-center bg-background/75 backdrop-blur-sm"
@@ -2542,12 +2614,12 @@ function TransportMenu({ onNavigate, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <p className="text-sm font-bold text-text">🌀 Portal de Transporte</p>
+          <p className="text-sm font-bold text-text">{t('vr.transportMenu.title')}</p>
           <button
             type="button"
             onClick={onClose}
             className="text-text-muted hover:text-text"
-            aria-label="Cerrar"
+            aria-label={t('vr.transportMenu.close')}
           >
             ✕
           </button>
@@ -2568,17 +2640,17 @@ function TransportMenu({ onNavigate, onClose }) {
               ].join(' ')}
             >
               <span className="text-3xl">{w.emoji}</span>
-              <span className="text-xs font-semibold text-text">{w.name}</span>
-              <span className="text-xs text-text-muted">{w.desc}</span>
+              <span className="text-xs font-semibold text-text">{t(`vr.transportMenu.worlds.${w.id}.name`)}</span>
+              <span className="text-xs text-text-muted">{t(`vr.transportMenu.worlds.${w.id}.desc`)}</span>
               {!w.available && (
-                <span className="mt-0.5 rounded-full bg-border/50 px-2 py-0.5 text-[10px] text-text-muted">🔒 Bloqueado</span>
+                <span className="mt-0.5 rounded-full bg-border/50 px-2 py-0.5 text-[10px] text-text-muted">{t('vr.transportMenu.locked')}</span>
               )}
             </button>
           ))}
         </div>
 
         <p className="mt-4 text-center text-xs text-text-muted">
-          Pulsa <kbd className="rounded bg-border px-1 py-0.5 font-mono text-[10px]">Esc</kbd> o haz clic fuera para cerrar
+          {t('vr.transportMenu.hintPrefix')} <kbd className="rounded bg-border px-1 py-0.5 font-mono text-[10px]">Esc</kbd> {t('vr.transportMenu.hintSuffix')}
         </p>
       </div>
     </div>
@@ -2603,6 +2675,7 @@ const MIN_MAP_ZOOM = 1
 const MAX_MAP_ZOOM = 8
 
 function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
+  const { t } = useI18n()
   const playerMarkerRef = useRef(null)
   const playerArrowRef = useRef(null)
   const svgWrapRef = useRef(null)
@@ -2691,8 +2764,8 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between gap-6">
-          <p className="text-sm font-bold" style={{ color: '#e8c477' }}>🗺️ Mapa del Campus — Oliver Academy</p>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label="Cerrar mapa">
+          <p className="text-sm font-bold" style={{ color: '#e8c477' }}>{t('vr.worldMap.title')}</p>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.worldMap.closeAria')}>
             ✕
           </button>
         </div>
@@ -2720,7 +2793,7 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
           <circle cx="90" cy="-60" r="30" fill="#2d6a22" opacity="0.6" />
           <circle cx="-90" cy="60" r="22" fill="#2d6a22" opacity="0.55" />
           <circle cx="90" cy="60" r="22" fill="#2d6a22" opacity="0.55" />
-          <text x="-90" y="-60" fontSize="2.4" textAnchor="middle" fill="#dff0d0" opacity="0.8">Bosque de Arces</text>
+          <text x="-90" y="-60" fontSize="2.4" textAnchor="middle" fill="#dff0d0" opacity="0.8">{t('vr.worldMap.forest')}</text>
 
           {/* Ring roads (paved stone) */}
           <circle cx="0" cy="0" r="23.5" fill="none" stroke="#a8a090" strokeWidth="3" opacity="0.8" />
@@ -2748,7 +2821,7 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
               return `${Math.cos(a) * 9},${Math.sin(a) * 9}`
             }).join(' ')
           } fill="#d0c8b8" />
-          <text x="0" y="13" fontSize="2.3" textAnchor="middle" fill="#f0ece0" opacity="0.9">Plaza Central</text>
+          <text x="0" y="13" fontSize="2.3" textAnchor="middle" fill="#f0ece0" opacity="0.9">{t('vr.worldMap.plaza')}</text>
           {/* Maple leaf monument */}
           <circle cx="-7" cy="0" r="2.0" fill="#d52b1e" opacity="0.9" />
           <text x="-7" y="0.5" fontSize="3.5" textAnchor="middle" dominantBaseline="middle">🍁</text>
@@ -2758,13 +2831,14 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
           {/* Academic buildings */}
           {CAMPUS_ACADEMIC.map(({ pos, color, w, d, name, label }) => {
             const [bx, , bz] = pos
+            const localName = t(`vr.worldMap.buildings.${CAMPUS_BUILDING_I18N_KEY[name]}`)
             return (
               <g key={name}>
-                <title>{name}</title>
+                <title>{localName}</title>
                 <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill={color} opacity="0.82" rx="0.8" />
                 <rect x={bx - w / 2} y={bz - d / 2} width={w} height={d} fill="none" stroke="#d52b1e" strokeWidth="0.6" opacity="0.5" rx="0.8" />
                 <text x={bx} y={bz + 0.6} fontSize="4.5" textAnchor="middle" dominantBaseline="middle">{label}</text>
-                <text x={bx} y={bz + d / 2 + 3.5} fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.95">{name}</text>
+                <text x={bx} y={bz + d / 2 + 3.5} fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.95">{localName}</text>
               </g>
             )
           })}
@@ -2774,14 +2848,14 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
             const [bx, , bz] = pos
             return (
               <g key={i}>
-                <title>Dormitorios</title>
+                <title>{t('vr.worldMap.dorms')}</title>
                 <rect x={bx - 3.5} y={bz - 6} width={7} height={12} fill={color} opacity="0.70" rx="0.4" />
                 <rect x={bx - 3.5} y={bz - 6} width={7} height={1.5} fill="#d52b1e" opacity="0.45" rx="0.3" />
               </g>
             )
           })}
-          <text x="60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">Dormitorios</text>
-          <text x="-60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">Dormitorios</text>
+          <text x="60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">{t('vr.worldMap.dorms')}</text>
+          <text x="-60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">{t('vr.worldMap.dorms')}</text>
 
           {/* NPCs that are really walkable-to in the live Campus */}
           {MAP_NPCS.map((npc) => {
@@ -2797,7 +2871,7 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
 
           {/* Daily reward chest — pulses with a quest-style "!" when claimable */}
           <g>
-            <title>{dailyClaimable ? 'Recompensa diaria disponible' : 'Recompensa diaria (ya reclamada hoy)'}</title>
+            <title>{dailyClaimable ? t('vr.worldMap.dailyRewardAvailable') : t('vr.worldMap.dailyRewardClaimed')}</title>
             <circle cx={REWARD_BOX_POS.x} cy={REWARD_BOX_POS.z} r="1.6" fill="#fbbf24" opacity={dailyClaimable ? 0.95 : 0.5} stroke="#1a1410" strokeWidth="0.4" />
             <text x={REWARD_BOX_POS.x} y={REWARD_BOX_POS.z + 0.5} fontSize="2.6" textAnchor="middle" dominantBaseline="middle">🎁</text>
             {dailyClaimable && (
@@ -2807,19 +2881,19 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
 
           {/* Hacker-class computer terminal */}
           <g>
-            <title>Terminal (clase Hacker)</title>
+            <title>{t('vr.worldMap.hackerTerminal')}</title>
             <circle cx={COMPUTER_POS.x} cy={COMPUTER_POS.z} r="1.4" fill="#22c55e" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
             <text x={COMPUTER_POS.x} y={COMPUTER_POS.z + 0.5} fontSize="2.4" textAnchor="middle" dominantBaseline="middle">💻</text>
           </g>
           <g>
-            <title>Terminal (clase Hacker)</title>
+            <title>{t('vr.worldMap.hackerTerminal')}</title>
             <circle cx={COMPUTER_POS_SPAWN.x} cy={COMPUTER_POS_SPAWN.z} r="1.4" fill="#22c55e" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
             <text x={COMPUTER_POS_SPAWN.x} y={COMPUTER_POS_SPAWN.z + 0.5} fontSize="2.4" textAnchor="middle" dominantBaseline="middle">💻</text>
           </g>
 
           {/* Announcements / video screen, north of the plaza */}
           <g>
-            <title>Pantalla de anuncios</title>
+            <title>{t('vr.worldMap.announcementsScreen')}</title>
             <circle cx="0" cy="-28" r="1.4" fill="#a78bfa" opacity="0.85" stroke="#1a1410" strokeWidth="0.4" />
             <text x="0" y="-27.5" fontSize="2.4" textAnchor="middle" dominantBaseline="middle">📺</text>
           </g>
@@ -2846,7 +2920,7 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
             type="button"
             onClick={() => setZoom((z) => Math.min(MAX_MAP_ZOOM, z * 1.4))}
             className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white shadow hover:bg-black/80"
-            aria-label="Acercar"
+            aria-label={t('vr.worldMap.zoomInAria')}
           >
             +
           </button>
@@ -2854,7 +2928,7 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
             type="button"
             onClick={() => setZoom((z) => Math.max(MIN_MAP_ZOOM, z / 1.4))}
             className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-lg font-bold text-white shadow hover:bg-black/80"
-            aria-label="Alejar"
+            aria-label={t('vr.worldMap.zoomOutAria')}
           >
             −
           </button>
@@ -2862,21 +2936,21 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
             type="button"
             onClick={centerOnPlayer}
             className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-sm text-white shadow hover:bg-black/80"
-            aria-label="Centrar en mí"
-            title="Centrar en mí"
+            aria-label={t('vr.worldMap.centerAria')}
+            title={t('vr.worldMap.centerAria')}
           >
             🎯
           </button>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[11px] text-text-muted">
-          <span>🐾 NPC</span>
-          <span>🎁 Recompensa diaria</span>
-          <span>💻 Terminal (Hacker)</span>
-          <span>📺 Anuncios</span>
-          <span className="text-[#e74c3c]">▲ Tú</span>
+          <span>{t('vr.worldMap.legendNpc')}</span>
+          <span>{t('vr.worldMap.legendDailyReward')}</span>
+          <span>{t('vr.worldMap.legendTerminal')}</span>
+          <span>{t('vr.worldMap.legendAnnouncements')}</span>
+          <span className="text-[#e74c3c]">{t('vr.worldMap.legendYou')}</span>
         </div>
         <p className="mt-1 text-center text-xs text-text-muted">
-          Pulsa <strong>M</strong> para cerrar el mapa · revisa <strong>📜 Misiones</strong> en el menú para el catálogo completo
+          {t('vr.worldMap.footerBefore')} <strong>M</strong> {t('vr.worldMap.footerMid')} <strong>📜 {t('vr.worldMap.missionsWord')}</strong> {t('vr.worldMap.footerAfter')}
         </p>
       </div>
     </div>
@@ -2885,6 +2959,7 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
 
 // ── Class Preview Card — shown when player nears a class node in WorldTree ─────
 function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, onSelectPlayer, onSelectOliver, onClose }) {
+  const { t } = useI18n()
   const cls = PLAYER_CLASSES[classId]
   // The Hacker node is admin-exclusive — for everyone else it's as if the
   // node weren't there at all (no preview, no "Elegir").
@@ -2898,8 +2973,8 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
     return (
       <div className="absolute bottom-20 left-1/2 z-30 w-80 -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface/95 shadow-2xl backdrop-blur sm:w-96">
         <div className="border-b border-border px-4 py-3 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Elige la clase de Oliver</p>
-          <p className="mt-0.5 text-sm text-text-muted">Tu clase: <strong style={{ color: cls.color }}>{cls.icon} {cls.name}</strong></p>
+          <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{t('vr.classPreview.chooseOliverTitle')}</p>
+          <p className="mt-0.5 text-sm text-text-muted">{t('vr.classPreview.yourClass')} <strong style={{ color: cls.color }}>{cls.icon} {cls.name}</strong></p>
         </div>
         <div className="flex flex-col gap-2 p-3">
           {Object.values(OLIVER_CLASSES).map((oc) => (
@@ -2916,7 +2991,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
                 <p className="mt-0.5 text-[10px] text-text-muted leading-tight">{oc.description}</p>
               </div>
               {oc.pairedWith === classId && (
-                <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary">Sinergia</span>
+                <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-primary">{t('vr.classPreview.synergy')}</span>
               )}
             </button>
           ))}
@@ -2957,7 +3032,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 
       {/* Starting skills */}
       <div className="border-t border-border px-4 py-2">
-        <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-text-muted">Habilidades iniciales</p>
+        <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-text-muted">{t('vr.classPreview.startingSkills')}</p>
         <div className="flex gap-2">
           {cls.startSkills.map((sid) => {
             const skill = SKILL_REGISTRY[sid]
@@ -2983,7 +3058,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
           className="w-full rounded-xl py-2.5 text-sm font-black text-white transition-all hover:scale-105"
           style={{ background: `linear-gradient(135deg, ${cls.color}, ${cls.color}cc)`, boxShadow: `0 4px 16px ${cls.color}44` }}
         >
-          Elegir {cls.name}
+          {t('vr.classPreview.choose', { name: cls.name })}
         </button>
       </div>
     </div>
@@ -2995,6 +3070,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
 export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false }) {
+  const { t, lang } = useI18n()
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
@@ -3105,7 +3181,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // spawn, shows Oliver rescuing them, and announces it in world chat (local
   // + broadcast to everyone, doubling as a live test of global announcements).
   const handleFallRescue = (fallPos) => {
-    const text = `${chatAuthor} se ha caído al vacío, vamos a rescatarlo 🐱`
+    const text = t('vr.combat.fellIntoVoid', { name: chatAuthor })
     useWorldChatStore.getState().sendMessage('Sistema', text, { authorId: playerId })
     sendChatMessage('Sistema', text)
     // Same spot as the campus spawn point (Gran Aula's front edge) — the old
@@ -3159,11 +3235,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const utt = new SpeechSynthesisUtterance(clean)
     const isOwnMessage = last.authorId === playerId
     const isMascotActive = isOwnMessage && useVrCharacterStore.getState().activeChar === 'mascot'
-    utt.lang = 'es-ES'
+    utt.lang = lang === 'en' ? 'en-US' : 'es-ES'
     utt.rate = isMascotActive ? 1.15 : 1.0
     utt.pitch = isMascotActive ? 1.45 : 1.0
     window.speechSynthesis.speak(utt)
-  }, [worldMessages, playerId])
+  }, [worldMessages, playerId, lang])
 
   useEffect(() => {
     if (nearbyNpcId !== activeNpcId) setActiveNpcId(null)
@@ -3173,15 +3249,15 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     if (motdSentRef.current) return
     motdSentRef.current = true
     const motd = anfiteatroMode
-      ? `🎭 Anfiteatro Oliver, ${chatAuthor}. Disfruta el espectáculo. Pulsa E junto al portal para volver al Campus.`
+      ? t('vr.combat.motdAnfiteatro', { name: chatAuthor })
       : roomMode
-        ? `Tu Room privada, ${chatAuthor}. Aquí solo apareces tú. Acércate al portal 🌀 y pulsa E para volver al Campus.`
-        : `Bienvenido al Campus, ${chatAuthor}. Pulsa C para chatear, P para tu personaje, M para el mapa, o usa /w nombre mensaje para susurrar.`
+        ? t('vr.combat.motdRoom', { name: chatAuthor })
+        : t('vr.combat.motdCampus', { name: chatAuthor })
     useWorldChatStore.getState().addSystemMessage(motd)
     // The instructions above are local-only (for the joining player). Other
     // already-connected players get a short generic announcement instead —
     // otherwise everyone would hear/see this player's own "how to" text.
-    sendChatMessage('Sistema', 'Un usuario se ha unido al mapa')
+    sendChatMessage('Sistema', t('vr.combat.userJoined'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -3191,10 +3267,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // otherwise silent.
   useEffect(() => {
     const announce = (e) => {
-      useWorldChatStore.getState().addSystemMessage(`🎮 Mando conectado: ${e.gamepad.id} — ¡listo para jugar!`)
+      useWorldChatStore.getState().addSystemMessage(t('vr.combat.gamepadConnected', { id: e.gamepad.id }))
     }
     const announceLost = (e) => {
-      useWorldChatStore.getState().addSystemMessage(`🎮 Mando desconectado: ${e.gamepad.id}`)
+      useWorldChatStore.getState().addSystemMessage(t('vr.combat.gamepadDisconnected', { id: e.gamepad.id }))
     }
     window.addEventListener('gamepadconnected', announce)
     window.addEventListener('gamepaddisconnected', announceLost)
@@ -3203,7 +3279,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const already = navigator.getGamepads?.() ?? []
     for (const pad of already) {
       if (pad?.connected) {
-        useWorldChatStore.getState().addSystemMessage(`🎮 Mando detectado: ${pad.id} — ¡listo para jugar!`)
+        useWorldChatStore.getState().addSystemMessage(t('vr.combat.gamepadDetected', { id: pad.id }))
         break
       }
     }
@@ -3211,6 +3287,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       window.removeEventListener('gamepadconnected', announce)
       window.removeEventListener('gamepaddisconnected', announceLost)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 'E' near a portal, idle NPC, or daily reward box
@@ -3246,27 +3323,27 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const reportAttackResult = useCallback((result, label) => {
     if (!result.ok) {
       if (result.reason === 'no-target') {
-        useWorldChatStore.getState().addSystemMessage(`❌ ${label}: no hay ningún monstruo cerca. Acércate a un Bug de Código.`)
+        useWorldChatStore.getState().addSystemMessage(t('vr.combat.noTargetNearby', { label }))
       }
       return
     }
     if (result.missed) {
-      useWorldChatStore.getState().addSystemMessage(`${label} a ${result.mobName}... ¡y falló!`)
+      useWorldChatStore.getState().addSystemMessage(t('vr.combat.missed', { label, mob: result.mobName }))
       return
     }
-    const critTag = result.crit ? ' ¡CRÍTICO!' : ''
+    const critTag = result.crit ? t('vr.combat.critTag') : ''
     if (result.killed) {
       const itemMsg = result.item ? ` + ${result.item.icon} ${result.item.name}` : ''
       const xpMsg = result.xp > 0 ? ` + ✨${result.xp} XP` : ''
       useWorldChatStore.getState().addSystemMessage(
-        `💀 ${result.mobName} derrotado${critTag} — +${formatCurrency(result.coins)}${xpMsg}${itemMsg}`,
+        t('vr.combat.killed', { mob: result.mobName, crit: critTag, coins: formatCurrency(result.coins), xp: xpMsg, item: itemMsg }),
       )
     } else {
       useWorldChatStore.getState().addSystemMessage(
-        `${label} a ${result.mobName} por ${result.damage}${critTag} (${result.hp}/${result.maxHp} HP)`,
+        t('vr.combat.hit', { label, mob: result.mobName, damage: result.damage, crit: critTag, hp: result.hp, maxHp: result.maxHp }),
       )
     }
-  }, [])
+  }, [t])
 
   // Daño base + crítico base de la clase activa, para golpe y habilidades —
   // seguimos sin un sistema real de stats de arma/poder de ataque como el de
@@ -3292,12 +3369,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const skill = SKILL_REGISTRY[skillId]
     const pos = playerPositionRef.current
     if (!skill?.effect || !pos) {
-      useWorldChatStore.getState().addSystemMessage(`${skill?.icon ?? '✨'} Usaste ${skill?.name ?? skillId}.`)
+      useWorldChatStore.getState().addSystemMessage(t('vr.combat.usedSkill', { icon: skill?.icon ?? '✨', name: skill?.name ?? skillId }))
       return
     }
     const { kind, power = 1 } = skill.effect
     if (kind === 'utility') {
-      useWorldChatStore.getState().addSystemMessage(`${skill.icon} ${skill.name} — efecto próximamente (necesita daño entrante al jugador).`)
+      useWorldChatStore.getState().addSystemMessage(t('vr.combat.utilitySoon', { icon: skill.icon, name: skill.name }))
       return
     }
     const { baseDamage, baseCrit } = classDamageProfile()
@@ -3309,7 +3386,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       { color: skill.vfxColor, ranged: kind === 'ranged' }, range,
     )
     reportAttackResult(result, `${skill.icon} ${skill.name}`)
-  }, [level, classDamageProfile, reportAttackResult])
+  }, [level, classDamageProfile, reportAttackResult, t])
 
   useWorldShortcuts({
     onToggleMap: () => setMapOpen((open) => !open),
@@ -3327,13 +3404,13 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
       if (!pos) return
       const { baseDamage, baseCrit } = classDamageProfile()
       const result = useMobStore.getState().attackNearest(pos, level, baseDamage, baseCrit)
-      reportAttackResult(result, '⚔️ Golpeaste')
+      reportAttackResult(result, t('vr.combat.meleeLabel'))
     },
     onUseWeapon: () => {
       if (playerClass === 'hacker') {
         setTerminalOpen(true)
       } else {
-        useWorldChatStore.getState().addSystemMessage('🔒 Tu arma todavía no tiene una acción asignada (próximamente).')
+        useWorldChatStore.getState().addSystemMessage(t('vr.combat.weaponNotAssigned'))
       }
     },
   })
@@ -3361,11 +3438,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // Auto-dismiss the control hint after 12s, then never show again
   useEffect(() => {
     if (!showHint) return
-    const t = setTimeout(() => {
+    const hintTimer = setTimeout(() => {
       localStorage.setItem('vr-hint-seen', '1')
       setShowHint(false)
     }, 12000)
-    return () => clearTimeout(t)
+    return () => clearTimeout(hintTimer)
   }, [showHint])
 
   // Lighting themes per world mode
@@ -3488,8 +3565,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             className="absolute bottom-40 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-36"
           >
             {(IDLE_NPC_CONFIGS[nearbyNpcId] ?? getVrNpcById(nearbyNpcId))?.emoji}{' '}
-            Clic derecho o E para hablar con{' '}
-            {(IDLE_NPC_CONFIGS[nearbyNpcId] ?? getVrNpcById(nearbyNpcId))?.name}
+            {t('vr.prompts.talkTo', { name: (IDLE_NPC_CONFIGS[nearbyNpcId] ?? getVrNpcById(nearbyNpcId))?.name })}
           </button>
         )}
 
@@ -3500,7 +3576,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClick={() => setDailyRewardsOpen(true)}
             className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
           >
-            🎁 Haz clic o pulsa E para reclamar recompensa diaria
+            {t('vr.prompts.claimDaily')}
           </button>
         )}
 
@@ -3511,7 +3587,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClick={() => setTerminalOpen(true)}
             className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
           >
-            🖥️ Pulsa E para usar la terminal
+            {t('vr.prompts.useTerminal')}
           </button>
         )}
 
@@ -3522,7 +3598,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClick={() => setTerminal2Open(true)}
             className="absolute bottom-32 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-28"
           >
-            🖥️ Pulsa E para usar la terminal
+            {t('vr.prompts.useTerminal')}
           </button>
         )}
 
@@ -3533,7 +3609,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClick={() => isPrivateWorld ? navigate('/vr') : setPortalMenuOpen(true)}
             className="absolute bottom-24 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-surface/95 px-4 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur transition-colors hover:bg-surface sm:bottom-20"
           >
-            {isPrivateWorld ? '🌀 Haz clic o pulsa E para volver al Campus' : '🌀 Haz clic o pulsa E para abrir el portal'}
+            {isPrivateWorld ? t('vr.prompts.returnToCampus') : t('vr.prompts.openPortal')}
           </button>
         )}
 
@@ -3629,12 +3705,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <div className="pointer-events-none absolute right-4 top-4 z-20 hidden rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur sm:block">
             {isVrRealtimeAvailable() ? (
               connected ? (
-                <span>🟢 Conectado · {remotePlayerCount} {remotePlayerCount === 1 ? 'jugador' : 'jugadores'} más</span>
+                <span>{t('vr.prompts.connected', { count: remotePlayerCount, unit: remotePlayerCount === 1 ? t('vr.prompts.playerSingular') : t('vr.prompts.playerPlural') })}</span>
               ) : (
-                <span>🟡 Conectando…</span>
+                <span>{t('vr.prompts.connecting')}</span>
               )
             ) : (
-              <span>⚪ Modo sin conexión</span>
+              <span>{t('vr.prompts.offlineMode')}</span>
             )}
           </div>
         )}
@@ -3642,12 +3718,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* World badge */}
         {hudVisible && anfiteatroMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
-            🎭 Anfiteatro Oliver
+            {t('vr.prompts.anfiteatroBadge')}
           </div>
         )}
         {hudVisible && roomMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
-            🏠 Mi Room (privada)
+            {t('vr.prompts.roomBadge')}
           </div>
         )}
 
@@ -3656,9 +3732,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-xl bg-surface/90 px-4 py-2 text-center text-xs text-text shadow-lg backdrop-blur sm:text-sm"
             style={{ maxWidth: '90vw' }}
           >
-            <strong>W A S D</strong> o flechas para moverte · <strong>espacio</strong> saltar ·{' '}
-            {!isPrivateWorld && <><strong>M</strong> mapa · <strong>P</strong> personaje · <strong>B</strong> inventario · <strong>C</strong> chat · </>}
-            <strong>E</strong> hablar/portal · arrastra para mirar · <strong>rueda</strong> zoom 🎮
+            <strong>{t('vr.hint.moveKeys')}</strong> {t('vr.hint.moveConnector')} · <strong>{t('vr.hint.spaceKey')}</strong> {t('vr.hint.jump')} ·{' '}
+            {!isPrivateWorld && <><strong>{t('vr.hint.mapKey')}</strong> {t('vr.hint.map')} · <strong>{t('vr.hint.characterKey')}</strong> {t('vr.hint.character')} · <strong>{t('vr.hint.inventoryKey')}</strong> {t('vr.hint.inventory')} · <strong>{t('vr.hint.chatKey')}</strong> {t('vr.hint.chat')} · </>}
+            <strong>{t('vr.hint.interactKey')}</strong> {t('vr.hint.talkPortal')} · {t('vr.hint.look')} · <strong>{t('vr.hint.zoomKey')}</strong> {t('vr.hint.zoom')}
           </div>
         )}
 
@@ -3749,7 +3825,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClick={() => setAbilityTesterOpen((v) => !v)}
             className="absolute right-4 top-4 z-20 rounded-full bg-primary/90 px-3 py-1.5 text-xs font-semibold text-background shadow-lg hover:bg-primary"
           >
-            🧪 Habilidades
+            {t('vr.buttons.abilityTester')}
           </button>
         )}
         {abilityTesterOpen && (
@@ -3766,7 +3842,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             onClick={() => setChestOpen((v) => !v)}
             className="absolute right-32 top-4 z-20 rounded-full bg-amber-500/90 px-3 py-1.5 text-xs font-semibold text-background shadow-lg hover:bg-amber-500"
           >
-            📦 Cofre
+            {t('vr.buttons.chest')}
           </button>
         )}
         {chestOpen && <ChestPanel onClose={() => setChestOpen(false)} />}
@@ -3780,7 +3856,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           onClick={() => setPhoneOpen(true)}
           className="absolute bottom-4 right-4 z-20 hidden items-center gap-1.5 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-semibold text-text shadow-lg backdrop-blur hover:bg-surface md:flex"
         >
-          📱 4 Pared
+          {t('vr.buttons.phone')}
         </button>
         {phoneOpen && <FourthWallPhone onClose={() => setPhoneOpen(false)} />}
 
@@ -3820,7 +3896,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* WorldTree badge */}
         {hudVisible && worldTreeMode && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur">
-            🌳 Árbol del Mundo
+            {t('vr.worldTreeBadge')}
           </div>
         )}
 
@@ -3828,7 +3904,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={worldTreeMode ? 'Árbol del Mundo' : anfiteatroMode ? 'Anfiteatro' : roomMode ? 'Mi Room' : 'Campus VR'}
+            worldName={worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 
@@ -3839,17 +3915,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4 text-center">
             <div className="max-w-sm rounded-2xl bg-surface p-6 shadow-2xl">
               <p className="mb-2 text-3xl">🔌</p>
-              <p className="mb-2 text-base font-bold text-text">Sesión desconectada</p>
+              <p className="mb-2 text-base font-bold text-text">{t('vr.disconnected.title')}</p>
               <p className="mb-4 text-sm text-text-muted">
-                Tu cuenta se conectó al Campus desde otra ventana o pestaña. Solo se permite una
-                sesión activa por cuenta, así que esta se desconectó.
+                {t('vr.disconnected.detail')}
               </p>
               <button
                 type="button"
                 onClick={() => window.location.reload()}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-primary-hover"
               >
-                Recargar
+                {t('vr.disconnected.reload')}
               </button>
             </div>
           </div>

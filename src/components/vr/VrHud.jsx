@@ -6,6 +6,7 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
+import { useI18n } from '../../i18n'
 import TargetFrame from './TargetFrame'
 
 // ─── Minimap world bounds (campus VR coordinate space) ─────────────────────
@@ -51,6 +52,7 @@ function useCooldown(cooldownMs) {
 const BTN = 54
 
 function SkillBtn({ skillId, hotkey, dim = false, size = BTN, onUse }) {
+  const { t } = useI18n()
   const skill = getSkillById(skillId)
   const { remaining, trigger, pct } = useCooldown(skill?.cooldownMs ?? 2000)
   const onCooldown = remaining > 0
@@ -67,7 +69,7 @@ function SkillBtn({ skillId, hotkey, dim = false, size = BTN, onUse }) {
       <div
         className="flex items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/20"
         style={{ width: size, height: size, minWidth: size, minHeight: size }}
-        title={`Slot vacío (${hotkey})`}
+        title={t('vr.hud.emptySlot', { hotkey })}
       >
         <span style={{ fontSize: 10 }}>{hotkey}</span>
       </div>
@@ -190,6 +192,7 @@ function VrMinimap({ playerPosRef }) {
 
 // ─── XP bar (bottom strip, WoC-inspired) ───────────────────────────────────
 function XpBar() {
+  const { t } = useI18n()
   const xp = useLevelStore((s) => s.xp)
   const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
   const pct = isMaxLevel ? 1 : xpIntoLevel / xpForNextLevel
@@ -212,7 +215,7 @@ function XpBar() {
           color: isMaxLevel ? '#fbbf24' : '#c4b5fd',
         }}
       >
-        Nv.{level}
+        {t('vr.hud.level', { level })}
       </span>
       <div className="relative flex-1 overflow-hidden rounded-full bg-white/10" style={{ height: 3 }}>
         <div
@@ -236,6 +239,7 @@ function XpBar() {
 // ─── Portrait card (top-left) — BDM compact style ─────────────────────────
 // Click opens the Avatar's Personaje tab in the MascotCompanion menu.
 function PortraitHud({ onOpenCharacterPanel }) {
+  const { t } = useI18n()
   const playerClass = useGameStore((s) => s.player.class)
   const oliverClass = useGameStore((s) => s.oliver.class)
   const hp = useGameStore((s) => s.player.hp)
@@ -259,7 +263,7 @@ function PortraitHud({ onOpenCharacterPanel }) {
     <button
       type="button"
       onClick={onOpenCharacterPanel}
-      title="Ver personaje"
+      title={t('vr.hud.viewCharacter')}
       className="relative flex flex-col gap-1 rounded-xl px-3 py-2 text-left transition-transform active:scale-95"
       style={{
         background: 'linear-gradient(135deg, rgba(0,0,0,0.72), rgba(0,0,0,0.45))',
@@ -271,7 +275,7 @@ function PortraitHud({ onOpenCharacterPanel }) {
       {/* Mascot mini badge */}
       <div
         className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/70 text-sm shadow-md"
-        title="Tu mascota"
+        title={t('vr.hud.yourMascot')}
       >
         {mascotEmoji}
       </div>
@@ -291,7 +295,7 @@ function PortraitHud({ onOpenCharacterPanel }) {
         </div>
         <div className="flex flex-col">
           <span className="font-black text-white" style={{ fontSize: 11, letterSpacing: 0.5 }}>
-            {cls ? cls.name : 'Sin clase'}
+            {cls ? cls.name : t('vr.hud.noClass')}
           </span>
           {oCls && (
             <span className="rounded px-1 font-bold" style={{ fontSize: 9, background: `${oCls.color}28`, color: oCls.color, marginTop: 1 }}>
@@ -377,6 +381,7 @@ function VrUtilBar({
   setHudVisible,
   isPrivateWorld,
 }) {
+  const { t } = useI18n()
   const [muted, setMuted] = useState(() => localStorage.getItem('vr-muted') === '1')
 
   // Sync initial mute state to npcVoice store on first render
@@ -399,15 +404,15 @@ function VrUtilBar({
   // turn the HUD back on/configure it), then the eye toggle right under it,
   // not the other way around.
   const BTNS = [
-    { icon: '⚙️', title: 'Ajustes', onClick: onOpenSettings },
-    { icon: hudVisible ? '👁️' : '🙈', title: hudVisible ? 'Ocultar interfaz' : 'Mostrar interfaz', onClick: () => setHudVisible(v => !v) },
-    { icon: '🎁', title: 'Recompensa diaria', onClick: onOpenDailyRewards, hidden: !hudVisible },
-    { icon: '🎒', title: 'Bolsas', onClick: onOpenBags, hidden: !hudVisible },
-    { icon: '🗺️', title: 'Mapa', onClick: onOpenMap, hidden: !hudVisible || isPrivateWorld },
-    { icon: '💬', title: 'Chat', onClick: onOpenChat, hidden: !hudVisible },
-    { icon: muted ? '🔇' : '🔊', title: muted ? 'Activar audio' : 'Silenciar', onClick: toggleMute, hidden: !hudVisible },
-    { icon: '👥', title: 'Amigos', onClick: onOpenFriends, hidden: !hudVisible },
-    { icon: '⚔️', title: 'Arena', onClick: onOpenArenaConfirm, hidden: !hudVisible },
+    { icon: '⚙️', title: t('vr.hud.settings'), onClick: onOpenSettings },
+    { icon: hudVisible ? '👁️' : '🙈', title: hudVisible ? t('vr.hud.hideUi') : t('vr.hud.showUi'), onClick: () => setHudVisible(v => !v) },
+    { icon: '🎁', title: t('vr.hud.dailyReward'), onClick: onOpenDailyRewards, hidden: !hudVisible },
+    { icon: '🎒', title: t('vr.hud.bags'), onClick: onOpenBags, hidden: !hudVisible },
+    { icon: '🗺️', title: t('vr.hud.map'), onClick: onOpenMap, hidden: !hudVisible || isPrivateWorld },
+    { icon: '💬', title: t('vr.hud.chat'), onClick: onOpenChat, hidden: !hudVisible },
+    { icon: muted ? '🔇' : '🔊', title: muted ? t('vr.hud.unmute') : t('vr.hud.mute'), onClick: toggleMute, hidden: !hudVisible },
+    { icon: '👥', title: t('vr.hud.friends'), onClick: onOpenFriends, hidden: !hudVisible },
+    { icon: '⚔️', title: t('vr.hud.arena'), onClick: onOpenArenaConfirm, hidden: !hudVisible },
   ]
 
   return (
@@ -431,13 +436,14 @@ function VrUtilBar({
 
 // ─── Real-time clock ──────────────────────────────────────────────────────
 function DayNightClock() {
+  const { lang } = useI18n()
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
   const h = now.getHours()
-  const label = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+  const label = now.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-MX', { hour: '2-digit', minute: '2-digit' })
   const icon = h >= 20 || h < 5 ? '🌙' : h < 7 ? '🌅' : h < 17 ? '☀️' : '🌇'
   return (
     <div

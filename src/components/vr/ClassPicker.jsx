@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PLAYER_CLASSES } from '../../stores/useGameStore'
+import { useI18n } from '../../i18n'
 
 // Selector de clase canónico (estilo WoW: lista + panel de detalle). ÚNICO
 // componente de selección de clase del juego — el Templo tutorial y (próximamente)
@@ -8,8 +9,6 @@ import { PLAYER_CLASSES } from '../../stores/useGameStore'
 // persiste vía useGameStore.selectPlayerClass (que fuerza guardado en la nube).
 //
 // props: isAdmin (habilita la clase Hacker), onSelect(classId), onClose (opcional).
-
-const STAT_LABELS = { str: 'Fuerza', agi: 'Agilidad', sta: 'Resistencia', int: 'Intelecto', spi: 'Espíritu' }
 
 // Comentario de Oliver por clase, mostrado al previsualizar cada una.
 const OLIVER_CLASS_LINES = {
@@ -24,10 +23,26 @@ const OLIVER_CLASS_LINES = {
   druid:    'Druida, maestro de las formas. Yo también tengo muchas formas: dormido, hambriento y caótico. 🌿',
 }
 
+// Versión en inglés de las mismas líneas — mismo criterio que
+// vrNpcTranslations.js (lookup paralelo por id, nunca se toca el original).
+const OLIVER_CLASS_LINES_EN = {
+  warrior:  'Warrior? That\'s my thing — fighting with sharp claws. Though I use paws. ⚔️🐱',
+  paladin:  'Paladin, strength and light in one. I\'m also a light source (the one blocking your sleep at 3 AM). 🛡️',
+  hunter:   'Hunter. Tracking prey… just like me when I stalk the mouse cursor for hours. 🏹',
+  rogue:    'Rogue, huh? Stealthy and cunning, just like when I sneak up without a sound and scare you. 🗡️',
+  priest:   'Priest, the one who holds the team together. I hold the couch together. A huge responsibility. ✨',
+  shaman:   'Shaman, the one who talks to the elements! I talk to my treat and it never answers. ⚡',
+  mage:     'Mage, the long-range thinker. I predict things too… like when you\'re going to give me tuna. 🔮',
+  warlock:  'Warlock… you summon shadows and demons. I summon attention at 3 AM. Basically the same thing. 🌑',
+  druid:    'Druid, master of shapeshifting. I also have many shapes: asleep, hungry, and chaotic. 🌿',
+}
+
 export default function ClassPicker({ isAdmin, onSelect, onClose }) {
+  const { t, lang } = useI18n()
   const classes = Object.values(PLAYER_CLASSES).filter((c) => c.id !== 'hacker' || isAdmin)
   const [selectedId, setSelectedId] = useState(classes[0]?.id ?? null)
   const cls = PLAYER_CLASSES[selectedId]
+  const oliverLine = (lang === 'en' ? OLIVER_CLASS_LINES_EN : OLIVER_CLASS_LINES)[selectedId]
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col select-none" style={{ background: 'linear-gradient(160deg,#0a0407 0%,#140a12 100%)' }}>
@@ -35,10 +50,10 @@ export default function ClassPicker({ isAdmin, onSelect, onClose }) {
       <div className="flex items-center justify-between border-b px-5 py-3.5" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
         <div>
           <p className="text-[9px] font-black uppercase tracking-[0.25em]" style={{ color: '#c79c6e' }}>Oliver Academy</p>
-          <p className="text-lg font-black text-white">Elige tu Clase</p>
+          <p className="text-lg font-black text-white">{t('vr.hud.classPicker.title')}</p>
         </div>
         <div className="flex items-center gap-3">
-          <p className="hidden text-[10px] sm:block" style={{ color: 'rgba(255,255,255,0.25)' }}>Podrás cambiarla más adelante</p>
+          <p className="hidden text-[10px] sm:block" style={{ color: 'rgba(255,255,255,0.25)' }}>{t('vr.hud.classPicker.subtitle')}</p>
           {onClose && (
             <button type="button" onClick={onClose}
               className="rounded-xl px-3 py-1.5 text-xs font-bold transition-colors"
@@ -91,11 +106,11 @@ export default function ClassPicker({ isAdmin, onSelect, onClose }) {
             <div className="mb-5 flex gap-5">
               {/* Stat bars */}
               <div className="flex-1">
-                <p className="mb-2 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Estadísticas</p>
+                <p className="mb-2 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.hud.classPicker.stats')}</p>
                 <div className="flex flex-col gap-2">
                   {Object.entries(cls.baseStats).map(([key, val]) => (
                     <div key={key} className="flex items-center gap-2">
-                      <span className="w-20 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{STAT_LABELS[key]}</span>
+                      <span className="w-20 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{t(`vr.hud.classPicker.statLabels.${key}`)}</span>
                       <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                         <div className="h-full rounded-full transition-all duration-500"
                           style={{ width: `${Math.round((val / 25) * 100)}%`, background: cls.color }} />
@@ -109,17 +124,17 @@ export default function ClassPicker({ isAdmin, onSelect, onClose }) {
               {/* Meta: resource + armor */}
               <div className="w-36 shrink-0 flex flex-col gap-3">
                 <div>
-                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Recurso</p>
+                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.hud.classPicker.resource')}</p>
                   <p className="text-sm font-bold" style={{ color: cls.resourceType === 'rage' ? '#f97316' : cls.resourceType === 'energy' ? '#eab308' : '#69ccf0' }}>
-                    {cls.resourceType === 'rage' ? '🔥 Rabia' : cls.resourceType === 'energy' ? '⚡ Energía' : '💧 Maná'}
+                    {cls.resourceType === 'rage' ? t('vr.hud.classPicker.rage') : cls.resourceType === 'energy' ? t('vr.hud.classPicker.energy') : t('vr.hud.classPicker.mana')}
                   </p>
                 </div>
                 <div>
-                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Armadura</p>
+                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.hud.classPicker.armor')}</p>
                   <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{cls.armor}</p>
                 </div>
                 <div>
-                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Armas</p>
+                  <p className="mb-1 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.hud.classPicker.weapons')}</p>
                   <p className="text-[10px] leading-snug" style={{ color: 'rgba(255,255,255,0.5)' }}>{cls.weapons.join(', ')}</p>
                 </div>
               </div>
@@ -127,7 +142,7 @@ export default function ClassPicker({ isAdmin, onSelect, onClose }) {
 
             {/* Signature abilities */}
             <div className="mb-5">
-              <p className="mb-2 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>Habilidades características</p>
+              <p className="mb-2 text-[8px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('vr.hud.classPicker.abilities')}</p>
               <div className="flex gap-2">
                 {cls.signatureAbilities.map((ab) => (
                   <div key={ab.id} className="flex-1 rounded-xl px-3 py-2.5"
@@ -140,11 +155,11 @@ export default function ClassPicker({ isAdmin, onSelect, onClose }) {
             </div>
 
             {/* Oliver comment */}
-            {OLIVER_CLASS_LINES[cls.id] && (
+            {oliverLine && (
               <div className="mb-5 flex items-start gap-2.5 rounded-xl px-3.5 py-2.5"
                 style={{ border: '1px solid rgba(251,146,60,0.25)', background: 'rgba(251,146,60,0.06)' }}>
                 <span className="text-xl shrink-0">🐱</span>
-                <p className="text-[11px] italic leading-snug" style={{ color: 'rgba(253,186,116,0.8)' }}>{OLIVER_CLASS_LINES[cls.id]}</p>
+                <p className="text-[11px] italic leading-snug" style={{ color: 'rgba(253,186,116,0.8)' }}>{oliverLine}</p>
               </div>
             )}
 
@@ -152,7 +167,7 @@ export default function ClassPicker({ isAdmin, onSelect, onClose }) {
             <button type="button" onClick={() => onSelect(selectedId)}
               className="w-full rounded-2xl py-3.5 text-base font-black transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{ background: `linear-gradient(135deg, ${cls.color} 0%, ${cls.color}cc 100%)`, color: '#0a0407' }}>
-              Elegir {cls.name} →
+              {t('vr.hud.classPicker.confirm', { name: cls.name })}
             </button>
           </div>
         )}

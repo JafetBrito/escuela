@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { DAILY_CYCLE, getTodayReward } from '../../data/dailyRewardsRegistry'
 import { formatCurrency } from '../../utils/currency'
+import { useI18n } from '../../i18n'
 
 export default function DailyRewardsBoard({ onClose }) {
+  const { t } = useI18n()
   const lastClaimDate = useDailyRewardsStore((s) => s.lastClaimDate)
   const streak = useDailyRewardsStore((s) => s.streak)
   const canClaim = useDailyRewardsStore((s) => s.canClaim)
@@ -50,14 +52,14 @@ export default function DailyRewardsBoard({ onClose }) {
             <span className="text-2xl">🎁</span>
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-white/40">Campus VR</p>
-              <p className="text-base font-black text-white">Recompensa Diaria</p>
+              <p className="text-base font-black text-white">{t('vr.hud.dailyRewards.title')}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white"
-            aria-label="Cerrar"
+            aria-label={t('vr.hud.dailyRewards.close')}
           >
             ✕
           </button>
@@ -70,9 +72,9 @@ export default function DailyRewardsBoard({ onClose }) {
             style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}
           >
             <span className="text-3xl">{claimed.icon}</span>
-            <p className="mt-1 text-sm font-black text-green-400">¡Recompensa reclamada!</p>
+            <p className="mt-1 text-sm font-black text-green-400">{t('vr.hud.dailyRewards.claimedTitle')}</p>
             <p className="text-xs text-white/50">
-              +{formatCurrency(claimed.coins)} · +{claimed.xp} XP · Racha: {claimed.streak} días
+              {t('vr.hud.dailyRewards.claimedDetail', { coins: formatCurrency(claimed.coins), xp: claimed.xp, streak: claimed.streak })}
             </p>
           </div>
         )}
@@ -113,7 +115,7 @@ export default function DailyRewardsBoard({ onClose }) {
                   className="text-center leading-tight"
                   style={{ fontSize: 9, color: isCurrent ? '#a78bfa' : 'rgba(255,255,255,0.3)' }}
                 >
-                  {d.day === 7 ? '👑' : `D${d.day}`}
+                  {d.day === 7 ? '👑' : t('vr.hud.dailyRewards.dayShort', { day: d.day })}
                 </span>
               </div>
             )
@@ -123,8 +125,8 @@ export default function DailyRewardsBoard({ onClose }) {
         {/* Streak label */}
         <p className="px-5 text-center text-xs text-white/30">
           {streak > 0
-            ? `Racha actual: ${streak} ${streak === 1 ? 'día' : 'días'} seguidos`
-            : 'Reclama hoy para empezar tu racha'}
+            ? t('vr.hud.dailyRewards.streakLabel', { count: streak, unit: streak === 1 ? t('vr.hud.dailyRewards.streakDay') : t('vr.hud.dailyRewards.streakDays') })
+            : t('vr.hud.dailyRewards.startStreak')}
         </p>
 
         {/* Today's reward */}
@@ -137,7 +139,7 @@ export default function DailyRewardsBoard({ onClose }) {
         >
           <span className="text-3xl">{todayReward.icon}</span>
           <div className="flex-1">
-            <p className="text-sm font-bold text-white">{alreadyClaimed ? 'Reclamado hoy' : todayReward.label}</p>
+            <p className="text-sm font-bold text-white">{alreadyClaimed ? t('vr.hud.dailyRewards.claimedToday') : todayReward.label}</p>
             <p className="text-xs text-white/50">{todayReward.desc}</p>
             <p className="mt-0.5 text-xs font-bold" style={{ color: '#fbbf24' }}>
               {formatCurrency(todayReward.coins)} · +{todayReward.xp} XP
@@ -159,10 +161,10 @@ export default function DailyRewardsBoard({ onClose }) {
               boxShadow: !alreadyClaimed && !claimed ? '0 4px 20px rgba(124,58,237,0.4)' : 'none',
             }}
           >
-            {alreadyClaimed ? '✅ Ya reclamaste hoy' : claimed ? '✅ ¡Reclamado!' : '🎁 Reclamar recompensa'}
+            {alreadyClaimed ? t('vr.hud.dailyRewards.alreadyClaimed') : claimed ? t('vr.hud.dailyRewards.justClaimed') : t('vr.hud.dailyRewards.claimReward')}
           </button>
           <p className="mt-2 text-center text-xs text-white/20">
-            {alreadyClaimed ? 'Vuelve mañana para mantener tu racha.' : 'La recompensa se renueva cada día a medianoche.'}
+            {alreadyClaimed ? t('vr.hud.dailyRewards.comeBackTomorrow') : t('vr.hud.dailyRewards.renewsDaily')}
           </p>
         </div>
       </div>

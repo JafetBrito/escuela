@@ -2,19 +2,25 @@ import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { usePhoneMessagesStore } from '../../stores/usePhoneMessagesStore'
 import { PHONE_CANNED_MESSAGES } from '../../data/phoneCannedMessages'
+import { useI18n } from '../../i18n'
 
-const SHORTCUTS = [
-  { label: '🏠 Inicio', path: '/dashboard' },
-  { label: '📜 Misiones', path: '/misiones' },
-  { label: '🏫 Academias', path: '/academias' },
-  { label: '🛒 Tienda', path: '/tienda' },
-  { label: '🏆 Logros', path: '/logros' },
-]
+function useShortcuts() {
+  const { t } = useI18n()
+  return [
+    { label: t('vr.hud.phone.shortcutHome'), path: '/dashboard' },
+    { label: t('vr.hud.phone.shortcutMissions'), path: '/misiones' },
+    { label: t('vr.hud.phone.shortcutAcademies'), path: '/academias' },
+    { label: t('vr.hud.phone.shortcutShop'), path: '/tienda' },
+    { label: t('vr.hud.phone.shortcutAchievements'), path: '/logros' },
+  ]
+}
 
 // App "Internet" del teléfono: la escuela real, embebida — mismo origen,
 // así que la sesión ya está compartida (mismas cookies/localStorage), sin
 // login aparte.
 function InternetApp() {
+  const { t } = useI18n()
+  const SHORTCUTS = useShortcuts()
   const [path, setPath] = useState('/dashboard')
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -34,7 +40,7 @@ function InternetApp() {
           </button>
         ))}
       </div>
-      <iframe key={reloadKey} src={path} title="4 Pared — Internet" className="flex-1 border-0 bg-white" />
+      <iframe key={reloadKey} src={path} title={t('vr.hud.phone.internetTitle')} className="flex-1 border-0 bg-white" />
     </div>
   )
 }
@@ -43,10 +49,11 @@ function InternetApp() {
 // ajedrez/trivia/hospital) y manda uno de los mensajes prearmados —
 // sin campo de texto libre, ver phoneCannedMessages.js.
 function MessagesApp() {
+  const { t } = useI18n()
   const session = useAuthStore((s) => s.session)
   const profile = useAuthStore((s) => s.profile)
   const myId = session?.user?.id
-  const myName = profile?.display_name || session?.user?.email || 'Jugador'
+  const myName = profile?.display_name || session?.user?.email || t('vr.hud.phone.defaultPlayerName')
 
   const searchResults = usePhoneMessagesStore((s) => s.searchResults)
   const searching = usePhoneMessagesStore((s) => s.searching)
@@ -68,9 +75,9 @@ function MessagesApp() {
 
   const handleSend = async (body) => {
     if (!target || !myId) return
-    setStatus('Enviando…')
+    setStatus(t('vr.hud.phone.sending'))
     const { error } = await sendMessage(myId, myName, target.id, target.display_name, body)
-    setStatus(error ? '❌ No se pudo enviar' : '✅ Enviado')
+    setStatus(error ? t('vr.hud.phone.sendError') : t('vr.hud.phone.sendSuccess'))
     if (!error) setTarget(null)
   }
 
@@ -82,15 +89,15 @@ function MessagesApp() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre o correo…"
+              placeholder={t('vr.hud.phone.searchPlaceholder')}
               className="flex-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none focus:border-primary"
             />
             <button type="submit" className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">
-              Buscar
+              {t('vr.hud.phone.search')}
             </button>
           </form>
 
-          {searching && <p className="mt-2 text-[11px] text-white/50">Buscando…</p>}
+          {searching && <p className="mt-2 text-[11px] text-white/50">{t('vr.hud.phone.searching')}</p>}
 
           {searchResults.length > 0 && (
             <div className="mt-2 flex flex-col gap-1.5">
@@ -102,18 +109,18 @@ function MessagesApp() {
                   className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-left text-xs hover:bg-white/10"
                 >
                   <span>{p.display_name || p.email}</span>
-                  <span className="text-white/40">Enviar →</span>
+                  <span className="text-white/40">{t('vr.hud.phone.sendArrow')}</span>
                 </button>
               ))}
             </div>
           )}
 
-          <p className="mb-1.5 mt-4 text-[10px] font-black uppercase tracking-widest text-white/40">Recientes</p>
+          <p className="mb-1.5 mt-4 text-[10px] font-black uppercase tracking-widest text-white/40">{t('vr.hud.phone.recent')}</p>
           <div className="flex flex-col gap-1.5">
-            {messages.length === 0 && <p className="text-[11px] text-white/40">Sin mensajes todavía.</p>}
+            {messages.length === 0 && <p className="text-[11px] text-white/40">{t('vr.hud.phone.noMessages')}</p>}
             {messages.map((m) => (
               <div key={m.id} className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-xs">
-                <p className="text-white/50">{m.from_id === myId ? `Para ${m.to_name}` : `De ${m.from_name}`}</p>
+                <p className="text-white/50">{m.from_id === myId ? t('vr.hud.phone.to', { name: m.to_name }) : t('vr.hud.phone.from', { name: m.from_name })}</p>
                 <p className="mt-0.5">{m.body}</p>
               </div>
             ))}
@@ -122,9 +129,9 @@ function MessagesApp() {
       ) : (
         <>
           <button type="button" onClick={() => setTarget(null)} className="mb-2 self-start text-xs text-white/60 hover:text-white">
-            ← Atrás
+            {t('vr.hud.phone.back')}
           </button>
-          <p className="mb-2 text-xs text-white/70">Mensaje para <strong className="text-white">{target.display_name || target.email}</strong>:</p>
+          <p className="mb-2 text-xs text-white/70">{t('vr.hud.phone.messageForPrefix')} <strong className="text-white">{target.display_name || target.email}</strong>:</p>
           <div className="flex flex-col gap-1.5">
             {PHONE_CANNED_MESSAGES.map((msg) => (
               <button
@@ -144,15 +151,15 @@ function MessagesApp() {
   )
 }
 
-const APPS = [
-  { id: 'internet', label: 'Internet', icon: '🌐' },
-  { id: 'mensajes', label: 'Mensajes', icon: '💬' },
-]
-
 // "4 Pared" — el teléfono del mundo VR (solo escritorio, ver el botón que
 // lo abre en VRPage.jsx). Estilo GTA V: una pantalla dentro de un marco de
 // teléfono, con un puñado de "apps" en vez de una ventana genérica.
 export default function FourthWallPhone({ onClose }) {
+  const { t } = useI18n()
+  const APPS = [
+    { id: 'internet', label: t('vr.hud.phone.appInternet'), icon: '🌐' },
+    { id: 'mensajes', label: t('vr.hud.phone.appMessages'), icon: '💬' },
+  ]
   const [app, setApp] = useState(null)
 
   return (
@@ -162,7 +169,7 @@ export default function FourthWallPhone({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between bg-black px-4 py-2 text-[10px] font-semibold text-white/60">
-          <span>4 Pared</span>
+          <span>{t('vr.hud.phone.header')}</span>
           <button type="button" onClick={onClose} className="text-white/60 hover:text-white">✕</button>
         </div>
 
@@ -192,7 +199,7 @@ export default function FourthWallPhone({ onClose }) {
             onClick={() => setApp(null)}
             className="shrink-0 border-t border-white/10 bg-black py-2 text-center text-xs font-semibold text-white/70 hover:text-white"
           >
-            ● Inicio
+            {t('vr.hud.phone.home')}
           </button>
         )}
       </div>

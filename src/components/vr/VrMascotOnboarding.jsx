@@ -5,18 +5,20 @@ import { MASCOTS, getMascotById } from '../../data/mascotRegistry'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useGameStore, OLIVER_CLASSES } from '../../stores/useGameStore'
+import { useI18n } from '../../i18n'
 
 const SELECTABLE_MASCOTS = MASCOTS.filter((m) => m.modelPath)
 
 // ─── Mascot card ──────────────────────────────────────────────────────────────
 
 function MascotCard({ mascot, selected, onSelect, onShowDesc }) {
+  const { t } = useI18n()
   return (
     <button
       type="button"
       onClick={() => onSelect(mascot.id)}
       onContextMenu={(e) => { e.preventDefault(); onShowDesc(mascot) }}
-      title="Clic para seleccionar · Clic derecho para ver descripción"
+      title={t('vr.hud.onboarding.cardHint')}
       className="relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-all hover:scale-105 focus:outline-none"
       style={{
         borderColor: selected ? mascot.color : 'var(--color-border)',
@@ -47,6 +49,7 @@ function MascotCard({ mascot, selected, onSelect, onShowDesc }) {
 // ─── Description tooltip ─────────────────────────────────────────────────────
 
 function DescTooltip({ mascot, onClose }) {
+  const { t } = useI18n()
   if (!mascot) return null
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center p-4 sm:items-center"
@@ -64,11 +67,11 @@ function DescTooltip({ mascot, onClose }) {
           </div>
         </div>
         <p className="text-sm leading-relaxed text-text-muted">
-          {mascot.description || 'Un compañero fiel para tu aventura en Oliver School.'}
+          {mascot.description || t('vr.hud.onboarding.defaultMascotDesc')}
         </p>
         <button type="button" onClick={onClose}
           className="mt-4 w-full rounded-xl bg-surface py-2 text-sm font-bold text-text-muted border border-border hover:bg-background">
-          Cerrar
+          {t('vr.hud.onboarding.close')}
         </button>
       </div>
     </div>
@@ -79,6 +82,7 @@ function DescTooltip({ mascot, onClose }) {
 
 // onDone: optional callback called after finish (used by VrArbol tutorial)
 export default function VrMascotOnboarding({ onDone } = {}) {
+  const { t } = useI18n()
   const [step, setStep]               = useState(0)   // 0: choose mascot, 1: oliver class
   const [mascotId, setMascotId]       = useState(SELECTABLE_MASCOTS[0]?.id ?? 8)
   const [petName, setPetName]         = useState('')
@@ -119,12 +123,12 @@ export default function VrMascotOnboarding({ onDone } = {}) {
               <span className="text-3xl">🐾</span>
               <div>
                 <h2 className="text-xl font-black text-text">
-                  {step === 0 ? '¡Elige tu compañero!' : `Clase de ${petName.trim() || selectedMascot.name}`}
+                  {step === 0 ? t('vr.hud.onboarding.chooseTitle') : t('vr.hud.onboarding.classTitle', { name: petName.trim() || selectedMascot.name })}
                 </h2>
                 <p className="text-xs text-text-muted">
                   {step === 0
-                    ? 'Clic derecho o ℹ para ver la descripción de cada mascota'
-                    : 'La clase define las habilidades especiales de tu compañero'}
+                    ? t('vr.hud.onboarding.chooseSubtitle')
+                    : t('vr.hud.onboarding.classSubtitle')}
                 </p>
               </div>
             </div>
@@ -177,7 +181,7 @@ export default function VrMascotOnboarding({ onDone } = {}) {
               {/* Custom name */}
               <div>
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-muted">
-                  Nombre personalizado (opcional)
+                  {t('vr.hud.onboarding.customName')}
                 </label>
                 <input
                   type="text"
@@ -192,7 +196,7 @@ export default function VrMascotOnboarding({ onDone } = {}) {
               <button type="button" onClick={() => setStep(1)}
                 className="w-full rounded-2xl py-3.5 text-base font-black text-white transition-all hover:scale-[1.02] active:scale-95"
                 style={{ background: `linear-gradient(135deg, ${selectedMascot.color}, ${selectedMascot.color}bb)` }}>
-                Continuar →
+                {t('vr.hud.onboarding.continue')}
               </button>
             </div>
           )}
@@ -215,7 +219,7 @@ export default function VrMascotOnboarding({ onDone } = {}) {
                       {isPaired && (
                         <span className="absolute right-2 top-2 rounded-full px-1.5 py-0.5 text-[9px] font-black"
                           style={{ background: `${ocls.color}33`, color: ocls.color }}>
-                          ★ Recomendada
+                          {t('vr.hud.onboarding.recommended')}
                         </span>
                       )}
                       <div className="flex items-center gap-3">
@@ -233,14 +237,14 @@ export default function VrMascotOnboarding({ onDone } = {}) {
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(0)}
                   className="rounded-xl border border-border px-4 py-3 text-sm font-bold text-text-muted hover:bg-surface">
-                  ← Atrás
+                  {t('vr.hud.onboarding.back')}
                 </button>
                 <button type="button"
                   onClick={handleFinish}
                   disabled={!oliverClassId || saving}
                   className="flex-1 rounded-2xl py-3.5 text-base font-black text-white transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   style={oCls ? { background: `linear-gradient(135deg, ${oCls.color}, ${oCls.color}bb)` } : { background: 'var(--color-primary)' }}>
-                  {saving ? 'Guardando…' : oliverClassId ? '¡Entrar al Campus VR! 🌍' : 'Elige una clase'}
+                  {saving ? t('vr.hud.onboarding.saving') : oliverClassId ? t('vr.hud.onboarding.enterCampus') : t('vr.hud.onboarding.chooseClass')}
                 </button>
               </div>
             </div>
