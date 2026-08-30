@@ -101,6 +101,11 @@ const MyClassesPage = lazy(() => import('./components/liveclass/MyClassesPage'))
 const ClassSummaryPage = lazy(() => import('./components/liveclass/ClassSummaryPage'))
 const AdminExamsPage = lazy(() => import('./components/admin/AdminExamsPage'))
 const AdminCoursesPage = lazy(() => import('./components/admin/AdminCoursesPage'))
+const AdminTeachersPage = lazy(() => import('./components/admin/AdminTeachersPage'))
+const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
+const TeacherReflectionsPage = lazy(() => import('./components/teacher/TeacherReflectionsPage'))
+const TeacherProfilePage = lazy(() => import('./components/teacher/TeacherProfilePage'))
+const TeacherPublicProfilePage = lazy(() => import('./components/teacher/TeacherPublicProfilePage'))
 const AdminTriviaPage = lazy(() => import('./components/admin/AdminTriviaPage'))
 const ExamsPage = lazy(() => import('./components/exams/ExamsPage'))
 const ExamPage = lazy(() => import('./components/exams/ExamPage'))
@@ -649,6 +654,62 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminCoursesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profesores"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminTeachersPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        {/* Rutas de profesor — las estáticas (reflexiones/perfil) van ANTES
+            de la dinámica /profesor/:id para que React Router no confunda
+            "reflexiones"/"perfil" con un :id (mismo criterio que
+            /admin/alumnos/:id vs. el resto de /admin/*, que no colisionan
+            porque ninguna otra ruta admin usa un segmento dinámico al mismo
+            nivel). */}
+        <Route
+          path="/profesor"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TeacherDashboardPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profesor/reflexiones"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TeacherReflectionsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profesor/perfil"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TeacherProfilePage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profesor/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TeacherPublicProfilePage />
               </Suspense>
             </ProtectedRoute>
           }

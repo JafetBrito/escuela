@@ -144,6 +144,7 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
   const profile = useAuthStore((s) => s.profile)
+  const isTeacher = useAuthStore((s) => s.isTeacher)
   const signOut = useAuthStore((s) => s.signOut)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const { t, lang, setLang } = useI18n()
@@ -271,6 +272,22 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
         >
           🏫 {t('nav.items.academias')}
         </Link>
+
+        {/* Profesor — solo visible para cuentas promovidas por un admin
+            (profiles.role === 'teacher', ver AdminTeachersPage.jsx) */}
+        {isTeacher?.() && (
+          <Link
+            to="/profesor"
+            onClick={closeAll}
+            className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+              location.pathname.startsWith('/profesor')
+                ? 'bg-primary/10 text-primary'
+                : 'text-text-muted hover:text-text'
+            }`}
+          >
+            🧑‍🏫 Profesor
+          </Link>
+        )}
 
         {/* Dropdown groups */}
         {visibleGroups.map((group) => {
@@ -454,6 +471,18 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
           >
             🏫 {t('nav.items.academias')}
           </Link>
+
+          {isTeacher?.() && (
+            <Link
+              to="/profesor"
+              onClick={closeAll}
+              className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/profesor') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+              }`}
+            >
+              🧑‍🏫 Profesor
+            </Link>
+          )}
 
           {visibleGroups.map((group) => {
             const isExpanded = expandedGroupId === group.id

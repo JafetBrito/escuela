@@ -11,8 +11,11 @@ import { useState } from 'react'
 // `onFinish` reemplazan el botón "Siguiente" del ÚLTIMO paso, para que ahí
 // mismo se pueda saltar a la siguiente CLASE (LearningInterface.jsx ya tenía
 // esa navegación; aquí solo se le da su lugar al final del último paso, sin
-// duplicar el botón).
-export default function LessonSteps({ steps, onFinish, onFinishLabel = 'Siguiente clase →' }) {
+// duplicar el botón). `finishExtra` es contenido opcional (ej.
+// LessonReflectionBox) que se muestra justo arriba del botón de "terminar",
+// solo en el último paso — puramente decorativo desde el punto de vista de
+// este componente, nunca gatea onFinish.
+export default function LessonSteps({ steps, onFinish, onFinishLabel = 'Siguiente clase →', finishExtra = null }) {
   // Arranca siempre en el primer paso — el caller monta este componente con
   // key={módulo.id}, así que al cambiar de clase React lo desmonta y vuelve
   // a montar entero, sin heredar "iba en el paso 3" de la clase anterior.
@@ -52,6 +55,8 @@ export default function LessonSteps({ steps, onFinish, onFinishLabel = 'Siguient
       <div key={current.id} className="module-enter">
         {current.render()}
       </div>
+
+      {isLast && finishExtra}
 
       <div className="flex items-center justify-between gap-3">
         {clampedIndex > 0 ? (

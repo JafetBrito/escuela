@@ -42,6 +42,7 @@ import TrackContent from './TrackContent'
 import PhishingGame from './PhishingGame'
 import HanziPractice from './HanziPractice'
 import LessonSteps from './LessonSteps'
+import LessonReflectionBox from './LessonReflectionBox'
 import MascotCompanion from '../mascot/MascotCompanion'
 import WelcomeModal from '../onboarding/WelcomeModal'
 import AppTopBar from '../shared/AppTopBar'
@@ -276,6 +277,14 @@ export default function LearningInterface() {
                 steps={steps}
                 onFinish={goNext}
                 onFinishLabel={nextModule ? `Siguiente clase: ${nextModule.title} →` : '🗺️ Volver al mapa'}
+                finishExtra={
+                  <LessonReflectionBox
+                    courseId={courseId}
+                    moduleId={currentModule.id}
+                    teacherId={courseData.teacher_id}
+                    teacherName={courseData.teacher?.display_name}
+                  />
+                }
               />
             ) : (
               <div key={currentModule.id} className="module-enter flex flex-col gap-4">
@@ -297,6 +306,13 @@ export default function LearningInterface() {
                 )}
                 <ModuleResources module={currentModule} className="min-h-[120px]" />
                 <CommentsPanel courseId={courseId} moduleId={currentModule.id} />
+
+                <LessonReflectionBox
+                  courseId={courseId}
+                  moduleId={currentModule.id}
+                  teacherId={courseData.teacher_id}
+                  teacherName={courseData.teacher?.display_name}
+                />
 
                 <div className="flex items-center justify-end">
                   <button

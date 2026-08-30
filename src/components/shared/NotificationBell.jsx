@@ -17,6 +17,9 @@ function notificationMeta(n) {
   if (n.admin_id && n.project_id) return { icon: '📁', ring: 'bg-rose-500/15 text-rose-400' }
   if (n.project_id) return { icon: '📁', ring: 'bg-amber-500/15 text-amber-400' }
   if (n.task_id) return { icon: '📋', ring: 'bg-emerald-500/15 text-emerald-400' }
+  // teacher_id presente = fila dirigida al profesor (reflexión de clase de
+  // un alumno) — ver migration_049.sql.
+  if (n.teacher_id && n.reflection_id) return { icon: '📩', ring: 'bg-rose-500/15 text-rose-400' }
   return { icon: '🔔', ring: 'bg-primary/15 text-primary' }
 }
 
@@ -91,6 +94,8 @@ export default function NotificationBell() {
       navigate(`/proyectos/${n.project_id}`)
     } else if (n.task_id) {
       navigate(`/mis-tareas/${n.task_id}`)
+    } else if (n.teacher_id && n.reflection_id) {
+      navigate('/profesor/reflexiones')
     }
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useTeacherStore } from '../../stores/useTeacherStore'
 import TeacherShell from './TeacherShell'
@@ -10,18 +10,18 @@ export default function TeacherProfilePage() {
   const refreshProfile = useAuthStore((s) => s.refreshProfile)
   const updateMyProfile = useTeacherStore((s) => s.updateMyProfile)
 
-  const [form, setForm] = useState({ display_name: '', avatar_url: '', teacher_bio: '' })
+  // Inicializado directo desde `profile` (sin efecto) — ProtectedRoute.jsx
+  // no deja montar ninguna ruta protegida hasta que authReady es true, y
+  // useAuthStore._applySession ya carga el profile ANTES de poner authReady
+  // en true, así que profile siempre existe para cuando este componente
+  // monta por primera vez.
+  const [form, setForm] = useState(() => ({
+    display_name: profile?.display_name ?? '',
+    avatar_url: profile?.avatar_url ?? '',
+    teacher_bio: profile?.teacher_bio ?? '',
+  }))
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-
-  useEffect(() => {
-    if (!profile) return
-    setForm({
-      display_name: profile.display_name ?? '',
-      avatar_url: profile.avatar_url ?? '',
-      teacher_bio: profile.teacher_bio ?? '',
-    })
-  }, [profile])
 
   if (!isTeacher?.()) {
     return <TeacherShell />

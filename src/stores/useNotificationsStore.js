@@ -25,6 +25,10 @@ function notificationUrl(n) {
   if (n.admin_id && n.project_id) return `/proyectos/${n.project_id}`
   if (n.project_id) return `/proyectos/${n.project_id}`
   if (n.task_id) return `/mis-tareas/${n.task_id}`
+  // teacher_id presente = esta fila es para el profesor (alumno mandó una
+  // reflexión de clase — ver migration_049.sql). No hay página de detalle
+  // por reflexión, la bandeja completa del profesor ES el destino.
+  if (n.teacher_id && n.reflection_id) return '/profesor/reflexiones'
   return null
 }
 
@@ -256,6 +260,21 @@ export const useNotificationsStore = create((set, get) => ({
       project_id: project.id,
       title: '📁 Proyecto actualizado',
       body: `${studentName ?? 'Un alumno'} actualizó "${project.title}"`,
+    })
+  },
+
+  // Usado por LessonReflectionBox.jsx cuando el alumno manda una reflexión
+  // de clase a su profesor — requiere "notifications: student notifies
+  // teacher of reflection" (migration_049.sql): el insert es hecho por el
+  // propio alumno, no por un admin.
+  notifyTeacherReflection: async (reflection, studentName) => {
+    if (!reflection.teacher_id) return
+    await insertNotification({
+      student_id: reflection.student_id,
+      teacher_id: reflection.teacher_id,
+      reflection_id: reflection.id,
+      title: '📩 Nueva reflexión de clase',
+      body: `${studentName ?? 'Un alumno'} te mandó una reflexión`,
     })
   },
 }))

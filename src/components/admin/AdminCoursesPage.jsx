@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useCourseContentStore } from '../../stores/useCourseContentStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
 
 // Mismo criterio que QUESTION_TYPES en AdminExamsPage.jsx — puramente de
 // autoría, determina qué campos se muestran para el módulo. 'video' es el
@@ -53,6 +54,7 @@ const emptyCourse = (id) => ({
   locked: false,
   modules: [],
   translations: {},
+  teacher_id: '',
 })
 
 export default function AdminCoursesPage() {
@@ -60,6 +62,8 @@ export default function AdminCoursesPage() {
   const catalog = useCourseContentStore((s) => s.catalog)
   const courses = useCourseContentStore((s) => s.courses)
   const saveCourse = useCourseContentStore((s) => s.saveCourse)
+  const teachers = useAdminUsersStore((s) => s.teachers)
+  const fetchTeachers = useAdminUsersStore((s) => s.fetchTeachers)
 
   const [courseId, setCourseId] = useState('')
   const [creatingId, setCreatingId] = useState('')
@@ -69,9 +73,19 @@ export default function AdminCoursesPage() {
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
+    if (!isAdmin?.()) return
+    fetchTeachers()
+  }, [isAdmin, fetchTeachers])
+
+  useEffect(() => {
     if (!courseId) { setForm(null); setModules([]); return }
     const course = courses[courseId] ?? emptyCourse(courseId)
     const { modules: courseModules, ...rest } = course
+    // `teacher` es el objeto embebido por el join de useCourseContentStore
+    // (profiles!teacher_id) — `courses` de verdad no tiene esa columna, así
+    // que se quita aquí para que handleSave no intente subirlo en el
+    // upsert; el select de abajo se guía solo por `teacher_id`.
+    delete rest.teacher
     setForm(rest)
     setModules(courseModules ?? [])
     setMsg('')
@@ -211,6 +225,16 @@ export default function AdminCoursesPage() {
                   <label className="text-[10px] font-bold uppercase text-text-muted">Subcategoría</label>
                   <input value={form.subcategory ?? ''} onChange={(e) => updateForm({ subcategory: e.target.value })}
                     className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-text-muted">Profesor</label>
+                  <select value={form.teacher_id ?? ''} onChange={(e) => updateForm({ teacher_id: e.target.value || null })}
+                    className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary">
+                    <option value="">Sin profesor asignado</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>{t.display_name || t.email}</option>
+                    ))}
+                  </select>
                 </div>
                 <label className="col-span-2 flex items-center gap-2 text-sm text-text sm:col-span-3">
                   <input type="checkbox" checked={Boolean(form.locked)} onChange={(e) => updateForm({ locked: e.target.checked })} />
