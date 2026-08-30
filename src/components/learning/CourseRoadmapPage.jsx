@@ -143,6 +143,16 @@ export default function CourseRoadmapPage() {
           <div>
             <h1 className="text-2xl font-black text-text sm:text-3xl">{courseData.title}</h1>
             <p className="mx-auto mt-2 max-w-xl text-sm text-text-muted">{courseData.description}</p>
+            {/* Cursos sin profesor asignado (teacher_id null, la mayoría hoy)
+                simplemente no muestran esta línea — ver migration_048.sql. */}
+            {courseData.teacher_id && courseData.teacher?.display_name && (
+              <Link
+                to={`/profesor/${courseData.teacher_id}`}
+                className="text-xs font-semibold text-text-muted hover:text-primary"
+              >
+                Impartido por {courseData.teacher.display_name} →
+              </Link>
+            )}
           </div>
 
           {!hasAccessToCourse(courseId) && (

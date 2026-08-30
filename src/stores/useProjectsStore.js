@@ -85,4 +85,13 @@ export const useProjectsStore = create((set, get) => ({
     const { data } = await q
     set({ allProjects: data ?? [], adminLoading: false })
   },
+
+  // Conteo liviano para el badge de "Bandeja de revisión" en el riel admin
+  // (AdminShell.jsx) — solo ids, no proyectos completos. `status ===
+  // 'completado'` es la señal de que el alumno terminó y el admin debería
+  // echarle un ojo (mismo criterio que la bandeja de AdminProjectsPage).
+  fetchProjectsNeedingReviewCount: async () => {
+    const { data } = await supabase.from('student_projects').select('id').eq('status', 'completado')
+    return data?.length ?? 0
+  },
 }))

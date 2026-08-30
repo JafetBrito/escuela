@@ -141,15 +141,37 @@ export const useTasksStore = create((set, get) => ({
   allTasks: [],
   adminLoading: false,
 
+  // El embed `task_questions(id, answered)` usa el FK task_questions.task_id
+  // -> student_tasks.id (migration_011.sql) para que PostgREST lo resuelva
+  // solo — así la lista admin (y la Bandeja de revisión) saben sin otra
+  // consulta si una tarea tiene preguntas sin responder, vía
+  // `task.task_questions.some(q => !q.answered)`.
   fetchAllTasks: async (studentId = null) => {
     set({ adminLoading: true })
     let q = supabase
       .from('student_tasks')
-      .select('*, profiles!student_id(display_name, email)')
+      .select('*, profiles!student_id(display_name, email), task_questions(id, answered)')
       .order('created_at', { ascending: false })
     if (studentId) q = q.eq('student_id', studentId)
     const { data } = await q
     set({ allTasks: data ?? [], adminLoading: false })
+  },
+
+  // Conteo liviano para el badge de "Bandeja de revisión" en el riel admin
+  // (AdminShell.jsx) — trae solo ids (nunca filas completas) y deduplica en
+  // JS, porque una misma tarea puede calificar por los dos motivos a la vez
+  // (entregada Y con pregunta sin responder) y no queremos contarla doble.
+  // Mismo criterio que la bandeja de AdminTasksPage (ver ese archivo).
+  fetchTasksNeedingReviewCount: async () => {
+    const [{ data: entregadas }, { data: withQuestions }] = await Promise.all([
+      supabase.from('student_tasks').select('id').eq('status', 'entregada'),
+      supabase.from('task_questions').select('task_id').eq('answered', false),
+    ])
+    const ids = new Set([
+      ...(entregadas ?? []).map((t) => t.id),
+      ...(withQuestions ?? []).map((q) => q.task_id),
+    ])
+    return ids.size
   },
 
   createTask: async (payload) => {

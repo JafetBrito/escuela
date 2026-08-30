@@ -31,7 +31,14 @@ export const useCourseContentStore = create((set, get) => ({
   fetchAll: async () => {
     if (get().loaded || get().loading) return get().catalog
     set({ loading: true })
-    const { data, error } = await supabase.from('courses').select('*')
+    // `teacher:profiles!teacher_id(...)` — mismo patrón de embed que
+    // AdminTasksPage.jsx ya usa para student_tasks (profiles!student_id),
+    // aunque teacher_id/student_id apunten a auth.users y no a profiles
+    // directo. Usado por CourseRoadmapPage.jsx para la línea "Impartido
+    // por…"; viene null en cursos sin profesor asignado (teacher_id null).
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*, teacher:profiles!teacher_id(display_name)')
     if (error) {
       // OJO: `loaded` se pone en true IGUAL en el error (con catálogo
       // vacío) — no en false. ProtectedRoute.jsx bloquea el render de toda

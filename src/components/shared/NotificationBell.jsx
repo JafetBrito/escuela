@@ -84,9 +84,9 @@ export default function NotificationBell() {
     } else if (n.class_id) {
       navigate(`/mis-clases/${n.class_id}`)
     } else if (n.admin_id && n.task_id) {
-      navigate(`/admin/tareas?student=${n.student_id}`)
+      navigate(`/mis-tareas/${n.task_id}`)
     } else if (n.admin_id && n.project_id) {
-      navigate(`/admin/proyectos?student=${n.student_id}`)
+      navigate(`/proyectos/${n.project_id}`)
     } else if (n.project_id) {
       navigate(`/proyectos/${n.project_id}`)
     } else if (n.task_id) {

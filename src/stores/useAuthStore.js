@@ -269,6 +269,12 @@ export const useAuthStore = create((set, get) => ({
 
   isAdmin: () => get().profile?.role === 'admin',
 
+  // Profesor: cuenta restringida, promovida por un admin desde
+  // /admin/profesores (ver useAdminUsersStore.promoteToTeacher) — nunca por
+  // signup directo. Ve sus propios cursos asignados y su bandeja de
+  // reflexiones (ver src/components/teacher/).
+  isTeacher: () => get().profile?.role === 'teacher',
+
   // Live voice (mic dictation in VR chat): admins always have it; everyone
   // else needs it explicitly granted via the admin's "Voz" panel, which
   // writes profiles.voice_enabled for that player (see gmCommands.setVoicePermission).

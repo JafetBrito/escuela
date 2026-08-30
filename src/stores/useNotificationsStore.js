@@ -15,12 +15,28 @@ function notificationUrl(n) {
   if (n.trivia_invite_id) return `/games/quiz-rapido?invite=${n.trivia_invite_id}`
   if (n.class_id) return `/mis-clases/${n.class_id}`
   // admin_id presente = esta fila es para el profesor (alumno entregó/preguntó/
-  // actualizó), no para el alumno — va a la vista de admin, no a la del alumno.
-  if (n.admin_id && n.task_id) return `/admin/tareas?student=${n.student_id}`
-  if (n.admin_id && n.project_id) return `/admin/proyectos?student=${n.student_id}`
+  // actualizó). OJO: NO va a /admin/tareas (la lista) — AdminTasksPage.jsx y
+  // AdminProjectsPage.jsx navegan directo a /mis-tareas/:id y /proyectos/:id
+  // al hacer clic en una tarjeta (son la misma vista compartida con el
+  // alumno, con UI de admin condicional — ver viewingAsAdmin en
+  // TaskDetailPage.jsx/ProjectDetailPage.jsx). Mandar a la lista en vez del
+  // detalle específico era el bug: "la notificación no lleva a ningún lado".
+  if (n.admin_id && n.task_id) return `/mis-tareas/${n.task_id}`
+  if (n.admin_id && n.project_id) return `/proyectos/${n.project_id}`
   if (n.project_id) return `/proyectos/${n.project_id}`
   if (n.task_id) return `/mis-tareas/${n.task_id}`
   return null
+}
+
+// Único punto de inserción para todas las notifyX de abajo — antes cada una
+// hacía el insert "a ciegas" (sin mirar el resultado), así que un insert
+// bloqueado por RLS (ej. migration_047.sql no corrida en producción) fallaba
+// en silencio total: sin notificación, sin error en consola, nada que avisara
+// que algo se rompió.
+async function insertNotification(payload) {
+  const { error } = await supabase.from('student_notifications').insert(payload)
+  if (error) console.error('[notifications] insert falló:', error.message, payload)
+  return { error }
 }
 
 // Le entrega al store local (XP/monedas) la recompensa de una notificación
@@ -119,7 +135,7 @@ export const useNotificationsStore = create((set, get) => ({
   // Usado por el admin al calificar una tarea — notifica al alumno dueño y
   // le entrega la recompensa (si el admin puso XP/monedas) por esta misma vía.
   notifyTaskGraded: async (task, grade, gradeMax, xpReward = 0, goldReward = 0) => {
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: task.student_id,
       task_id: task.id,
       title: 'Calificaron tu tarea',
@@ -133,7 +149,7 @@ export const useNotificationsStore = create((set, get) => ({
   // en la clase a cada alumno de `studentIds` (uno mismo, o todos los que de
   // verdad entraron si la clase era para "todos los alumnos").
   notifyClassFinished: async (cls, studentIds) => {
-    await supabase.from('student_notifications').insert(
+    await insertNotification(
       studentIds.map((id) => ({
         student_id: id,
         class_id: cls.id,
@@ -148,7 +164,7 @@ export const useNotificationsStore = create((set, get) => ({
   // Usado por useProjectsStore.createProject cuando un admin asigna un
   // proyecto a un alumno (no cuando el alumno crea el suyo propio).
   notifyProjectAssigned: async (project) => {
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: project.student_id,
       project_id: project.id,
       title: 'Nuevo proyecto asignado',
@@ -169,7 +185,7 @@ export const useNotificationsStore = create((set, get) => ({
       targets = data ?? []
     }
     if (!targets.length) return
-    await supabase.from('student_notifications').insert(
+    await insertNotification(
       targets.map((s) => ({
         student_id: s.id,
         class_id: cls.id,
@@ -181,7 +197,7 @@ export const useNotificationsStore = create((set, get) => ({
 
   // Usado por useTasksStore.createTask cuando un admin asigna una tarea.
   notifyTaskAssigned: async (task) => {
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: task.student_id,
       task_id: task.id,
       title: 'Se te asignó una nueva tarea',
@@ -195,7 +211,7 @@ export const useNotificationsStore = create((set, get) => ({
   // insert es hecho por el propio alumno, no por un admin.
   notifyAdminTaskSubmitted: async (task, studentName) => {
     if (!task.assigned_by) return
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: task.student_id,
       admin_id: task.assigned_by,
       task_id: task.id,
@@ -207,7 +223,7 @@ export const useNotificationsStore = create((set, get) => ({
   // Usado por useTasksStore.askTaskQuestion — misma dirección que arriba.
   notifyAdminTaskQuestion: async (task, studentName, question) => {
     if (!task.assigned_by) return
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: task.student_id,
       admin_id: task.assigned_by,
       task_id: task.id,
@@ -220,7 +236,7 @@ export const useNotificationsStore = create((set, get) => ({
   // (política "notifications: admin creates" existente), avisa al alumno
   // que su duda tiene respuesta.
   notifyTaskQuestionAnswered: async (task) => {
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: task.student_id,
       task_id: task.id,
       title: '💬 Respondieron tu pregunta',
@@ -234,7 +250,7 @@ export const useNotificationsStore = create((set, get) => ({
   // project admin" (migration_047.sql).
   notifyAdminProjectUpdated: async (project, studentName) => {
     if (!project.assigned_by || project.assigned_by === project.student_id) return
-    await supabase.from('student_notifications').insert({
+    await insertNotification({
       student_id: project.student_id,
       admin_id: project.assigned_by,
       project_id: project.id,

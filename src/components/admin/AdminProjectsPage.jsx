@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { supabase } from '../../services/supabase/client'
@@ -7,6 +7,17 @@ import { useProjectsStore } from '../../stores/useProjectsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import StudentCoursesPanel from './StudentCoursesPanel'
 import ProjectCard from '../projects/ProjectCard'
+
+// Tope de filas visibles en la Bandeja de revisión antes de "ver todas".
+const REVIEW_QUEUE_CAP = 15
+
+// A diferencia de student_tasks, un proyecto no tiene un estado tipo
+// "entregado para calificar" ni preguntas propias — el único estado que el
+// alumno controla es `status` ('en_progreso' | 'completado', ver
+// migration_010.sql). "completado" es la señal más cercana a "el alumno
+// dice que ya terminó, el admin debería echarle un ojo" — no hay
+// calificación en proyectos, así que esto es la única condición razonable.
+const needsReview = (project) => project.status === 'completado'
 
 export default function AdminProjectsPage() {
   const navigate = useNavigate()
@@ -27,6 +38,7 @@ export default function AdminProjectsPage() {
   const [form, setForm] = useState({ title: '', description: '' })
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [queueExpanded, setQueueExpanded] = useState(false)
 
   useEffect(() => {
     if (!isAdmin?.()) return
@@ -59,6 +71,17 @@ export default function AdminProjectsPage() {
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [isAdmin, fetchAllProjects])
+
+  // Bandeja de revisión — global, ignora selectedStudent (misma idea que
+  // AdminTasksPage.jsx). `allProjects` ya viene sin filtro (fetchAllProjects()
+  // al montar) y se re-fetchea sola vía el canal 'admin-projects-live' de
+  // arriba, así que esto es puro derive, sin fetch propio. Se calcula antes
+  // del early-return de abajo porque los Hooks no pueden llamarse condicionalmente.
+  const reviewQueue = useMemo(() => {
+    return allProjects
+      .filter(needsReview)
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+  }, [allProjects])
 
   if (!isAdmin?.()) {
     return (
@@ -103,6 +126,7 @@ export default function AdminProjectsPage() {
   const projectsForSelected = selectedStudent
     ? allProjects.filter((p) => p.student_id === selectedStudent.id)
     : allProjects
+  const visibleQueue = queueExpanded ? reviewQueue : reviewQueue.slice(0, REVIEW_QUEUE_CAP)
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -117,6 +141,55 @@ export default function AdminProjectsPage() {
             <p className="mt-1 text-sm font-medium text-white/85">
               Asigna proyectos a tus alumnos y revisa cómo van organizando su trabajo.
             </p>
+          </div>
+
+          {/* ── Bandeja de revisión — global, ignora al alumno seleccionado
+              a propósito, siempre visible al entrar a esta página. ── */}
+          <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+            <h2 className="mb-3 flex items-center gap-1.5 text-sm font-extrabold text-text">
+              📥 Bandeja de revisión
+              {reviewQueue.length > 0 && (
+                <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-background">
+                  {reviewQueue.length}
+                </span>
+              )}
+            </h2>
+
+            {reviewQueue.length === 0 ? (
+              <p className="py-2 text-center text-sm text-text-muted">Todo al día ✅</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {visibleQueue.map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => navigate(`/proyectos/${p.id}`)}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-primary/50"
+                    >
+                      <span className="text-lg shrink-0">📁</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold text-primary">
+                          {p.profiles?.display_name || p.profiles?.email || 'Alumno'}
+                        </p>
+                        <p className="truncate text-sm font-semibold text-text">{p.title}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                        ✅ Marcado como completado
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {reviewQueue.length > REVIEW_QUEUE_CAP && (
+                  <button
+                    type="button"
+                    onClick={() => setQueueExpanded((v) => !v)}
+                    className="mt-2 w-full rounded-lg border border-border/60 py-1.5 text-xs font-bold text-primary hover:bg-primary/10"
+                  >
+                    {queueExpanded ? 'Ver menos' : `Ver todas (${reviewQueue.length})`}
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <div className="mt-6 grid gap-6 md:grid-cols-[220px_1fr]">

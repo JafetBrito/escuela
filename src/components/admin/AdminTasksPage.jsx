@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { supabase } from '../../services/supabase/client'
@@ -21,6 +21,16 @@ const STATUS_SECTIONS = [
   { key: 'pendiente', label: '⏳ Pendientes',   cls: 'text-amber-400 border-amber-500/20' },
   { key: 'revisada',  label: '✅ Calificadas',  cls: 'text-emerald-400 border-emerald-500/20' },
 ]
+
+// Tope de filas visibles en la Bandeja de revisión antes de mostrar
+// "ver todas" — evita que un salón grande vuelva la tarjeta interminable.
+const REVIEW_QUEUE_CAP = 15
+
+// Una tarea entra a la bandeja si necesita calificación O tiene al menos una
+// pregunta sin responder (embed `task_questions` agregado en
+// useTasksStore.fetchAllTasks — ver comentario ahí).
+const hasUnansweredQuestion = (task) => (task.task_questions ?? []).some((q) => !q.answered)
+const needsReview = (task) => task.status === 'entregada' || hasUnansweredQuestion(task)
 
 // Lista plana de TODAS las misiones (globales + de curso) para el selector
 // "Adjuntar misión" — ambos registros usan exactamente el mismo shape.
@@ -55,6 +65,7 @@ export default function AdminTasksPage() {
   const [form, setForm] = useState(emptyForm())
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [queueExpanded, setQueueExpanded] = useState(false)
 
   useEffect(() => {
     if (!isAdmin?.()) return
@@ -89,6 +100,19 @@ export default function AdminTasksPage() {
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [isAdmin, fetchAllTasks])
+
+  // Bandeja de revisión — vista global (ignora selectedStudent a propósito,
+  // es la idea del feature: ver TODO lo pendiente sin tener que ir alumno
+  // por alumno). `allTasks` ya viene sin filtro (fetchAllTasks() sin
+  // studentId al montar) y ya se re-fetchea solo via el canal Realtime
+  // 'admin-tasks-live' de arriba, así que esto es puro derive, sin fetch propio.
+  // Se calcula antes del early-return de abajo porque los Hooks no pueden
+  // llamarse condicionalmente.
+  const reviewQueue = useMemo(() => {
+    return allTasks
+      .filter(needsReview)
+      .sort((a, b) => new Date(b.updated_at ?? b.created_at) - new Date(a.updated_at ?? a.created_at))
+  }, [allTasks])
 
   if (!isAdmin?.()) {
     return (
@@ -204,6 +228,7 @@ export default function AdminTasksPage() {
   const tasksForSelected = selectedStudent
     ? allTasks.filter((t) => t.student_id === selectedStudent.id)
     : allTasks
+  const visibleQueue = queueExpanded ? reviewQueue : reviewQueue.slice(0, REVIEW_QUEUE_CAP)
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -227,6 +252,72 @@ export default function AdminTasksPage() {
                 <p className="text-[11px] font-semibold opacity-70">{section.label}</p>
               </div>
             ))}
+          </div>
+
+          {/* ── Bandeja de revisión — global, ignora al alumno seleccionado
+              a propósito (ver comentario en reviewQueue arriba). Vive fuera
+              de la campanita de notificaciones, siempre visible al entrar
+              a esta página sin importar qué alumno esté elegido. ── */}
+          <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-1.5 text-sm font-extrabold text-text">
+                📥 Bandeja de revisión
+                {reviewQueue.length > 0 && (
+                  <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-background">
+                    {reviewQueue.length}
+                  </span>
+                )}
+              </h2>
+            </div>
+
+            {reviewQueue.length === 0 ? (
+              <p className="py-2 text-center text-sm text-text-muted">Todo al día ✅</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {visibleQueue.map((task) => {
+                    const type = taskTypeOf(task.type)
+                    const unanswered = hasUnansweredQuestion(task)
+                    return (
+                      <div
+                        key={task.id}
+                        onClick={() => navigate(`/mis-tareas/${task.id}`)}
+                        className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface p-3 transition-colors hover:border-primary/50"
+                      >
+                        <span className="text-lg shrink-0">{type.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-primary">
+                            {task.profiles?.display_name || task.profiles?.email || 'Alumno'}
+                          </p>
+                          <p className="truncate text-sm font-semibold text-text">{task.title}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                          {task.status === 'entregada' && (
+                            <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-400">
+                              📤 Sin calificar
+                            </span>
+                          )}
+                          {unanswered && (
+                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                              ❓ Pregunta sin responder
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {reviewQueue.length > REVIEW_QUEUE_CAP && (
+                  <button
+                    type="button"
+                    onClick={() => setQueueExpanded((v) => !v)}
+                    className="mt-2 w-full rounded-lg border border-border/60 py-1.5 text-xs font-bold text-primary hover:bg-primary/10"
+                  >
+                    {queueExpanded ? 'Ver menos' : `Ver todas (${reviewQueue.length})`}
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <div className="mt-6 grid gap-6 md:grid-cols-[220px_1fr]">
@@ -585,6 +676,11 @@ export default function AdminTasksPage() {
                                       {task.subject && <span className="text-xs text-text-muted">{task.subject}</span>}
                                       {task.details?.linkedLesson && <span className="text-xs text-primary">🎓 clase</span>}
                                       {task.details?.linkedMission && <span className="text-xs text-violet-400">📜 misión</span>}
+                                      {hasUnansweredQuestion(task) && (
+                                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                                          ❓ {task.task_questions.filter((q) => !q.answered).length} pregunta{task.task_questions.filter((q) => !q.answered).length === 1 ? '' : 's'}
+                                        </span>
+                                      )}
                                     </div>
                                     {!selectedStudent && task.profiles && (
                                       <p className="text-xs font-bold text-primary mb-0.5">

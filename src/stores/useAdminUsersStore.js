@@ -8,6 +8,7 @@ import { supabase } from '../services/supabase/client'
 // AdminProjectsPage.jsx, AdminLiveClassesPage.jsx).
 export const useAdminUsersStore = create((set) => ({
   students: [],
+  teachers: [],
   loading: false,
   error: null,
 
@@ -55,6 +56,47 @@ export const useAdminUsersStore = create((set) => ({
           st.id === studentId ? { ...st, account_status: 'active', age_profile: ageProfile } : st
         ),
       }))
+    }
+    return { error }
+  },
+
+  // Directorio de profesores para AdminTeachersPage — mismo shape que
+  // fetchStudents, solo cambia el filtro de role.
+  fetchTeachers: async () => {
+    set({ loading: true, error: null })
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, display_name, role, avatar_url, teacher_bio')
+      .eq('role', 'teacher')
+      .order('display_name')
+    if (error) console.error('[useAdminUsersStore.fetchTeachers]', error)
+    set({ teachers: data ?? [], loading: false, error: error?.message ?? null })
+  },
+
+  // No hay flujo de invitación por correo — un profesor se promueve a partir
+  // de una cuenta que ya existe (alguien que ya se registró como alumno).
+  // Busca por email exacto para que el admin pueda confirmar "es esta
+  // persona" antes de promoverla.
+  findProfileByEmail: async (email) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, display_name, role')
+      .eq('email', email.trim())
+      .maybeSingle()
+    return { data, error }
+  },
+
+  promoteToTeacher: async (userId) => {
+    const { error } = await supabase.from('profiles').update({ role: 'teacher' }).eq('id', userId)
+    return { error }
+  },
+
+  // Vuelve a dejar la cuenta como alumno normal — por si el admin se
+  // equivocó de persona al promover.
+  demoteToStudent: async (userId) => {
+    const { error } = await supabase.from('profiles').update({ role: 'student' }).eq('id', userId)
+    if (!error) {
+      set((s) => ({ teachers: s.teachers.filter((t) => t.id !== userId) }))
     }
     return { error }
   },
