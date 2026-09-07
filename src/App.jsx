@@ -103,6 +103,7 @@ const AdminExamsPage = lazy(() => import('./components/admin/AdminExamsPage'))
 const AdminCoursesPage = lazy(() => import('./components/admin/AdminCoursesPage'))
 const AdminTeachersPage = lazy(() => import('./components/admin/AdminTeachersPage'))
 const AdminEmailsPage = lazy(() => import('./components/admin/AdminEmailsPage'))
+const AdminAiSettingsPage = lazy(() => import('./components/admin/AdminAiSettingsPage'))
 const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
 const TeacherReflectionsPage = lazy(() => import('./components/teacher/TeacherReflectionsPage'))
 const TeacherProfilePage = lazy(() => import('./components/teacher/TeacherProfilePage'))
@@ -676,6 +677,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminEmailsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/ia"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminAiSettingsPage />
               </Suspense>
             </ProtectedRoute>
           }

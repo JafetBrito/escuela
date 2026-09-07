@@ -1,8 +1,4 @@
-import { minimaxChatCompletion } from './minimaxClient'
-import { deepseekChatCompletion } from './deepseekClient'
-import { anthropicChatCompletion } from './anthropicClient'
-import { googleChatCompletion } from './googleClient'
-import { openaiCompatibleChatCompletion } from './openaiCompatibleClient'
+import { callAiGateway } from './aiGateway'
 import { AI_TONES, AI_VERBOSITY, AGENT_MODES } from '../../stores/useSettingsStore'
 import { getProviderById, providerSupportsTools } from '../../data/aiProviderRegistry'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
@@ -94,26 +90,24 @@ async function callProvider({ connectionId, messages, temperature, maxTokens, to
   const apiKey = await useAiCredentialsStore.getState().getApiKeyForCall(connectionId)
   if (!apiKey) throw new Error('No se pudo leer la llave de esta conexión.')
 
-  const baseArgs = { apiKey, messages, model: connection.model || provider?.defaultModel, temperature, maxTokens }
-
-  switch (provider?.kind) {
-    case 'native':
-      if (connection.providerId === 'minimax') return minimaxChatCompletion(baseArgs)
-      if (connection.providerId === 'deepseek') return deepseekChatCompletion(baseArgs)
-      if (connection.providerId === 'anthropic') return anthropicChatCompletion(baseArgs)
-      if (connection.providerId === 'google') return googleChatCompletion(baseArgs)
-      throw new Error(`Proveedor nativo desconocido: ${connection.providerId}`)
-    case 'openai_compatible': {
-      const baseUrl = connection.baseUrl || provider?.defaultBaseUrl
-      if (toolsEnabled?.length && providerSupportsTools(connection.providerId)) {
-        return runToolLoop({ ...baseArgs, baseUrl, toolsEnabled })
-      }
-      const message = await openaiCompatibleChatCompletion({ ...baseArgs, baseUrl })
-      return message.content
-    }
-    default:
-      throw new Error('Esta conexión de IA no tiene un proveedor válido configurado.')
+  const baseArgs = {
+    apiKey, messages, providerId: connection.providerId,
+    model: connection.model || provider?.defaultModel, temperature, maxTokens,
   }
+
+  if (!provider) {
+    throw new Error('Esta conexión de IA no tiene un proveedor válido configurado.')
+  }
+
+  if (provider.kind === 'openai_compatible') {
+    const baseUrl = connection.baseUrl || provider?.defaultBaseUrl
+    if (toolsEnabled?.length && providerSupportsTools(connection.providerId)) {
+      return runToolLoop({ ...baseArgs, baseUrl, toolsEnabled })
+    }
+    return callAiGateway({ ...baseArgs, baseUrl })
+  }
+
+  return callAiGateway(baseArgs)
 }
 
 export const aiTextTransport = {
@@ -153,22 +147,15 @@ export function getTransport(mode = 'text') {
 // is caught immediately instead of at the next real chat message.
 export async function testCredential({ providerId, apiKey, baseUrl, model }) {
   const provider = getProviderById(providerId)
-  const args = {
-    apiKey,
-    model: model || provider?.defaultModel,
-    messages: [{ role: 'user', content: 'Responde solo con la palabra: ok' }],
-    maxTokens: 10,
-  }
   try {
-    if (provider?.kind === 'native') {
-      if (providerId === 'minimax') await minimaxChatCompletion(args)
-      else if (providerId === 'deepseek') await deepseekChatCompletion(args)
-      else if (providerId === 'anthropic') await anthropicChatCompletion(args)
-      else if (providerId === 'google') await googleChatCompletion(args)
-      else throw new Error('Proveedor desconocido')
-    } else {
-      await openaiCompatibleChatCompletion({ ...args, baseUrl: baseUrl || provider?.defaultBaseUrl })
-    }
+    await callAiGateway({
+      apiKey,
+      providerId,
+      model: model || provider?.defaultModel,
+      baseUrl: baseUrl || provider?.defaultBaseUrl,
+      messages: [{ role: 'user', content: 'Responde solo con la palabra: ok' }],
+      maxTokens: 10,
+    })
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err.message }

@@ -1,8 +1,4 @@
-import { minimaxChatCompletion } from '../chat/minimaxClient'
-import { deepseekChatCompletion } from '../chat/deepseekClient'
-import { anthropicChatCompletion } from '../chat/anthropicClient'
-import { googleChatCompletion } from '../chat/googleClient'
-import { openaiCompatibleChatCompletion } from '../chat/openaiCompatibleClient'
+import { callAiGateway } from '../chat/aiGateway'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { useCourseContentStore } from '../../stores/useCourseContentStore'
@@ -80,17 +76,12 @@ async function callAi(systemPrompt, userPrompt, maxTokens) {
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt },
   ]
-  const args = { apiKey, messages, model: connection.model || provider?.defaultModel, temperature, maxTokens }
-
-  if (provider?.kind === 'native') {
-    if (connection.providerId === 'minimax') return minimaxChatCompletion(args)
-    if (connection.providerId === 'deepseek') return deepseekChatCompletion(args)
-    if (connection.providerId === 'anthropic') return anthropicChatCompletion(args)
-    if (connection.providerId === 'google') return googleChatCompletion(args)
-  }
   const baseUrl = connection.baseUrl || provider?.defaultBaseUrl
-  const message = await openaiCompatibleChatCompletion({ ...args, baseUrl })
-  return message.content
+
+  return callAiGateway({
+    apiKey, messages, providerId: connection.providerId,
+    model: connection.model || provider?.defaultModel, baseUrl, temperature, maxTokens,
+  })
 }
 
 // Pela un posible cerco ```json ... ``` (o ``` ... ```) antes de parsear.

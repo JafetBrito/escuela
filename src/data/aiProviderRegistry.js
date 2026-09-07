@@ -1,10 +1,13 @@
 // Single source of truth for "qué proveedores de IA aceptamos". Most modern
 // providers speak the same OpenAI chat-completions format, so instead of
-// writing one adapter per provider we have ONE generic adapter
-// (openaiCompatibleClient.js) reused by several registry entries that only
-// differ in their default base URL — plus 3 native adapters for the
-// providers whose API shape is genuinely different (MiniMax, Anthropic,
-// Google).
+// writing one adapter per provider there's ONE generic "openai_compatible"
+// path reused by several registry entries that only differ in their default
+// base URL — plus 4 native adapters for the providers whose API shape is
+// genuinely different (MiniMax, DeepSeek, Anthropic, Google). All 5 adapters
+// now live server-side in supabase/functions/ai-chat/index.ts (see
+// src/services/chat/aiGateway.js for the frontend call site) — this file
+// only carries the metadata (kind/defaultModel/defaultBaseUrl) needed to
+// build the request, not the fetch() logic itself anymore.
 export const AI_PROVIDERS = [
   { id: 'minimax', label: 'MiniMax', kind: 'native', requiresBaseUrl: false,
     defaultModel: 'abab6.5s-chat' },

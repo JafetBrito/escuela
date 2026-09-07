@@ -1,4 +1,4 @@
-import { openaiCompatibleChatCompletion } from './openaiCompatibleClient'
+import { callAiGateway } from './aiGateway'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { COURSES_DATA } from '../../data/courseRegistry'
@@ -58,15 +58,20 @@ const TOOL_DEFS = {
 // to call one (or more), run them locally and send the results back for a
 // final answer. Capped at a single round — enough for "look something up
 // and answer", not a general agent loop.
-export async function runToolLoop({ apiKey, baseUrl, model, messages, temperature, maxTokens, toolsEnabled }) {
+export async function runToolLoop({ apiKey, providerId, baseUrl, model, messages, temperature, maxTokens, toolsEnabled }) {
   const tools = toolsEnabled.filter((id) => TOOL_DEFS[id]).map((id) => TOOL_DEFS[id].schema)
   if (!tools.length) {
-    const message = await openaiCompatibleChatCompletion({ apiKey, baseUrl, model, messages, temperature, maxTokens })
-    return message.content
+    return callAiGateway({ apiKey, providerId, baseUrl, model, messages, temperature, maxTokens })
   }
 
-  const first = await openaiCompatibleChatCompletion({ apiKey, baseUrl, model, messages, temperature, maxTokens, tools })
-  if (!first.tool_calls?.length) return first.content
+  const first = await callAiGateway({ apiKey, providerId, baseUrl, model, messages, temperature, maxTokens, tools })
+  // callAiGateway returns a plain string when there are no tool_calls, or
+  // { content, tool_calls } when there are — same shape
+  // openaiCompatibleChatCompletion used to return, which this loop already
+  // expected.
+  if (typeof first === 'string' || !first.tool_calls?.length) {
+    return typeof first === 'string' ? first : first.content
+  }
 
   const toolResults = first.tool_calls.map((call) => {
     const def = TOOL_DEFS[call.function.name]
@@ -75,9 +80,9 @@ export async function runToolLoop({ apiKey, baseUrl, model, messages, temperatur
     return { role: 'tool', tool_call_id: call.id, content: String(result) }
   })
 
-  const followUp = await openaiCompatibleChatCompletion({
-    apiKey, baseUrl, model, temperature, maxTokens,
+  const followUp = await callAiGateway({
+    apiKey, providerId, baseUrl, model, temperature, maxTokens,
     messages: [...messages, { role: 'assistant', content: first.content, tool_calls: first.tool_calls }, ...toolResults],
   })
-  return followUp.content
+  return typeof followUp === 'string' ? followUp : followUp.content
 }

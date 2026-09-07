@@ -1,8 +1,4 @@
-import { minimaxChatCompletion } from './minimaxClient'
-import { deepseekChatCompletion } from './deepseekClient'
-import { anthropicChatCompletion } from './anthropicClient'
-import { googleChatCompletion } from './googleClient'
-import { openaiCompatibleChatCompletion } from './openaiCompatibleClient'
+import { callAiGateway } from './aiGateway'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { getProviderById } from '../../data/aiProviderRegistry'
@@ -55,15 +51,9 @@ export async function sendNpcMessage({ npcPrompt, content, history = [], lang = 
     { role: 'user', content },
   ]
 
-  const args = { apiKey, messages, model: connection.model || provider?.defaultModel, temperature, maxTokens }
-
-  if (provider?.kind === 'native') {
-    if (connection.providerId === 'minimax') return minimaxChatCompletion(args)
-    if (connection.providerId === 'deepseek') return deepseekChatCompletion(args)
-    if (connection.providerId === 'anthropic') return anthropicChatCompletion(args)
-    if (connection.providerId === 'google') return googleChatCompletion(args)
-  }
   const baseUrl = connection.baseUrl || provider?.defaultBaseUrl
-  const message = await openaiCompatibleChatCompletion({ ...args, baseUrl })
-  return message.content
+  return callAiGateway({
+    apiKey, messages, providerId: connection.providerId,
+    model: connection.model || provider?.defaultModel, baseUrl, temperature, maxTokens,
+  })
 }

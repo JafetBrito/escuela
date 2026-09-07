@@ -17,6 +17,7 @@ const SECTIONS = [
   { to: '/admin/cursos', icon: '📚', label: 'Cursos' },
   { to: '/admin/profesores', icon: '🧑‍🏫', label: 'Profesores' },
   { to: '/admin/correos', icon: '📧', label: 'Correos' },
+  { to: '/admin/ia', icon: '🤖', label: 'IA' },
   { to: '/admin/tareas', icon: '📋', label: 'Tareas' },
   { to: '/admin/proyectos', icon: '📁', label: 'Proyectos' },
   { to: '/admin/clases', icon: '🎓', label: 'Clases en vivo' },
