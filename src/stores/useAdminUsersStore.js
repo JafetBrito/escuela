@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase/client'
 export const useAdminUsersStore = create((set) => ({
   students: [],
   teachers: [],
+  allProfilesForEmail: [],
   loading: false,
   error: null,
 
@@ -71,6 +72,20 @@ export const useAdminUsersStore = create((set) => ({
       .order('display_name')
     if (error) console.error('[useAdminUsersStore.fetchTeachers]', error)
     set({ teachers: data ?? [], loading: false, error: error?.message ?? null })
+  },
+
+  // Directorio completo (alumnos + profesores + admins) para el selector de
+  // destinatarios de /admin/correos — a diferencia de fetchStudents/
+  // fetchTeachers, aquí no se filtra por role porque el admin puede querer
+  // mandarle un correo a cualquier cuenta del sistema.
+  fetchAllProfilesForEmail: async () => {
+    set({ loading: true, error: null })
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, display_name, role')
+      .order('display_name')
+    if (error) console.error('[useAdminUsersStore.fetchAllProfilesForEmail]', error)
+    set({ allProfilesForEmail: data ?? [], loading: false, error: error?.message ?? null })
   },
 
   // No hay flujo de invitación por correo — un profesor se promueve a partir

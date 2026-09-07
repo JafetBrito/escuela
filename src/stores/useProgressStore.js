@@ -127,7 +127,15 @@ export const useProgressStore = create((set, get) => ({
     const targetModule = courseData.modules.find((m) => m.id === id)
     if (!targetModule) return false
 
+    // Cursos generados por el Oráculo (IA) para el propio alumno nunca piden
+    // licencia — son personales, ya "pagados" con su propia conexión de IA,
+    // y no viven en el catálogo general que la licencia protege (ver
+    // src/services/ai/courseGenerator.js).
+    const isOwnAiCourse =
+      courseData.ai_generated && courseData.created_by === useAuthStore.getState().session?.user?.id
+
     if (
+      !isOwnAiCourse &&
       targetModule.order > FREE_MODULE_ORDER_LIMIT &&
       !useAuthStore.getState().hasAccessToCourse(courseId)
     ) {

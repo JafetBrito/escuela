@@ -102,6 +102,7 @@ const ClassSummaryPage = lazy(() => import('./components/liveclass/ClassSummaryP
 const AdminExamsPage = lazy(() => import('./components/admin/AdminExamsPage'))
 const AdminCoursesPage = lazy(() => import('./components/admin/AdminCoursesPage'))
 const AdminTeachersPage = lazy(() => import('./components/admin/AdminTeachersPage'))
+const AdminEmailsPage = lazy(() => import('./components/admin/AdminEmailsPage'))
 const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
 const TeacherReflectionsPage = lazy(() => import('./components/teacher/TeacherReflectionsPage'))
 const TeacherProfilePage = lazy(() => import('./components/teacher/TeacherProfilePage'))
@@ -122,6 +123,7 @@ const GuiasPage    = lazy(() => import('./components/guides/GuiasPage'))
 const IaToolsPage  = lazy(() => import('./components/ai/IaToolsPage'))
 const GlossaryPage = lazy(() => import('./components/glossary/GlossaryPage'))
 const SearchPage   = lazy(() => import('./components/search/SearchPage'))
+const OraclePage   = lazy(() => import('./components/oracle/OraclePage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -668,6 +670,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/correos"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminEmailsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
         {/* Rutas de profesor — las estáticas (reflexiones/perfil) van ANTES
             de la dinámica /profesor/:id para que React Router no confunda
             "reflexiones"/"perfil" con un :id (mismo criterio que
@@ -1023,6 +1035,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <SearchPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/oraculo"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <OraclePage />
               </Suspense>
             </ProtectedRoute>
           }

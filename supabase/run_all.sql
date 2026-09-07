@@ -2255,6 +2255,113 @@ create policy "notifications: student notifies teacher of reflection" on public.
     )
   );
 
+-- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 050 — Herramienta de correo masivo HTML para el admin. Tres
+-- tablas nuevas, todas admin-only (RLS is_admin() puro, sin lectura pública
+-- — a diferencia de school_announcements/platform_settings de
+-- migration_003.sql, esto es una herramienta interna, nadie más necesita
+-- verla). El envío real ocurre en la Edge Function supabase/functions/
+-- send-email/ (service role + SMTP de Gmail vía Deno.env), estas tablas solo
+-- guardan plantillas reutilizables, el historial de envíos y la firma.
+-- ════════════════════════════════════════════════════════════════════════
+
+-- ─── email_templates ───────────────────────────────────────────────────────
+-- Plantillas guardadas por el admin (además de las 3 de arranque que viven
+-- en código, src/data/emailTemplates.js — esas no necesitan fila en la base
+-- porque no se editan, solo se cargan como punto de partida).
+create table if not exists public.email_templates (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  subject text not null,
+  html_content text not null,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.email_templates enable row level security;
+
+drop policy if exists "email_templates: admin only" on public.email_templates;
+create policy "email_templates: admin only" on public.email_templates
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ─── email_campaigns ───────────────────────────────────────────────────────
+-- Historial/log de cada envío masivo. Lo llena la Edge Function con el
+-- service role (no el navegador directamente) al terminar de mandar todos
+-- los lotes BCC, sea que haya salido bien o mal.
+create table if not exists public.email_campaigns (
+  id uuid primary key default gen_random_uuid(),
+  subject text not null,
+  html_content text not null,
+  recipient_count integer not null default 0,
+  sent_by uuid references auth.users(id),
+  status text not null default 'sending', -- sending | sent | failed
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.email_campaigns enable row level security;
+
+drop policy if exists "email_campaigns: admin only" on public.email_campaigns;
+create policy "email_campaigns: admin only" on public.email_campaigns
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ─── email_settings ─────────────────────────────────────────────────────────
+-- Almacén genérico clave/valor para configuración chica de esta herramienta.
+-- Hoy solo se usa una fila (key = 'signature', value = HTML de la firma que
+-- se le pega al final de cada correo) — se elige esta forma genérica a
+-- propósito para que la próxima configuración pequeña de esta herramienta no
+-- necesite otra tabla ni otra columna.
+create table if not exists public.email_settings (
+  key text primary key,
+  value text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.email_settings enable row level security;
+
+drop policy if exists "email_settings: admin only" on public.email_settings;
+create policy "email_settings: admin only" on public.email_settings
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ════════════════════════════════════════════════════════════════════════
+-- MIGRACIÓN 051 — "El Oráculo de Oliver": generador de cursos con IA
+-- ════════════════════════════════════════════════════════════════════════
+-- Un alumno puede escribir un tema y su propia conexión de IA (BYOK, ver
+-- useAiCredentialsStore.js) planea y escribe un curso completo (módulos +
+-- quiz), que se guarda como una fila normal en `courses` (migration_024.sql)
+-- y se reproduce con el mismo motor que cualquier otro curso
+-- (LearningInterface.jsx) — no hay tabla nueva, solo dos columnas nuevas y
+-- dos políticas RLS adicionales.
+--
+-- OJO: estos cursos NO aparecen en el catálogo general (src/data/courses.json
+-- y sus ~14 consumidores) — a propósito, ver src/services/ai/courseGenerator.js
+-- y src/components/oracle/OraclePage.jsx. Solo son alcanzables por su dueño,
+-- vía /oraculo → "Mis Cursos IA" (que filtra por created_by = auth.uid()) o
+-- conociendo el id exacto (/learn/:id).
+alter table public.courses add column if not exists created_by uuid references auth.users(id);
+alter table public.courses add column if not exists ai_generated boolean not null default false;
+
+-- Políticas ADITIVAS: la policy "courses: admin writes" (for all, ver
+-- migration_024.sql) sigue intacta — en RLS de Postgres, varias policies
+-- permissive para el mismo comando se combinan con OR, así que un admin
+-- sigue pudiendo escribir cualquier curso Y, aparte, cualquier usuario
+-- autenticado puede insertar/actualizar SOLO su propio curso generado por IA.
+drop policy if exists "courses: users insert their own ai-generated course" on public.courses;
+create policy "courses: users insert their own ai-generated course" on public.courses
+  for insert with check (created_by = auth.uid() and ai_generated = true);
+
+drop policy if exists "courses: users update their own ai-generated course" on public.courses;
+create policy "courses: users update their own ai-generated course" on public.courses
+  for update using (public.is_admin() or (created_by = auth.uid() and ai_generated = true))
+  with check (public.is_admin() or (created_by = auth.uid() and ai_generated = true));
+
+-- La policy de SELECT ("courses: everyone reads") no se toca — estos cursos
+-- no son descubribles en ningún catálogo, así que "todos leen" no filtra
+-- nada realmente sensible (mismo criterio que ya aplica a los ~48 cursos
+-- existentes).
+
+
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,
 -- DEMO SEED — datos de prueba (🧪 DEMO — ...) para /mis-tareas, /anuncios,

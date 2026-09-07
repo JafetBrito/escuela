@@ -23,6 +23,7 @@ const GROUPS = [
     icon: '🎓',
     items: [
       { to: '/mis-clases',   key: 'misClases',    label: 'Mis Clases',   icon: '🎓' },
+      { to: '/oraculo',      key: 'oraculo',      label: 'Oráculo',      icon: '🔮' },
       { to: '/clases-disponibles', key: 'clasesDisponibles', label: 'Clases Disponibles', icon: '🎬' },
       { to: '/clase-online', key: 'claseOnline',  label: 'Clase Online', icon: '📺' },
       { to: '/horario',      key: 'horario',      label: 'Horario',      icon: '🗓️' },

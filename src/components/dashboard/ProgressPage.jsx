@@ -5,6 +5,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import AchievementsPanel from '../mascot/AchievementsPanel'
 import courses from '../../data/courses.json'
 import { COURSES_DATA, hasCourseData } from '../../data/courseRegistry'
+import { supabase } from '../../services/supabase/client'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
@@ -71,6 +72,41 @@ export default function ProgressPage() {
   const [activeSection, setActiveSection] = useState('cursos')
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
+
+  // Recompensas recibidas — historial de notificaciones con XP/monedas
+  // (calificaciones, clases, etc.), para que la recompensa quede revisable
+  // más adelante y no solo como una campanita efímera. Consulta local y
+  // simple: no hay store dedicado porque es de solo lectura y no se repite
+  // en ningún otro lado de la app.
+  const [rewards, setRewards] = useState([])
+  const [rewardsLoading, setRewardsLoading] = useState(true)
+  const [rewardsVisible, setRewardsVisible] = useState(8)
+  const userId = session?.user?.id
+
+  useEffect(() => {
+    let cancelled = false
+    // El fetch vive en su propia función async para que el setState quede
+    // dentro de callbacks (post-await), no como una llamada síncrona directa
+    // en el cuerpo del efecto (regla react-hooks/set-state-in-effect).
+    async function loadRewards() {
+      if (!userId) {
+        if (!cancelled) setRewardsLoading(false)
+        return
+      }
+      const { data } = await supabase
+        .from('student_notifications')
+        .select('id, title, body, xp_reward, gold_reward, created_at')
+        .eq('student_id', userId)
+        .or('xp_reward.gt.0,gold_reward.gt.0')
+        .order('created_at', { ascending: false })
+        .limit(50)
+      if (cancelled) return
+      setRewards(data ?? [])
+      setRewardsLoading(false)
+    }
+    loadRewards()
+    return () => { cancelled = true }
+  }, [userId])
 
   const progressByCourse = useCallback((courseId) => {
     if (!hasCourseData(courseId)) return null
@@ -180,6 +216,66 @@ export default function ProgressPage() {
               </div>
             </section>
           )}
+
+          {/* Recompensas recibidas — historial de XP/monedas ya entregadas
+              (calificaciones, clases, etc.), acentuado con el mismo tono
+              violeta/dorado que la burbuja de recompensa diaria en VR
+              (DailyRewardsBoard.jsx) para que se sienta parte del mismo
+              sistema gamificado. */}
+          <section
+            className="rounded-2xl border p-4"
+            style={{ borderColor: 'rgba(251,191,36,0.25)', background: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(251,191,36,0.04) 100%)' }}
+          >
+            <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.progress.rewardsTitle')}</h2>
+            {rewardsLoading ? (
+              <p className="text-sm text-text-muted">{t('dashboard.progress.rewardsLoading')}</p>
+            ) : rewards.length === 0 ? (
+              <p className="text-sm text-text-muted">{t('dashboard.progress.rewardsEmpty')}</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {rewards.slice(0, rewardsVisible).map((n) => (
+                    <div key={n.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-text">{n.title}</p>
+                        {n.body && <p className="truncate text-xs text-text-muted">{n.body}</p>}
+                        <p className="mt-0.5 text-[10px] text-text-muted/60">
+                          {new Date(n.created_at).toLocaleDateString(t('dashboard.progress.dateLocale'), { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-1.5">
+                        {n.xp_reward > 0 && (
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-black text-white"
+                            style={{ background: 'linear-gradient(90deg, #7c3aed, #4f46e5)' }}
+                          >
+                            {t('dashboard.progress.rewardXp', { xp: n.xp_reward })}
+                          </span>
+                        )}
+                        {n.gold_reward > 0 && (
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-black text-amber-950"
+                            style={{ background: 'linear-gradient(90deg, #fbbf24, #f59e0b)' }}
+                          >
+                            {t('dashboard.progress.rewardGold', { gold: n.gold_reward })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {rewards.length > rewardsVisible && (
+                  <button
+                    type="button"
+                    onClick={() => setRewardsVisible((v) => v + 10)}
+                    className="mt-2 w-full rounded-xl border border-dashed border-border py-2 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {t('dashboard.progress.rewardsLoadMore')}
+                  </button>
+                )}
+              </>
+            )}
+          </section>
 
           {/* Cursos / Calificaciones / Logros */}
           <section className="space-y-3">

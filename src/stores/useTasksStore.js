@@ -189,7 +189,13 @@ export const useTasksStore = create((set, get) => ({
     return { data, error }
   },
 
-  gradeTask: async (taskId, { grade, grade_max, feedback, xp_reward = 0, gold_reward = 0 }) => {
+  // `task` (opcional) es el objeto completo ya cargado en quien llama —
+  // antes esta función buscaba la tarea en `allTasks` para armar la
+  // notificación, pero ese slice solo se llena si el admin visitó
+  // /admin/tareas antes; calificando directo desde TaskDetailPage.jsx (que
+  // carga la tarea aparte, vía fetchTask) `allTasks` podía estar vacío y la
+  // notificación de recompensa nunca se disparaba, en silencio.
+  gradeTask: async (taskId, { grade, grade_max, feedback, xp_reward = 0, gold_reward = 0 }, task) => {
     const patch = { grade, grade_max, feedback, xp_reward, gold_reward, status: 'revisada', updated_at: new Date().toISOString() }
     const { error } = await supabase
       .from('student_tasks')
@@ -200,8 +206,8 @@ export const useTasksStore = create((set, get) => ({
         allTasks: s.allTasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
         tasks: s.tasks.map((t) => t.id === taskId ? { ...t, ...patch } : t),
       }))
-      const task = get().allTasks.find((t) => t.id === taskId)
-      if (task) useNotificationsStore.getState().notifyTaskGraded(task, grade, grade_max, xp_reward, gold_reward)
+      const fullTask = task ?? get().allTasks.find((t) => t.id === taskId)
+      if (fullTask) useNotificationsStore.getState().notifyTaskGraded(fullTask, grade, grade_max, xp_reward, gold_reward)
     }
     return { error }
   },

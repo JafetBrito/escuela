@@ -12,6 +12,7 @@ export const en = {
     },
     items: {
       misClases: 'My Classes',
+      oraculo: 'Oracle',
       clasesDisponibles: 'Available Classes',
       claseOnline: 'Online Class',
       horario: 'Schedule',
@@ -140,6 +141,13 @@ export const en = {
       statusCompleted: 'Completed',
       statusInProgress: 'In progress',
       noEnrolledCourses: "You haven't enrolled in any course yet. Explore the schools to get started.",
+      rewardsTitle: '🎁 Rewards received',
+      rewardsLoading: 'Loading rewards…',
+      rewardsEmpty: "You haven't received any rewards yet. Keep completing tasks and classes!",
+      rewardsLoadMore: 'See more',
+      rewardXp: '+{xp} XP',
+      rewardGold: '+{gold} 🪙',
+      dateLocale: 'en-US',
     },
     quest: {
       mainLabel: '📜 Main Quest',
@@ -516,6 +524,10 @@ export const en = {
       gradeModalTitle: '📊 Grade',
       gradeModalComments: "💬 Teacher's comments",
       close: 'Close',
+      gradeCardTitle: '🎉 Task graded',
+      rewardXp: '+{xp} XP',
+      rewardGold: '+{gold} 🪙',
+      tapForDetails: 'Tap to see full view →',
     },
     taskCompose: {
       header: '✍️ Write task',

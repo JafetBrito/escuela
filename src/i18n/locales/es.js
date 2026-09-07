@@ -16,6 +16,7 @@ export const es = {
     },
     items: {
       misClases: 'Mis Clases',
+      oraculo: 'Oráculo',
       clasesDisponibles: 'Clases Disponibles',
       claseOnline: 'Clase Online',
       horario: 'Horario',
@@ -144,6 +145,13 @@ export const es = {
       statusCompleted: 'Completado',
       statusInProgress: 'En curso',
       noEnrolledCourses: 'Aún no te has inscrito a ningún curso. Explora las escuelas para empezar.',
+      rewardsTitle: '🎁 Recompensas recibidas',
+      rewardsLoading: 'Cargando recompensas…',
+      rewardsEmpty: 'Aún no has recibido recompensas. ¡Sigue completando tareas y clases!',
+      rewardsLoadMore: 'Ver más',
+      rewardXp: '+{xp} XP',
+      rewardGold: '+{gold} 🪙',
+      dateLocale: 'es-MX',
     },
     quest: {
       mainLabel: '📜 Misión principal',
@@ -520,6 +528,10 @@ export const es = {
       gradeModalTitle: '📊 Calificación',
       gradeModalComments: '💬 Comentarios del profesor',
       close: 'Cerrar',
+      gradeCardTitle: '🎉 Tarea calificada',
+      rewardXp: '+{xp} XP',
+      rewardGold: '+{gold} 🪙',
+      tapForDetails: 'Toca para ver en grande →',
     },
     taskCompose: {
       header: '✍️ Redactar tarea',
