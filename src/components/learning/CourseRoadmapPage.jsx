@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, Navigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { getCourseData, hasCourseData } from '../../data/courseRegistry'
@@ -6,6 +6,7 @@ import { useProgressStore, EMPTY_ARRAY } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { useI18n } from '../../i18n'
+import { supabase } from '../../services/supabase/client'
 import ModuleHoverCard from './ModuleHoverCard'
 
 // Nodo de un módulo en el camino — círculo con número/✓/🔒, alternando
@@ -79,6 +80,26 @@ export default function CourseRoadmapPage() {
 
   const courseData = hasCourseData(courseId) ? getCourseData(courseId, lang) : null
 
+  // Nombre del profesor, resuelto aparte (no vía embed en
+  // useCourseContentStore.fetchAll) — courses.teacher_id apunta a
+  // auth.users, no a profiles, así que PostgREST no puede embeberlo solo;
+  // una consulta propia y aislada acá evita que un fallo tumbe el curso
+  // entero (ver el fix de useCourseContentStore.js).
+  const teacherId = courseData?.teacher_id ?? null
+  // Sin `teacherId` no hay nada que buscar — el JSX de abajo ya exige
+  // `teacherId && teacherName` para mostrar la línea, así que un
+  // `teacherName` obsoleto de un curso anterior nunca llega a pintarse
+  // mientras el nuevo curso no tenga profesor asignado; no hace falta
+  // limpiarlo a mano (evita un setState síncrono al entrar al efecto).
+  const [teacherName, setTeacherName] = useState(null)
+  useEffect(() => {
+    if (!teacherId) return
+    let cancelled = false
+    supabase.from('profiles').select('display_name').eq('id', teacherId).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setTeacherName(data?.display_name ?? null) })
+    return () => { cancelled = true }
+  }, [teacherId])
+
   const modulesWithState = useMemo(() => {
     if (!courseData) return []
     return courseData.modules.map((mod) => {
@@ -145,12 +166,12 @@ export default function CourseRoadmapPage() {
             <p className="mx-auto mt-2 max-w-xl text-sm text-text-muted">{courseData.description}</p>
             {/* Cursos sin profesor asignado (teacher_id null, la mayoría hoy)
                 simplemente no muestran esta línea — ver migration_048.sql. */}
-            {courseData.teacher_id && courseData.teacher?.display_name && (
+            {teacherId && teacherName && (
               <Link
-                to={`/profesor/${courseData.teacher_id}`}
+                to={`/profesor/${teacherId}`}
                 className="text-xs font-semibold text-text-muted hover:text-primary"
               >
-                Impartido por {courseData.teacher.display_name} →
+                Impartido por {teacherName} →
               </Link>
             )}
           </div>

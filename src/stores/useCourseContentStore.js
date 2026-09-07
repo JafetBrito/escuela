@@ -31,14 +31,19 @@ export const useCourseContentStore = create((set, get) => ({
   fetchAll: async () => {
     if (get().loaded || get().loading) return get().catalog
     set({ loading: true })
-    // `teacher:profiles!teacher_id(...)` — mismo patrón de embed que
-    // AdminTasksPage.jsx ya usa para student_tasks (profiles!student_id),
-    // aunque teacher_id/student_id apunten a auth.users y no a profiles
-    // directo. Usado por CourseRoadmapPage.jsx para la línea "Impartido
-    // por…"; viene null en cursos sin profesor asignado (teacher_id null).
+    // OJO: NO usar el embed `profiles!teacher_id(...)` acá — a diferencia de
+    // student_tasks (donde profiles!student_id sí resuelve porque apunta a
+    // profiles), `courses.teacher_id` referencia auth.users(id), no
+    // profiles(id) directo. PostgREST no puede inferir esa relación
+    // transitiva y devuelve error en TODA la consulta ("could not find a
+    // relationship"), lo que dejaba `catalog`/`courses` vacíos y bloqueaba
+    // la entrada a absolutamente todos los cursos (bug real, encontrado
+    // 2026-09-07). El nombre del profesor se resuelve aparte, en
+    // CourseRoadmapPage.jsx, con una consulta propia y aislada — si esa
+    // falla, solo se pierde la línea "Impartido por…", no el curso entero.
     const { data, error } = await supabase
       .from('courses')
-      .select('*, teacher:profiles!teacher_id(display_name)')
+      .select('*')
     if (error) {
       // OJO: `loaded` se pone en true IGUAL en el error (con catálogo
       // vacío) — no en false. ProtectedRoute.jsx bloquea el render de toda
