@@ -31,6 +31,18 @@ export const useAuthStore = create((set, get) => ({
   googleUser: null,
   isUnlocked: false,
 
+  // True for the whole span of _applySession — set({session,...}) fires the
+  // autosave subscription (useAuthStore is one of the watched stores)
+  // immediately, before the cloud profile fetch below even starts. Without
+  // this flag, autoSave.js schedules a save 500ms/3000ms later using
+  // whatever state exists AT THAT POINT — still the pre-restore defaults if
+  // the fetch hasn't resolved yet — and pushes that empty snapshot to the
+  // cloud, permanently overwriting real progress. This happens on every
+  // manual login (signInWithEmail), which is exactly the "clear cache, log
+  // back in, progress is gone" report: the cache clear wipes the Supabase
+  // session, forcing a fresh login every time.
+  restoringSnapshot: false,
+
   init: async () => {
     const savedRecruiter = localStorage.getItem(RECRUITER_STORAGE_KEY)
     if (savedRecruiter) {
@@ -67,13 +79,23 @@ export const useAuthStore = create((set, get) => ({
       return
     }
 
-    set({ session, user: session.user, isUnlocked: true })
+    set({ session, user: session.user, isUnlocked: true, restoringSnapshot: true })
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', session.user.id)
       .single()
+
+    // ponytail: temporary diagnostic for the "progress resets after a cache
+    // clear + relogin" bug — delete once confirmed fixed.
+    console.log('[_applySession]', {
+      userId: session.user.id,
+      profileError: profileError?.message ?? null,
+      hasProfile: !!profile,
+      cloudLastSaved: profile?.snapshot?.lastSaved ?? null,
+      localLastSaved: loadLocalSnapshot()?.lastSaved ?? null,
+    })
 
     set({ profile: profile ?? null, license: profile?.license ?? null })
 
@@ -83,6 +105,7 @@ export const useAuthStore = create((set, get) => ({
     // so progress/mascot/settings follow the user across devices.
     if (profile?.snapshot?.lastSaved) {
       const cloudIsNewer = !local?.lastSaved || profile.snapshot.lastSaved > local.lastSaved
+      console.log('[_applySession] restoring from cloud?', cloudIsNewer)
       if (cloudIsNewer) {
         applyProgressSnapshot(profile.snapshot)
       }
@@ -96,6 +119,8 @@ export const useAuthStore = create((set, get) => ({
       // write looks identical to "never synced".
       applyProgressSnapshot({})
     }
+
+    set({ restoringSnapshot: false })
   },
 
   refreshProfile: async () => {

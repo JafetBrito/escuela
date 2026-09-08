@@ -82,8 +82,14 @@ export function hydrateFromLocalStorage() {
 // instead of silent.
 export async function pushSnapshotToCloud() {
   if (!isSupabaseConfigured()) return
-  const { user, profile } = useAuthStore.getState()
+  const { user, profile, restoringSnapshot } = useAuthStore.getState()
   if (!user) return
+  // A cloud-restore is in flight (see useAuthStore._applySession) — saving
+  // now would capture pre-restore/default state and overwrite real cloud
+  // progress with it. scheduleSave() already skips this window, but this is
+  // the one call site that flushes synchronously (beforeunload) without
+  // going through scheduleSave, so it needs its own guard.
+  if (restoringSnapshot) return
   // La cuenta de reclutador (ver useAuthStore.enterRecruiterMode) usa un id
   // falso ("recruiter-<token>") sin fila real en auth.users — nunca hay
   // nada que sincronizar y el intento solo generaba un 400 (uuid inválido)
@@ -132,6 +138,15 @@ function scheduleCloudSave() {
 let saveTimer = null
 export function startAutoSave() {
   const scheduleSave = () => {
+    // A cloud-restore is in flight (see useAuthStore._applySession) —
+    // useAuthStore.set({session,...}) alone fires this subscriber before the
+    // profile fetch even starts, so without this guard a save 500ms/3000ms
+    // later would capture pre-restore/default state and overwrite real
+    // cloud progress with it. Once the restore finishes it flips the flag
+    // back off with its own set() call, which re-fires this subscriber and
+    // schedules a correct save from the now-restored state.
+    if (useAuthStore.getState().restoringSnapshot) return
+
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       saveLocalSnapshot(buildProgressSnapshot())
@@ -143,8 +158,8 @@ export function startAutoSave() {
 
   // Flush to cloud immediately when tab closes — avoids losing the last few seconds of progress
   window.addEventListener('beforeunload', () => {
-    const { user, session } = useAuthStore.getState()
-    if (!isSupabaseConfigured() || !user || !session?.access_token) return
+    const { user, session, restoringSnapshot } = useAuthStore.getState()
+    if (!isSupabaseConfigured() || !user || !session?.access_token || restoringSnapshot) return
     const snapshot = buildProgressSnapshot()
     // keepalive ensures the browser sends this even as the page unloads
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
