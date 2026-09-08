@@ -11,6 +11,18 @@ import { DEV_UNLOCK_ALL } from '../config/devUnlock'
 // validación en cada F5.
 const RECRUITER_STORAGE_KEY = 'oliver_recruiter_pass'
 
+// supabase-js fires onAuthStateChange far more often than "the user logged
+// in" — tab refocus, token refresh, multi-tab session sync all re-run
+// _applySession with the SAME session. Restoring the snapshot on every one
+// of those was actively destructive: each restore ends with its own
+// settle-save (see restoringSnapshot below), which nudges the cloud's
+// lastSaved a couple seconds ahead of local's — so the NEXT stray
+// onAuthStateChange firing sees "cloud is newer" again and restores again,
+// stomping whatever the user did locally in between. Restoring once per
+// user per tab load is enough; every later event just needs the fresh
+// session/profile, not a full state overwrite.
+let restoredSnapshotForUserId = null
+
 // Three user roles:
 //  - 'admin'            -> profile.role === 'admin', access to everything
 //  - alumno sin llave   -> logged in, profile.license is empty
@@ -99,25 +111,29 @@ export const useAuthStore = create((set, get) => ({
 
     set({ profile: profile ?? null, license: profile?.license ?? null })
 
-    const local = loadLocalSnapshot()
+    if (restoredSnapshotForUserId !== session.user.id) {
+      restoredSnapshotForUserId = session.user.id
 
-    // If the cloud snapshot is newer than what's in this browser, restore it
-    // so progress/mascot/settings follow the user across devices.
-    if (profile?.snapshot?.lastSaved) {
-      const cloudIsNewer = !local?.lastSaved || profile.snapshot.lastSaved > local.lastSaved
-      console.log('[_applySession] restoring from cloud?', cloudIsNewer)
-      if (cloudIsNewer) {
-        applyProgressSnapshot(profile.snapshot)
+      const local = loadLocalSnapshot()
+
+      // If the cloud snapshot is newer than what's in this browser, restore it
+      // so progress/mascot/settings follow the user across devices.
+      if (profile?.snapshot?.lastSaved) {
+        const cloudIsNewer = !local?.lastSaved || profile.snapshot.lastSaved > local.lastSaved
+        console.log('[_applySession] restoring from cloud?', cloudIsNewer)
+        if (cloudIsNewer) {
+          applyProgressSnapshot(profile.snapshot)
+        }
+      } else if (profile && local?.userId && local.userId !== session.user.id) {
+        // This browser's local storage belongs to a DIFFERENT account that
+        // never made it to the cloud — don't let the new account inherit it.
+        // If the cloud just has nothing yet (new account, or a sync that
+        // hasn't landed), keep what's already loaded instead of wiping it —
+        // wiping here used to silently destroy progress every time the cloud
+        // write had failed (e.g. a missing `snapshot` column), since a failed
+        // write looks identical to "never synced".
+        applyProgressSnapshot({})
       }
-    } else if (profile && local?.userId && local.userId !== session.user.id) {
-      // This browser's local storage belongs to a DIFFERENT account that
-      // never made it to the cloud — don't let the new account inherit it.
-      // If the cloud just has nothing yet (new account, or a sync that
-      // hasn't landed), keep what's already loaded instead of wiping it —
-      // wiping here used to silently destroy progress every time the cloud
-      // write had failed (e.g. a missing `snapshot` column), since a failed
-      // write looks identical to "never synced".
-      applyProgressSnapshot({})
     }
 
     set({ restoringSnapshot: false })
@@ -171,6 +187,10 @@ export const useAuthStore = create((set, get) => ({
   signOut: async () => {
     localStorage.removeItem(RECRUITER_STORAGE_KEY)
     if (supabase) await supabase.auth.signOut()
+    // Otherwise logging into a DIFFERENT account in the same tab afterwards
+    // would skip its restore too, inheriting whatever the previous account
+    // left in the stores.
+    restoredSnapshotForUserId = null
     set({
       session: null,
       user: null,
