@@ -116,4 +116,6 @@ union all
 select '052' as migracion, 'ai_gateway_settings: prompt de sistema global editable' as descripcion, exists (select 1 from information_schema.tables where table_schema='public' and table_name='ai_gateway_settings') as aplicada
 union all
 select '053' as migracion, 'Anatomía 12 sistemas + curso Cómo Funciona Nuestro Cerebro' as descripcion, exists (select 1 from public.courses where id = 'course-cerebro-neurociencia') as aplicada
+union all
+select '054' as migracion, 'Curso Evaluación del Paciente y Signos Vitales' as descripcion, exists (select 1 from public.courses where id = 'course-valoracion-paciente') as aplicada
 order by 1;

@@ -426,6 +426,16 @@
     "locked": false
   },
   {
+    "id": "course-valoracion-paciente",
+    "title": "Evaluación del Paciente y Signos Vitales",
+    "description": "El método que usan los profesionales de emergencias para evaluar a un paciente en minutos: impresión general, AVDI, ABC, prioridad del paciente y cómo medir e interpretar los signos vitales.",
+    "icon": "🩹",
+    "color": "#38bdf8",
+    "category": "Medicina",
+    "subcategory": "Evaluación del Paciente",
+    "locked": false
+  },
+  {
     "id": "course-primeros-auxilios",
     "title": "Primeros Auxilios: Guía Práctica para Salvar Vidas",
     "description": "RCP, atragantamiento, heridas, quemaduras, fracturas y emergencias comunes — qué hacer en los primeros minutos, antes de que llegue ayuda profesional.",
