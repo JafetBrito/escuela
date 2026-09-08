@@ -147,6 +147,20 @@ export function startAutoSave() {
     // schedules a correct save from the now-restored state.
     if (useAuthStore.getState().restoringSnapshot) return
 
+    // On every fresh page load, useAuthStore changes state at least twice
+    // before any login happens (the initial "no session yet" _applySession(null),
+    // then authReady:true) — both fire this subscriber. With no guard, 500ms
+    // later this wrote a fresh, empty "logged out" snapshot to localStorage
+    // with userId:null. That write's brand-new lastSaved then beat the real
+    // cloud snapshot's older lastSaved in EVERY subsequent login's
+    // cloudIsNewer check, permanently blocking the cloud restore — the exact
+    // "cache clear, log back in, always defaults" report. There's nothing
+    // real to protect in localStorage before a Supabase user exists, so
+    // just don't write. (Local-only mode, no Supabase configured, has no
+    // `user` ever and must keep saving — only skip when Supabase IS
+    // configured and we're in that pre-login window.)
+    if (isSupabaseConfigured() && !useAuthStore.getState().user) return
+
     if (saveTimer) clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
       saveLocalSnapshot(buildProgressSnapshot())
