@@ -416,6 +416,16 @@
     "locked": false
   },
   {
+    "id": "course-cerebro-neurociencia",
+    "title": "Cómo Funciona Nuestro Cerebro",
+    "description": "Una introducción detallada a la neurociencia: neuronas, sinapsis, las regiones del cerebro, la memoria y la neuroplasticidad — el órgano más complejo del cuerpo, explicado desde cero.",
+    "icon": "🧠",
+    "color": "#a78bfa",
+    "category": "Medicina",
+    "subcategory": "Neurociencia",
+    "locked": false
+  },
+  {
     "id": "course-primeros-auxilios",
     "title": "Primeros Auxilios: Guía Práctica para Salvar Vidas",
     "description": "RCP, atragantamiento, heridas, quemaduras, fracturas y emergencias comunes — qué hacer en los primeros minutos, antes de que llegue ayuda profesional.",
