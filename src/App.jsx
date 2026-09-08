@@ -25,6 +25,7 @@ import SchoolPage from './components/dashboard/SchoolPage'
 import LanguageSyllabusPage from './components/dashboard/LanguageSyllabusPage'
 import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
 import AcademiaIAPage from './components/dashboard/AcademiaIAPage'
+import AcademiaMedicinaPage from './components/dashboard/AcademiaMedicinaPage'
 import AcademiaChinaPage from './components/dashboard/AcademiaChinaPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
 import AcademiasPage from './components/dashboard/AcademiasPage'
@@ -316,6 +317,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AcademiaIAPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academia-medicina"
+          element={
+            <ProtectedRoute>
+              <AcademiaMedicinaPage />
             </ProtectedRoute>
           }
         />

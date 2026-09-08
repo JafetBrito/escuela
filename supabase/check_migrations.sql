@@ -118,4 +118,6 @@ union all
 select '053' as migracion, 'Anatomía 12 sistemas + curso Cómo Funciona Nuestro Cerebro' as descripcion, exists (select 1 from public.courses where id = 'course-cerebro-neurociencia') as aplicada
 union all
 select '054' as migracion, 'Curso Evaluación del Paciente y Signos Vitales' as descripcion, exists (select 1 from public.courses where id = 'course-valoracion-paciente') as aplicada
+union all
+select '055' as migracion, 'Atlas del Cuerpo Humano: los 12 Sistemas' as descripcion, exists (select 1 from public.courses where id = 'course-atlas-cuerpo-humano') as aplicada
 order by 1;

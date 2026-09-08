@@ -436,6 +436,16 @@
     "locked": false
   },
   {
+    "id": "course-atlas-cuerpo-humano",
+    "title": "Atlas del Cuerpo Humano: los 12 Sistemas",
+    "description": "Un diagrama vectorizado de referencia para cada uno de los 12 sistemas del cuerpo humano — consulta rápida y visual, complemento del curso de Anatomía y Fisiología Humana.",
+    "icon": "🗺️",
+    "color": "#0ea5e9",
+    "category": "Medicina",
+    "subcategory": "Atlas Visual",
+    "locked": false
+  },
+  {
     "id": "course-primeros-auxilios",
     "title": "Primeros Auxilios: Guía Práctica para Salvar Vidas",
     "description": "RCP, atragantamiento, heridas, quemaduras, fracturas y emergencias comunes — qué hacer en los primeros minutos, antes de que llegue ayuda profesional.",
