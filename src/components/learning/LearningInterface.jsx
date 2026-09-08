@@ -108,9 +108,16 @@ export default function LearningInterface() {
   // --- 4. DERIVACIÓN DE DATOS (Obteniendo el curso actual) ---
   const courseData = hasCourseData(courseId) ? getCourseData(courseId, lang) : null
 
-  const requestedId = Number(moduleId)
+  // moduleId de la URL siempre llega como string — los cursos nuevos usan
+  // ids numéricos (1, 2, 3…) pero la mayoría de los cursos existentes usan
+  // ids de texto ("ana-01", "paux-01"...). Antes esto forzaba
+  // Number(moduleId), que da NaN para cualquier id de texto — el módulo
+  // nunca se encontraba y el guard de más abajo mandaba de vuelta al mapa
+  // del curso en cada clic, sin importar que el módulo sí existiera (bug
+  // real: cualquier curso con ids de texto era imposible de recorrer).
+  // Comparar por String(m.id) funciona para ambos tipos de id a la vez.
   const currentModule = courseData
-    ? courseData.modules.find((m) => m.id === requestedId) ?? courseData.modules[0]
+    ? courseData.modules.find((m) => String(m.id) === moduleId) ?? courseData.modules[0]
     : null
 
   useEffect(() => {
@@ -136,7 +143,7 @@ export default function LearningInterface() {
   if (!courseData) {
     return <Navigate to="/dashboard" replace />
   }
-  if (!Number.isFinite(requestedId) || !isModuleUnlocked(courseId, requestedId)) {
+  if (!currentModule || !isModuleUnlocked(courseId, currentModule.id)) {
     return <Navigate to={`/learn/${courseId}`} replace />
   }
 
