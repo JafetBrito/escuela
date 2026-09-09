@@ -122,4 +122,6 @@ union all
 select '055' as migracion, 'Atlas del Cuerpo Humano: los 12 Sistemas' as descripcion, exists (select 1 from public.courses where id = 'course-atlas-cuerpo-humano') as aplicada
 union all
 select '056' as migracion, 'Atlas del Cuerpo Humano: ilustraciones reales (Wikimedia Commons)' as descripcion, exists (select 1 from public.courses where id = 'course-atlas-cuerpo-humano' and modules::text like '%sistema-esqueletico.jpg%') as aplicada
+union all
+select '057' as migracion, 'Academia de IA en inglés: course-001/003/prompt-practico via translations.en' as descripcion, exists (select 1 from public.courses where id = 'course-prompt-practico' and translations->'en'->>'title' is not null) as aplicada
 order by 1;
