@@ -126,4 +126,6 @@ union all
 select '057' as migracion, 'Academia de IA en inglés: course-001/003/prompt-practico via translations.en' as descripcion, exists (select 1 from public.courses where id = 'course-prompt-practico' and translations->'en'->>'title' is not null) as aplicada
 union all
 select '058' as migracion, 'Academia de IA en francés: course-001/003/prompt-practico via translations.fr' as descripcion, exists (select 1 from public.courses where id = 'course-prompt-practico' and translations->'fr'->>'title' is not null) as aplicada
+union all
+select '059' as migracion, 'Introducción a la Medicina: retratos reales de 15 figuras históricas (Wikimedia Commons)' as descripcion, exists (select 1 from public.courses where id = 'course-medicina' and modules::text like '%hipocrates.jpg%') as aplicada
 order by 1;
