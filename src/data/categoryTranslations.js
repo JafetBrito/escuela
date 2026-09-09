@@ -187,6 +187,8 @@ export const CATEGORY_NAME_EN = {
   // courses.json `subcategory` tags (not already covered above)
   'APIs y Automatización': 'APIs & Automation',
   'Anatomía y Fisiología': 'Anatomy & Physiology',
+  'Atlas Visual': 'Visual Atlas',
+  'Evaluación del Paciente': 'Patient Assessment',
   Aprendizaje: 'Learning',
   Canadá: 'Canada',
   Civil: 'Civil',
@@ -219,12 +221,36 @@ export const CATEGORY_NAME_EN = {
   'Terminal y Sistemas': 'Terminal & Systems',
 }
 
+// Traducción al francés — solo los términos que usan la Academia de IA y la
+// Academia de Medicina (a diferencia de CATEGORY_NAME_EN, que cubre las ~215
+// categorías/temas de toda la app). Ampliar cuando otra página necesite más
+// términos en francés.
+export const CATEGORY_NAME_FR = {
+  'Inteligencia Artificial': 'Intelligence Artificielle',
+  Medicina: 'Médecine',
+  'Herramientas de IA': "Outils d'IA",
+  'Prompt Engineering': 'Prompt Engineering',
+  'Anatomía y Fisiología': 'Anatomie et Physiologie',
+  Patología: 'Pathologie',
+  Farmacología: 'Pharmacologie',
+  Neurociencia: 'Neurosciences',
+  'Evaluación del Paciente': 'Évaluation du Patient',
+  'Atlas Visual': 'Atlas Visuel',
+  'Primeros Auxilios': 'Premiers Secours',
+}
+
+function tableFor(lang) {
+  return lang === 'en' ? CATEGORY_NAME_EN : lang === 'fr' ? CATEGORY_NAME_FR : null
+}
+
 export function localizeCategoryName(name, lang) {
-  if (lang !== 'en' || !name) return name
-  return CATEGORY_NAME_EN[name] ?? name
+  const table = tableFor(lang)
+  if (!table || !name) return name
+  return table[name] ?? name
 }
 
 export function localizeTopics(topics, lang) {
-  if (lang !== 'en' || !topics) return topics
-  return topics.map((t) => CATEGORY_NAME_EN[t] ?? t)
+  const table = tableFor(lang)
+  if (!table || !topics) return topics
+  return topics.map((t) => table[t] ?? t)
 }

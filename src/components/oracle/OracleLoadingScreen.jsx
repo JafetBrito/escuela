@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../../i18n'
 
 // Antes: un emoji 🔮 pulsante + texto + puntos, mientras se genera el curso.
 // Ahora: /public/desarrollo.mp4 en loop mientras se genera, y en cuanto
@@ -9,6 +10,7 @@ import { useState } from 'react'
 // puntos de progreso de siempre — nunca deja al alumno con una pantalla en
 // blanco.
 export default function OracleLoadingScreen({ status, stepLabel, moduleCount, moduleIndex, onContinue }) {
+  const { t } = useI18n()
   const [videoFailed, setVideoFailed] = useState(false)
   const isDone = status === 'done'
 
@@ -16,7 +18,7 @@ export default function OracleLoadingScreen({ status, stepLabel, moduleCount, mo
     return (
       <div className="flex flex-col items-center gap-4 py-6 text-center">
         <span className="animate-pulse text-5xl">{isDone ? '✅' : '🔮'}</span>
-        <p className="text-lg font-bold text-text">{isDone ? '¡Tu curso está listo!' : stepLabel}</p>
+        <p className="text-lg font-bold text-text">{isDone ? t('pages.oracle.loading.done') : stepLabel}</p>
         {!isDone && status === 'lessons' && (
           <div className="flex items-center gap-1.5">
             {Array.from({ length: moduleCount }).map((_, i) => (
@@ -26,7 +28,7 @@ export default function OracleLoadingScreen({ status, stepLabel, moduleCount, mo
         )}
         {isDone && (
           <button type="button" onClick={onContinue} className="rounded-lg bg-primary px-6 py-2.5 text-sm font-black text-background hover:bg-primary-hover">
-            Ver mi curso →
+            {t('pages.oracle.loading.viewCourse')}
           </button>
         )}
       </div>
@@ -60,9 +62,9 @@ export default function OracleLoadingScreen({ status, stepLabel, moduleCount, mo
           />
         )}
       </div>
-      <p className="text-lg font-bold text-text">{isDone ? '¡Tu curso está listo!' : stepLabel}</p>
+      <p className="text-lg font-bold text-text">{isDone ? t('pages.oracle.loading.done') : stepLabel}</p>
       {!isDone && (
-        <p className="text-sm text-text-muted">Esto puede tardar un poco — no cierres esta página.</p>
+        <p className="text-sm text-text-muted">{t('pages.oracle.loading.wait')}</p>
       )}
       {!isDone && status === 'lessons' && (
         <div className="flex items-center gap-1.5">
@@ -73,7 +75,7 @@ export default function OracleLoadingScreen({ status, stepLabel, moduleCount, mo
       )}
       {isDone && (
         <button type="button" onClick={onContinue} className="rounded-lg bg-primary px-6 py-2.5 text-sm font-black text-background hover:bg-primary-hover">
-          Ver mi curso →
+          {t('pages.oracle.loading.viewCourse')}
         </button>
       )}
     </div>

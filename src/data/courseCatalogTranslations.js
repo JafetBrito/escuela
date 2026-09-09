@@ -175,6 +175,18 @@ export const COURSE_CATALOG_EN = {
     title: 'Basic Pharmacology: How Medications Work',
     description: 'What a medication is, how it acts in your body, why dosage matters so much, and why antibiotic resistance is everyone\'s problem.',
   },
+  'course-cerebro-neurociencia': {
+    title: 'How Our Brain Works',
+    description: 'A detailed introduction to neuroscience: neurons, synapses, brain regions, memory, and neuroplasticity — the most complex organ in the body, explained from scratch.',
+  },
+  'course-valoracion-paciente': {
+    title: 'Patient Assessment & Vital Signs',
+    description: 'The method emergency professionals use to assess a patient in minutes: general impression, AVPU, ABC, patient priority, and how to measure and interpret vital signs.',
+  },
+  'course-atlas-cuerpo-humano': {
+    title: 'Atlas of the Human Body: The 12 Systems',
+    description: 'A vectorized reference diagram for each of the 12 systems of the human body — quick, visual reference, a companion to the Human Anatomy & Physiology course.',
+  },
   'course-primeros-auxilios': {
     title: 'First Aid: A Practical Guide to Saving Lives',
     description: 'CPR, choking, wounds, burns, fractures, and common emergencies — what to do in the first minutes, before professional help arrives.',
@@ -325,8 +337,64 @@ export const COURSE_CATALOG_EN = {
   },
 }
 
+// Traducción al francés — igual que COURSE_CATALOG_EN pero solo para los
+// cursos de la Academia de IA y la Academia de Medicina (las dos páginas que
+// necesitaban francés en esta tanda), no los 79 cursos completos como el
+// inglés. Ampliar cuando otra página necesite más cursos en francés.
+export const COURSE_CATALOG_FR = {
+  'course-001': {
+    title: 'Maîtriser Google NotebookLM',
+    description: 'Apprends à utiliser Google NotebookLM comme assistant de recherche et d\'étude, module par module, avec des défis et ta mascotte IA comme guide.',
+  },
+  'course-002': {
+    title: "Automatise tes études avec l'IA",
+    description: "Crée des flux de travail, des prompts et des automatisations IA pour étudier plus vite : résumés automatiques, fiches de révision générées seules et assistants personnalisés pour chaque matière. Tu apprendras à connecter des outils d'IA entre eux sans savoir programmer. Bientôt disponible.",
+  },
+  'course-003': {
+    title: 'Prompt Engineering depuis zéro',
+    description: 'Le manuel complet du prompt engineering. Zero-shot, Few-shot, CoT, ReAct, ToT, meta-prompting et plus encore. Théorie + pratique avec Oliver comme tuteur.',
+  },
+  'course-prompt-practico': {
+    title: 'Prompt Engineering Pratique : De la Théorie aux Projets Réels',
+    description: 'Le complément pratique de « Prompt Engineering depuis zéro » : moins de théorie, plus d\'exercices réels — déboguer des prompts qui échouent, extraire des données, travailler avec du code et enchaîner des tâches.',
+  },
+  'course-medicina': {
+    title: 'Introduction à la Médecine',
+    description: "Le savoir médical a longtemps été la propriété de l'élite. Ici, il appartient à tous. Histoire chronologique de la médecine + premiers secours que tout le monde peut et doit connaître.",
+  },
+  'course-medicina-anatomia': {
+    title: 'Anatomie et Physiologie Humaines',
+    description: 'Comment ton corps est construit et comment il fonctionne, système par système : squelette, cœur, poumons, cerveau et digestion, expliqué depuis zéro.',
+  },
+  'course-medicina-patologia': {
+    title: 'Pathologie Générale : Comment et Pourquoi Nous Tombons Malades',
+    description: "Ce qu'est une maladie, comment agissent les infections, ce qu'est l'inflammation et comment un médecin arrive à un diagnostic — vulgarisation médicale sérieuse et accessible.",
+  },
+  'course-medicina-farmacologia': {
+    title: 'Pharmacologie de Base : Comment Fonctionnent les Médicaments',
+    description: "Ce qu'est un médicament, comment il agit dans ton corps, pourquoi le dosage compte tant, et pourquoi la résistance aux antibiotiques est le problème de tous.",
+  },
+  'course-cerebro-neurociencia': {
+    title: 'Comment Fonctionne Notre Cerveau',
+    description: "Une introduction détaillée aux neurosciences : neurones, synapses, régions du cerveau, mémoire et neuroplasticité — l'organe le plus complexe du corps, expliqué depuis zéro.",
+  },
+  'course-valoracion-paciente': {
+    title: 'Évaluation du Patient et Signes Vitaux',
+    description: "La méthode utilisée par les professionnels des urgences pour évaluer un patient en quelques minutes : impression générale, AVPU, ABC, priorité du patient, et comment mesurer et interpréter les signes vitaux.",
+  },
+  'course-atlas-cuerpo-humano': {
+    title: 'Atlas du Corps Humain : les 12 Systèmes',
+    description: 'Un schéma vectoriel de référence pour chacun des 12 systèmes du corps humain — consultation rapide et visuelle, complément du cours Anatomie et Physiologie Humaines.',
+  },
+  'course-primeros-auxilios': {
+    title: 'Premiers Secours : Guide Pratique pour Sauver des Vies',
+    description: "RCP, étouffement, plaies, brûlures, fractures et urgences courantes — que faire dans les premières minutes, avant l'arrivée des secours professionnels.",
+  },
+}
+
 export function localizeCourseCatalog(course, lang) {
-  if (lang !== 'en') return course
-  const tr = COURSE_CATALOG_EN[course.id]
+  const table = lang === 'en' ? COURSE_CATALOG_EN : lang === 'fr' ? COURSE_CATALOG_FR : null
+  if (!table) return course
+  const tr = table[course.id]
   return tr ? { ...course, ...tr } : course
 }

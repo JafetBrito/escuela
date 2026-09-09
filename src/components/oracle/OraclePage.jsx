@@ -7,6 +7,7 @@ import OracleGenerateForm from './OracleGenerateForm'
 import OracleLoadingScreen from './OracleLoadingScreen'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useI18n } from '../../i18n'
 import { supabase } from '../../services/supabase/client'
 import {
   generateCourseOutline,
@@ -34,16 +35,16 @@ import {
 // sigue siendo un archivo estático, ver el plan de este feature para el
 // porqué).
 
-const STEP_LABELS = {
-  outline: '🧠 Planeando tu curso…',
-  saving: '💾 Guardando tu curso…',
-}
+const buildStepLabels = (t) => ({
+  outline: t('pages.oracle.steps.outline'),
+  saving: t('pages.oracle.steps.saving'),
+})
 
-const REVIEW_BADGES = {
-  pending: { label: '⏳ En revisión', className: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
-  approved: { label: '✅ Aprobado', className: 'border-green-500/30 bg-green-500/10 text-green-300' },
-  rejected: { label: '❌ Rechazado', className: 'border-red-500/30 bg-red-500/10 text-red-300' },
-}
+const buildReviewBadges = (t) => ({
+  pending: { label: t('pages.oracle.review.pending'), className: 'border-amber-500/30 bg-amber-500/10 text-amber-300' },
+  approved: { label: t('pages.oracle.review.approved'), className: 'border-green-500/30 bg-green-500/10 text-green-300' },
+  rejected: { label: t('pages.oracle.review.rejected'), className: 'border-red-500/30 bg-red-500/10 text-red-300' },
+})
 
 function CourseCard({ course, footer }) {
   return (
@@ -66,6 +67,9 @@ export default function OraclePage() {
   const navigate = useNavigate()
   const session = useAuthStore((s) => s.session)
   const activeCredentialId = useSettingsStore((s) => s.activeCredentialId)
+  const { t } = useI18n()
+  const STEP_LABELS = buildStepLabels(t)
+  const REVIEW_BADGES = buildReviewBadges(t)
 
   const [tab, setTab] = useState('generar') // 'generar' | 'mis-cursos' | 'comunidad'
   const [status, setStatus] = useState('idle') // idle | outline | lessons | saving | done | error
@@ -173,7 +177,7 @@ export default function OraclePage() {
       setStatus('done')
     } catch (err) {
       console.error('[OraclePage] generation failed:', err)
-      setError(err?.message || 'Algo salió mal generando tu curso. Intenta de nuevo.')
+      setError(err?.message || t('pages.oracle.error.generic'))
       setStatus('error')
     }
   }
@@ -194,7 +198,11 @@ export default function OraclePage() {
 
   const currentStepLabel =
     status === 'lessons'
-      ? `✍️ Escribiendo clase ${moduleIndex + 1} de ${outline?.modules?.length ?? '?'}: ${outline?.modules?.[moduleIndex]?.title ?? ''}…`
+      ? t('pages.oracle.steps.writingLesson', {
+          current: moduleIndex + 1,
+          total: outline?.modules?.length ?? '?',
+          title: outline?.modules?.[moduleIndex]?.title ?? '',
+        })
       : STEP_LABELS[status]
 
   return (
@@ -216,12 +224,10 @@ export default function OraclePage() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(152,202,63,0.25),transparent_55%)]" />
             <div className="relative">
               <MascotViewport className="mx-auto h-40 w-40 sm:h-52 sm:w-52" showEmotions />
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-white/40">Oliver Academy</p>
-              <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">🔮 El Oráculo de Oliver</h1>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-white/40">{t('pages.oracle.brand')}</p>
+              <h1 className="mt-1 text-3xl font-black text-white sm:text-4xl">{t('pages.oracle.title')}</h1>
               <p className="mx-auto mt-2 max-w-xl text-sm text-white/60">
-                Escribe cualquier tema y la IA arma un curso completo para ti: temario, clases con
-                contenido real, imágenes y recursos de fuentes abiertas, y un quiz por clase — listo
-                para jugar como cualquier otro curso.
+                {t('pages.oracle.subtitle')}
               </p>
             </div>
           </div>
@@ -235,7 +241,7 @@ export default function OraclePage() {
                 tab === 'generar' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'
               }`}
             >
-              ✨ Generar
+              {t('pages.oracle.tabs.generate')}
             </button>
             <button
               type="button"
@@ -244,7 +250,7 @@ export default function OraclePage() {
                 tab === 'mis-cursos' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'
               }`}
             >
-              📚 Mis Cursos {myCourses.length > 0 ? `(${myCourses.length})` : ''}
+              {myCourses.length > 0 ? t('pages.oracle.tabs.myCoursesCount', { count: myCourses.length }) : t('pages.oracle.tabs.myCourses')}
             </button>
             <button
               type="button"
@@ -253,7 +259,7 @@ export default function OraclePage() {
                 tab === 'comunidad' ? 'bg-primary text-background' : 'text-text-muted hover:text-text'
               }`}
             >
-              🌍 Comunidad
+              {t('pages.oracle.tabs.community')}
             </button>
           </div>
 
@@ -276,14 +282,14 @@ export default function OraclePage() {
               {status === 'error' && (
                 <div className="flex flex-col items-center gap-4 py-6 text-center">
                   <span className="text-5xl">⚠️</span>
-                  <p className="text-lg font-bold text-text">No pudimos generar tu curso</p>
+                  <p className="text-lg font-bold text-text">{t('pages.oracle.error.heading')}</p>
                   <p className="max-w-md text-sm text-text-muted">{error}</p>
                   <button
                     type="button"
                     onClick={() => setStatus('idle')}
                     className="mt-1 rounded-lg bg-primary px-6 py-2.5 text-sm font-black text-background hover:bg-primary-hover"
                   >
-                    Reintentar
+                    {t('pages.oracle.error.retry')}
                   </button>
                 </div>
               )}
@@ -293,13 +299,13 @@ export default function OraclePage() {
           {tab === 'mis-cursos' && (
             <div className="rounded-2xl border border-border bg-surface p-6">
               {myCoursesLoading ? (
-                <p className="text-sm text-text-muted">Cargando tus cursos…</p>
+                <p className="text-sm text-text-muted">{t('pages.oracle.myCourses.loading')}</p>
               ) : myCourses.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-8 text-center">
                   <span className="text-4xl">📭</span>
-                  <p className="font-bold text-text">Todavía no has generado ningún curso</p>
+                  <p className="font-bold text-text">{t('pages.oracle.myCourses.emptyTitle')}</p>
                   <p className="text-sm text-text-muted">
-                    Ve a la pestaña "Generar" y escribe cualquier tema que quieras aprender.
+                    {t('pages.oracle.myCourses.emptyBody')}
                   </p>
                 </div>
               ) : (
@@ -327,7 +333,7 @@ export default function OraclePage() {
                                 onClick={() => handleRequestReview(c.id)}
                                 className="rounded-lg border border-border px-2 py-1 text-[10px] font-semibold text-text-muted hover:border-primary/40 hover:text-text"
                               >
-                                📮 Solicitar revisión
+                                {t('pages.oracle.review.requestButton')}
                               </button>
                             )}
                           </div>
@@ -343,15 +349,15 @@ export default function OraclePage() {
           {tab === 'comunidad' && (
             <div className="rounded-2xl border border-border bg-surface p-6">
               <p className="mb-4 text-sm text-text-muted">
-                Cursos generados por otros alumnos y aprobados por un admin — visibles aquí para todos.
+                {t('pages.oracle.community.subtitle')}
               </p>
               {communityLoading ? (
-                <p className="text-sm text-text-muted">Cargando…</p>
+                <p className="text-sm text-text-muted">{t('pages.oracle.community.loading')}</p>
               ) : communityCourses.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-8 text-center">
                   <span className="text-4xl">🌍</span>
-                  <p className="font-bold text-text">Todavía no hay cursos aprobados</p>
-                  <p className="text-sm text-text-muted">Cuando un admin apruebe un curso compartido, aparecerá aquí.</p>
+                  <p className="font-bold text-text">{t('pages.oracle.community.emptyTitle')}</p>
+                  <p className="text-sm text-text-muted">{t('pages.oracle.community.emptyBody')}</p>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -361,7 +367,9 @@ export default function OraclePage() {
                       course={c}
                       footer={
                         authorNames[c.created_by] ? (
-                          <span className="shrink-0 self-end text-[10px] text-text-muted">por {authorNames[c.created_by]}</span>
+                          <span className="shrink-0 self-end text-[10px] text-text-muted">
+                            {t('pages.oracle.community.by', { name: authorNames[c.created_by] })}
+                          </span>
                         ) : null
                       }
                     />
