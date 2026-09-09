@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
@@ -81,6 +81,7 @@ export default function OraclePage() {
   const [communityCourses, setCommunityCourses] = useState([])
   const [communityLoading, setCommunityLoading] = useState(true)
   const [authorNames, setAuthorNames] = useState({})
+  const communityFetchedRef = useRef(false)
 
   const fetchMyCourses = () => {
     if (!session?.user?.id) return
@@ -103,7 +104,8 @@ export default function OraclePage() {
   }, [session?.user?.id])
 
   useEffect(() => {
-    if (tab !== 'comunidad' || communityCourses.length > 0) return
+    if (tab !== 'comunidad' || communityFetchedRef.current) return
+    communityFetchedRef.current = true
     let cancelled = false
     supabase
       .from('courses')
@@ -134,7 +136,7 @@ export default function OraclePage() {
     return () => {
       cancelled = true
     }
-  }, [tab, communityCourses.length])
+  }, [tab])
 
   const isBusy = status === 'outline' || status === 'lessons' || status === 'saving' || status === 'done'
 
