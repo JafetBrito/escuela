@@ -213,11 +213,12 @@ async function resolveImage(query) {
     ).then((r) => r.json())
     for (const hit of search?.query?.search ?? []) {
       const info = await fetch(
-        `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(hit.title)}&prop=imageinfo&iiprop=url|extmetadata&format=json&origin=*`,
+        `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(hit.title)}&prop=imageinfo&iiprop=url|extmetadata|mime&format=json&origin=*`,
       ).then((r) => r.json())
       const imageinfo = Object.values(info?.query?.pages ?? {})[0]?.imageinfo?.[0]
       const license = imageinfo?.extmetadata?.LicenseShortName?.value ?? ''
-      if (imageinfo?.url && ALLOWED_LICENSES.test(license)) {
+      const isImage = /^image\//.test(imageinfo?.mime ?? '') && imageinfo.mime !== 'image/vnd.djvu'
+      if (imageinfo?.url && isImage && ALLOWED_LICENSES.test(license)) {
         const artist = stripHtml(imageinfo.extmetadata?.Artist?.value)
         return { url: imageinfo.url, credit: artist || 'Wikimedia Commons', license }
       }

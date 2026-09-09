@@ -80,7 +80,9 @@ async function callMinimax({ apiKey, messages, model, temperature, maxTokens }: 
       ...(maxTokens != null ? { tokens_to_generate: maxTokens } : {}),
     }),
   })
-  if (!response.ok) throw new Error(`Minimax API error: ${response.status}`)
+  if (!response.ok) {
+    throw new Error(`Minimax API error: ${response.status} ${await response.text().catch(() => '')}`)
+  }
   const data = await response.json()
   const content = data.choices?.[0]?.message?.content
   if (!content) throw new Error('Minimax API returned no content')
@@ -103,7 +105,9 @@ async function callDeepseek({ apiKey, messages, model, temperature, maxTokens }:
       ...(maxTokens != null ? { max_tokens: maxTokens } : {}),
     }),
   })
-  if (!response.ok) throw new Error(`DeepSeek API error: ${response.status}`)
+  if (!response.ok) {
+    throw new Error(`DeepSeek API error: ${response.status} ${await response.text().catch(() => '')}`)
+  }
   const data = await response.json()
   const content = data.choices?.[0]?.message?.content
   if (!content) throw new Error('DeepSeek API returned no content')
