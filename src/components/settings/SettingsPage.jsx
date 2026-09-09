@@ -23,17 +23,30 @@ import { buildProgressSnapshot } from '../../services/persistence/progressSnapsh
 import { saveLocalSnapshot } from '../../services/persistence/localStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import { providerSupportsTools } from '../../data/aiProviderRegistry'
-import { useI18n } from '../../i18n'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 
 const ROLE_LABELS = {
   admin: 'Administrador',
   student: 'Alumno',
 }
 
-const CATEGORIES = [
+// El tema "Reina Nefertiti" se desbloquea comprándolo en la Tienda (ver
+// shopRegistry.js, id 'reina-nefertiti') — por eso NO vive en esta lista fija,
+// se agrega dinámicamente en el render solo si useShopStore.isOwned() es true.
+const BASE_THEMES = THEMES.filter((t) => t.id !== 'desert')
+const NEFERTITI_THEME = THEMES.find((t) => t.id === 'desert')
+
+// Dos grupos separados en el riel de navegación: preferencias de cuenta vs.
+// configuración de la IA — antes eran 13 pestañas sueltas en una sola lista,
+// mezclando ambas cosas sin ninguna jerarquía visual.
+const ACCOUNT_CATEGORIES = [
   { id: 'cuenta', label: '👤 Cuenta' },
   { id: 'apariencia', label: '🎨 Apariencia' },
-  { id: 'nucleo', label: '🧠 Núcleo' },
+  { id: 'interfaz', label: '🖐️ Widgets flotantes' },
+]
+
+const AI_CATEGORIES = [
+  { id: 'nucleo', label: '🧠 Núcleo (conexión)' },
   { id: 'identidad', label: '✨ Identidad y Alma' },
   { id: 'personalidad', label: '🎭 Personalidad' },
   { id: 'usuario', label: '🙋 Usuario' },
@@ -43,18 +56,16 @@ const CATEGORIES = [
   { id: 'memoria', label: '🧩 Memoria' },
   { id: 'notion', label: '🗒️ Notion' },
   { id: 'chats', label: '💬 Chats' },
-  { id: 'interfaz', label: '🖐️ Interfaz' },
 ]
 
 export default function SettingsPage() {
-  const { t } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const navigate = useNavigate()
   const [category, setCategory] = useState('cuenta')
   const [saved, setSaved] = useState(false)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const mascot = getMascotById(selectedMascotId)
   const chatHistory = useChatHistoryStore((s) => s.history)
-  const license = useAuthStore((s) => s.license)
   const googleUser = useAuthStore((s) => s.googleUser)
   const lock = useAuthStore((s) => s.lock)
   const session = useAuthStore((s) => s.session)
@@ -62,7 +73,8 @@ export default function SettingsPage() {
   // Perfil de edad "niños" (profiles.age_profile, asignado por el admin) no
   // ve la configuración de API keys/proveedor de IA — no tiene sentido que
   // un niño la vea ni la toque.
-  const visibleCategories = CATEGORIES.filter((c) => !(c.id === 'nucleo' && profile?.age_profile === 'kids'))
+  const isKidsProfile = profile?.age_profile === 'kids'
+  const visibleAiCategories = isKidsProfile ? [] : AI_CATEGORIES
   const signOut = useAuthStore((s) => s.signOut)
   const updatePassword = useAuthStore((s) => s.updatePassword)
   const coins = useCurrencyStore((s) => s.coins)
@@ -117,18 +129,11 @@ export default function SettingsPage() {
 
   const displayName = settingsMascotName || mascot.name
   const historyDays = Object.keys(chatHistory).sort((a, b) => b.localeCompare(a))
-
-  const accessLabel = license
-    ? license.type === 'full'
-      ? 'Completo (todos los cursos)'
-      : `Un curso (${license?.courseId ?? '—'})`
-    : 'Todos los cursos · primeras 2 clases gratis'
+  const hasNefertitiTheme = useShopStore((s) => s.isOwned('reina-nefertiti'))
 
   const supabaseReady = isSupabaseConfigured()
   const isEmailProvider = session?.user?.app_metadata?.provider === 'email'
-  const roleLabel = profile
-    ? `${ROLE_LABELS[profile.role] ?? 'Alumno'} (${license ? 'con llave' : 'sin llave'})`
-    : null
+  const roleLabel = profile ? ROLE_LABELS[profile.role] ?? 'Alumno' : null
 
   const handleLogout = async () => {
     if (supabaseReady) {
@@ -193,9 +198,12 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex flex-col gap-6 md:flex-row">
-            {/* Category rail */}
-            <nav className="flex shrink-0 gap-1.5 overflow-x-auto md:w-48 md:flex-col md:overflow-visible">
-              {visibleCategories.map((c) => (
+            {/* Category rail — dos grupos separados: preferencias de cuenta
+                arriba, configuración de la IA abajo, cada uno con su propio
+                encabezado en vez de una sola lista plana de 13 pestañas. */}
+            <nav className="flex shrink-0 gap-1.5 overflow-x-auto md:w-52 md:flex-col md:overflow-visible">
+              <p className="px-3 pt-1 text-[11px] font-bold uppercase tracking-wider text-text-muted/70 md:pt-0">Cuenta</p>
+              {ACCOUNT_CATEGORIES.map((c) => (
                 <button
                   key={c.id}
                   type="button"
@@ -207,6 +215,24 @@ export default function SettingsPage() {
                   {c.label}
                 </button>
               ))}
+
+              {visibleAiCategories.length > 0 && (
+                <>
+                  <p className="mt-3 px-3 text-[11px] font-bold uppercase tracking-wider text-text-muted/70">Inteligencia Artificial</p>
+                  {visibleAiCategories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCategory(c.id)}
+                      className={`shrink-0 rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                        category === c.id ? 'bg-primary text-background' : 'text-text-muted hover:bg-surface'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </>
+              )}
             </nav>
 
             {/* Active category */}
@@ -234,66 +260,64 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-                    <div>
-                      <p className="text-text-muted">Licencia</p>
-                      <p className="font-mono text-text">{license?.licenseId ?? '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-text-muted">Acceso a cursos</p>
-                      <p className="text-text">{accessLabel}</p>
-                    </div>
-                    <div>
-                      <p className="text-text-muted">Monedas y nivel</p>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        <CurrencyBadge amount={coins} />
-                        <LevelBadge />
-                      </div>
+                  <div>
+                    <p className="text-sm text-text-muted">Monedas y nivel</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <CurrencyBadge amount={coins} />
+                      <LevelBadge />
                     </div>
                   </div>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <ProgressSync />
-                    <Link to="/unlock" className="rounded-lg border border-primary/30 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10">
-                      🔑 Canjear otra llave
-                    </Link>
-                    <button onClick={handleLogout} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-danger hover:text-danger">
-                      Cerrar sesión
-                    </button>
+                  <div className="border-t border-border pt-3">
+                    <p className="text-sm font-semibold text-text">Idioma</p>
+                    <select
+                      value={lang} onChange={(e) => setLang(e.target.value)}
+                      className="mt-2 w-full max-w-xs rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
+                    >
+                      {SUPPORTED_LANGUAGES.map((code) => (
+                        <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {isEmailProvider && (
-                    <form onSubmit={handleChangePassword} className="mt-2 flex flex-wrap items-end gap-2">
-                      <label className="flex flex-col gap-1 text-sm">
-                        Cambiar contraseña
+                    <form onSubmit={handleChangePassword} className="border-t border-border pt-3">
+                      <p className="text-sm font-semibold text-text">Cambiar contraseña</p>
+                      <div className="mt-2 flex flex-wrap items-end gap-2">
                         <input
                           type="password" minLength={6} value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="Nueva contraseña"
                           className="rounded-lg border border-border bg-background px-3 py-2 text-text outline-none focus:border-primary"
                         />
-                      </label>
-                      <button type="submit" disabled={newPassword.length < 6}
-                        className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-primary hover:text-text disabled:opacity-60">
-                        Actualizar
-                      </button>
-                      {passwordStatus && <span className="text-sm text-primary">{passwordStatus}</span>}
+                        <button type="submit" disabled={newPassword.length < 6}
+                          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-primary hover:text-text disabled:opacity-60">
+                          Actualizar
+                        </button>
+                        {passwordStatus && <span className="text-sm text-primary">{passwordStatus}</span>}
+                      </div>
                     </form>
                   )}
 
-                  <p className="text-xs text-text-muted">
-                    {supabaseReady
-                      ? 'Tu progreso, mascota y configuración se guardan en tu cuenta y se sincronizan entre dispositivos.'
-                      : '"Descargar llave" guarda un archivo con tu licencia y todo tu progreso. Úsalo para seguir donde lo dejaste en otro navegador.'}
-                  </p>
+                  {!supabaseReady && (
+                    <div className="border-t border-border pt-3">
+                      <p className="text-sm font-semibold text-text">Copia de seguridad local</p>
+                      <p className="mt-1 text-xs text-text-muted">
+                        Sin una cuenta en la nube, tu progreso solo vive en este navegador. Descarga un archivo de respaldo para seguir donde lo dejaste en otro dispositivo.
+                      </p>
+                      <div className="mt-2"><ProgressSync /></div>
+                    </div>
+                  )}
 
                   <div className="border-t border-border pt-3">
-                    <p className="text-sm font-semibold text-text">Nombre de tu mascota</p>
-                    <input
-                      type="text" value={settingsMascotName} onChange={(e) => setMascotName(e.target.value)}
-                      placeholder={mascot.name}
-                      className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
-                    />
+                    <p className="text-xs text-text-muted">
+                      {supabaseReady
+                        ? 'Tu progreso, mascota y configuración se guardan en tu cuenta y se sincronizan entre dispositivos.'
+                        : 'Tu progreso se guarda solo en este navegador — usa la copia de seguridad local de arriba para llevarlo a otro dispositivo.'}
+                    </p>
+                    <button onClick={handleLogout} className="mt-3 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-danger hover:text-danger">
+                      Cerrar sesión
+                    </button>
                   </div>
                 </section>
               )}
@@ -303,7 +327,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🎨 Apariencia</p>
                   <p className="text-sm text-text-muted">Elige el tema visual de toda la plataforma. Se guarda en tu cuenta — te acompaña a cualquier dispositivo donde inicies sesión.</p>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    {THEMES.map((th) => (
+                    {BASE_THEMES.map((th) => (
                       <button
                         key={th.id}
                         type="button"
@@ -317,6 +341,29 @@ export default function SettingsPage() {
                         {theme === th.id && <span className="text-xs font-bold text-primary">✓ Activo</span>}
                       </button>
                     ))}
+
+                    {hasNefertitiTheme ? (
+                      <button
+                        type="button"
+                        onClick={() => setTheme(NEFERTITI_THEME.id)}
+                        className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-colors ${
+                          theme === NEFERTITI_THEME.id ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
+                        }`}
+                      >
+                        <span className="text-3xl">{NEFERTITI_THEME.icon}</span>
+                        <span className="text-sm font-semibold text-text">{NEFERTITI_THEME.label}</span>
+                        {theme === NEFERTITI_THEME.id && <span className="text-xs font-bold text-primary">✓ Activo</span>}
+                      </button>
+                    ) : (
+                      <Link
+                        to="/tienda"
+                        className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-4 text-center text-text-muted transition-colors hover:border-primary/40 hover:text-text"
+                      >
+                        <span className="text-3xl opacity-50">🔒</span>
+                        <span className="text-sm font-semibold">{NEFERTITI_THEME.label}</span>
+                        <span className="text-xs font-semibold text-primary">🛍️ Ir a la tienda de temas</span>
+                      </Link>
+                    )}
                   </div>
                 </section>
               )}
@@ -326,6 +373,14 @@ export default function SettingsPage() {
               {category === 'identidad' && (
                 <section className="flex flex-col gap-6 rounded-xl border border-border bg-surface p-5">
                   <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🐾 Nombre</p>
+                    <input
+                      type="text" value={settingsMascotName} onChange={(e) => setMascotName(e.target.value)}
+                      placeholder={mascot.name}
+                      className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="border-t border-border pt-4">
                     <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">✨ Identidad</p>
                     <p className="mt-1 text-sm text-text-muted">Quién es {displayName} — su biografía, gustos, forma de ser.</p>
                     <textarea
@@ -557,7 +612,7 @@ export default function SettingsPage() {
 
               {category === 'interfaz' && (
                 <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🖐️ Interfaz</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🖐️ Widgets flotantes</p>
                   <p className="text-sm text-text-muted">
                     Los elementos flotantes (Radio, Cámara) se arrastran desde su asa <strong>⠿</strong>. Ajusta su tamaño.
                   </p>
