@@ -15,6 +15,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 const SECTIONS = [
   { to: '/admin', icon: '🏠', label: 'Resumen', end: true },
   { to: '/admin/cursos', icon: '📚', label: 'Cursos' },
+  { to: '/admin/oraculo', icon: '🔮', label: 'Revisión del Oráculo' },
   { to: '/admin/profesores', icon: '🧑‍🏫', label: 'Profesores' },
   { to: '/admin/correos', icon: '📧', label: 'Correos' },
   { to: '/admin/ia', icon: '🤖', label: 'IA' },

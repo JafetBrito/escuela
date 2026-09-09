@@ -29,6 +29,12 @@ function notificationUrl(n) {
   // reflexión de clase — ver migration_049.sql). No hay página de detalle
   // por reflexión, la bandeja completa del profesor ES el destino.
   if (n.teacher_id && n.reflection_id) return '/profesor/reflexiones'
+  // course_id sin admin_id = decisión de revisión llegando al alumno dueño
+  // del curso — va directo a jugarlo. Con admin_id (pedido de revisión
+  // llegando a un admin, ver request_course_review en migration_060.sql) va
+  // a la cola de revisión, no al curso mismo (el admin todavía no decidió).
+  if (n.course_id && n.admin_id) return '/admin/oraculo'
+  if (n.course_id) return `/learn/${n.course_id}`
   return null
 }
 
@@ -275,6 +281,24 @@ export const useNotificationsStore = create((set, get) => ({
       reflection_id: reflection.id,
       title: '📩 Nueva reflexión de clase',
       body: `${studentName ?? 'Un alumno'} te mandó una reflexión`,
+    })
+  },
+
+  // Usado por AdminOracleReviewPage.jsx al aprobar/rechazar un curso del
+  // Oráculo — avisa al alumno dueño. El pedido de revisión en sí (alumno →
+  // todos los admins) no pasa por aquí: lo hace la función de confianza
+  // request_course_review (migration_060.sql), porque un alumno no puede
+  // bajo RLS enumerar quién es admin para dirigirle un insert directo.
+  notifyCourseReviewDecision: async (course, decision, note) => {
+    await insertNotification({
+      student_id: course.created_by,
+      course_id: course.id,
+      title: decision === 'approved' ? '✅ Tu curso fue aprobado' : '❌ Tu curso fue rechazado',
+      body: note
+        ? `"${course.title}" — ${note}`
+        : decision === 'approved'
+          ? `"${course.title}" ya es visible en la pestaña Comunidad del Oráculo.`
+          : `"${course.title}" no fue aprobado esta vez — puedes volver a pedir revisión desde Mis Cursos.`,
     })
   },
 }))

@@ -102,6 +102,7 @@ const MyClassesPage = lazy(() => import('./components/liveclass/MyClassesPage'))
 const ClassSummaryPage = lazy(() => import('./components/liveclass/ClassSummaryPage'))
 const AdminExamsPage = lazy(() => import('./components/admin/AdminExamsPage'))
 const AdminCoursesPage = lazy(() => import('./components/admin/AdminCoursesPage'))
+const AdminOracleReviewPage = lazy(() => import('./components/admin/AdminOracleReviewPage'))
 const AdminTeachersPage = lazy(() => import('./components/admin/AdminTeachersPage'))
 const AdminEmailsPage = lazy(() => import('./components/admin/AdminEmailsPage'))
 const AdminAiSettingsPage = lazy(() => import('./components/admin/AdminAiSettingsPage'))
@@ -666,6 +667,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminCoursesPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/oraculo"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminOracleReviewPage />
               </Suspense>
             </ProtectedRoute>
           }

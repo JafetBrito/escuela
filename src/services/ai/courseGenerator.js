@@ -19,11 +19,48 @@ import { supabase } from '../supabase/client'
 
 // maxTokens deliberadamente más alto que el default de chat
 // (useSettingsStore, pensado para respuestas cortas de chat) — un temario o
-// una clase completa en HTML necesita mucho más espacio.
+// una clase completa en HTML necesita mucho más espacio. La versión "con
+// misiones" pide más porque el JSON de la clase crece con exercise+missionChat.
 const OUTLINE_MAX_TOKENS = 900
 const LESSON_MAX_TOKENS = 2600
+const LESSON_MAX_TOKENS_WITH_MISSIONS = 3200
 
-const OUTLINE_SYSTEM_PROMPT = `Eres un diseñador curricular experto. Te dan un tema y debes planear un curso completo, dividido en clases progresivas, de nivel introductorio a intermedio.
+// Lista propia y deliberadamente CORTA — NO reutiliza SUPPORTED_LANGUAGES/
+// LANGUAGE_NAMES de src/i18n. Esa lista incluye locales curados a mano sin
+// traducción real (náhuatl, yup'ik, dakota, "pirata", castellano antiguo,
+// etc.) pensados para strings de interfaz ya revisadas — dejar que un LLM
+// genérico invente contenido educativo libre en esos idiomas es un riesgo
+// real de contenido inexacto o irrespetuoso, muy distinto a texto de UI ya
+// curado. Aquí solo idiomas donde un LLM mayor típicamente escribe bien.
+export const ORACLE_LANGUAGES = [
+  { code: 'es', label: 'Español' },
+  { code: 'en', label: 'English' },
+  { code: 'fr', label: 'Français' },
+  { code: 'pt', label: 'Português' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'ja', label: '日本語' },
+  { code: 'zh', label: '中文' },
+]
+
+export const ORACLE_DIFFICULTIES = [
+  { id: 'principiante', label: 'Principiante' },
+  { id: 'intermedio', label: 'Intermedio' },
+  { id: 'avanzado', label: 'Avanzado' },
+]
+
+const LANGUAGE_INSTRUCTION = (language) => {
+  const found = ORACLE_LANGUAGES.find((l) => l.code === language)
+  return found && found.code !== 'es'
+    ? `\n\nEscribe TODO el contenido (títulos, descripciones, texto) en ${found.label}, aunque estas instrucciones estén en español.`
+    : ''
+}
+
+function buildOutlineSystemPrompt({ difficulty, audience, moduleCount, language }) {
+  const difficultyLabel = ORACLE_DIFFICULTIES.find((d) => d.id === difficulty)?.label ?? 'Intermedio'
+  return `Eres un diseñador curricular experto. Te dan un tema y debes planear un curso completo, dividido en clases progresivas.
+
+Nivel del curso: ${difficultyLabel}.${audience?.trim() ? `\nPúblico objetivo: ${audience.trim()}.` : ''}
 
 Responde ÚNICAMENTE con JSON estricto, sin bloques de código markdown (nada de \`\`\`), sin explicación antes ni después — solo el objeto JSON, empezando directamente con "{".
 
@@ -39,9 +76,16 @@ Formato exacto:
   ]
 }
 
-El array "modules" debe tener entre 5 y 8 elementos, en orden lógico de aprendizaje.`
+El array "modules" debe tener EXACTAMENTE ${moduleCount} elementos, en orden lógico de aprendizaje.${LANGUAGE_INSTRUCTION(language)}`
+}
 
-const LESSON_SYSTEM_PROMPT = `Eres un profesor experto escribiendo el contenido completo de una clase para un curso online. Te dan el tema del curso, el título de la clase y una breve descripción de qué debe cubrir.
+function buildLessonSystemPrompt({ includeMissions, language }) {
+  const missionsFields = includeMissions
+    ? `,
+  "exercise": "una consigna corta de reflexión o práctica para que el alumno aplique lo aprendido en esta clase (string vacío \\"\\" si de verdad no aplica)",
+  "missionChat": { "label": "una instrucción corta pidiéndole al alumno que le cuente algo a su mascota sobre esta clase", "hint": "una pista de 1 línea sobre cómo responder" }`
+    : ''
+  return `Eres un profesor experto escribiendo el contenido completo de una clase para un curso online. Te dan el tema del curso, el título de la clase y una breve descripción de qué debe cubrir.
 
 Responde ÚNICAMENTE con JSON estricto, sin bloques de código markdown (nada de \`\`\`), sin explicación antes ni después — solo el objeto JSON, empezando directamente con "{".
 
@@ -52,10 +96,13 @@ Formato exacto:
     "question": "Una pregunta de opción múltiple sobre el contenido de la clase",
     "options": ["opción A", "opción B", "opción C", "opción D"],
     "correctIndex": 0
-  }
+  },
+  "imageQuery": "una frase corta y específica en inglés para buscar UNA imagen real relacionada en Wikimedia Commons (ej. \\"Louis Armstrong trumpet 1950s\\"), o \\"\\" si no hay nada visual obvio que buscar",
+  "resourceQuery": "un título o tema concreto para buscar UN artículo relacionado en Wikipedia, o \\"\\" si no aplica"${missionsFields}
 }
 
-"options" debe tener EXACTAMENTE 4 elementos, y "correctIndex" debe ser el índice (0 a 3) de la opción correcta.`
+"options" debe tener EXACTAMENTE 4 elementos, y "correctIndex" debe ser el índice (0 a 3) de la opción correcta.${LANGUAGE_INSTRUCTION(language)}`
+}
 
 // Mensaje mostrado cuando no hay conexión de IA activa — mismo estilo que el
 // fallback de npcTransport.js, pero sin las variantes multi-idioma (esta
@@ -112,14 +159,100 @@ async function callAiForJson(systemPrompt, userPrompt, maxTokens) {
   }
 }
 
-export async function generateCourseOutline(topic) {
+export async function generateCourseOutline(topic, { difficulty = 'intermedio', audience = '', moduleCount = 6, language = 'es' } = {}) {
   const userPrompt = `Tema del curso: "${topic}"`
-  return callAiForJson(OUTLINE_SYSTEM_PROMPT, userPrompt, OUTLINE_MAX_TOKENS)
+  return callAiForJson(buildOutlineSystemPrompt({ difficulty, audience, moduleCount, language }), userPrompt, OUTLINE_MAX_TOKENS)
 }
 
-export async function generateLessonContent(topic, courseTitle, moduleTitle, moduleDescription) {
+export async function generateLessonContent(
+  topic, courseTitle, moduleTitle, moduleDescription,
+  { includeMissions = false, language = 'es' } = {},
+) {
   const userPrompt = `Curso: "${courseTitle}" (tema general: ${topic})\nClase: "${moduleTitle}"\nQué debe cubrir: ${moduleDescription}`
-  return callAiForJson(LESSON_SYSTEM_PROMPT, userPrompt, LESSON_MAX_TOKENS)
+  const maxTokens = includeMissions ? LESSON_MAX_TOKENS_WITH_MISSIONS : LESSON_MAX_TOKENS
+  return callAiForJson(buildLessonSystemPrompt({ includeMissions, language }), userPrompt, maxTokens)
+}
+
+// Estimado de costo ANTES de generar, mostrado en el formulario — a
+// propósito en llamadas/tokens, NUNCA en dinero: esta app no rastrea precios
+// por proveedor/modelo (es BYOK, cada quien paga su propia llave), así que
+// cualquier cifra en $ sería inventada. "Peor caso" asume que cada llamada
+// necesita su único reintento de auto-corrección (ver callAiForJson).
+export function estimateGenerationCost({ moduleCount, includeMissions }) {
+  const lessonMaxTokens = includeMissions ? LESSON_MAX_TOKENS_WITH_MISSIONS : LESSON_MAX_TOKENS
+  const aiCallsBest = 1 + moduleCount
+  const aiCallsWorst = aiCallsBest * 2
+  const estimatedOutputTokens = OUTLINE_MAX_TOKENS + moduleCount * lessonMaxTokens
+  return { aiCallsBest, aiCallsWorst, estimatedOutputTokens }
+}
+
+// ─── Imágenes y recursos reales — mejor esfuerzo, fuentes abiertas ────────
+// Corre EN EL NAVEGADOR del alumno (mismo lugar que el resto de las llamadas
+// BYOK) — por eso no puede mandar un header User-Agent propio (los
+// navegadores lo prohíben en fetch(), a diferencia del `curl -A "..."` que sí
+// se pudo usar desde un agente/Node para el curso de Medicina). En su lugar
+// se usa el mecanismo CORS que MediaWiki documenta para apps web:
+// `&origin=*` habilita Access-Control-Allow-Origin para peticiones anónimas
+// del navegador — tráfico normal y esperado (un puñado de llamadas por
+// curso generado), nada parecido al scraping masivo.
+const ALLOWED_LICENSES = /public domain|cc0|cc[- ]by(?:[- ]sa)?/i
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+}
+
+function stripHtml(s) {
+  return String(s ?? '').replace(/<[^>]*>/g, '').trim()
+}
+
+async function resolveImage(query) {
+  if (!query?.trim()) return null
+  try {
+    const search = await fetch(
+      `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srlimit=5&format=json&origin=*&srsearch=${encodeURIComponent(query)}`,
+    ).then((r) => r.json())
+    for (const hit of search?.query?.search ?? []) {
+      const info = await fetch(
+        `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(hit.title)}&prop=imageinfo&iiprop=url|extmetadata&format=json&origin=*`,
+      ).then((r) => r.json())
+      const imageinfo = Object.values(info?.query?.pages ?? {})[0]?.imageinfo?.[0]
+      const license = imageinfo?.extmetadata?.LicenseShortName?.value ?? ''
+      if (imageinfo?.url && ALLOWED_LICENSES.test(license)) {
+        const artist = stripHtml(imageinfo.extmetadata?.Artist?.value)
+        return { url: imageinfo.url, credit: artist || 'Wikimedia Commons', license }
+      }
+    }
+  } catch (err) {
+    console.warn('[courseGenerator] resolveImage omitido:', err)
+  }
+  return null
+}
+
+async function resolveResource(query, lang = 'es') {
+  if (!query?.trim()) return null
+  const wikiLang = ORACLE_LANGUAGES.some((l) => l.code === lang) ? lang : 'es'
+  try {
+    const search = await fetch(
+      `https://${wikiLang}.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srsearch=${encodeURIComponent(query)}`,
+    ).then((r) => r.json())
+    const hit = search?.query?.search?.[0]
+    if (!hit) return null
+    return { label: hit.title, url: `https://${wikiLang}.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, '_'))}` }
+  } catch (err) {
+    console.warn('[courseGenerator] resolveResource omitido:', err)
+  }
+  return null
+}
+
+// Resuelve imagen + recurso de una clase ya generada (en paralelo) — nunca
+// lanza: un fallo de red, sin resultados, o una licencia no aceptable se
+// traduce en `null`, y esa clase simplemente queda sin imagen/recurso.
+export async function enrichLessonWithMedia(lesson, { language = 'es' } = {}) {
+  const [image, resource] = await Promise.all([
+    resolveImage(lesson.imageQuery),
+    resolveResource(lesson.resourceQuery, language),
+  ])
+  return { ...lesson, image, resource }
 }
 
 // Sin librería de slugs en el resto del repo — versión mínima: minúsculas,
@@ -128,7 +261,7 @@ export async function generateLessonContent(topic, courseTitle, moduleTitle, mod
 export function slugify(text) {
   return String(text ?? '')
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -139,25 +272,40 @@ export function slugify(text) {
 // investigación en el plan): ids de módulo NUMÉRICOS empezando en 1 (un id
 // string deja ese módulo inalcanzable — LearningInterface.jsx hace
 // Number(moduleId) sobre el parámetro de la URL), sin `type`/`videoId` (sin
-// generación de video en esta versión), y `noChat: true` para que
-// missionsRegistry.js no exija además una misión de chat con la mascota.
-export function assembleCourse({ outline, lessons, userId }) {
+// generación de video en esta versión), y `noChat: true` cuando no hay
+// misiones (para que missionsRegistry.js no exija además una conversación
+// con la mascota).
+export function assembleCourse({ outline, lessons, userId, difficulty = null, includeMissions = false }) {
   const id = `${slugify(outline.title)}-${crypto.randomUUID().slice(0, 8)}`
 
-  const modules = lessons.map((lesson, i) => ({
-    id: i + 1,
-    order: i + 1,
-    title: outline.modules[i]?.title ?? lesson.title ?? `Clase ${i + 1}`,
-    description: outline.modules[i]?.description ?? '',
-    content: lesson.content,
-    quiz: {
-      question: lesson.quiz.question,
-      options: lesson.quiz.options,
-      correctIndex: lesson.quiz.correctIndex,
-    },
-    resources: [],
-    noChat: true,
-  }))
+  const modules = lessons.map((lesson, i) => {
+    const imageBlock = lesson.image
+      ? `<img src="${escapeHtml(lesson.image.url)}" alt="${escapeHtml(outline.modules[i]?.title ?? '')}" style="width:100%;max-width:420px;display:block;margin:0 auto 1rem auto;border-radius:12px;background:#fff" /><p style="text-align:center;font-size:0.75rem;opacity:.6;margin-top:-0.75rem;margin-bottom:1.5rem">${escapeHtml(lesson.image.credit)} — ${escapeHtml(lesson.image.license)}, Wikimedia Commons</p>`
+      : ''
+
+    const base = {
+      id: i + 1,
+      order: i + 1,
+      title: outline.modules[i]?.title ?? lesson.title ?? `Clase ${i + 1}`,
+      description: outline.modules[i]?.description ?? '',
+      content: imageBlock + lesson.content,
+      quiz: {
+        question: lesson.quiz.question,
+        options: lesson.quiz.options,
+        correctIndex: lesson.quiz.correctIndex,
+      },
+      resources: lesson.resource ? [lesson.resource] : [],
+    }
+
+    if (includeMissions && lesson.exercise?.trim()) {
+      return {
+        ...base,
+        exercises: [{ id: `m${i + 1}-1`, type: 'challenge', prompt: lesson.exercise.trim(), solution: '' }],
+        missions: lesson.missionChat?.label ? { chat: { label: lesson.missionChat.label, hint: lesson.missionChat.hint ?? '' } } : undefined,
+      }
+    }
+    return { ...base, exercises: [], noChat: true }
+  })
 
   return {
     id,
@@ -167,7 +315,7 @@ export function assembleCourse({ outline, lessons, userId }) {
     color: outline.color,
     category: outline.category,
     subcategory: null,
-    difficulty: null,
+    difficulty,
     locked: false,
     modules,
     translations: {},
@@ -188,4 +336,12 @@ export async function saveGeneratedCourse(course) {
   useCourseContentStore.setState({ loaded: false })
   await useCourseContentStore.getState().fetchAll()
   return data
+}
+
+// Llamado desde "Mis Cursos IA" cuando el alumno pide revisión humana — ver
+// migration_060.sql (función de confianza que valida dueño, cambia el
+// estado, y notifica a todos los admins en una sola operación).
+export async function requestCourseReview(courseId) {
+  const { error } = await supabase.rpc('request_course_review', { p_course_id: courseId })
+  if (error) throw error
 }
