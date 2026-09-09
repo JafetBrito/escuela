@@ -120,4 +120,6 @@ union all
 select '054' as migracion, 'Curso Evaluación del Paciente y Signos Vitales' as descripcion, exists (select 1 from public.courses where id = 'course-valoracion-paciente') as aplicada
 union all
 select '055' as migracion, 'Atlas del Cuerpo Humano: los 12 Sistemas' as descripcion, exists (select 1 from public.courses where id = 'course-atlas-cuerpo-humano') as aplicada
+union all
+select '056' as migracion, 'Atlas del Cuerpo Humano: ilustraciones reales (Wikimedia Commons)' as descripcion, exists (select 1 from public.courses where id = 'course-atlas-cuerpo-humano' and modules::text like '%sistema-esqueletico.jpg%') as aplicada
 order by 1;
