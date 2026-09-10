@@ -284,10 +284,18 @@ export default function TextSelectionMenu() {
     if (!lessonCtx) { console.warn('[highlight] no lessonCtx', pathname); return }
     const container = document.querySelector('[data-lesson-content]')
     const selection = window.getSelection()
-    console.warn('[highlight] startHighlighting', { hasContainer: !!container, rangeCount: selection?.rangeCount, text: selection?.toString() })
+    console.warn('[highlight] startHighlighting ' + JSON.stringify({ hasContainer: !!container, rangeCount: selection?.rangeCount, text: selection?.toString() }))
     if (!container || !selection || selection.rangeCount === 0) return
-    const described = describeRange(container, selection.getRangeAt(0))
-    console.warn('[highlight] described', described)
+    const range = selection.getRangeAt(0)
+    console.warn('[highlight] range ' + JSON.stringify({
+      collapsed: range.collapsed,
+      startOffset: range.startOffset, endOffset: range.endOffset,
+      startType: range.startContainer.nodeType, endType: range.endContainer.nodeType,
+      containerTextLen: container.textContent?.length,
+      containerContains: container.contains(range.startContainer) && container.contains(range.endContainer),
+    }))
+    const described = describeRange(container, range)
+    console.warn('[highlight] described ' + JSON.stringify(described))
     if (!described) return
     setPendingHighlight(described)
     setHighlighting(true)
