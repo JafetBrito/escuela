@@ -25,6 +25,8 @@ import ProfileSummaryCard from './ProfileSummaryCard'
 import TrajectorySummaryCard from './TrajectorySummaryCard'
 import BadgesSummaryCard from './BadgesSummaryCard'
 import UpcomingDeadlinesCard from './UpcomingDeadlinesCard'
+import UpcomingClassesCard from './UpcomingClassesCard'
+import CoursesDonutCard from './CoursesDonutCard'
 import QuickLinksRow from './QuickLinksRow'
 
 // ── Mapa: fila de "regiones" (src/utils/regions.js) con una línea punteada de fondo, estilo mapa
@@ -84,7 +86,7 @@ export { default as CourseCard } from './CourseCard'
 // Historial de rondas anteriores en project_dashboard_hero_redesign
 // (memoria) — la 3ª ronda lo redujo a casi nada por duplicar /progreso; este
 // cambio no revierte esa decisión, agrega resúmenes que antes no existían.
-function InicioTab({ profile, license, progressByCourse, profileSummary, trajectory, badges, pendingTasks }) {
+function InicioTab({ profile, license, progressByCourse, profileSummary, trajectory, badges, pendingTasks, coursesTotal }) {
   const { t, lang } = useI18n()
   const [patchNotesOpen, setPatchNotesOpen] = useState(false)
   const latest = PATCH_NOTES[0]
@@ -191,8 +193,10 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
             una sidebar de navegación (sigue en el flujo normal de la página). */}
         <div className="space-y-4">
           <ProfileSummaryCard {...profileSummary} />
+          <CoursesDonutCard {...trajectory} totalCount={coursesTotal} />
           <TrajectorySummaryCard {...trajectory} />
           <BadgesSummaryCard {...badges} />
+          <UpcomingClassesCard />
           <UpcomingDeadlinesCard pendingTasks={pendingTasks} />
         </div>
       </div>
@@ -249,6 +253,9 @@ export default function DashboardPage() {
   }
   const trajectory = { completedCount, inProgressCount }
   const badges = { unlockedCount: unlocked.length, total: allAchievements.length }
+  // "Disponibles" (no bloqueados), no el catálogo entero — evita el mismo
+  // "total fijo inventado" que TrajectorySummaryCard ya decidió no mostrar.
+  const coursesTotal = courses.filter((c) => !c.locked).length
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -265,6 +272,7 @@ export default function DashboardPage() {
           trajectory={trajectory}
           badges={badges}
           pendingTasks={pendingTasks}
+          coursesTotal={coursesTotal}
         />
       </main>
 
