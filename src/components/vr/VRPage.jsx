@@ -1594,6 +1594,11 @@ function IdleNpc({ config, playerPositionRef }) {
     window.speechSynthesis.speak(utt)
   }, [config, lang])
 
+  // Escala propia opcional (ej. OLIVER_NPC.scale) — para un NPC que debe
+  // notarse claramente (como Oliver, protagonista del discurso programado)
+  // sin agrandar a todos los demás IdleNpc que comparten este componente.
+  const npcScale = config.scale ?? NPC_SCALE
+
   return (
     <group position={config.position}
       onClick={(e) => {
@@ -1605,18 +1610,21 @@ function IdleNpc({ config, playerPositionRef }) {
         useTargetStore.getState().setTarget('npc', config.id)
         sayOneLine()
       }}>
-      {/* Transparent hitbox so click works even before model loads */}
+      {/* Transparent hitbox so click works even before model loads — solo
+          para el instante antes de que cargue el modelo real, así que no
+          hace falta escalarlo con npcScale (el modelo visible, una vez
+          carga, es clickeable en todo su tamaño real). */}
       <mesh position={[0, 0.7, 0]}>
         <cylinderGeometry args={[0.35, 0.35, 1.6, 8]} />
         <meshBasicMaterial transparent opacity={0.01} depthWrite={false} />
       </mesh>
-      <group scale={NPC_SCALE} position={[0, NPC_SCALE * MODEL_HALF_HEIGHT, 0]}>
+      <group scale={npcScale} position={[0, npcScale * MODEL_HALF_HEIGHT, 0]}>
         <MascotMesh mascot={mascot} />
       </group>
       {showAiHighlight && (
-        <pointLight position={[0, NPC_SCALE * 2 + 0.3, 0]} color="#a855f7" intensity={1.4} distance={4} />
+        <pointLight position={[0, npcScale * 2 + 0.3, 0]} color="#a855f7" intensity={1.4} distance={4} />
       )}
-      <Html position={[0, NPC_SCALE * 2 + 0.6, 0]} center distanceFactor={10}>
+      <Html position={[0, npcScale * 2 + 0.6, 0]} center distanceFactor={10}>
         <div
           className={`pointer-events-none whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold shadow-lg ${
             showAiHighlight ? 'bg-purple-500/90 text-white' : 'bg-surface/90 text-text'
@@ -1625,7 +1633,7 @@ function IdleNpc({ config, playerPositionRef }) {
           {showAiHighlight ? '🧠 ' : ''}{config.emoji} {config.name}
         </div>
       </Html>
-      <BubbleStack bubbles={bubbles} baseY={NPC_SCALE * 2 + 1.0} color={config.bubbleColor} />
+      <BubbleStack bubbles={bubbles} baseY={npcScale * 2 + 1.0} color={config.bubbleColor} />
     </group>
   )
 }
@@ -3015,14 +3023,18 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
           <text x="60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">{t('vr.worldMap.dorms')}</text>
           <text x="-60" y="68" fontSize="2.2" textAnchor="middle" fill="#f0ece0" opacity="0.85">{t('vr.worldMap.dorms')}</text>
 
-          {/* NPCs that are really walkable-to in the live Campus */}
+          {/* NPCs that are really walkable-to in the live Campus — un NPC con
+              `scale` propio (ej. OLIVER_NPC, 5x el tamaño normal en el mundo
+              3D) se dibuja igual de grande aquí, para que resalte también en
+              el mapa y no solo caminando cerca de él. */}
           {MAP_NPCS.map((npc) => {
             const [x, , z] = npc.position
+            const sizeMult = (npc.scale ?? 0.26) / 0.26
             return (
               <g key={npc.id}>
                 <title>{npc.name}</title>
-                <circle cx={x} cy={z} r="1.6" fill={npc.bubbleColor ?? '#fde68a'} opacity="0.95" stroke="#1a1410" strokeWidth="0.4" />
-                <text x={x} y={z - 2.6} fontSize="3" textAnchor="middle">{npc.emoji}</text>
+                <circle cx={x} cy={z} r={1.6 * sizeMult} fill={npc.bubbleColor ?? '#fde68a'} opacity="0.95" stroke="#1a1410" strokeWidth="0.4" />
+                <text x={x} y={z - 2.6 * sizeMult} fontSize={3 * sizeMult} textAnchor="middle">{npc.emoji}</text>
               </g>
             )
           })}

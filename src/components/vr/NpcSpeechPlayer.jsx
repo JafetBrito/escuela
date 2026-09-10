@@ -93,9 +93,14 @@ export default function NpcSpeechPlayer({ channelRef }) {
   }, [channelRef])
 
   if (!active) return null
+  // Mismo cálculo de baseY que IdleNpc en VRPage.jsx (npcScale*2 + 1.0) — si
+  // el NPC tiene una escala propia (ej. OLIVER_NPC.scale), la burbuja flota
+  // sobre su cabeza real en vez de quedar enterrada en un cuerpo agrandado.
+  // 0.26 es el mismo NPC_SCALE por defecto que usa IdleNpc.
+  const npcScale = active.npc.scale ?? 0.26
   return (
     <group position={active.npc.position}>
-      <BubbleStack bubbles={[active.bubble]} baseY={1.5} color={active.npc.bubbleColor} />
+      <BubbleStack bubbles={[active.bubble]} baseY={npcScale * 2 + 1.0} color={active.npc.bubbleColor} />
     </group>
   )
 }

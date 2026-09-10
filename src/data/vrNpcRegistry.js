@@ -260,6 +260,9 @@ export const OLIVER_NPC = {
   // distancia de donde el jugador realmente aparece hoy, así que en la
   // práctica era casi imposible encontrarlo sin saber exactamente a dónde ir.
   position: [4, 0, -48],
+  // ~5x el tamaño normal de un IdleNpc (0.26) — pedido explícito para que se
+  // note de lejos, dado que es el único NPC con un discurso programado.
+  scale: 1.3,
   bubbleColor: '#fde68a',
   lines: [
     // --- Bienvenida y motivacionales ---

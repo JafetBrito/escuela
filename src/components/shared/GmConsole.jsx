@@ -150,8 +150,21 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
             if (!standaloneChannelRef.current) {
               log('⏳ Abriendo conexión temporal al Campus (no estás dentro del mundo VR)…')
               const ch = supabase.channel('vr:campus', { config: { broadcast: { self: false } } })
-              await new Promise((resolve) => ch.subscribe((status) => { if (status === 'SUBSCRIBED') resolve() }))
-              standaloneChannelRef.current = ch
+              const subscribed = await new Promise((resolve) => {
+                const timeout = setTimeout(() => resolve(false), 8000)
+                ch.subscribe((status) => {
+                  if (status === 'SUBSCRIBED') { clearTimeout(timeout); resolve(true) }
+                  else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                    clearTimeout(timeout); resolve(false)
+                  }
+                })
+              })
+              if (subscribed) {
+                standaloneChannelRef.current = ch
+              } else {
+                supabase.removeChannel(ch)
+                log('❌ No se pudo abrir la conexión temporal (revisa tu internet e inténtalo de nuevo).')
+              }
             }
             channel = standaloneChannelRef.current
           }

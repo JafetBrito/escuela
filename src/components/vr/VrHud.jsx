@@ -174,7 +174,10 @@ function VrMinimap({ playerPosRef }) {
         {MINIMAP_NPCS.map(({ id, pos, color }) => {
           const [mx, mz] = w2m(pos[0], pos[2], MM_SIZE)
           if (mx < 0 || mx > MM_SIZE || mz < 0 || mz > MM_SIZE) return null
-          return <circle key={id} cx={mx} cy={mz} r={2.5} fill={color} opacity={0.8} clipPath="url(#mm-clip)" />
+          // Oliver es ~5x el tamaño normal en el mundo 3D (OLIVER_NPC.scale)
+          // — se nota igual aquí para que resalte también en el minimapa.
+          const r = id === 'oliver' ? 2.5 * ((OLIVER_NPC.scale ?? 0.26) / 0.26) : 2.5
+          return <circle key={id} cx={mx} cy={mz} r={r} fill={color} opacity={0.8} clipPath="url(#mm-clip)" />
         })}
         {/* player dot */}
         <circle cx={px} cy={pz} r={5}   fill="rgba(139,92,246,0.6)"  clipPath="url(#mm-clip)" />
