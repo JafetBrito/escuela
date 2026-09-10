@@ -39,6 +39,9 @@ import GmConsole from '../shared/GmConsole'
 import BashTerminalModal from './BashTerminalModal'
 import FourthWallPhone from './FourthWallPhone'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
+import { useNpcSpeechScheduler } from './useNpcSpeechScheduler'
+import NpcSpeechPlayer from './NpcSpeechPlayer'
+import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
 import MobField from './MobField'
 import { useMobStore } from '../../stores/useMobStore'
 import { useSpawnedNpcStore } from '../../stores/useSpawnedNpcStore'
@@ -1593,7 +1596,15 @@ function IdleNpc({ config, playerPositionRef }) {
 
   return (
     <group position={config.position}
-      onClick={(e) => { e.stopPropagation(); useTargetStore.getState().setTarget('npc', config.id); sayOneLine() }}>
+      onClick={(e) => {
+        e.stopPropagation()
+        // No interrumpir el discurso programado (NpcSpeechPlayer.jsx) con un
+        // sayOneLine() suelto que cancelaría su speechSynthesis a mitad de
+        // frase.
+        if (useNpcSpeechStore.getState().activeNpcId === config.id) return
+        useTargetStore.getState().setTarget('npc', config.id)
+        sayOneLine()
+      }}>
       {/* Transparent hitbox so click works even before model loads */}
       <mesh position={[0, 0.7, 0]}>
         <cylinderGeometry args={[0.35, 0.35, 1.6, 8]} />
@@ -2212,6 +2223,7 @@ function World({
   playerRotationRef,
   remoteTransformsRef,
   remoteActionsRef,
+  channelRef,
   onNearbyNpcChange,
   onNearPortalChange,
   onNearClassNodeChange,
@@ -2344,6 +2356,7 @@ function World({
       <IdleNpc config={localizeNpcDialogue(EINSTEIN_NPC, lang)} playerPositionRef={playerPositionRef} />
       <IdleNpc config={localizeNpcDialogue(JAFET_NPC, lang)}    playerPositionRef={playerPositionRef} />
       {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={localizeNpcDialogue(npc, lang)} playerPositionRef={playerPositionRef} />)}
+      <NpcSpeechPlayer channelRef={channelRef} />
       <MobField />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
@@ -3269,6 +3282,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     dnSeason,
     dnWeather,
   })
+  // Discurso diario programado de Oliver en la plaza — ver
+  // useNpcSpeechScheduler.js. Solo aplica al Campus compartido, igual que el
+  // resto del multiplayer.
+  useNpcSpeechScheduler({ channelRef, enabled: !isPrivateWorld })
   const [vrReady, setVrReady] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
   const [nearClassNodeId, setNearClassNodeId] = useState(null)
@@ -3671,6 +3688,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               playerRotationRef={playerRotationRef}
               remoteTransformsRef={remoteTransformsRef}
               remoteActionsRef={remoteActionsRef}
+              channelRef={channelRef}
               onNearbyNpcChange={setNearbyNpcId}
               onNearPortalChange={setNearPortal}
               onNearClassNodeChange={setNearClassNodeId}
