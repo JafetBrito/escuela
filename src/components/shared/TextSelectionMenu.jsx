@@ -94,7 +94,6 @@ export default function TextSelectionMenu() {
   const [translation, setTranslation] = useState(null)
   const [translating, setTranslating] = useState(false)
   const [highlighting, setHighlighting] = useState(false)
-  const [pendingHighlight, setPendingHighlight] = useState(null) // { quote, prefix, suffix }
   // `hide` es un useCallback estable (deps []), así que no puede leer el
   // `reading` de su propio render — se espeja en un ref para que sepa, en
   // cualquier momento, si la lectura EN CURSO es la suya propia.
@@ -121,18 +120,22 @@ export default function TextSelectionMenu() {
     setTranslation(null)
     setTranslating(false)
     setHighlighting(false)
-    setPendingHighlight(null)
     setSel(null)
   }, [])
 
   // Shared logic: given text + screen-absolute position (top Y del texto
   // seleccionado y bottom Y), muestra el menú. `bottom` se usa para calcular
   // dónde cae la barra nativa de Android y esquivarla (ver render, abajo).
-  // `inLessonContent` decide si el botón "Subrayar" se ofrece — ver
-  // closestLessonContent arriba.
-  const showForSelection = useCallback((text, x, top, bottom, inLessonContent = false) => {
+  // `inLessonContent` decide si el botón "Subrayar" se ofrece, y `described`
+  // ya trae quote/prefix/suffix calculados — ver closestLessonContent y
+  // describeRange más abajo. Se calculan aquí, en el mismo mouseup que
+  // captura `text`, porque la selección del navegador no sobrevive de forma
+  // confiable a NINGÚN clic posterior del menú (ni siquiera al primero, pese
+  // a onMouseDown={preventDefault} en cada botón) — leerla de nuevo en el
+  // clic de "Subrayar" resultaba en Range vacío la mayoría de las veces.
+  const showForSelection = useCallback((text, x, top, bottom, inLessonContent = false, described = null) => {
     if (!text || text.length < 2) { hide(); return }
-    setSel({ text, x, top, bottom, inLessonContent })
+    setSel({ text, x, top, bottom, inLessonContent, described })
     setSaved(false)
     setCopied(false)
     setTranslation(null)
@@ -148,7 +151,9 @@ export default function TextSelectionMenu() {
       if (!selection || selection.isCollapsed || selection.rangeCount === 0) { hide(); return }
       const text = selection.toString().trim()
       const rect = selection.getRangeAt(0).getBoundingClientRect()
-      showForSelection(text, rect.left + rect.width / 2, rect.top, rect.bottom, Boolean(closestLessonContent(selection.anchorNode)))
+      const lessonContainer = closestLessonContent(selection.anchorNode)
+      const described = lessonContainer ? describeRange(lessonContainer, selection.getRangeAt(0)) : null
+      showForSelection(text, rect.left + rect.width / 2, rect.top, rect.bottom, Boolean(lessonContainer), described)
     }
     const onMouseUp = (e) => readSelectionAndShow(e.target)
     // En Android, la selección por mantener-presionado (o arrastrar los
@@ -272,39 +277,12 @@ export default function TextSelectionMenu() {
     setTimeout(hide, 1400)
   }
 
-  // Ojo: aunque cada botón hace onMouseDown={preventDefault}, la selección
-  // del navegador de todos modos queda colapsada para cuando se hace clic en
-  // un swatch de color (segundo clic) — probablemente por cómo Chrome
-  // resuelve el foco entre dos clics seguidos sobre botones del mismo panel.
-  // Por eso el Range se lee y se describe aquí, en el momento de abrir la
-  // fila de colores (un solo clic desde la selección original), y se guarda
-  // ya descrito — elegir el color después no depende de que la selección
-  // siga viva.
-  const startHighlighting = () => {
-    if (!lessonCtx) { console.warn('[highlight] no lessonCtx', pathname); return }
-    const container = document.querySelector('[data-lesson-content]')
-    const selection = window.getSelection()
-    console.warn('[highlight] startHighlighting ' + JSON.stringify({ hasContainer: !!container, rangeCount: selection?.rangeCount, text: selection?.toString() }))
-    if (!container || !selection || selection.rangeCount === 0) return
-    const range = selection.getRangeAt(0)
-    console.warn('[highlight] range ' + JSON.stringify({
-      collapsed: range.collapsed,
-      startOffset: range.startOffset, endOffset: range.endOffset,
-      startType: range.startContainer.nodeType, endType: range.endContainer.nodeType,
-      containerTextLen: container.textContent?.length,
-      containerContains: container.contains(range.startContainer) && container.contains(range.endContainer),
-    }))
-    const described = describeRange(container, range)
-    console.warn('[highlight] described ' + JSON.stringify(described))
-    if (!described) return
-    setPendingHighlight(described)
-    setHighlighting(true)
-  }
-
+  // `sel.described` ya trae quote/prefix/suffix, calculados en el mouseup
+  // que mostró el menú (ver showForSelection) — elegir un color no depende
+  // de que la selección del navegador siga viva.
   const chooseHighlightColor = async (color) => {
-    const described = pendingHighlight
+    const described = sel?.described
     setHighlighting(false)
-    setPendingHighlight(null)
     if (!lessonCtx || !described) { hide(); return }
     const container = document.querySelector('[data-lesson-content]')
     const userId = useAuthStore.getState().session?.user?.id
@@ -402,13 +380,13 @@ export default function TextSelectionMenu() {
         </button>
 
         {/* Subrayar — solo dentro de una clase, ver LESSON_ROUTE/closestLessonContent */}
-        {lessonCtx && sel.inLessonContent && (
+        {lessonCtx && sel.inLessonContent && sel.described && (
           <>
             <Divider vertical={vertical} />
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => (highlighting ? setHighlighting(false) : startHighlighting())}
+              onClick={() => setHighlighting((h) => !h)}
               title="Subrayar"
               className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all
                 ${vertical ? 'w-full' : ''}
