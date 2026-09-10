@@ -40,9 +40,6 @@ export default function NpcSpeechPlayer({ channelRef }) {
   const sessionRef = useRef(0)
 
   useEffect(() => {
-    const channel = channelRef?.current
-    if (!channel) return
-
     const onSpeech = ({ payload }) => {
       const npc = findNpc(payload?.npcId)
       if (!npc || !payload?.script) return
@@ -76,8 +73,23 @@ export default function NpcSpeechPlayer({ channelRef }) {
       speakChunk(0)
     }
 
-    channel.on('broadcast', { event: 'npc_speech' }, onSpeech)
-    return () => { sessionRef.current += 1 }
+    // channelRef.current puede seguir siendo null en este primer efecto —
+    // World vive dentro de un <Suspense> (carga de modelos GLB) que a veces
+    // termina de montarse DESPUÉS de que useVrMultiplayer ya conectó, pero
+    // otras veces antes; channelRef es la misma referencia toda la sesión,
+    // así que un simple `if (!channel) return` nunca se volvería a intentar.
+    // Reintenta cada 300ms hasta que el canal exista, después registra una
+    // sola vez.
+    let interval = null
+    const tryRegister = () => {
+      const channel = channelRef?.current
+      if (!channel) return false
+      channel.on('broadcast', { event: 'npc_speech' }, onSpeech)
+      return true
+    }
+    if (!tryRegister()) interval = setInterval(() => { if (tryRegister()) clearInterval(interval) }, 300)
+
+    return () => { sessionRef.current += 1; if (interval) clearInterval(interval) }
   }, [channelRef])
 
   if (!active) return null
