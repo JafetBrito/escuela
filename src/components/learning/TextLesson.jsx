@@ -123,17 +123,37 @@ export default function TextLesson({ content, courseId, moduleId, moduleTitle, c
   // sobre el HTML recién inyectado (ver utils/highlightTextAnchor.js — un
   // <mark> no sobrevive a un re-render de dangerouslySetInnerHTML, así que
   // hay que reaplicarlos cada vez que cambia de clase).
+  //
+  // Un MutationObserver los reaplica también ante cualquier reset posterior
+  // del contenedor — este mismo componente vuelve a recibir un
+  // dangerouslySetInnerHTML idéntico varias veces durante el asentamiento
+  // inicial de la clase (progreso/chat/store aún resolviendo), y cada uno de
+  // esos resets borra los <mark> igual que un cambio real de contenido. El
+  // check de "¿ya existe este id?" antes de reinsertar evita que el propio
+  // observer se dispare en bucle sobre sus propias inserciones.
   useEffect(() => {
     if (!courseId || moduleId == null) return
     let active = true
-    fetchHighlights(courseId, moduleId).then((rows) => {
+    let rows = []
+    const reapply = () => {
+      const container = contentRef.current
+      if (!container) return
+      rows.forEach((row) => {
+        if (!container.querySelector(`[data-highlight-id="${row.id}"]`)) {
+          applyHighlight(container, row, { id: row.id, color: row.color })
+        }
+      })
+    }
+    fetchHighlights(courseId, moduleId).then((fetched) => {
       if (!active) return
-      setHighlights(rows)
-      if (contentRef.current) {
-        rows.forEach((row) => applyHighlight(contentRef.current, row, { id: row.id, color: row.color }))
-      }
+      rows = fetched
+      setHighlights(fetched)
+      reapply()
     })
-    return () => { active = false }
+    const container = contentRef.current
+    const observer = container ? new MutationObserver(reapply) : null
+    observer?.observe(container, { childList: true, subtree: true })
+    return () => { active = false; observer?.disconnect() }
   }, [courseId, moduleId, content])
 
   const handleContentClick = (e) => {
