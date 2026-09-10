@@ -5,6 +5,7 @@ import { useSpawnedNpcStore } from '../../stores/useSpawnedNpcStore'
 import { MOB_TYPES } from '../../data/mobRegistry'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, VR_NPCS } from '../../data/vrNpcRegistry'
 import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
+import { supabase } from '../../services/supabase/client'
 
 const SUMMONABLE_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
 const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -56,10 +57,19 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
   const [busy, setBusy] = useState(false)
   const logRef = useRef(null)
   const inputRef = useRef(null)
+  // /discurso desde el panel de admin (AdminCommandsPage) no recibe
+  // channelRef — esa página no vive dentro del mundo VR, así que no hay
+  // useVrMultiplayer conectado a 'vr:campus'. Se abre una conexión propia,
+  // solo para ese envío, la primera vez que hace falta.
+  const standaloneChannelRef = useRef(null)
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
   }, [lines])
+
+  useEffect(() => () => {
+    if (standaloneChannelRef.current) supabase.removeChannel(standaloneChannelRef.current)
+  }, [])
 
   if (!open) return null
 
@@ -129,6 +139,21 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
           for (let i = 0; i < 10 && !channel; i++) {
             await new Promise((r) => setTimeout(r, 300))
             channel = channelRef?.current
+          }
+          // Esta consola también se usa desde el panel de admin
+          // (AdminCommandsPage), fuera del mundo VR — ahí nunca va a llegar
+          // channelRef porque no existe ningún useVrMultiplayer conectado.
+          // Se abre (una sola vez, reutilizable) una conexión propia solo
+          // para poder mandar este broadcast — mismo canal 'vr:campus' que
+          // ya usa todo el mundo, así que llega igual a todos los jugadores.
+          if (!channel) {
+            if (!standaloneChannelRef.current) {
+              log('⏳ Abriendo conexión temporal al Campus (no estás dentro del mundo VR)…')
+              const ch = supabase.channel('vr:campus', { config: { broadcast: { self: false } } })
+              await new Promise((resolve) => ch.subscribe((status) => { if (status === 'SUBSCRIBED') resolve() }))
+              standaloneChannelRef.current = ch
+            }
+            channel = standaloneChannelRef.current
           }
           if (!channel) {
             log('❌ No hay conexión al mundo compartido todavía — espera a que "Conectado" aparezca arriba y vuelve a intentar.')
