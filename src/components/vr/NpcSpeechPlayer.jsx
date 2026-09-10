@@ -4,6 +4,16 @@ import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, getVrNpcById } from '../../data/vrNpcRegistry'
 
+// El canal 'vr:campus' se abre con broadcast self:false (useVrMultiplayer.js)
+// — a propósito para pos/action/chat, pero significa que quien DISPARA un
+// npc_speech (el ciclo automático o /discurso) nunca recibe su propio
+// mensaje por Realtime, solo lo verían otros jugadores conectados. Sin
+// nadie más en la sala (el caso normal al probar esto), no pasaba nada
+// visible para nadie. Este evento local completa el círculo: el emisor lo
+// dispara también sobre sí mismo, sin tocar el self:false del canal
+// compartido (que sigue evitando eco en pos/action/chat).
+export const LOCAL_SPEECH_EVENT = 'oliver:npc-speech-local'
+
 const SINGLETON_NPCS = { [OLIVER_NPC.id]: OLIVER_NPC, [EINSTEIN_NPC.id]: EINSTEIN_NPC, [JAFET_NPC.id]: JAFET_NPC }
 function findNpc(npcId) {
   return SINGLETON_NPCS[npcId] ?? getVrNpcById(npcId)
@@ -89,7 +99,14 @@ export default function NpcSpeechPlayer({ channelRef }) {
     }
     if (!tryRegister()) interval = setInterval(() => { if (tryRegister()) clearInterval(interval) }, 300)
 
-    return () => { sessionRef.current += 1; if (interval) clearInterval(interval) }
+    const onLocalSpeech = (e) => onSpeech({ payload: e.detail })
+    window.addEventListener(LOCAL_SPEECH_EVENT, onLocalSpeech)
+
+    return () => {
+      sessionRef.current += 1
+      if (interval) clearInterval(interval)
+      window.removeEventListener(LOCAL_SPEECH_EVENT, onLocalSpeech)
+    }
   }, [channelRef])
 
   if (!active) return null

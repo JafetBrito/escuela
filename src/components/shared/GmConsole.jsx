@@ -6,6 +6,7 @@ import { MOB_TYPES } from '../../data/mobRegistry'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, VR_NPCS } from '../../data/vrNpcRegistry'
 import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
 import { supabase } from '../../services/supabase/client'
+import { LOCAL_SPEECH_EVENT } from '../vr/NpcSpeechPlayer'
 
 const SUMMONABLE_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
 const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -171,12 +172,14 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
           if (!channel) {
             log('❌ No hay conexión al mundo compartido todavía — espera a que "Conectado" aparezca arriba y vuelve a intentar.')
           } else {
-            channel.send({
-              type: 'broadcast',
-              event: 'npc_speech',
-              payload: { npcId: speech.npcId, script: speech.script, startedAt: Date.now() },
-            })
-            log(`✅ Discurso de "${speech.npcId}" disparado — todos los conectados al Campus deberían verlo/oírlo ahora.`)
+            const payload = { npcId: speech.npcId, script: speech.script, startedAt: Date.now() }
+            channel.send({ type: 'broadcast', event: 'npc_speech', payload })
+            // El canal usa broadcast self:false — quien lo dispara nunca
+            // recibe su propio mensaje por Realtime, así que sin este evento
+            // local no vería/oiría nada si es el único conectado (el caso
+            // típico al probar esto solo).
+            window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, { detail: payload }))
+            log(`✅ Discurso de "${speech.npcId}" disparado — deberías verlo/oírlo tú también ahora mismo.`)
           }
         }
       } else if (cmd === 'target') {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { supabase, isSupabaseConfigured } from '../../services/supabase/client'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
+import { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
 
 const POLL_MS = 20_000
 const WINDOW_MINUTES = 2 // ventana de disparo: hora exacta ± 2 min
@@ -35,6 +36,16 @@ export function useNpcSpeechScheduler({ channelRef, enabled }) {
   useEffect(() => {
     if (!enabled || !isSupabaseConfigured()) return
 
+    // channel.send con self:false nunca vuelve a quien lo manda — así que
+    // quien dispara el discurso (el que gane la carrera de esta pestaña)
+    // también lo dispara sobre sí mismo vía un evento local, además del
+    // broadcast real para el resto de conectados.
+    const broadcastSpeech = (npcId, speech) => {
+      const payload = { npcId, script: speech.script, startedAt: Date.now() }
+      channelRef.current?.send({ type: 'broadcast', event: 'npc_speech', payload })
+      window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, { detail: payload }))
+    }
+
     const check = async () => {
       const now = new Date()
       const dateKey = mexicoCityDateKey(now)
@@ -44,11 +55,7 @@ export function useNpcSpeechScheduler({ channelRef, enabled }) {
           const testKey = `${npcId}:test:${bucket}`
           if (attemptedRef.current.has(testKey)) continue
           attemptedRef.current.add(testKey)
-          channelRef.current?.send({
-            type: 'broadcast',
-            event: 'npc_speech',
-            payload: { npcId, script: speech.script, startedAt: Date.now() },
-          })
+          broadcastSpeech(npcId, speech)
           continue
         }
 
@@ -68,11 +75,7 @@ export function useNpcSpeechScheduler({ channelRef, enabled }) {
           .insert({ npc_id: npcId, event_date: dateKey, triggered_by: userId })
         if (error) continue // otro cliente ya lo reclamó — está bien, no es un error real
 
-        channelRef.current?.send({
-          type: 'broadcast',
-          event: 'npc_speech',
-          payload: { npcId, script: speech.script, startedAt: Date.now() },
-        })
+        broadcastSpeech(npcId, speech)
       }
     }
 
