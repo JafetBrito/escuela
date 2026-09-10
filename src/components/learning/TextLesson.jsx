@@ -163,6 +163,19 @@ export default function TextLesson({ content, courseId, moduleId, moduleTitle, c
     return () => { active = false; observer?.disconnect() }
   }, [courseId, moduleId, content])
 
+  // TextSelectionMenu.jsx crea el subrayado (guarda en Supabase + dibuja el
+  // <mark> directo en el DOM) sin pasar por este componente — sin este
+  // listener, uno creado así queda fuera de `highlights`/`highlightsRef` y
+  // no se puede abrir su popover hasta recargar la página.
+  useEffect(() => {
+    const onCreated = (e) => {
+      highlightsRef.current = [...highlightsRef.current, e.detail]
+      setHighlights(highlightsRef.current)
+    }
+    window.addEventListener('oliver:highlight-created', onCreated)
+    return () => window.removeEventListener('oliver:highlight-created', onCreated)
+  }, [])
+
   const handleContentClick = (e) => {
     const mark = e.target.closest('[data-highlight-id]')
     if (!mark) return

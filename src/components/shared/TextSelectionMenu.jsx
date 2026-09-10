@@ -295,7 +295,13 @@ export default function TextSelectionMenu() {
       color,
       ...described,
     })
-    if (created) applyHighlight(container, described, { id: created.id, color })
+    if (created) {
+      applyHighlight(container, described, { id: created.id, color })
+      // TextLesson.jsx guarda su propia lista de subrayados (para saber qué
+      // mostrar al hacer clic en un <mark>) — sin este evento, uno creado
+      // aquí queda invisible para ese estado hasta recargar la página.
+      window.dispatchEvent(new CustomEvent('oliver:highlight-created', { detail: created }))
+    }
   }
 
   const search = () => {
