@@ -119,15 +119,27 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
         const speech = NPC_SPEECHES[npcId]
         if (!speech) {
           log(`❌ No hay discurso registrado para "${npcId}". Disponibles: ${Object.keys(NPC_SPEECHES).join(', ')}`)
-        } else if (!channelRef?.current) {
-          log('❌ No hay conexión al mundo compartido todavía — espera a que "Conectado" aparezca arriba y vuelve a intentar.')
         } else {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'npc_speech',
-            payload: { npcId: speech.npcId, script: speech.script, startedAt: Date.now() },
-          })
-          log(`✅ Discurso de "${speech.npcId}" disparado — todos los conectados al Campus deberían verlo/oírlo ahora.`)
+          // channelRef.current puede tardar un instante en poblarse justo
+          // después de entrar al Campus (mismo motivo que NpcSpeechPlayer.jsx
+          // — useVrMultiplayer conecta de forma asíncrona) — un par de
+          // reintentos cortos evita el falso "no hay conexión" si el admin
+          // escribe el comando muy rápido tras abrir la consola.
+          let channel = channelRef?.current
+          for (let i = 0; i < 10 && !channel; i++) {
+            await new Promise((r) => setTimeout(r, 300))
+            channel = channelRef?.current
+          }
+          if (!channel) {
+            log('❌ No hay conexión al mundo compartido todavía — espera a que "Conectado" aparezca arriba y vuelve a intentar.')
+          } else {
+            channel.send({
+              type: 'broadcast',
+              event: 'npc_speech',
+              payload: { npcId: speech.npcId, script: speech.script, startedAt: Date.now() },
+            })
+            log(`✅ Discurso de "${speech.npcId}" disparado — todos los conectados al Campus deberían verlo/oírlo ahora.`)
+          }
         }
       } else if (cmd === 'target') {
         const query = args.join(' ')
