@@ -131,14 +131,21 @@ export default function TextLesson({ content, courseId, moduleId, moduleTitle, c
   // esos resets borra los <mark> igual que un cambio real de contenido. El
   // check de "¿ya existe este id?" antes de reinsertar evita que el propio
   // observer se dispare en bucle sobre sus propias inserciones.
+  // `highlightsRef` es la fuente de verdad que lee el observer — no el
+  // estado `highlights` directamente, porque borrar/actualizar un subrayado
+  // muta el ref de forma SÍNCRONA antes de tocar el DOM (ver
+  // handleDeleteHighlight): si el observer leyera un `rows` capturado solo
+  // una vez en este efecto, reinsertaría el <mark> que removeHighlightMarks
+  // acaba de quitar, porque para él ese subrayado "seguía pendiente".
+  const highlightsRef = useRef([])
+
   useEffect(() => {
     if (!courseId || moduleId == null) return
     let active = true
-    let rows = []
     const reapply = () => {
       const container = contentRef.current
       if (!container) return
-      rows.forEach((row) => {
+      highlightsRef.current.forEach((row) => {
         if (!container.querySelector(`[data-highlight-id="${row.id}"]`)) {
           applyHighlight(container, row, { id: row.id, color: row.color })
         }
@@ -146,7 +153,7 @@ export default function TextLesson({ content, courseId, moduleId, moduleTitle, c
     }
     fetchHighlights(courseId, moduleId).then((fetched) => {
       if (!active) return
-      rows = fetched
+      highlightsRef.current = fetched
       setHighlights(fetched)
       reapply()
     })
@@ -168,14 +175,19 @@ export default function TextLesson({ content, courseId, moduleId, moduleTitle, c
   const handleSaveHighlightComment = async (comment) => {
     if (!activeHighlight) return
     await updateHighlightComment(activeHighlight.id, comment)
-    setHighlights((prev) => prev.map((h) => (h.id === activeHighlight.id ? { ...h, comment } : h)))
+    highlightsRef.current = highlightsRef.current.map((h) => (h.id === activeHighlight.id ? { ...h, comment } : h))
+    setHighlights(highlightsRef.current)
   }
 
   const handleDeleteHighlight = async () => {
     if (!activeHighlight) return
     await deleteHighlight(activeHighlight.id)
+    // El ref se actualiza ANTES de tocar el DOM — el observer de arriba
+    // reacciona a esta misma mutación y necesita ver el subrayado ya fuera
+    // de la lista, o lo reinserta creyendo que sigue pendiente.
+    highlightsRef.current = highlightsRef.current.filter((h) => h.id !== activeHighlight.id)
     removeHighlightMarks(contentRef.current, activeHighlight.id)
-    setHighlights((prev) => prev.filter((h) => h.id !== activeHighlight.id))
+    setHighlights(highlightsRef.current)
     setActiveHighlight(null)
   }
 
