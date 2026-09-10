@@ -259,7 +259,10 @@ export const OLIVER_NPC = {
   // Gran Aula) — antes estaba en [4,0,4], una plaza "vieja" a 50+ unidades de
   // distancia de donde el jugador realmente aparece hoy, así que en la
   // práctica era casi imposible encontrarlo sin saber exactamente a dónde ir.
-  position: [0, 0, -44],
+  // [0,0,-44] ("más al centro/al fondo") lo dejó invisible — probablemente
+  // detrás/dentro de algo ahí, adivinado sin poder ver la escena real.
+  // Vuelve a la posición confirmada visible en captura de pantalla.
+  position: [4, 0, -48],
   // ~5x el tamaño normal de un IdleNpc (0.26) — pedido explícito para que se
   // note de lejos, dado que es el único NPC con un discurso programado.
   scale: 1.3,
