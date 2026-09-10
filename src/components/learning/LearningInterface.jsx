@@ -199,7 +199,18 @@ export default function LearningInterface() {
       })
     }
     if (currentModule.content) {
-      steps.push({ id: 'leccion', label: 'Lección', icon: '📖', render: () => <TextLesson content={currentModule.content} className="w-full" /> })
+      steps.push({
+        id: 'leccion', label: 'Lección', icon: '📖',
+        render: () => (
+          <TextLesson
+            content={currentModule.content}
+            courseId={courseId}
+            moduleId={currentModule.id}
+            moduleTitle={currentModule.title}
+            className="w-full"
+          />
+        ),
+      })
     }
     if (hasActivity) {
       steps.push({

@@ -6,7 +6,11 @@ import {
   getMatchingVoices, getPreferredLang, setPreferredLang,
   getPreferredRate, setPreferredRate, getPreferredVoiceURI, setPreferredVoiceURI,
 } from '../../utils/readAloudPrefs'
+import { applyHighlight, removeHighlightMarks } from '../../utils/highlightTextAnchor'
+import { fetchHighlights, updateHighlightComment, deleteHighlight } from '../../services/highlights/highlightsService'
+import { useInventoryStore } from '../../stores/useInventoryStore'
 import WikiPopover from './WikiPopover'
+import HighlightPopover from '../shared/HighlightPopover'
 
 // Mismo mapeo de idioma → voz que TextSelectionMenu.jsx (leer texto
 // seleccionado) — el idioma por defecto se deriva del idioma actual del
@@ -60,9 +64,12 @@ function getReadableChunks(html) {
 // Hover sobre un .wiki-link (ver glossaryRegistry.js) muestra un popover con
 // la entrada del "segundo cerebro" sin salir del curso — event delegation
 // sobre el contenedor porque el HTML es dangerouslySetInnerHTML, no JSX.
-export default function TextLesson({ content, className = '' }) {
+export default function TextLesson({ content, courseId, moduleId, moduleTitle, className = '' }) {
   const { lang } = useI18n()
+  const contentRef = useRef(null)
   const [hover, setHover] = useState(null) // { entry, rect }
+  const [highlights, setHighlights] = useState([])
+  const [activeHighlight, setActiveHighlight] = useState(null) // { id, quote, comment, color, position }
   const [reading, setReading] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [voices, setVoices] = useState(() => window.speechSynthesis?.getVoices() ?? [])
@@ -111,6 +118,56 @@ export default function TextLesson({ content, className = '' }) {
       stopSharedTts()
     }
   }, [content])
+
+  // Carga los subrayados guardados de ESTA clase y los vuelve a dibujar
+  // sobre el HTML recién inyectado (ver utils/highlightTextAnchor.js — un
+  // <mark> no sobrevive a un re-render de dangerouslySetInnerHTML, así que
+  // hay que reaplicarlos cada vez que cambia de clase).
+  useEffect(() => {
+    if (!courseId || moduleId == null) return
+    let active = true
+    fetchHighlights(courseId, moduleId).then((rows) => {
+      if (!active) return
+      setHighlights(rows)
+      if (contentRef.current) {
+        rows.forEach((row) => applyHighlight(contentRef.current, row, { id: row.id, color: row.color }))
+      }
+    })
+    return () => { active = false }
+  }, [courseId, moduleId, content])
+
+  const handleContentClick = (e) => {
+    const mark = e.target.closest('[data-highlight-id]')
+    if (!mark) return
+    const highlight = highlights.find((h) => h.id === mark.dataset.highlightId)
+    if (!highlight) return
+    const rect = mark.getBoundingClientRect()
+    setActiveHighlight({ ...highlight, position: { x: rect.left + rect.width / 2, y: rect.bottom } })
+  }
+
+  const handleSaveHighlightComment = async (comment) => {
+    if (!activeHighlight) return
+    await updateHighlightComment(activeHighlight.id, comment)
+    setHighlights((prev) => prev.map((h) => (h.id === activeHighlight.id ? { ...h, comment } : h)))
+  }
+
+  const handleDeleteHighlight = async () => {
+    if (!activeHighlight) return
+    await deleteHighlight(activeHighlight.id)
+    removeHighlightMarks(contentRef.current, activeHighlight.id)
+    setHighlights((prev) => prev.filter((h) => h.id !== activeHighlight.id))
+    setActiveHighlight(null)
+  }
+
+  const handleImportHighlightToNotes = () => {
+    if (!activeHighlight) return
+    useInventoryStore.getState().addItem({
+      type: 'note',
+      text: `"${activeHighlight.quote}"`,
+      ...(moduleId != null ? { moduleId, moduleTitle } : {}),
+      courseId,
+    })
+  }
 
   if (!content) return null
 
@@ -301,6 +358,9 @@ export default function TextLesson({ content, className = '' }) {
         )}
       </div>
       <div
+        ref={contentRef}
+        data-lesson-content="true"
+        onClick={handleContentClick}
         className={`rounded-xl border border-border bg-surface px-6 py-5 text-text
           [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary first:[&_h2]:mt-0
           [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-text
@@ -332,6 +392,16 @@ export default function TextLesson({ content, className = '' }) {
         onMouseEnter={cancelHide}
         onMouseLeave={scheduleHide}
       />
+      {activeHighlight && (
+        <HighlightPopover
+          highlight={activeHighlight}
+          position={activeHighlight.position}
+          onSave={handleSaveHighlightComment}
+          onDelete={handleDeleteHighlight}
+          onImportToNotes={handleImportHighlightToNotes}
+          onClose={() => setActiveHighlight(null)}
+        />
+      )}
     </div>
   )
 }

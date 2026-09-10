@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { createHighlight } from '../../services/highlights/highlightsService'
+import { describeRange, applyHighlight } from '../../utils/highlightTextAnchor'
+import HighlightColorSwatches from './HighlightColorSwatches'
 
 const LANGS = [
   { code: 'es-ES', label: 'ES', name: 'Español' },
@@ -26,6 +31,22 @@ const isCoarsePointer = () => {
   try { return window.matchMedia('(pointer: coarse)').matches } catch { return false }
 }
 const TOUCH_MENU_OFFSET = 56
+
+// El botón "Subrayar" solo debe ofrecerse dentro de una clase (donde un
+// subrayado se puede guardar y volver a encontrar, ver
+// utils/highlightTextAnchor.js) — nunca en el resto de la app ni en el
+// lector de epub (otro documento, sin este contenedor).
+const LESSON_ROUTE = /^\/learn\/([^/]+)\/clase\/([^/]+)/
+function closestLessonContent(node) {
+  const el = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement
+  return el?.closest?.('[data-lesson-content]') ?? null
+}
+
+function Divider({ vertical }) {
+  return vertical
+    ? <div className="my-0.5 h-px w-full bg-white/10" />
+    : <div className="mx-0.5 h-4 w-px bg-white/10" />
+}
 
 // Doble clic nativo del navegador solo selecciona UNA palabra — el botón
 // "Leer" lee fielmente lo que esté seleccionado, así que con doble clic
@@ -61,6 +82,9 @@ export default function TextSelectionMenu() {
   const setPanel = useMascotCompanionStore((s) => s.setPanel)
   const setChatPrefill = useMascotCompanionStore((s) => s.setChatPrefill)
   const menuRef = useRef()
+  const { pathname } = useLocation()
+  const lessonMatch = pathname.match(LESSON_ROUTE)
+  const lessonCtx = lessonMatch ? { courseId: lessonMatch[1], moduleId: lessonMatch[2] } : null
 
   const [sel, setSel] = useState(null)
   const [langIdx, setLangIdx] = useState(getSavedLangIdx)
@@ -69,6 +93,7 @@ export default function TextSelectionMenu() {
   const [copied, setCopied] = useState(false)
   const [translation, setTranslation] = useState(null)
   const [translating, setTranslating] = useState(false)
+  const [highlighting, setHighlighting] = useState(false)
   // `hide` es un useCallback estable (deps []), así que no puede leer el
   // `reading` de su propio render — se espeja en un ref para que sepa, en
   // cualquier momento, si la lectura EN CURSO es la suya propia.
@@ -94,19 +119,23 @@ export default function TextSelectionMenu() {
     setCopied(false)
     setTranslation(null)
     setTranslating(false)
+    setHighlighting(false)
     setSel(null)
   }, [])
 
   // Shared logic: given text + screen-absolute position (top Y del texto
   // seleccionado y bottom Y), muestra el menú. `bottom` se usa para calcular
   // dónde cae la barra nativa de Android y esquivarla (ver render, abajo).
-  const showForSelection = useCallback((text, x, top, bottom) => {
+  // `inLessonContent` decide si el botón "Subrayar" se ofrece — ver
+  // closestLessonContent arriba.
+  const showForSelection = useCallback((text, x, top, bottom, inLessonContent = false) => {
     if (!text || text.length < 2) { hide(); return }
-    setSel({ text, x, top, bottom })
+    setSel({ text, x, top, bottom, inLessonContent })
     setSaved(false)
     setCopied(false)
     setTranslation(null)
     setTranslating(false)
+    setHighlighting(false)
   }, [hide])
 
   // ── Main document listener ──────────────────────────────────────────────
@@ -117,7 +146,7 @@ export default function TextSelectionMenu() {
       if (!selection || selection.isCollapsed || selection.rangeCount === 0) { hide(); return }
       const text = selection.toString().trim()
       const rect = selection.getRangeAt(0).getBoundingClientRect()
-      showForSelection(text, rect.left + rect.width / 2, rect.top, rect.bottom)
+      showForSelection(text, rect.left + rect.width / 2, rect.top, rect.bottom, Boolean(closestLessonContent(selection.anchorNode)))
     }
     const onMouseUp = (e) => readSelectionAndShow(e.target)
     // En Android, la selección por mantener-presionado (o arrastrar los
@@ -241,6 +270,31 @@ export default function TextSelectionMenu() {
     setTimeout(hide, 1400)
   }
 
+  // La selección del navegador sigue viva en este punto (cada botón del
+  // menú hace onMouseDown={preventDefault} para evitar que se colapse), así
+  // que se puede leer el Range real aquí mismo — ver highlightTextAnchor.js
+  // para por qué no se guarda el Range en sí, solo lo que describe.
+  const chooseHighlightColor = async (color) => {
+    setHighlighting(false)
+    if (!lessonCtx) { hide(); return }
+    const container = document.querySelector('[data-lesson-content]')
+    const selection = window.getSelection()
+    const userId = useAuthStore.getState().session?.user?.id
+    if (!container || !selection || selection.rangeCount === 0 || !userId) { hide(); return }
+    const range = selection.getRangeAt(0)
+    const described = describeRange(container, range)
+    if (!described) { hide(); return }
+    hide()
+    const created = await createHighlight({
+      courseId: lessonCtx.courseId,
+      moduleId: lessonCtx.moduleId,
+      userId,
+      color,
+      ...described,
+    })
+    if (created) applyHighlight(container, described, { id: created.id, color })
+  }
+
   const search = () => {
     window.open(`https://www.google.com/search?q=${encodeURIComponent(sel.text)}`, '_blank', 'noopener')
   }
@@ -285,9 +339,6 @@ export default function TextSelectionMenu() {
   // termina cortado — se apila vertical, un botón por fila, con texto
   // completo siempre visible.
   const vertical = isCoarsePointer()
-  const Divider = () => vertical
-    ? <div className="my-0.5 h-px w-full bg-white/10" />
-    : <div className="mx-0.5 h-4 w-px bg-white/10" />
 
   return (
     <div
@@ -325,6 +376,25 @@ export default function TextSelectionMenu() {
           <span>{reading ? 'Parar' : 'Leer'}</span>
         </button>
 
+        {/* Subrayar — solo dentro de una clase, ver LESSON_ROUTE/closestLessonContent */}
+        {lessonCtx && sel.inLessonContent && (
+          <>
+            <Divider vertical={vertical} />
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setHighlighting((h) => !h)}
+              title="Subrayar"
+              className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all
+                ${vertical ? 'w-full' : ''}
+                ${highlighting ? 'bg-white/15 text-white' : 'text-zinc-300 hover:bg-white/10 hover:text-white'}`}
+            >
+              <span className="text-sm">🖍️</span>
+              <span>Subrayar</span>
+            </button>
+          </>
+        )}
+
         {/* Selector de idioma */}
         <button
           type="button"
@@ -336,7 +406,7 @@ export default function TextSelectionMenu() {
           {vertical ? `Idioma: ${LANGS[langIdx].name}` : LANGS[langIdx].label}
         </button>
 
-        <Divider />
+        <Divider vertical={vertical} />
 
         {/* Guardar en notas */}
         <button
@@ -355,7 +425,7 @@ export default function TextSelectionMenu() {
           <span>{saved ? '¡Guardado!' : 'Notas'}</span>
         </button>
 
-        <Divider />
+        <Divider vertical={vertical} />
 
         {/* Pregúntale a tu mascota */}
         <button
@@ -369,7 +439,7 @@ export default function TextSelectionMenu() {
           <span>Tu mascota</span>
         </button>
 
-        <Divider />
+        <Divider vertical={vertical} />
 
         {/* Traducir */}
         <button
@@ -390,7 +460,7 @@ export default function TextSelectionMenu() {
           <span>Traducir</span>
         </button>
 
-        <Divider />
+        <Divider vertical={vertical} />
 
         {/* Copiar */}
         <button
@@ -418,7 +488,7 @@ export default function TextSelectionMenu() {
           {vertical && <span>Buscar en Google</span>}
         </button>
 
-        <Divider />
+        <Divider vertical={vertical} />
 
         {/* Cerrar */}
         <button
@@ -445,6 +515,16 @@ export default function TextSelectionMenu() {
               ? <span className="text-red-400">No se pudo traducir</span>
               : <span>{translation}</span>
           }
+        </div>
+      )}
+
+      {/* ── Highlight color swatches ── */}
+      {highlighting && (
+        <div
+          onMouseDown={(e) => e.preventDefault()}
+          className="mt-1 rounded-xl border border-white/10 bg-zinc-900/96 py-1.5 shadow-xl backdrop-blur-md"
+        >
+          <HighlightColorSwatches onSelect={chooseHighlightColor} vertical={vertical} />
         </div>
       )}
 
