@@ -124,16 +124,13 @@ export default function TextLesson({ content, courseId, moduleId, moduleTitle, c
   // <mark> no sobrevive a un re-render de dangerouslySetInnerHTML, así que
   // hay que reaplicarlos cada vez que cambia de clase).
   useEffect(() => {
-    console.warn('[highlight] effect fired ' + JSON.stringify({ courseId, moduleId }))
     if (!courseId || moduleId == null) return
     let active = true
     fetchHighlights(courseId, moduleId).then((rows) => {
-      console.warn('[highlight] fetched ' + JSON.stringify({ active, hasContentRef: !!contentRef.current, rowCount: rows.length }))
       if (!active) return
       setHighlights(rows)
       if (contentRef.current) {
-        const results = rows.map((row) => applyHighlight(contentRef.current, row, { id: row.id, color: row.color }))
-        console.warn('[highlight] applyHighlight results ' + JSON.stringify(results))
+        rows.forEach((row) => applyHighlight(contentRef.current, row, { id: row.id, color: row.color }))
       }
     })
     return () => { active = false }
