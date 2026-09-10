@@ -255,7 +255,11 @@ export const OLIVER_NPC = {
   emoji: '🐾',
   name: 'Oliver',
   mascotId: 8,
-  position: [4, 0, 4],
+  // Cerca del spawn real (CampusGlbWorld: spawnAt [0,0,-53], el frente de la
+  // Gran Aula) — antes estaba en [4,0,4], una plaza "vieja" a 50+ unidades de
+  // distancia de donde el jugador realmente aparece hoy, así que en la
+  // práctica era casi imposible encontrarlo sin saber exactamente a dónde ir.
+  position: [4, 0, -48],
   bubbleColor: '#fde68a',
   lines: [
     // --- Bienvenida y motivacionales ---
