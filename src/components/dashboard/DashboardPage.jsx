@@ -15,18 +15,20 @@ import { useCourseContentStore } from '../../stores/useCourseContentStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { MASCOTS } from '../../data/mascotRegistry'
 import { useTasksStore } from '../../stores/useTasksStore'
-import { CATEGORY_META } from '../../data/categoryMeta'
 import { PATCH_NOTES, LATEST_VERSION } from '../../data/patchNotesRegistry'
 import { BUILD_INFO, RECENT_COMMITS } from '../../data/buildInfo'
 import { useI18n } from '../../i18n'
 import { buildRegions } from '../../utils/regions'
-import TodayCourseCard from '../shared/TodayCourseCard'
 import ProfileSummaryCard from './ProfileSummaryCard'
 import TrajectorySummaryCard from './TrajectorySummaryCard'
 import BadgesSummaryCard from './BadgesSummaryCard'
 import UpcomingDeadlinesCard from './UpcomingDeadlinesCard'
-import UpcomingClassesCard from './UpcomingClassesCard'
+import MiniCalendarCard from './MiniCalendarCard'
 import CoursesDonutCard from './CoursesDonutCard'
+import CategoryActivityBarCard from './CategoryActivityBarCard'
+import LevelGaugeCard from './LevelGaugeCard'
+import HeroBanner from './HeroBanner'
+import CourseHighlightRow from './CourseHighlightRow'
 import QuickLinksRow from './QuickLinksRow'
 
 // ── Mapa: fila de "regiones" (src/utils/regions.js) con una línea punteada de fondo, estilo mapa
@@ -96,7 +98,8 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
     return p !== null && p > 0 && p < 100
   }), [progressByCourse])
 
-  const todayCourses = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 2)
+  const highlightCourses = (inProgress.length > 0 ? inProgress : courses.filter((c) => !c.locked)).slice(0, 8)
+  const ctaCourseId = inProgress[0]?.id ?? null
   const regions = useMemo(() => buildRegions(courses, progressByCourse, lang), [progressByCourse, lang])
   const displayName = profile?.display_name ?? t('dashboard.defaultStudent')
   const vrAllowed = !['kids', 'seniors'].includes(profile?.age_profile)
@@ -105,31 +108,36 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       {patchNotesOpen && <PatchNotesModal open force onClose={() => setPatchNotesOpen(false)} />}
 
-      <div>
-        <h1 className="text-xl font-black text-text">
-          {t('dashboard.greeting', { name: displayName })}{license?.role === 'admin' ? ' 🛡️' : ' 👋'}
-        </h1>
-        <p className="text-sm text-text-muted mt-0.5">{t('dashboard.greetingSub')}</p>
+      <HeroBanner
+        displayName={displayName}
+        mascotEmoji={profileSummary.mascotEmoji}
+        isAdmin={license?.role === 'admin'}
+        ctaCourseId={ctaCourseId}
+      />
+
+      <CourseHighlightRow courseList={highlightCourses} progressByCourse={progressByCourse} />
+
+      {/* Fila de estadísticas grandes — calco de la referencia (donut / barras / gauge) */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <CoursesDonutCard {...trajectory} totalCount={coursesTotal} />
+        <CategoryActivityBarCard regions={regions} />
+        <LevelGaugeCard {...profileSummary} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        {/* Columna principal */}
-        <div className="min-w-0 space-y-8">
-          <section>
-            <p className="mb-3 text-sm font-extrabold text-text">{t('dashboard.promo.todayTitle')}</p>
-            {todayCourses.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {todayCourses.map((c) => (
-                  <TodayCourseCard key={c.id} course={c} pct={progressByCourse(c.id) ?? 0} meta={CATEGORY_META[c.category] ?? CATEGORY_META.Otros} />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-text-muted">
-                {t('dashboard.promo.todayEmpty')}
-              </div>
-            )}
-          </section>
+      {/* Fila de desglose — calco de la referencia (lista de barras / lista con
+          flechas / calendario) */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <TrajectorySummaryCard {...trajectory} totalCount={coursesTotal} />
+        <UpcomingDeadlinesCard pendingTasks={pendingTasks} />
+        <MiniCalendarCard />
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ProfileSummaryCard {...profileSummary} />
+        <BadgesSummaryCard {...badges} />
+      </div>
+
+      <div className="space-y-8">
           {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
               Sin git (algún checkout raro) cae al patch note curado como respaldo. */}
           <div className="rounded-2xl overflow-hidden border border-white/[0.07]"
@@ -187,18 +195,6 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
           <QuickLinksRow />
 
           <WorldMapSection regions={regions} />
-        </div>
-
-        {/* Columna secundaria — resúmenes con link a la página completa, NO
-            una sidebar de navegación (sigue en el flujo normal de la página). */}
-        <div className="space-y-4">
-          <ProfileSummaryCard {...profileSummary} />
-          <CoursesDonutCard {...trajectory} totalCount={coursesTotal} />
-          <TrajectorySummaryCard {...trajectory} />
-          <BadgesSummaryCard {...badges} />
-          <UpcomingClassesCard />
-          <UpcomingDeadlinesCard pendingTasks={pendingTasks} />
-        </div>
       </div>
     </div>
   )
