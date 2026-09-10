@@ -36,6 +36,7 @@ function chunkScript(text) {
 // error hacia afuera: si el NPC del payload no existe en el registro, o no
 // hay speechSynthesis, simplemente no reproduce nada.
 export default function NpcSpeechPlayer({ channelRef }) {
+  console.warn('[npcspeech] component rendering, channel=' + !!channelRef?.current)
   const [active, setActive] = useState(null) // { npc, bubble: { id, text } }
   const sessionRef = useRef(0)
 
