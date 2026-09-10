@@ -281,13 +281,13 @@ export default function TextSelectionMenu() {
   // ya descrito — elegir el color después no depende de que la selección
   // siga viva.
   const startHighlighting = () => {
-    if (!lessonCtx) { console.debug('[highlight] no lessonCtx', pathname); return }
+    if (!lessonCtx) { console.warn('[highlight] no lessonCtx', pathname); return }
     const container = document.querySelector('[data-lesson-content]')
     const selection = window.getSelection()
-    console.debug('[highlight] startHighlighting', { hasContainer: !!container, rangeCount: selection?.rangeCount, text: selection?.toString() })
+    console.warn('[highlight] startHighlighting', { hasContainer: !!container, rangeCount: selection?.rangeCount, text: selection?.toString() })
     if (!container || !selection || selection.rangeCount === 0) return
     const described = describeRange(container, selection.getRangeAt(0))
-    console.debug('[highlight] described', described)
+    console.warn('[highlight] described', described)
     if (!described) return
     setPendingHighlight(described)
     setHighlighting(true)
