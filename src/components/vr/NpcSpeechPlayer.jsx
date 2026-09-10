@@ -36,15 +36,13 @@ function chunkScript(text) {
 // error hacia afuera: si el NPC del payload no existe en el registro, o no
 // hay speechSynthesis, simplemente no reproduce nada.
 export default function NpcSpeechPlayer({ channelRef }) {
-  console.warn('[npcspeech] component rendering, channel=' + !!channelRef?.current)
   const [active, setActive] = useState(null) // { npc, bubble: { id, text } }
   const sessionRef = useRef(0)
 
   useEffect(() => {
     const onSpeech = ({ payload }) => {
-      console.warn('[npcspeech] onSpeech fired ' + JSON.stringify({ npcId: payload?.npcId, hasScript: !!payload?.script }))
       const npc = findNpc(payload?.npcId)
-      if (!npc || !payload?.script) { console.warn('[npcspeech] bail: npc=' + !!npc + ' script=' + !!payload?.script); return }
+      if (!npc || !payload?.script) return
       const session = ++sessionRef.current
       const chunks = chunkScript(payload.script)
       useNpcSpeechStore.getState().setActive(npc.id)
@@ -87,7 +85,6 @@ export default function NpcSpeechPlayer({ channelRef }) {
       const channel = channelRef?.current
       if (!channel) return false
       channel.on('broadcast', { event: 'npc_speech' }, onSpeech)
-      console.warn('[npcspeech] handler registered on channel')
       return true
     }
     if (!tryRegister()) interval = setInterval(() => { if (tryRegister()) clearInterval(interval) }, 300)
