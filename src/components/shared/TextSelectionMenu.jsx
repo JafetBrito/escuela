@@ -94,6 +94,7 @@ export default function TextSelectionMenu() {
   const [translation, setTranslation] = useState(null)
   const [translating, setTranslating] = useState(false)
   const [highlighting, setHighlighting] = useState(false)
+  const [pendingHighlight, setPendingHighlight] = useState(null) // { quote, prefix, suffix }
   // `hide` es un useCallback estable (deps []), así que no puede leer el
   // `reading` de su propio render — se espeja en un ref para que sepa, en
   // cualquier momento, si la lectura EN CURSO es la suya propia.
@@ -120,6 +121,7 @@ export default function TextSelectionMenu() {
     setTranslation(null)
     setTranslating(false)
     setHighlighting(false)
+    setPendingHighlight(null)
     setSel(null)
   }, [])
 
@@ -270,20 +272,33 @@ export default function TextSelectionMenu() {
     setTimeout(hide, 1400)
   }
 
-  // La selección del navegador sigue viva en este punto (cada botón del
-  // menú hace onMouseDown={preventDefault} para evitar que se colapse), así
-  // que se puede leer el Range real aquí mismo — ver highlightTextAnchor.js
-  // para por qué no se guarda el Range en sí, solo lo que describe.
-  const chooseHighlightColor = async (color) => {
-    setHighlighting(false)
-    if (!lessonCtx) { hide(); return }
+  // Ojo: aunque cada botón hace onMouseDown={preventDefault}, la selección
+  // del navegador de todos modos queda colapsada para cuando se hace clic en
+  // un swatch de color (segundo clic) — probablemente por cómo Chrome
+  // resuelve el foco entre dos clics seguidos sobre botones del mismo panel.
+  // Por eso el Range se lee y se describe aquí, en el momento de abrir la
+  // fila de colores (un solo clic desde la selección original), y se guarda
+  // ya descrito — elegir el color después no depende de que la selección
+  // siga viva.
+  const startHighlighting = () => {
+    if (!lessonCtx) return
     const container = document.querySelector('[data-lesson-content]')
     const selection = window.getSelection()
+    if (!container || !selection || selection.rangeCount === 0) return
+    const described = describeRange(container, selection.getRangeAt(0))
+    if (!described) return
+    setPendingHighlight(described)
+    setHighlighting(true)
+  }
+
+  const chooseHighlightColor = async (color) => {
+    const described = pendingHighlight
+    setHighlighting(false)
+    setPendingHighlight(null)
+    if (!lessonCtx || !described) { hide(); return }
+    const container = document.querySelector('[data-lesson-content]')
     const userId = useAuthStore.getState().session?.user?.id
-    if (!container || !selection || selection.rangeCount === 0 || !userId) { hide(); return }
-    const range = selection.getRangeAt(0)
-    const described = describeRange(container, range)
-    if (!described) { hide(); return }
+    if (!container || !userId) { hide(); return }
     hide()
     const created = await createHighlight({
       courseId: lessonCtx.courseId,
@@ -383,7 +398,7 @@ export default function TextSelectionMenu() {
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => setHighlighting((h) => !h)}
+              onClick={() => (highlighting ? setHighlighting(false) : startHighlighting())}
               title="Subrayar"
               className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all
                 ${vertical ? 'w-full' : ''}
