@@ -1188,7 +1188,7 @@ const BUG_PUZZLES_ZH = [
 //   the class tree unlocks its Tier-3 ultimate at): a harder-paying version
 //   of the same puzzle, themed as breaking encryption.
 // - 'admin'  → the real GM console (way more power, admin-only).
-function TerminalModal({ tier, onClose, playerPositionRef }) {
+function TerminalModal({ tier, onClose, playerPositionRef, channelRef }) {
   const { t, lang } = useI18n()
   const [puzzleIdx] = useState(() => Math.floor(Math.random() * BUG_PUZZLES.length))
   const [selected, setSelected] = useState(null)
@@ -1196,7 +1196,7 @@ function TerminalModal({ tier, onClose, playerPositionRef }) {
   const canClaim = useTerminalRewardsStore((s) => s.canClaim())
   const puzzle = (lang === 'en' ? BUG_PUZZLES_EN : lang === 'fr' ? BUG_PUZZLES_FR : lang === 'it' ? BUG_PUZZLES_IT : lang === 'ca' ? BUG_PUZZLES_CA : lang === 'ja' ? BUG_PUZZLES_JA : lang === 'zh' ? BUG_PUZZLES_ZH : BUG_PUZZLES)[puzzleIdx]
 
-  if (tier === 'admin') return <GmConsole open onClose={onClose} playerPositionRef={playerPositionRef} />
+  if (tier === 'admin') return <GmConsole open onClose={onClose} playerPositionRef={playerPositionRef} channelRef={channelRef} />
 
   const reward = tier === 'hacker' ? { coins: 600, xp: 60 } : { coins: 250, xp: 25 }
 
@@ -3969,6 +3969,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
             onClose={() => setTerminalOpen(false)}
             playerPositionRef={playerPositionRef}
+            channelRef={channelRef}
           />
         )}
         {terminal2Open && (
@@ -3976,6 +3977,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             tier={isAdmin ? 'admin' : level >= 10 ? 'hacker' : 'basic'}
             onClose={() => setTerminal2Open(false)}
             playerPositionRef={playerPositionRef}
+            channelRef={channelRef}
           />
         )}
 

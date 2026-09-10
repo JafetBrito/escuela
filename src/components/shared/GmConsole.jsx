@@ -4,6 +4,7 @@ import { useMobStore } from '../../stores/useMobStore'
 import { useSpawnedNpcStore } from '../../stores/useSpawnedNpcStore'
 import { MOB_TYPES } from '../../data/mobRegistry'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, VR_NPCS } from '../../data/vrNpcRegistry'
+import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
 
 const SUMMONABLE_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
 const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -24,6 +25,7 @@ const COMMAND_PALETTE = [
   { cmd: '/npcclear', desc: 'Quitar NPCs invocados' },
   { cmd: '/who ', desc: 'Buscar jugador' },
   { cmd: '/target ', desc: 'Cambiar a quién afectan los comandos' },
+  { cmd: '/discurso ', desc: 'Disparar ahora el discurso programado de un NPC (prueba)' },
 ]
 
 const HELP_LINES = [
@@ -39,6 +41,7 @@ const HELP_LINES = [
   '  /npcclear              — quita todos los NPCs invocados con /npcadd',
   '  /who <texto>           — busca jugadores por correo o nombre',
   '  /target <correo|yo>    — cambia a quién afectan los comandos',
+  '  /discurso <npcId>      — dispara ahora el discurso programado de ese NPC (ej. oliver), para probarlo sin esperar a la hora',
 ]
 
 // Admin-only "GM console" (World of Warcraft moderator-style): a command
@@ -46,7 +49,7 @@ const HELP_LINES = [
 // en la de cualquier jugador, por email/nombre. Apuntar a otro jugador
 // escribe directo a su profiles.snapshot en Supabase ya que sus stores no
 // están cargados en este navegador.
-export default function GmConsole({ open, onClose, playerPositionRef }) {
+export default function GmConsole({ open, onClose, playerPositionRef, channelRef }) {
   const [lines, setLines] = useState(['🖥️ Consola GM — escribe /help para ver los comandos.'])
   const [input, setInput] = useState('')
   const [target, setTarget] = useState({ id: SELF_TARGET, label: 'yo (tú)' })
@@ -107,6 +110,25 @@ export default function GmConsole({ open, onClose, playerPositionRef }) {
       } else if (cmd === 'npcclear') {
         useSpawnedNpcStore.getState().clear()
         log('✅ NPCs invocados eliminados.')
+      } else if (cmd === 'discurso') {
+        // Dispara el broadcast directo sobre el canal de la partida — se
+        // salta el horario y el candado de "una vez al día" (npc_speech_log)
+        // a propósito: es solo para probar/demostrar el sistema, no cuenta
+        // como la aparición real del día. Ver useNpcSpeechScheduler.js.
+        const npcId = norm(args[0]) || 'oliver'
+        const speech = NPC_SPEECHES[npcId]
+        if (!speech) {
+          log(`❌ No hay discurso registrado para "${npcId}". Disponibles: ${Object.keys(NPC_SPEECHES).join(', ')}`)
+        } else if (!channelRef?.current) {
+          log('❌ No hay conexión al mundo compartido todavía — espera a que "Conectado" aparezca arriba y vuelve a intentar.')
+        } else {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'npc_speech',
+            payload: { npcId: speech.npcId, script: speech.script, startedAt: Date.now() },
+          })
+          log(`✅ Discurso de "${speech.npcId}" disparado — todos los conectados al Campus deberían verlo/oírlo ahora.`)
+        }
       } else if (cmd === 'target') {
         const query = args.join(' ')
         if (!query || query === 'yo') {

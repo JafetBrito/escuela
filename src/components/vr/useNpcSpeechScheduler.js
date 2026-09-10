@@ -6,6 +6,15 @@ import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
 const POLL_MS = 20_000
 const WINDOW_MINUTES = 2 // ventana de disparo: hora exacta ± 2 min
 
+// ⚠️ TEMPORAL, solo para probar el sistema en vivo — con esto en un número,
+// el discurso se repite cada TEST_INTERVAL_MINUTES en vez de una sola vez al
+// día a targetUtcHour. El candado de "una vez al día" (npc_speech_log) no
+// aplica en este modo — su restricción unique es por día, no por ventana de
+// minutos, así que cada cliente conectado simplemente reemite el broadcast
+// cuando le toca, sin tocar la tabla. Volver a `null` cuando ya no haga
+// falta probar así (deja el comportamiento real: una vez al día).
+const TEST_INTERVAL_MINUTES = 10
+
 // Truco de offset fijo (sin librería de zonas horarias): resta el offset
 // UTC-6 antes de leer año/mes/día en UTC — da la fecha calendario de Ciudad
 // de México sin necesitar Intl.DateTimeFormat con timeZone.
@@ -30,6 +39,19 @@ export function useNpcSpeechScheduler({ channelRef, enabled }) {
       const now = new Date()
       const dateKey = mexicoCityDateKey(now)
       for (const [npcId, speech] of Object.entries(NPC_SPEECHES)) {
+        if (TEST_INTERVAL_MINUTES != null) {
+          const bucket = Math.floor(Date.now() / (TEST_INTERVAL_MINUTES * 60_000))
+          const testKey = `${npcId}:test:${bucket}`
+          if (attemptedRef.current.has(testKey)) continue
+          attemptedRef.current.add(testKey)
+          channelRef.current?.send({
+            type: 'broadcast',
+            event: 'npc_speech',
+            payload: { npcId, script: speech.script, startedAt: Date.now() },
+          })
+          continue
+        }
+
         const attemptKey = `${npcId}:${dateKey}`
         if (attemptedRef.current.has(attemptKey)) continue
         const minutesFromTarget = Math.abs(
