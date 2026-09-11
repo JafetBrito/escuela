@@ -3,7 +3,7 @@ import { useParams, Navigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useRoadmapContentStore } from '../../stores/useRoadmapContentStore'
-import { useRoadmapProgressStore } from '../../stores/useRoadmapProgressStore'
+import { useRoadmapProgressStore, EMPTY_ARRAY } from '../../stores/useRoadmapProgressStore'
 import { useI18n } from '../../i18n'
 
 const LINK_LABEL_KEY = { course: 'linkCourse', tutorial: 'linkTutorial', external: 'linkExternal' }
@@ -67,7 +67,7 @@ export default function RoadmapViewerPage() {
   const loaded = useRoadmapContentStore((s) => s.loaded)
   const roadmap = useRoadmapContentStore((s) => s.roadmaps[id])
   const fetchAll = useRoadmapContentStore((s) => s.fetchAll)
-  const doneIds = useRoadmapProgressStore((s) => s.done[id] ?? [])
+  const doneIds = useRoadmapProgressStore((s) => s.done[id] ?? EMPTY_ARRAY)
   const toggleNodeDone = useRoadmapProgressStore((s) => s.toggleNodeDone)
   useEffect(() => { fetchAll() }, [fetchAll])
 

@@ -1,5 +1,12 @@
 import { create } from 'zustand'
 
+// Referencia estable para selectores tipo `s.done[roadmapId] ?? EMPTY_ARRAY`
+// — un `?? []` inline crea un array nuevo en cada render, y
+// useSyncExternalStore (por dentro de Zustand) lo interpreta como "el store
+// cambió" en cada lectura, lo que dispara un loop infinito (React error
+// #185). Mismo fix ya usado en useProgressStore.js.
+export const EMPTY_ARRAY = []
+
 // Qué nodos de qué road map ha marcado como aprendidos el alumno — un flag
 // "de visto" más, mismo criterio que useSeenStore.js: vive en el snapshot
 // unificado de profiles (ver progressSnapshot.js/autoSave.js), no en una
