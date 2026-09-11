@@ -23,6 +23,7 @@ import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useQuestsStore } from '../../stores/useQuestsStore'
 import { useSeenStore } from '../../stores/useSeenStore'
 import { useThemeStore } from '../../stores/useThemeStore'
+import { useRoadmapProgressStore } from '../../stores/useRoadmapProgressStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
 import { supabase, isSupabaseConfigured } from '../supabase/client'
@@ -58,6 +59,7 @@ const STORES = [
   // sesión (el bug real detrás de "veo el video todo el tiempo").
   useSeenStore,
   useThemeStore,
+  useRoadmapProgressStore,
 ]
 
 // Restores the user's account (license, progress, coins, settings, chat

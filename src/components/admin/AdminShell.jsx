@@ -16,6 +16,7 @@ const SECTIONS = [
   { to: '/admin', icon: '🏠', label: 'Resumen', end: true },
   { to: '/admin/cursos', icon: '📚', label: 'Cursos' },
   { to: '/admin/tutoriales', icon: '🧭', label: 'Tutoriales' },
+  { to: '/admin/roadmaps', icon: '🗺️', label: 'Road Maps' },
   { to: '/admin/oraculo', icon: '🔮', label: 'Revisión del Oráculo' },
   { to: '/admin/profesores', icon: '🧑‍🏫', label: 'Profesores' },
   { to: '/admin/correos', icon: '📧', label: 'Correos' },

@@ -28,6 +28,7 @@ import { useVoiceStore } from '../../stores/useVoiceStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { useSeenStore } from '../../stores/useSeenStore'
 import { useThemeStore } from '../../stores/useThemeStore'
+import { useRoadmapProgressStore } from '../../stores/useRoadmapProgressStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -149,6 +150,7 @@ export function buildProgressSnapshot() {
     bagsMigrated: useBagStore.getState().migrated,
     seen: useSeenStore.getState(),
     theme: useThemeStore.getState().theme,
+    roadmapProgress: useRoadmapProgressStore.getState().done,
     lastSaved: new Date().toISOString(),
   }
 }
@@ -210,4 +212,5 @@ export function applyProgressSnapshot(snapshot) {
   useEquipmentStore.getState().loadEquipped(snapshot.equippedItems)
   useSeenStore.getState().loadSeen(snapshot.seen)
   useThemeStore.getState().loadTheme(snapshot.theme)
+  useRoadmapProgressStore.getState().loadRoadmapProgress(snapshot.roadmapProgress)
 }

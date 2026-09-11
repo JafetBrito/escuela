@@ -289,6 +289,21 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
           🧭 {t('nav.items.tutoriales')}
         </Link>
 
+        {/* Road Maps — mismo criterio que Tutoriales (nivel superior, no
+            anidado), ver migration_064.sql. Nombre sin traducir ("Road
+            Maps") a propósito — así lo usó el usuario todo el tiempo. */}
+        <Link
+          to="/roadmaps"
+          onClick={closeAll}
+          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+            location.pathname.startsWith('/roadmap')
+              ? 'bg-primary/10 text-primary'
+              : 'text-text-muted hover:text-text'
+          }`}
+        >
+          🗺️ {t('nav.items.roadmaps')}
+        </Link>
+
         {/* Profesor — solo visible para cuentas promovidas por un admin
             (profiles.role === 'teacher', ver AdminTeachersPage.jsx) */}
         {isTeacher?.() && (
@@ -496,6 +511,16 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
             }`}
           >
             🧭 {t('nav.items.tutoriales')}
+          </Link>
+
+          <Link
+            to="/roadmaps"
+            onClick={closeAll}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              location.pathname.startsWith('/roadmap') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            🗺️ {t('nav.items.roadmaps')}
           </Link>
 
           {isTeacher?.() && (

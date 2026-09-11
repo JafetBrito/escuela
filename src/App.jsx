@@ -49,6 +49,7 @@ import { useHolidayStore } from './stores/useHolidayStore'
 import { useDayNightStore } from './stores/useDayNightStore'
 import { useCourseContentStore } from './stores/useCourseContentStore'
 import { useTutorialContentStore } from './stores/useTutorialContentStore'
+import { useRoadmapContentStore } from './stores/useRoadmapContentStore'
 import { useEffect } from 'react'
 
 /**
@@ -131,6 +132,9 @@ const OraclePage   = lazy(() => import('./components/oracle/OraclePage'))
 const TutorialsPage = lazy(() => import('./components/tutorials/TutorialsPage'))
 const TutorialViewerPage = lazy(() => import('./components/tutorials/TutorialViewerPage'))
 const AdminTutorialsPage = lazy(() => import('./components/admin/AdminTutorialsPage'))
+const RoadmapsPage = lazy(() => import('./components/roadmaps/RoadmapsPage'))
+const RoadmapViewerPage = lazy(() => import('./components/roadmaps/RoadmapViewerPage'))
+const AdminRoadmapsPage = lazy(() => import('./components/admin/AdminRoadmapsPage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -206,6 +210,7 @@ export default function App() {
     useDayNightStore.getState().load()
     useCourseContentStore.getState().fetchAll()
     useTutorialContentStore.getState().fetchAll()
+    useRoadmapContentStore.getState().fetchAll()
   }, [])
 
   return (
@@ -1111,6 +1116,36 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <AdminTutorialsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roadmaps"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <RoadmapsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roadmap/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <RoadmapViewerPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/roadmaps"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminRoadmapsPage />
               </Suspense>
             </ProtectedRoute>
           }
