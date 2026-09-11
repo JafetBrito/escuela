@@ -117,6 +117,12 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
 
       <CourseHighlightRow courseList={highlightCourses} progressByCourse={progressByCourse} />
 
+      {/* Accesos y mapa del mundo — pedido explícito del usuario: subirlos
+          arriba del todo, se perdían hasta abajo de la página y no se
+          notaban. */}
+      <QuickLinksRow />
+      <WorldMapSection regions={regions} />
+
       {/* Fila de estadísticas grandes — calco de la referencia (donut / barras / gauge) */}
       <div className="grid gap-4 sm:grid-cols-3">
         <CoursesDonutCard {...trajectory} totalCount={coursesTotal} />
@@ -137,64 +143,59 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
         <BadgesSummaryCard {...badges} />
       </div>
 
-      <div className="space-y-8">
-          {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
-              Sin git (algún checkout raro) cae al patch note curado como respaldo. */}
-          <div className="rounded-2xl overflow-hidden border border-white/[0.07]"
-            style={{ background: 'linear-gradient(135deg,#0f0f1a,#1a1030)' }}>
-            <div className="flex items-center justify-between px-4 py-3"
-              style={{ background:'linear-gradient(90deg,rgba(124,58,237,0.22),rgba(59,130,246,0.12))', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-lg">🚀</span>
-                <span className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest mr-1"
-                  style={{ background:'#22c55e22', color:'#22c55e', border:'1px solid #22c55e33' }}>
-                  {t('dashboard.changesTag')}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-bold text-white">
-                  {RECENT_COMMITS.length > 0
-                    ? `Versión #${BUILD_INFO.number} · ${BUILD_INFO.message}`
-                    : latest.title}
-                </span>
-              </div>
-              <button type="button" onClick={() => setPatchNotesOpen(true)}
-                className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white">
-                📋 {t('dashboard.history')}
-              </button>
-            </div>
-            <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
+      {/* Tablón de cambios — se llena solo con los commits de git (buildInfo.js).
+          Sin git (algún checkout raro) cae al patch note curado como respaldo.
+          Al final de la página a propósito — pedido explícito del usuario. */}
+      <div className="rounded-2xl overflow-hidden border border-white/[0.07]"
+        style={{ background: 'linear-gradient(135deg,#0f0f1a,#1a1030)' }}>
+        <div className="flex items-center justify-between px-4 py-3"
+          style={{ background:'linear-gradient(90deg,rgba(124,58,237,0.22),rgba(59,130,246,0.12))', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg">🚀</span>
+            <span className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest mr-1"
+              style={{ background:'#22c55e22', color:'#22c55e', border:'1px solid #22c55e33' }}>
+              {t('dashboard.changesTag')}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-sm font-bold text-white">
               {RECENT_COMMITS.length > 0
-                ? RECENT_COMMITS.slice(0, 6).map((c, i) => (
-                    <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
-                      style={{ background:'rgba(255,255,255,0.03)' }}>
-                      <span className="shrink-0 font-mono text-[10px] text-white/30">{c.date}</span>
-                      <span className="leading-snug">{c.message}</span>
-                    </li>
-                  ))
-                : latest.changes.slice(0, 4).map((c, i) => (
-                    <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
-                      style={{ background:'rgba(255,255,255,0.03)' }}>
-                      <span className="shrink-0">{c.icon}</span>
-                      <span className="leading-snug">{c.text}</span>
-                    </li>
-                  ))}
-            </ul>
-            <div className="flex items-center justify-between px-4 pb-3">
-              <span className="text-[10px] text-white/20">
-                {RECENT_COMMITS.length > 0
-                  ? `#${BUILD_INFO.number}${BUILD_INFO.hash ? ` · ${BUILD_INFO.hash}` : ''}`
-                  : `v${LATEST_VERSION}`}
-              </span>
-              {vrAllowed && (
-                <Link to="/vr" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/30">
-                  {t('dashboard.goVR')}
-                </Link>
-              )}
-            </div>
+                ? `Versión #${BUILD_INFO.number} · ${BUILD_INFO.message}`
+                : latest.title}
+            </span>
           </div>
-
-          <QuickLinksRow />
-
-          <WorldMapSection regions={regions} />
+          <button type="button" onClick={() => setPatchNotesOpen(true)}
+            className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white">
+            📋 {t('dashboard.history')}
+          </button>
+        </div>
+        <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
+          {RECENT_COMMITS.length > 0
+            ? RECENT_COMMITS.slice(0, 6).map((c, i) => (
+                <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
+                  style={{ background:'rgba(255,255,255,0.03)' }}>
+                  <span className="shrink-0 font-mono text-[10px] text-white/30">{c.date}</span>
+                  <span className="leading-snug">{c.message}</span>
+                </li>
+              ))
+            : latest.changes.slice(0, 4).map((c, i) => (
+                <li key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-xs text-white/60"
+                  style={{ background:'rgba(255,255,255,0.03)' }}>
+                  <span className="shrink-0">{c.icon}</span>
+                  <span className="leading-snug">{c.text}</span>
+                </li>
+              ))}
+        </ul>
+        <div className="flex items-center justify-between px-4 pb-3">
+          <span className="text-[10px] text-white/20">
+            {RECENT_COMMITS.length > 0
+              ? `#${BUILD_INFO.number}${BUILD_INFO.hash ? ` · ${BUILD_INFO.hash}` : ''}`
+              : `v${LATEST_VERSION}`}
+          </span>
+          {vrAllowed && (
+            <Link to="/vr" className="rounded-lg bg-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/30">
+              {t('dashboard.goVR')}
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   )
