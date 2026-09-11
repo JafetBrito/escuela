@@ -274,6 +274,21 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
           🏫 {t('nav.items.academias')}
         </Link>
 
+        {/* Tutoriales — nivel superior, a propósito NO anidado dentro de
+            "Academia" (pedido explícito del usuario): guías cortas de una
+            sola vista, concepto distinto a un curso, ver migration_063.sql. */}
+        <Link
+          to="/tutoriales"
+          onClick={closeAll}
+          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
+            location.pathname.startsWith('/tutorial')
+              ? 'bg-primary/10 text-primary'
+              : 'text-text-muted hover:text-text'
+          }`}
+        >
+          🧭 {t('nav.items.tutoriales')}
+        </Link>
+
         {/* Profesor — solo visible para cuentas promovidas por un admin
             (profiles.role === 'teacher', ver AdminTeachersPage.jsx) */}
         {isTeacher?.() && (
@@ -471,6 +486,16 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
             }`}
           >
             🏫 {t('nav.items.academias')}
+          </Link>
+
+          <Link
+            to="/tutoriales"
+            onClick={closeAll}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              location.pathname.startsWith('/tutorial') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            🧭 {t('nav.items.tutoriales')}
           </Link>
 
           {isTeacher?.() && (

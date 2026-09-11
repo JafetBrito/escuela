@@ -33,6 +33,7 @@ export const en = {
       academiaChina: 'China Academy',
       academiaMedicina: 'Medicine Academy',
       academias: 'Schools',
+      tutoriales: 'Tutorials',
       buscar: 'Search',
       mascota: 'My Team',
       arbol: 'Skill Tree',
@@ -379,6 +380,16 @@ export const en = {
     },
   },
   pages: {
+    tutoriales: {
+      title: 'Tutorials',
+      subtitle: 'Short, to-the-point guides — how to do one specific thing, not a full course.',
+      loading: 'Loading tutorials…',
+      emptyTitle: 'No tutorials yet',
+      emptyBody: 'Short guides will show up here soon.',
+      comingSoon: 'Coming soon',
+      backLabel: 'Tutorials',
+      resources: 'Resources',
+    },
     oracle: {
       brand: 'Oliver Academy',
       title: '🔮 The Oracle of Oliver',

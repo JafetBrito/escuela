@@ -48,6 +48,7 @@ import { useSwUpdateStore } from './stores/useSwUpdateStore'
 import { useHolidayStore } from './stores/useHolidayStore'
 import { useDayNightStore } from './stores/useDayNightStore'
 import { useCourseContentStore } from './stores/useCourseContentStore'
+import { useTutorialContentStore } from './stores/useTutorialContentStore'
 import { useEffect } from 'react'
 
 /**
@@ -127,6 +128,9 @@ const IaToolsPage  = lazy(() => import('./components/ai/IaToolsPage'))
 const GlossaryPage = lazy(() => import('./components/glossary/GlossaryPage'))
 const SearchPage   = lazy(() => import('./components/search/SearchPage'))
 const OraclePage   = lazy(() => import('./components/oracle/OraclePage'))
+const TutorialsPage = lazy(() => import('./components/tutorials/TutorialsPage'))
+const TutorialViewerPage = lazy(() => import('./components/tutorials/TutorialViewerPage'))
+const AdminTutorialsPage = lazy(() => import('./components/admin/AdminTutorialsPage'))
 
 /**
  * Componente de respaldo visual (Fallback) que se muestra DURANTE 
@@ -201,6 +205,7 @@ export default function App() {
     useHolidayStore.getState().load()
     useDayNightStore.getState().load()
     useCourseContentStore.getState().fetchAll()
+    useTutorialContentStore.getState().fetchAll()
   }, [])
 
   return (
@@ -1076,6 +1081,36 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <OraclePage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutoriales"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TutorialsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tutorial/:id"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TutorialViewerPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tutoriales"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <AdminTutorialsPage />
               </Suspense>
             </ProtectedRoute>
           }

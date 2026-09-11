@@ -37,6 +37,7 @@ export const es = {
       academiaChina: 'Academia de China',
       academiaMedicina: 'Academia de Medicina',
       academias: 'Escuelas',
+      tutoriales: 'Tutoriales',
       buscar: 'Buscar',
       mascota: 'Mi Equipo',
       arbol: 'Árbol',
@@ -383,6 +384,16 @@ export const es = {
     },
   },
   pages: {
+    tutoriales: {
+      title: 'Tutoriales',
+      subtitle: 'Guías cortas, al grano — cómo hacer algo específico, sin ser un curso completo.',
+      loading: 'Cargando tutoriales…',
+      emptyTitle: 'Todavía no hay tutoriales',
+      emptyBody: 'Pronto habrá guías cortas aquí.',
+      comingSoon: 'Próximamente',
+      backLabel: 'Tutoriales',
+      resources: 'Recursos',
+    },
     oracle: {
       brand: 'Oliver Academy',
       title: '🔮 El Oráculo de Oliver',
