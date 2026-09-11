@@ -24,6 +24,8 @@ const GROUPS = [
     items: [
       { to: '/mis-clases',   key: 'misClases',    label: 'Mis Clases',   icon: '🎓' },
       { to: '/oraculo',      key: 'oraculo',      label: 'Oráculo',      icon: '🔮' },
+      { to: '/tutoriales',   key: 'tutoriales',   label: 'Tutoriales',   icon: '🧭' },
+      { to: '/roadmaps',     key: 'roadmaps',     label: 'Road Maps',    icon: '🗺️' },
       { to: '/clases-disponibles', key: 'clasesDisponibles', label: 'Clases Disponibles', icon: '🎬' },
       { to: '/clase-online', key: 'claseOnline',  label: 'Clase Online', icon: '📺' },
       { to: '/horario',      key: 'horario',      label: 'Horario',      icon: '🗓️' },
@@ -274,36 +276,6 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
           🏫 {t('nav.items.academias')}
         </Link>
 
-        {/* Tutoriales — nivel superior, a propósito NO anidado dentro de
-            "Academia" (pedido explícito del usuario): guías cortas de una
-            sola vista, concepto distinto a un curso, ver migration_063.sql. */}
-        <Link
-          to="/tutoriales"
-          onClick={closeAll}
-          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-            location.pathname.startsWith('/tutorial')
-              ? 'bg-primary/10 text-primary'
-              : 'text-text-muted hover:text-text'
-          }`}
-        >
-          🧭 {t('nav.items.tutoriales')}
-        </Link>
-
-        {/* Road Maps — mismo criterio que Tutoriales (nivel superior, no
-            anidado), ver migration_064.sql. Nombre sin traducir ("Road
-            Maps") a propósito — así lo usó el usuario todo el tiempo. */}
-        <Link
-          to="/roadmaps"
-          onClick={closeAll}
-          className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-            location.pathname.startsWith('/roadmap')
-              ? 'bg-primary/10 text-primary'
-              : 'text-text-muted hover:text-text'
-          }`}
-        >
-          🗺️ {t('nav.items.roadmaps')}
-        </Link>
-
         {/* Profesor — solo visible para cuentas promovidas por un admin
             (profiles.role === 'teacher', ver AdminTeachersPage.jsx) */}
         {isTeacher?.() && (
@@ -501,26 +473,6 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
             }`}
           >
             🏫 {t('nav.items.academias')}
-          </Link>
-
-          <Link
-            to="/tutoriales"
-            onClick={closeAll}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              location.pathname.startsWith('/tutorial') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-            }`}
-          >
-            🧭 {t('nav.items.tutoriales')}
-          </Link>
-
-          <Link
-            to="/roadmaps"
-            onClick={closeAll}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              location.pathname.startsWith('/roadmap') ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
-            }`}
-          >
-            🗺️ {t('nav.items.roadmaps')}
           </Link>
 
           {isTeacher?.() && (
