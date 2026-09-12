@@ -2,8 +2,13 @@
 -- MIGRACIÓN 064 — tabla `roadmaps`: rutas de aprendizaje visuales,
 -- paralelo a `tutorials` (migration_063.sql) y `courses` (migration_024.sql).
 --
--- `nodes` es un jsonb array de temas a aprender, cada uno con un enlace
--- OPCIONAL a un curso/tutorial real o a una URL externa — mismo patrón que
+-- `nodes` es un ÁRBOL jsonb (no una lista plana): cada nodo tiene
+-- {id, title, intro, resources:[{label,url}], linkType, linkId,
+-- children:[...mismo shape, recursivo...]} — un tema (ej. "Internet")
+-- puede tener subtemas (ej. "¿Qué es HTTP?"), y esos a su vez más
+-- subtemas, sin límite de profundidad. `resources` son links de
+-- referencia externos; `linkType`/`linkId` (opcional, 'course'|'tutorial')
+-- enlaza a contenido real ya existente en la plataforma. Mismo patrón que
 -- `courses.modules`/`trivia_questions.questions` (contenido en jsonb,
 -- admin edita, todos leen). El PROGRESO por nodo (qué ha marcado cada
 -- alumno) NO vive aquí — va en el snapshot unificado de profiles
@@ -23,7 +28,7 @@ create table if not exists public.roadmaps (
   color text,
   category text,
   nodes jsonb not null default '[]'::jsonb,
-  -- cada nodo: { id, title, description, linkType: null|'course'|'tutorial'|'external', linkId, linkUrl }
+  -- árbol recursivo — ver comentario arriba del archivo
   locked boolean not null default false,
   translations jsonb not null default '{}'::jsonb,
   ai_generated boolean not null default false,
