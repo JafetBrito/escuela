@@ -12,6 +12,8 @@ import courses from '../../data/courses.json'
 import { getCourseData, hasCourseData } from '../../data/courseRegistry'
 import { renderMarkdown } from '../../utils/markdown'
 import StudentCoursesPanel from './StudentCoursesPanel'
+import AdminDonutChart from './AdminDonutChart'
+import AdminBarChart from './AdminBarChart'
 
 const SUBJECTS = ['Matemáticas', 'Física', 'Historia', 'Biología', 'Química', 'Filosofía',
   'Psicología', 'Programación', 'Inglés', 'Música', 'Arte', 'General']
@@ -230,6 +232,27 @@ export default function AdminTasksPage() {
     : allTasks
   const visibleQueue = queueExpanded ? reviewQueue : reviewQueue.slice(0, REVIEW_QUEUE_CAP)
 
+  // ── Resumen global (siempre sobre TODOS los alumnos, sin importar cuál
+  // esté seleccionado en la barra lateral) — calco visual de la referencia
+  // EduAdmin, con datos 100% reales de student_tasks/task_questions. ──
+  const gradedTasks = allTasks.filter((t) => t.grade != null)
+  const avgGrade = gradedTasks.length > 0
+    ? (gradedTasks.reduce((sum, t) => sum + (t.grade / (t.grade_max || 10)) * 10, 0) / gradedTasks.length).toFixed(1)
+    : null
+
+  const subjectCounts = {}
+  allTasks.forEach((t) => { const key = t.subject || 'Sin materia'; subjectCounts[key] = (subjectCounts[key] ?? 0) + 1 })
+  const tasksBySubject = Object.entries(subjectCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([label, value]) => ({ label, value }))
+
+  const today = new Date().toISOString().slice(0, 10)
+  const upcomingExams = allTasks
+    .filter((t) => t.type === 'examen' && t.due_date && t.due_date >= today)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    .slice(0, 4)
+
+  const tasksWithUnanswered = allTasks.filter(hasUnansweredQuestion)
+  const unansweredCount = tasksWithUnanswered.reduce((sum, t) => sum + t.task_questions.filter((q) => !q.answered).length, 0)
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
@@ -243,6 +266,66 @@ export default function AdminTasksPage() {
             <p className="mt-1 text-sm font-medium text-white/85">
               Asigna tareas y proyectos y exámenes a tus alumnos, revisa entregas y pon calificaciones.
             </p>
+          </div>
+
+          {/* Resumen global — calco visual de la referencia EduAdmin, datos
+              reales sobre TODOS los alumnos (independiente de cuál esté
+              seleccionado abajo). */}
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <p className="text-2xl font-black text-text">📋 {allTasks.length}</p>
+              <p className="text-xs text-text-muted">Total tareas</p>
+            </div>
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+              <p className="text-2xl font-black text-primary">📥 {reviewQueue.length}</p>
+              <p className="text-xs text-text-muted">En bandeja de revisión</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <p className="text-2xl font-black text-text">⭐ {avgGrade ?? '—'}</p>
+              <p className="text-xs text-text-muted">Calificación promedio</p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <AdminDonutChart
+              title="📋 Tareas por estado"
+              centerLabel={allTasks.length}
+              slices={[
+                { label: 'Pendientes', value: allTasks.filter((t) => t.status === 'pendiente').length, color: '#fbbf24' },
+                { label: 'Por revisar', value: allTasks.filter((t) => t.status === 'entregada').length, color: '#38bdf8' },
+                { label: 'Calificadas', value: allTasks.filter((t) => t.status === 'revisada').length, color: '#34d399' },
+              ]}
+            />
+            <AdminBarChart title="📚 Tareas por materia" bars={tasksBySubject} accent="#fb7185" />
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">📝 Exámenes próximos</p>
+              {upcomingExams.length === 0 ? (
+                <p className="text-sm text-text-muted">No hay exámenes programados.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {upcomingExams.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-hover">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-primary">{t.profiles?.display_name || t.profiles?.email}</p>
+                        <p className="truncate text-sm font-semibold text-text">{t.title}</p>
+                      </div>
+                      <span className="shrink-0 text-xs text-text-muted">
+                        {new Date(t.due_date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                        {t.details?.time ? ` · ${t.details.time}` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">❓ Preguntas sin responder</p>
+              <p className="text-2xl font-black text-text">{unansweredCount}</p>
+              <p className="text-xs text-text-muted">en {tasksWithUnanswered.length} tarea{tasksWithUnanswered.length === 1 ? '' : 's'}</p>
+            </div>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-3">

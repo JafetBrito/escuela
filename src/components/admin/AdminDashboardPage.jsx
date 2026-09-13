@@ -1,9 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import AdminShell from './AdminShell'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useAdminUsersStore } from '../../stores/useAdminUsersStore'
+import { useLiveClassStore } from '../../stores/useLiveClassStore'
+import { useCourseContentStore } from '../../stores/useCourseContentStore'
 import { levelProgress } from '../../stores/useLevelStore'
+import AdminDonutChart from './AdminDonutChart'
+import AdminBarChart from './AdminBarChart'
+
+// Sustituto honesto de "Students Attendance" — esta plataforma no registra
+// asistencia, y `profiles` no tiene `created_at` en producción (se
+// intentó, la consulta truena: "column profiles.created_at does not
+// exist"), así que en vez de eso se grafica algo real y ya disponible sin
+// tocar la base de datos: cuántos cursos hay por categoría.
+function coursesByCategory(catalog) {
+  const counts = {}
+  catalog.forEach((c) => { const key = c.category || 'Otros'; counts[key] = (counts[key] ?? 0) + 1 })
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 7).map(([label, value]) => ({ label, value }))
+}
 
 const AGE_PROFILES = [
   { id: 'normal', label: 'Normal', icon: '🧑' },
@@ -124,14 +139,18 @@ function StudentRow({ student, onSetAgeProfile }) {
 // — ese perfil sigue siendo editable por alumno, solo dejó de ser el eje
 // organizador del directorio).
 export default function AdminDashboardPage() {
-  const navigate = useNavigate()
   const isAdmin = useAuthStore((s) => s.isAdmin)
   const students = useAdminUsersStore((s) => s.students)
+  const teachers = useAdminUsersStore((s) => s.teachers)
   const loading = useAdminUsersStore((s) => s.loading)
   const fetchError = useAdminUsersStore((s) => s.error)
   const fetchStudents = useAdminUsersStore((s) => s.fetchStudents)
+  const fetchTeachers = useAdminUsersStore((s) => s.fetchTeachers)
   const approveStudent = useAdminUsersStore((s) => s.approveStudent)
   const setAgeProfile = useAdminUsersStore((s) => s.setAgeProfile)
+  const liveClasses = useLiveClassStore((s) => s.classes)
+  const fetchClasses = useLiveClassStore((s) => s.fetchClasses)
+  const courseCatalog = useCourseContentStore((s) => s.catalog)
   const [search, setSearch] = useState('')
 
   // `useMemo` (y cualquier otro hook) tiene que ir ANTES del early return de
@@ -147,10 +166,14 @@ export default function AdminDashboardPage() {
     seniors: students.filter((s) => s.age_profile === 'seniors').length,
   }), [students])
 
+  const categoryBars = useMemo(() => coursesByCategory(courseCatalog), [courseCatalog])
+
   useEffect(() => {
     if (!isAdmin?.()) return
     fetchStudents()
-  }, [fetchStudents, isAdmin])
+    fetchTeachers()
+    fetchClasses()
+  }, [fetchStudents, fetchTeachers, fetchClasses, isAdmin])
 
   if (!isAdmin?.()) {
     return (
@@ -161,6 +184,15 @@ export default function AdminDashboardPage() {
   }
 
   const pending = students.filter((s) => s.account_status === 'pending')
+
+  const upcomingClasses = liveClasses
+    .filter((c) => c.status !== 'finalizada' && (c.status === 'en_vivo' || new Date(c.scheduled_at) >= new Date()))
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+    .slice(0, 4)
+
+  const recentCourses = [...courseCatalog]
+    .sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0))
+    .slice(0, 4)
 
   const filtered = students.filter((s) => {
     if (!search.trim()) return true
@@ -179,26 +211,84 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tarjetas de conteo — informativas, no filtran el directorio de abajo */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-2xl font-black text-text">{counts.total}</p>
+            <p className="text-2xl font-black text-text">👥 {counts.total}</p>
             <p className="text-xs text-text-muted">Total alumnos</p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-2xl font-black text-text">🧑 {counts.normal}</p>
-            <p className="text-xs text-text-muted">Normal</p>
+            <p className="text-2xl font-black text-text">🧑‍🏫 {teachers.length}</p>
+            <p className="text-xs text-text-muted">Total profesores</p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-2xl font-black text-text">🧒 {counts.kids}</p>
-            <p className="text-xs text-text-muted">Niños</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-2xl font-black text-text">👴 {counts.seniors}</p>
-            <p className="text-xs text-text-muted">Abuelos</p>
+            <p className="text-2xl font-black text-text">📚 {courseCatalog.length}</p>
+            <p className="text-xs text-text-muted">Total cursos</p>
           </div>
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
             <p className="text-2xl font-black text-amber-400">⏳ {pending.length}</p>
             <p className="text-xs text-text-muted">Pendientes</p>
+          </div>
+        </div>
+
+        {/* Donut + barras — calco de "Growth"/"Students Attendance", con
+            datos reales: distribución de alumnos por perfil de edad y
+            cuántos cursos hay por categoría (ver coursesByCategory arriba
+            para el porqué del segundo, en vez de asistencia inventada). */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <AdminDonutChart
+            title="👥 Alumnos por perfil"
+            centerLabel={counts.total}
+            slices={[
+              { label: 'Normal', value: counts.normal, color: '#7c3aed' },
+              { label: 'Niños', value: counts.kids, color: '#38bdf8' },
+              { label: 'Abuelos', value: counts.seniors, color: '#fbbf24' },
+            ]}
+          />
+          <AdminBarChart title="📚 Cursos por categoría" bars={categoryBars} accent="#7c3aed" />
+        </div>
+
+        {/* Próximas clases + cursos recientes — calco de "Upcoming Lessons"/
+            "All New Courses", con datos reales de live_classes y del
+            catálogo de cursos. */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">🗓️ Próximas clases en vivo</p>
+            {upcomingClasses.length === 0 ? (
+              <p className="text-sm text-text-muted">No hay clases programadas.</p>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingClasses.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-hover">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-text">{c.status === 'en_vivo' ? '🔴 ' : ''}{c.title}</p>
+                      <p className="text-xs text-text-muted">
+                        {c.status === 'en_vivo' ? 'En vivo ahora' : new Date(c.scheduled_at).toLocaleString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link to="/admin/clases" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">Ver todas →</Link>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface p-4">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">🆕 Cursos recientes</p>
+            {recentCourses.length === 0 ? (
+              <p className="text-sm text-text-muted">Sin cursos todavía.</p>
+            ) : (
+              <ul className="space-y-2">
+                {recentCourses.map((c) => (
+                  <li key={c.id} className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-surface-hover">
+                    <span className="text-lg">{c.icon || '📘'}</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-text">{c.title}</p>
+                      <p className="text-xs text-text-muted">{c.category}{c.difficulty ? ` · ${c.difficulty}` : ''}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link to="/admin/cursos" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">Ver todos →</Link>
           </div>
         </div>
 
