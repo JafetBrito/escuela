@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import StatCard from '../shared/StatCard'
+// Reusa los charts genéricos ya construidos para los paneles de admin
+// (conic-gradient nativo, sin librería) — viven en components/admin por
+// dónde se necesitaron primero, pero no tienen nada específico de admin.
+import AdminDonutChart from '../admin/AdminDonutChart'
 import { Link, useParams } from 'react-router-dom'
 import { useLiveClassStore, canJoinClass, findClassByCode, classShortCode } from '../../stores/useLiveClassStore'
 import HubContent from './HubContent'
@@ -116,6 +120,34 @@ function ClassCard({ cls, onOpen }) {
       </div>
       <div className="shrink-0"><StatusPill status={cls.status} /></div>
     </button>
+  )
+}
+
+// ── Sección agrupada por estado — antes era una sola lista plana mezclando
+// en vivo/próximas/finalizadas en el orden que viniera de la consulta;
+// separarlas por estado es lo que de verdad "extiende" la página con
+// estructura real, no solo más aire. "Finalizadas" se tapa a SHOWN_CAP para
+// no volver la página interminable con el historial completo. ──
+const SHOWN_CAP = 5
+function Section({ title, classes, onOpen, cap }) {
+  const [expanded, setExpanded] = useState(false)
+  if (classes.length === 0) return null
+  const visible = cap && !expanded ? classes.slice(0, cap) : classes
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-black uppercase tracking-widest text-text-muted/60">
+        {title} <span className="text-text-muted/40">({classes.length})</span>
+      </h2>
+      <div className="space-y-3">
+        {visible.map((c) => <ClassCard key={c.id} cls={c} onOpen={onOpen} />)}
+      </div>
+      {cap && classes.length > cap && (
+        <button type="button" onClick={() => setExpanded((v) => !v)}
+          className="mt-2 w-full rounded-lg border border-border/60 py-1.5 text-xs font-bold text-primary hover:bg-primary/10">
+          {expanded ? 'Ver menos' : `Ver todas (${classes.length})`}
+        </button>
+      )}
+    </section>
   )
 }
 
@@ -247,35 +279,64 @@ export default function MyClassesPage() {
     if (classId) openClass(classId)
   }, [classId, openClass])
 
-  const liveCount = classes.filter((c) => c.status === 'en_vivo').length
-  const upcomingCount = classes.filter((c) => c.status === 'programada' && new Date(c.scheduled_at) >= new Date()).length
-  const finishedCount = classes.filter((c) => c.status === 'finalizada').length
+  const liveClasses = classes.filter((c) => c.status === 'en_vivo')
+  const upcomingClasses = classes.filter((c) => c.status === 'programada' && new Date(c.scheduled_at) >= new Date())
+  const finishedClasses = [...classes.filter((c) => c.status === 'finalizada')].reverse()
+  const liveCount = liveClasses.length
+  const upcomingCount = upcomingClasses.length
+  const finishedCount = finishedClasses.length
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
       <main className="flex-1 px-4 py-6 md:px-8">
-        <div className="mx-auto max-w-2xl">
-          {!activeClass && (
-            <>
-              <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
-                <h1 className="text-2xl font-black text-white sm:text-3xl">🎓 Mis Clases</h1>
-                <p className="mt-1 text-sm text-white/85">Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.</p>
+        {!activeClass && (
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
+              <h1 className="text-2xl font-black text-white sm:text-3xl">🎓 Mis Clases</h1>
+              <p className="mt-1 text-sm text-white/85">Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.</p>
+            </div>
+
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard icon="📅" value={classes.length} label="Total clases" />
+              <StatCard icon="🔴" value={liveCount} label="En vivo ahora" accent={liveCount > 0 ? 'text-red-400' : undefined} />
+              <StatCard icon="⏳" value={upcomingCount} label="Próximas" />
+              <StatCard icon="✅" value={finishedCount} label="Finalizadas" />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+              <div className="min-w-0 space-y-6">
+                <SyncCodeInput classes={classes} onOpen={openClass} />
+                {classes.length === 0 ? (
+                  <ClassList classes={classes} onOpen={openClass} />
+                ) : (
+                  <>
+                    <Section title="🔴 En vivo ahora" classes={liveClasses} onOpen={openClass} />
+                    <Section title="⏳ Próximas" classes={upcomingClasses} onOpen={openClass} />
+                    <Section title="✅ Finalizadas" classes={finishedClasses} onOpen={openClass} cap={SHOWN_CAP} />
+                  </>
+                )}
               </div>
 
-              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatCard icon="📅" value={classes.length} label="Total clases" />
-                <StatCard icon="🔴" value={liveCount} label="En vivo ahora" accent={liveCount > 0 ? 'text-red-400' : undefined} />
-                <StatCard icon="⏳" value={upcomingCount} label="Próximas" />
-                <StatCard icon="✅" value={finishedCount} label="Finalizadas" />
+              <div className="space-y-4">
+                <AdminDonutChart
+                  title="📊 Tus clases"
+                  centerLabel={classes.length}
+                  slices={[
+                    { label: 'Programadas', value: upcomingCount, color: '#fbbf24' },
+                    { label: 'En vivo', value: liveCount, color: '#f87171' },
+                    { label: 'Finalizadas', value: finishedCount, color: '#34d399' },
+                  ]}
+                />
               </div>
-
-              <SyncCodeInput classes={classes} onOpen={openClass} />
-              <ClassList classes={classes} onOpen={openClass} />
-            </>
-          )}
-          {activeClass && <ClassHub onBack={closeClass} />}
-        </div>
+            </div>
+          </div>
+        )}
+        {activeClass && (
+          <div className="mx-auto max-w-2xl">
+            <ClassHub onBack={closeClass} />
+          </div>
+        )}
       </main>
       <MascotCompanion />
     </div>
