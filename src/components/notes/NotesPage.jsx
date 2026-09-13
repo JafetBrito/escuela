@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import StatCard from '../shared/StatCard'
+import AdminDonutChart from '../admin/AdminDonutChart'
 import Inventory from '../inventory/Inventory'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -175,13 +176,19 @@ export default function NotesPage() {
   const linkCount = items.filter((i) => i.type === 'link').length
   const notionReady = notionConnected && Boolean(notionDatabaseId)
 
+  // Últimos 5 items reales (por createdAt) para el panel lateral — mismo
+  // patrón de "recientes" que ya usan los otros dashboards de esta ronda.
+  const recentItems = [...items]
+    .sort((a, b) => new Date(b.createdAt ?? 0) - new Date(a.createdAt ?? 0))
+    .slice(0, 5)
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
       <PageVideoModal pageKey="notas" />
 
       <main className="flex-1 px-4 py-8 md:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+        <div className="mx-auto max-w-6xl">
 
           {/* HEADER HERO DE LA PÁGINA */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-primary/80 to-primary px-6 py-8 shadow-lg">
@@ -193,28 +200,64 @@ export default function NotesPage() {
 
           {/* Tarjetas de estadísticas reales — reemplaza los badges de antes,
               mismo patrón que ya usan los otros dashboards de esta ronda. */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard icon="📝" value={noteCount} label={noteCount === 1 ? 'Nota' : 'Notas'} />
             <StatCard icon="🔗" value={linkCount} label={linkCount === 1 ? 'Enlace' : 'Enlaces'} />
             <StatCard icon="🗒️" value={notionReady ? 'Sí' : 'No'} label="Notion conectado" accent={notionReady ? 'text-emerald-400' : undefined} />
           </div>
 
-          {/* MÓDULO EXTERNO (Notion API) */}
-          <NotionSection />
+          {/* Layout ancho de 2 columnas — mismo patrón que /mis-clases: el
+              contenido real (Notion + inventario) a la izquierda, un donut
+              real + los últimos items a la derecha. */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_300px]">
+            <div className="min-w-0 space-y-6">
+              {/* MÓDULO EXTERNO (Notion API) */}
+              <NotionSection />
 
-          {/* MÓDULO INTERNO (Inventario Local de Notas) */}
-          <section className="flex flex-col gap-3">
-            <p className="tech-label">// Tu inventario de notas</p>
-            <p className="text-sm text-text-muted">
-              Haz clic en una nota para abrirla en una ventana emergente y editarla.
-            </p>
-            
-            {/* NOTA TÉCNICA: El componente <Inventory /> no recibe props porque 
-              él mismo se conecta a `useInventoryStore` por dentro. 
-              Aquí solo se está instanciando visualmente. 
-            */}
-            <Inventory />
-          </section>
+              {/* MÓDULO INTERNO (Inventario Local de Notas) */}
+              <section className="flex flex-col gap-3">
+                <p className="tech-label">// Tu inventario de notas</p>
+                <p className="text-sm text-text-muted">
+                  Haz clic en una nota para abrirla en una ventana emergente y editarla.
+                </p>
+
+                {/* NOTA TÉCNICA: El componente <Inventory /> no recibe props porque
+                  él mismo se conecta a `useInventoryStore` por dentro.
+                  Aquí solo se está instanciando visualmente.
+                */}
+                <Inventory />
+              </section>
+            </div>
+
+            <div className="space-y-4">
+              <AdminDonutChart
+                title="📊 Tus notas"
+                centerLabel={items.length}
+                slices={[
+                  { label: 'Notas', value: noteCount, color: '#7c3aed' },
+                  { label: 'Enlaces', value: linkCount, color: '#38bdf8' },
+                ]}
+              />
+
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">🕘 Recientes</p>
+                {recentItems.length === 0 ? (
+                  <p className="text-sm text-text-muted">Sin notas todavía.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {recentItems.map((item) => (
+                      <li key={item.id} className="flex items-start gap-2 rounded-xl px-1 py-1">
+                        <span className="mt-0.5 text-sm">{item.type === 'link' ? '🔗' : '📝'}</span>
+                        <p className="min-w-0 flex-1 truncate text-sm text-text-muted">
+                          {item.text || item.url || '(vacía)'}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
