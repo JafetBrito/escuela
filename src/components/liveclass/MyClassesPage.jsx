@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import StatCard from '../shared/StatCard'
 import { Link, useParams } from 'react-router-dom'
 import { useLiveClassStore, canJoinClass, findClassByCode, classShortCode } from '../../stores/useLiveClassStore'
 import HubContent from './HubContent'
@@ -246,6 +247,10 @@ export default function MyClassesPage() {
     if (classId) openClass(classId)
   }, [classId, openClass])
 
+  const liveCount = classes.filter((c) => c.status === 'en_vivo').length
+  const upcomingCount = classes.filter((c) => c.status === 'programada' && new Date(c.scheduled_at) >= new Date()).length
+  const finishedCount = classes.filter((c) => c.status === 'finalizada').length
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
@@ -253,8 +258,18 @@ export default function MyClassesPage() {
         <div className="mx-auto max-w-2xl">
           {!activeClass && (
             <>
-              <h1 className="mb-1 text-2xl font-black text-text">🎓 Mis Clases</h1>
-              <p className="mb-6 text-sm text-text-muted">Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.</p>
+              <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
+                <h1 className="text-2xl font-black text-white sm:text-3xl">🎓 Mis Clases</h1>
+                <p className="mt-1 text-sm text-white/85">Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.</p>
+              </div>
+
+              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard icon="📅" value={classes.length} label="Total clases" />
+                <StatCard icon="🔴" value={liveCount} label="En vivo ahora" accent={liveCount > 0 ? 'text-red-400' : undefined} />
+                <StatCard icon="⏳" value={upcomingCount} label="Próximas" />
+                <StatCard icon="✅" value={finishedCount} label="Finalizadas" />
+              </div>
+
               <SyncCodeInput classes={classes} onOpen={openClass} />
               <ClassList classes={classes} onOpen={openClass} />
             </>

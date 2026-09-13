@@ -19,6 +19,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
+import StatCard from '../shared/StatCard'
 import Inventory from '../inventory/Inventory'
 import { useInventoryStore } from '../../stores/useInventoryStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -166,10 +167,13 @@ export default function NotesPage() {
   const { t } = useI18n()
   // Leemos el inventario completo desde el estado global de Zustand
   const items = useInventoryStore((s) => s.items)
-  
+  const notionDatabaseId = useSettingsStore((s) => s.notionDatabaseId)
+  const notionConnected = useAiCredentialsStore((s) => s.connections.some((c) => c.providerId === 'notion'))
+
   // Filtramos para obtener los contadores visuales
   const noteCount = items.filter((i) => i.type === 'note').length
   const linkCount = items.filter((i) => i.type === 'link').length
+  const notionReady = notionConnected && Boolean(notionDatabaseId)
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -178,23 +182,21 @@ export default function NotesPage() {
 
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto flex max-w-3xl flex-col gap-6">
-          
+
           {/* HEADER HERO DE LA PÁGINA */}
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-primary/80 to-primary px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-background drop-shadow-sm">{t('pages.notes.title')}</h1>
             <p className="mt-1 text-sm font-medium text-background/80">
               {t('pages.notes.subtitle')}
             </p>
-            
-            {/* Badges de estadísticas locales */}
-            <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-background">
-                📝 {noteCount} {noteCount === 1 ? 'nota' : 'notas'}
-              </span>
-              <span className="rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-background">
-                🔗 {linkCount} {linkCount === 1 ? 'enlace' : 'enlaces'}
-              </span>
-            </div>
+          </div>
+
+          {/* Tarjetas de estadísticas reales — reemplaza los badges de antes,
+              mismo patrón que ya usan los otros dashboards de esta ronda. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <StatCard icon="📝" value={noteCount} label={noteCount === 1 ? 'Nota' : 'Notas'} />
+            <StatCard icon="🔗" value={linkCount} label={linkCount === 1 ? 'Enlace' : 'Enlaces'} />
+            <StatCard icon="🗒️" value={notionReady ? 'Sí' : 'No'} label="Notion conectado" accent={notionReady ? 'text-emerald-400' : undefined} />
           </div>
 
           {/* MÓDULO EXTERNO (Notion API) */}
