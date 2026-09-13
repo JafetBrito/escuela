@@ -32,11 +32,14 @@ const AGE_PROFILES = [
 function PendingRow({ student, onApprove }) {
   const [ageProfile, setAgeProfile] = useState('kids')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleApprove = async () => {
     setBusy(true)
-    await onApprove(student.id, ageProfile)
+    setError(null)
+    const { error: err } = await onApprove(student.id, ageProfile)
     setBusy(false)
+    if (err) setError(err.message)
   }
 
   return (
@@ -44,6 +47,7 @@ function PendingRow({ student, onApprove }) {
       <div className="min-w-0">
         <p className="font-bold text-text">{student.display_name || student.email}</p>
         <p className="text-xs text-text-muted">{student.email}</p>
+        {error && <p className="mt-1 text-xs font-semibold text-danger">❌ {error}</p>}
       </div>
       <div className="flex items-center gap-2">
         <select
@@ -76,11 +80,23 @@ function PendingRow({ student, onApprove }) {
 // que organiza la lista, es solo un atributo editable por alumno.
 function StudentRow({ student, onSetAgeProfile }) {
   const [savedFlash, setSavedFlash] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const snapshot = student.snapshot ?? {}
   const { level, xpIntoLevel, xpForNextLevel } = levelProgress(snapshot.xp ?? 0)
 
+  // Antes esto SIEMPRE mostraba el ✓ sin mirar el resultado — si Supabase
+  // bloqueaba el UPDATE por RLS (0 filas, sin error) o lo rechazaba por
+  // cualquier otro motivo, el admin veía "guardado" en su propia sesión
+  // (estado optimista) mientras la fila real nunca cambiaba. Ver el
+  // comentario en useAdminUsersStore.setAgeProfile.
   const handleAgeProfileChange = async (e) => {
-    await onSetAgeProfile(student.id, e.target.value)
+    setSaveError(null)
+    const { error } = await onSetAgeProfile(student.id, e.target.value)
+    if (error) {
+      setSaveError(error.message)
+      setTimeout(() => setSaveError(null), 5000)
+      return
+    }
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 1200)
   }
@@ -98,6 +114,7 @@ function StudentRow({ student, onSetAgeProfile }) {
         <p className="mt-1 text-xs text-text-muted">
           Nivel <span className="font-bold text-primary">{level}</span> · {xpIntoLevel}/{xpForNextLevel} XP · 🪙 {snapshot.coins ?? 0}
         </p>
+        {saveError && <p className="mt-1 text-xs font-semibold text-danger">❌ {saveError}</p>}
       </Link>
 
       <div className="flex flex-wrap items-center gap-1.5">

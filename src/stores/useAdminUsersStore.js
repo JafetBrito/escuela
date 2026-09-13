@@ -30,35 +30,50 @@ export const useAdminUsersStore = create((set) => ({
     set({ students: data ?? [], loading: false, error: error?.message ?? null })
   },
 
+  // `.update(...)` SIN `.select()` no distingue "se actualizó" de "RLS lo
+  // bloqueó en silencio" — Postgrest devuelve éxito y 0 filas, sin error,
+  // en ambos casos (mismo gotcha ya documentado y arreglado en
+  // autoSave.js/pushSnapshotToCloud). Sin el `.select()` de abajo, un
+  // admin cuyo `is_admin()` no aplique por lo que sea vería el dropdown
+  // "cambiar" en su propia sesión (estado optimista) sin que la fila real
+  // en Supabase se tocara nunca — exactamente el reporte de "no produce
+  // ningún cambio".
   setAgeProfile: async (studentId, ageProfile) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .update({ age_profile: ageProfile })
       .eq('id', studentId)
-    if (!error) {
-      set((s) => ({
-        students: s.students.map((st) => (st.id === studentId ? { ...st, age_profile: ageProfile } : st)),
-      }))
+      .select('id')
+    if (error) return { error }
+    if (!data || data.length === 0) {
+      return { error: { message: 'La base de datos no aceptó el cambio (0 filas) — probablemente un permiso (RLS) de la tabla profiles.' } }
     }
-    return { error }
+    set((s) => ({
+      students: s.students.map((st) => (st.id === studentId ? { ...st, age_profile: ageProfile } : st)),
+    }))
+    return { error: null }
   },
 
   // Aprueba una cuenta pendiente (ver migration_022.sql — hoy solo pasa con
   // cuentas de niños creadas por un padre/tutor) y de una vez le asigna el
-  // perfil de edad final que elija el admin.
+  // perfil de edad final que elija el admin. Mismo chequeo de "0 filas" que
+  // setAgeProfile — ver comentario ahí.
   approveStudent: async (studentId, ageProfile) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .update({ account_status: 'active', age_profile: ageProfile })
       .eq('id', studentId)
-    if (!error) {
-      set((s) => ({
-        students: s.students.map((st) =>
-          st.id === studentId ? { ...st, account_status: 'active', age_profile: ageProfile } : st
-        ),
-      }))
+      .select('id')
+    if (error) return { error }
+    if (!data || data.length === 0) {
+      return { error: { message: 'La base de datos no aceptó el cambio (0 filas) — probablemente un permiso (RLS) de la tabla profiles.' } }
     }
-    return { error }
+    set((s) => ({
+      students: s.students.map((st) =>
+        st.id === studentId ? { ...st, account_status: 'active', age_profile: ageProfile } : st
+      ),
+    }))
+    return { error: null }
   },
 
   // Directorio de profesores para AdminTeachersPage — mismo shape que
@@ -102,17 +117,23 @@ export const useAdminUsersStore = create((set) => ({
   },
 
   promoteToTeacher: async (userId) => {
-    const { error } = await supabase.from('profiles').update({ role: 'teacher' }).eq('id', userId)
-    return { error }
+    const { data, error } = await supabase.from('profiles').update({ role: 'teacher' }).eq('id', userId).select('id')
+    if (error) return { error }
+    if (!data || data.length === 0) {
+      return { error: { message: 'La base de datos no aceptó el cambio (0 filas) — probablemente un permiso (RLS) de la tabla profiles.' } }
+    }
+    return { error: null }
   },
 
   // Vuelve a dejar la cuenta como alumno normal — por si el admin se
   // equivocó de persona al promover.
   demoteToStudent: async (userId) => {
-    const { error } = await supabase.from('profiles').update({ role: 'student' }).eq('id', userId)
-    if (!error) {
-      set((s) => ({ teachers: s.teachers.filter((t) => t.id !== userId) }))
+    const { data, error } = await supabase.from('profiles').update({ role: 'student' }).eq('id', userId).select('id')
+    if (error) return { error }
+    if (!data || data.length === 0) {
+      return { error: { message: 'La base de datos no aceptó el cambio (0 filas) — probablemente un permiso (RLS) de la tabla profiles.' } }
     }
-    return { error }
+    set((s) => ({ teachers: s.teachers.filter((t) => t.id !== userId) }))
+    return { error: null }
   },
 }))
