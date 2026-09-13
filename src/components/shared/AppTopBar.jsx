@@ -91,8 +91,8 @@ const GROUPS = [
     items: [
       // Buzón ya no vive aquí — es un ícono junto a la campanita de
       // notificaciones (pedido explícito del usuario), no un item de menú.
-      { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥', hideFor: ['kids'] },
-      { to: '/foro',   key: 'foro',   label: 'Foro',   icon: '🗣️', hideFor: ['kids'] },
+      { to: '/amigos', key: 'amigos', label: 'Amigos', icon: '👥', hideFor: ['kids', 'seniors'] },
+      { to: '/foro',   key: 'foro',   label: 'Foro',   icon: '🗣️', hideFor: ['kids', 'seniors'] },
     ],
   },
 ]
@@ -575,7 +575,7 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
         </nav>
       )}
     </header>
-    <CampusMarquee />
+    {profile?.age_profile !== 'seniors' && <CampusMarquee />}
     </>
   )
 }

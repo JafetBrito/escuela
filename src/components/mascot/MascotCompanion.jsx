@@ -20,6 +20,7 @@ import FourthWallPhone from '../vr/FourthWallPhone'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
 import { useSettingsStore } from '../../stores/useSettingsStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { getMascotById } from '../../data/mascotRegistry'
@@ -109,6 +110,11 @@ function clampBubblePos(right, bottom) {
 }
 
 export default function MascotCompanion({ courseId, module, hideViewport = false, vrMode = false }) {
+  // Cuenta de "personas mayores" — pedido explícito del usuario: nada de
+  // mascota 3D/misiones/inventario/personaje, solo un ícono de chat normal
+  // que abre el chat directo con la IA (mismo ChatTab que ya usan las otras
+  // versiones, sin el sistema completo alrededor).
+  const seniorMode = useAuthStore((s) => s.profile?.age_profile === 'seniors')
   const open         = useMascotCompanionStore((s) => s.open)
   const setOpen      = useMascotCompanionStore((s) => s.setOpen)
   const openLocked   = useMascotCompanionStore((s) => s.openLocked)
@@ -243,7 +249,21 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
       }`}
       style={!open && bubblePos ? { right: bubblePos.right, bottom: bubblePos.bottom } : undefined}
     >
-      {open && (
+      {open && seniorMode && (
+        <div className="flex h-[80vh] w-[95vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <p className="text-base font-bold text-text">💬 Chat</p>
+            <button onClick={() => setOpen(false)} className="text-text-muted hover:text-text" aria-label="Cerrar">
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <ChatTab courseId={courseId} module={module} className="h-full" />
+          </div>
+        </div>
+      )}
+
+      {open && !seniorMode && (
         <div className="flex h-[80vh] w-[95vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
           {/* Header */}
           <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
@@ -396,7 +416,9 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
           className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-primary bg-surface shadow-lg transition-transform hover:scale-105 sm:h-24 sm:w-24"
           aria-label="Cerrar mascota"
         >
-          {hideViewport ? (
+          {seniorMode ? (
+            <span className="text-3xl sm:text-4xl">💬</span>
+          ) : hideViewport ? (
             <span className="text-3xl sm:text-4xl">🐾</span>
           ) : (
             <MascotViewport className="h-full w-full" />
@@ -412,7 +434,7 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
           className="flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface/90 px-3 text-xs font-semibold text-text-muted shadow backdrop-blur hover:text-text"
           aria-label="Mostrar mascota"
         >
-          🐾 Mostrar
+          {seniorMode ? '💬' : '🐾'} Mostrar
         </button>
       ) : (
         <div className="relative">
@@ -434,7 +456,9 @@ export default function MascotCompanion({ courseId, module, hideViewport = false
             aria-label="Abrir mascota — mantén presionado y arrastra para moverla"
             title="Arrastra para moverla"
           >
-            {hideViewport ? (
+            {seniorMode ? (
+              <span className="text-3xl sm:text-4xl">💬</span>
+            ) : hideViewport ? (
               <span className="text-3xl sm:text-4xl">🐾</span>
             ) : (
               <MascotViewport className="h-full w-full" />
