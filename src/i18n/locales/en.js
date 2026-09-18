@@ -1330,6 +1330,7 @@ export const en = {
       room: 'My Room',
       campus: 'VR Campus',
       birthday: 'Your Birthday Party',
+      classroom: 'Classroom',
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

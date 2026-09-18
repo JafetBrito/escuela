@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useBirthdayStore, isBirthdayToday } from '../../stores/useBirthdayStore'
 
@@ -8,7 +7,6 @@ import { useBirthdayStore, isBirthdayToday } from '../../stores/useBirthdayStore
 // fuerza para probarlo con /cumpleanos (GmConsole) sin esperar la fecha
 // real. Mismo criterio visual que UpdatingBanner en App.jsx.
 export default function BirthdayModal() {
-  const navigate = useNavigate()
   const profile = useAuthStore((s) => s.profile)
   const lastClaimedYear = useBirthdayStore((s) => s.lastClaimedYear)
   const debugForceOpen = useBirthdayStore((s) => s.debugForceOpen)
@@ -31,7 +29,12 @@ export default function BirthdayModal() {
 
   const handleGoToParty = () => {
     handleClose()
-    navigate('/vr/cumpleanos')
+    // Navegación dura (no navigate() de react-router) a propósito: pedido
+    // explícito para que la transición sea siempre un arranque limpio de
+    // /vr/cumpleanos, sin arrastrar estado/modales de donde sea que
+    // estuviera parado antes (ej. el picker de mascota o el tablón de
+    // versión quedando abiertos encima de la intro de la fiesta).
+    window.location.href = '/vr/cumpleanos'
   }
 
   return (

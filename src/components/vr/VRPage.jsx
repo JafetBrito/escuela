@@ -340,6 +340,57 @@ function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   )
 }
 
+// Salón de Clases — primer paso de las instancias VR de clases privadas
+// (pedido explícito: "vamos poco a poco"). Por ahora es un mundo privado de
+// un solo jugador, igual que RoomWorld/AnfiteatroWorld/BirthdayPartyWorld —
+// solo para que el admin pueda entrar y revisar cómo se ve/camina el
+// modelo antes de construir encima las instancias reales por clase (canal
+// de multijugador propio por classId, crear la instancia desde el Campus,
+// cargar el contenido real de la clase). Mismo colisionador "trimesh" que
+// CampusGlbWorld, por la misma razón: un salón real tiene mesas/escritorios
+// a otras alturas, no un solo piso plano.
+function useLabRoomGround() {
+  return useImportedGlbGround('/MODELOS 3D/SALON DE CLASES/computer_lab.glb')
+}
+
+function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, className }) {
+  const { t } = useI18n()
+  const { model, groundRayHeight } = useLabRoomGround()
+
+  return (
+    <>
+      <RigidBody type="fixed" colliders="trimesh">
+        <primitive object={model} />
+      </RigidBody>
+      <Html position={[0, 3.2, 0]} center distanceFactor={14}>
+        <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
+          🏫 {className || 'Salón de Clases'}
+        </div>
+      </Html>
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        spawnAt={[0, 0, 0]}
+      />
+      <Portal
+        position={[0, 0, 6]}
+        color="#38bdf8"
+        label={t('vr.portalLabels.exitToCampus')}
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
+    </>
+  )
+}
+
 // Mapa de Pruebas — terreno plano y simple (sin la malla real de campus.glb),
 // mismo Player/física/combate/NPCs/monstruos que el campus real. El bug de
 // "se traba cerca de los NPCs" viene del colisionador 'trimesh' de
@@ -2384,6 +2435,7 @@ function World({
   worldTreeMode,
   testMode,
   birthdayMode,
+  classroomMode,
 }) {
   // Called unconditionally (before any of the per-mode early returns below)
   // so it always runs in the same order across renders of a mounted World
@@ -2469,6 +2521,22 @@ function World({
   if (birthdayMode) {
     return (
       <BirthdayPartyWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+      />
+    )
+  }
+
+  if (classroomMode) {
+    return (
+      <ClassroomWorld
         mascot={mascot}
         skin={skin}
         keysRef={keysRef}
@@ -3391,7 +3459,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false }) {
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false }) {
   const { t, lang } = useI18n()
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
@@ -3417,7 +3485,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode || classroomMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
   // Admin's hour/season/weather (DevToolsPanel) is mirrored to every
   // connected player via VR presence — see useVrMultiplayer's worldState
@@ -3460,6 +3528,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     const ok = isBirthdayToday(profile?.birthdate) || useBirthdayStore.getState().debugForceOpen
     if (!ok) navigate('/dashboard')
   }, [birthdayMode, profile?.birthdate, navigate])
+
+  // /vr/salon (ClassroomWorld) — primer paso de las instancias de clase,
+  // admin-only por ahora mientras se prueba el modelo (ver comentario en
+  // ClassroomWorld más arriba).
+  useEffect(() => {
+    if (!classroomMode) return
+    if (!useAuthStore.getState().isAdmin()) navigate('/dashboard')
+  }, [classroomMode, navigate])
 
   const [vrReady, setVrReady] = useState(false)
   // Intro de la fiesta (animación + botón "Entrar") — se muestra antes que
@@ -3889,6 +3965,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               anfiteatroMode={anfiteatroMode}
               testMode={testMode}
               birthdayMode={birthdayMode}
+              classroomMode={classroomMode}
             />
             {/* Parked companion mesh when follow mode is off */}
             <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
@@ -4262,7 +4339,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={birthdayMode ? t('vr.worldNames.birthday') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={birthdayMode ? t('vr.worldNames.birthday') : classroomMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

@@ -1334,6 +1334,7 @@ export const es = {
       room: 'Mi Room',
       campus: 'Campus VR',
       birthday: 'Tu Fiesta de Cumpleaños',
+      classroom: 'Salón de Clases',
     },
     worldTreeBadge: '🌳 Árbol del Mundo',
     buttons: {

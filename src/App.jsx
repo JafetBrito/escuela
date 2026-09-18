@@ -986,6 +986,16 @@ export default function App() {
           }
         />
         <Route
+          path="/vr/salon"
+          element={
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage classroomMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/vr/pruebas"
           element={
             <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
