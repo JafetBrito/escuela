@@ -378,9 +378,16 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
     return () => useClassSessionStore.getState().reset()
   }, [cls.id])
 
+  // El modelo del salón (computer_lab.glb) está a otra escala que el resto
+  // del juego — sin esto, el maestro y el alumno se ven como hormigas junto
+  // a los escritorios. 4x iguala más o menos la proporción real de una
+  // persona contra los muebles del salón.
+  const CLASS_CHARACTER_SCALE = 4
+
   const teacherNpc = useMemo(() => ({
     ...localizeNpcDialogue(JAFET_NPC, lang),
     position: CLASS_TEACHER_POSITION,
+    scale: NPC_SCALE * CLASS_CHARACTER_SCALE,
   }), [lang])
 
   const handleTalkToTeacher = () => {
@@ -418,6 +425,7 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
+        visualScale={CLASS_CHARACTER_SCALE}
         authorName={authorName}
         playerId={playerId}
         spawnAt={[0, 0, 0]}

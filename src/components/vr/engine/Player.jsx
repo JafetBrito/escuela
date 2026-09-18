@@ -102,6 +102,11 @@ export function Player({
   authorName,
   playerId,
   spawnAt,
+  // Mundos con un modelo importado a otra escala (ej. ClassroomWorld: el
+  // salón de clases se ve gigante junto al personaje, "como hormigas") —
+  // solo agranda el cuerpo visible, no la cápsula de colisión ni la cámara,
+  // así que sigue siendo un cambio acotado/cosmético.
+  visualScale = 1,
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -300,7 +305,7 @@ export function Player({
     if (meshGroup.current) {
       const bob = isMoving ? Math.abs(Math.sin(walkCycle.current)) * WALK_BOB_HEIGHT : 0
       const tilt = isMoving ? Math.sin(walkCycle.current) * WALK_TILT : 0
-      meshGroup.current.position.y = bob + PLAYER_SCALE * MODEL_HALF_HEIGHT
+      meshGroup.current.position.y = bob + PLAYER_SCALE * visualScale * MODEL_HALF_HEIGHT
       meshGroup.current.rotation.z = tilt
       meshGroup.current.rotation.x = isMoving ? WALK_TILT * 0.6 : 0
     }
@@ -409,7 +414,7 @@ export function Player({
             MASCOT_RELATIVE_SCALE) whether it's the active model or the
             companion trailing alongside — switching which one you're playing
             as never makes either model shrink or grow. */}
-        <group ref={meshGroup} scale={PLAYER_SCALE}>
+        <group ref={meshGroup} scale={PLAYER_SCALE * visualScale}>
           {activeChar === 'avatar' ? (
             <>
               <group scale={AVATAR_RELATIVE_SCALE}>
