@@ -5,6 +5,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import VideoPlayer from '../video/VideoPlayer'
 import HubContent from './HubContent'
 import { useLiveClassStore, classShortCode } from '../../stores/useLiveClassStore'
+import { VR_CLASSES } from '../../data/vrClassRegistry'
 
 // Clases "de práctica": no se programan, no tienen horario ni ventana de
 // espera — siempre están ahí. El video vive en ESTA página (computadora).
@@ -73,6 +74,29 @@ function SyncModal({ cls, onChoose, onClose }) {
         </button>
       </div>
     </div>
+  )
+}
+
+// Clase en VR (Salón de Clases) — distinta del catálogo de video de arriba
+// a propósito: entrar no abre un reproductor aquí, teletransporta de una
+// vez al mapa (navegación dura, mismo criterio que la fiesta de
+// cumpleaños: arranque siempre limpio del mundo 3D). Ver vrClassRegistry.js
+// y ClassroomWorld en VRPage.jsx.
+function VrClassCard({ cls }) {
+  return (
+    <button
+      onClick={() => { window.location.href = `/vr/salon/${cls.id}` }}
+      className="flex w-full items-start gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-4 text-left transition-colors hover:border-primary"
+    >
+      <span className="text-2xl">🕶️</span>
+      <div className="min-w-0 flex-1">
+        <p className="font-bold text-text">{cls.title}</p>
+        <p className="mt-0.5 text-sm text-text-muted">Con {cls.teacherName} · {cls.durationMinutes} min · en Realidad Virtual</p>
+      </div>
+      <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
+        Disponible
+      </span>
+    </button>
   )
 }
 
@@ -167,6 +191,13 @@ export default function AvailableClassesPage() {
             <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
               <h1 className="text-3xl font-extrabold text-white">🎬 Clases Disponibles</h1>
               <p className="mt-1 text-sm font-medium text-white/85">Clases de práctica siempre abiertas — sin horario, sin espera. Entra cuando quieras.</p>
+            </div>
+          )}
+
+          {!openClassEntry && (
+            <div className="mt-6 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🕶️ Clases en Realidad Virtual</p>
+              {Object.values(VR_CLASSES).map((c) => <VrClassCard key={c.id} cls={c} />)}
             </div>
           )}
 

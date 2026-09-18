@@ -5,6 +5,7 @@ import { BubbleStack } from './engine'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
+import { useClassSessionStore } from '../../stores/useClassSessionStore'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, getVrNpcById } from '../../data/vrNpcRegistry'
 
 // El canal 'vr:campus' se abre con broadcast self:false (useVrMultiplayer.js)
@@ -67,6 +68,10 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
   const sessionRef = useRef(0)
   const nearRef = useRef(false)
   const npcVecRef = useRef(new THREE.Vector3())
+  // Leído por onSkip (que no tiene el `payload` del onSpeech que originó el
+  // discurso en curso) para avisar a ClassEndPanel incluso si el alumno
+  // salta la clase en vez de dejarla terminar sola.
+  const activeClassIdRef = useRef(null)
 
   // Proximidad jugador↔NPC recalculada cada frame (por eso vive en un
   // useFrame dentro del <Canvas>, no en el componente 2D) — solo escribe al
@@ -84,8 +89,14 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
 
   useEffect(() => {
     const onSpeech = ({ payload }) => {
-      const npc = findNpc(payload?.npcId)
-      if (!npc || !payload?.script) return
+      const baseNpc = findNpc(payload?.npcId)
+      if (!baseNpc || !payload?.script) return
+      // Un guion de clase (ver ClassroomWorld) puede traer su propia
+      // `position` — el registro fijo (vrNpcRegistry) solo conoce dónde
+      // vive ese NPC en el Campus, no en cada Salón de Clases donde
+      // también puede aparecer para dar una clase.
+      const npc = payload.position ? { ...baseNpc, position: payload.position } : baseNpc
+      activeClassIdRef.current = payload.classId ?? null
       const session = ++sessionRef.current
       const chunks = chunkScript(payload.script)
       useNpcSpeechStore.getState().setActive(npc)
@@ -93,7 +104,7 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
       // con discurso programado, no solo Oliver, pensado como "sistema"
       // reutilizable para cuando existan más NPCs-maestro con diálogos.
       useWorldChatStore.getState().addSystemMessage(
-        `🗣️ ${npc.name} está compartiendo algo en el Campus — acércate para escucharlo.`,
+        `🗣️ ${npc.name} está compartiendo algo — acércate para escucharlo.`,
       )
 
       const speakChunk = (i) => {
@@ -101,6 +112,9 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
         if (i >= chunks.length) {
           setActive(null)
           useNpcSpeechStore.getState().clear()
+          // Si este guion era el de una clase (ClassroomWorld), avisa que
+          // terminó para que <ClassEndPanel> habilite la pregunta libre.
+          if (payload.classId) useClassSessionStore.getState().end()
           return
         }
         const text = chunks[i]
@@ -135,6 +149,9 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
       if (window.speechSynthesis) window.speechSynthesis.cancel()
       setActive(null)
       useNpcSpeechStore.getState().clear()
+      // Saltar una clase también cuenta como "terminarla" — si no, el
+      // alumno que salta nunca vería el panel de preguntas.
+      if (activeClassIdRef.current) useClassSessionStore.getState().end()
     }
     window.addEventListener(NPC_SPEECH_SKIP_EVENT, onSkip)
 

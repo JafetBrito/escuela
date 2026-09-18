@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import { Physics, RigidBody, CapsuleCollider, CuboidCollider, useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import AppTopBar from '../shared/AppTopBar'
 import PageVideoModal from '../shared/PageVideoModal'
@@ -42,6 +42,9 @@ import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { useNpcSpeechScheduler } from './useNpcSpeechScheduler'
 import NpcSpeechPlayer, { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
 import NpcDialogueBox from './NpcDialogueBox'
+import ClassEndPanel from './ClassEndPanel'
+import { useClassSessionStore } from '../../stores/useClassSessionStore'
+import { VR_CLASSES, getVrClassById } from '../../data/vrClassRegistry'
 import BirthdayDecorations, { LOCAL_PARTY_EVENT } from './BirthdayDecorations'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
 import { useBirthdayStore, isBirthdayToday } from '../../stores/useBirthdayStore'
@@ -353,9 +356,42 @@ function useLabRoomGround() {
   return useImportedGlbGround('/MODELOS 3D/SALON DE CLASES/computer_lab.glb')
 }
 
-function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, className }) {
-  const { t } = useI18n()
+// Dónde está parado el maestro dentro del Salón de Clases — no es la misma
+// posición que JAFET_NPC tiene en el Campus (ver la `position` que viaja en
+// el payload de npc_speech para que la burbuja/caja de diálogo aparezcan
+// aquí y no allá).
+const CLASS_TEACHER_POSITION = [3, 0, 3]
+
+function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, classId }) {
+  const { t, lang } = useI18n()
   const { model, groundRayHeight } = useLabRoomGround()
+  // Sin classId (admin entrando a /vr/salon a secas, para probar) cae en la
+  // primera clase del registro — así el admin siempre ve el flujo completo.
+  const cls = getVrClassById(classId) ?? Object.values(VR_CLASSES)[0]
+
+  useEffect(() => {
+    useClassSessionStore.getState().setActiveClass(cls.id)
+    return () => useClassSessionStore.getState().reset()
+  }, [cls.id])
+
+  const teacherNpc = useMemo(() => ({
+    ...localizeNpcDialogue(JAFET_NPC, lang),
+    position: CLASS_TEACHER_POSITION,
+  }), [lang])
+
+  const handleTalkToTeacher = () => {
+    if (useClassSessionStore.getState().started) return
+    useClassSessionStore.getState().start()
+    window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, {
+      detail: {
+        npcId: cls.npcId,
+        script: cls.script,
+        classId: cls.id,
+        position: CLASS_TEACHER_POSITION,
+        startedAt: Date.now(),
+      },
+    }))
+  }
 
   return (
     <>
@@ -364,9 +400,10 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
       </RigidBody>
       <Html position={[0, 3.2, 0]} center distanceFactor={14}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-          🏫 {className || 'Salón de Clases'}
+          🏫 {cls.title} · {cls.teacherName} · {cls.durationMinutes} min
         </div>
       </Html>
+      <IdleNpc config={teacherNpc} playerPositionRef={playerPositionRef} onInteract={handleTalkToTeacher} />
       <Player
         mascot={mascot}
         skin={skin}
@@ -1584,7 +1621,7 @@ function VrNpc({ npc, playerPositionRef }) {
 }
 
 // NPCs only speak when left-clicked — no auto-speech.
-function IdleNpc({ config, playerPositionRef }) {
+function IdleNpc({ config, playerPositionRef, onInteract }) {
   const { lang } = useI18n()
   const mascot      = useMemo(() => getMascotById(config.mascotId), [config.mascotId])
   const [bubbles, setBubbles] = useState([])
@@ -1672,7 +1709,10 @@ function IdleNpc({ config, playerPositionRef }) {
         // frase.
         if (useNpcSpeechStore.getState().activeNpcId === config.id) return
         useTargetStore.getState().setTarget('npc', config.id)
-        sayOneLine()
+        // Un NPC "maestro" (ver ClassroomWorld) reemplaza la línea suelta
+        // normal por su propia lógica (arrancar el guion de la clase).
+        if (onInteract) onInteract()
+        else sayOneLine()
       }}>
       {/* Transparent hitbox so click works even before model loads — solo
           para el instante antes de que cargue el modelo real, así que no
@@ -2436,6 +2476,7 @@ function World({
   testMode,
   birthdayMode,
   classroomMode,
+  classId,
 }) {
   // Called unconditionally (before any of the per-mode early returns below)
   // so it always runs in the same order across renders of a mounted World
@@ -2546,6 +2587,7 @@ function World({
         authorName={authorName}
         playerId={playerId}
         onNearPortalChange={onNearPortalChange}
+        classId={classId}
       />
     )
   }
@@ -3462,6 +3504,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false }) {
   const { t, lang } = useI18n()
   const navigate = useNavigate()
+  const { classId } = useParams()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
@@ -3529,13 +3572,16 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     if (!ok) navigate('/dashboard')
   }, [birthdayMode, profile?.birthdate, navigate])
 
-  // /vr/salon (ClassroomWorld) — primer paso de las instancias de clase,
-  // admin-only por ahora mientras se prueba el modelo (ver comentario en
-  // ClassroomWorld más arriba).
+  // /vr/salon(/:classId) (ClassroomWorld) — cualquier alumno autenticado
+  // puede entrar a una clase REAL del registro (VR_CLASSES, ver
+  // vrClassRegistry.js). /vr/salon a secas (sin classId, o uno que no
+  // existe) sigue siendo solo para el admin: es el modo de "voy probando
+  // el salón", no una clase real que un alumno deba poder abrir.
   useEffect(() => {
     if (!classroomMode) return
+    if (classId && getVrClassById(classId)) return
     if (!useAuthStore.getState().isAdmin()) navigate('/dashboard')
-  }, [classroomMode, navigate])
+  }, [classroomMode, classId, navigate])
 
   const [vrReady, setVrReady] = useState(false)
   // Intro de la fiesta (animación + botón "Entrar") — se muestra antes que
@@ -3966,6 +4012,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               testMode={testMode}
               birthdayMode={birthdayMode}
               classroomMode={classroomMode}
+              classId={classId}
             />
             {/* Parked companion mesh when follow mode is off */}
             <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
@@ -4078,6 +4125,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
 
         {hudVisible && <NpcDialogueBox />}
+        {hudVisible && classroomMode && <ClassEndPanel />}
 
         {!isPrivateWorld && (
           <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} playerRotationRef={playerRotationRef} />
