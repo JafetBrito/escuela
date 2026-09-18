@@ -1478,7 +1478,11 @@ function VrNpc({ npc, playerPositionRef }) {
     if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
     const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
     if (!clean) return
-    window.speechSynthesis.cancel()
+    // No corta lo que ya está sonando (el discurso programado de Oliver u
+    // otro NPC) — antes cualquier clic mataba a media frase lo que fuera
+    // que estuviera sonando. La burbuja de texto sigue apareciendo igual,
+    // solo se omite la voz si ya hay una sonando.
+    if (window.speechSynthesis.speaking) return
     const utt = new SpeechSynthesisUtterance(clean)
     utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; utt.rate = 0.92; utt.pitch = 1.05
     window.speechSynthesis.speak(utt)
@@ -1597,7 +1601,9 @@ function IdleNpc({ config, playerPositionRef }) {
     if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
     const clean = text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
     if (!clean) return
-    window.speechSynthesis.cancel()
+    // Mismo criterio que VrNpc.sayDialogue: no corta lo que ya está
+    // sonando (discurso programado u otro NPC), solo omite la voz.
+    if (window.speechSynthesis.speaking) return
     const utt = new SpeechSynthesisUtterance(clean)
     utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; utt.rate = 0.95; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
@@ -2059,11 +2065,12 @@ function IdleNpcCard({ npcId, onClose, onChat }) {
     if (!npcVoice) return
     const clean = line.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
     if (!clean) return
-    window.speechSynthesis.cancel()
+    // Mismo criterio que sayDialogue/sayOneLine: no corta lo que ya está
+    // sonando, solo omite la voz de esta tarjeta.
+    if (window.speechSynthesis.speaking) return
     const utt = new SpeechSynthesisUtterance(clean)
     utt.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'it' ? 'it-IT' : lang === 'ca' ? 'ca-ES' : lang === 'ja' ? 'ja-JP' : lang === 'zh' ? 'zh-CN' : 'es-ES'; utt.rate = 0.9; utt.pitch = 1.1
     window.speechSynthesis.speak(utt)
-    return () => window.speechSynthesis.cancel()
   }, [cfg, line, lang])
 
   if (!cfg) return null
@@ -3445,7 +3452,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     if (!useVrSettingsStore.getState().npcVoice || !window.speechSynthesis) return
     const clean = last.text.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').replace(/[^\w\s.,!?¿¡]/g, '').trim()
     if (!clean) return
-    window.speechSynthesis.cancel()
+    // Mismo criterio que los NPCs: no corta un discurso/diálogo que ya está
+    // sonando, solo omite la voz de este mensaje de chat.
+    if (window.speechSynthesis.speaking) return
     const utt = new SpeechSynthesisUtterance(clean)
     const isOwnMessage = last.authorId === playerId
     const isMascotActive = isOwnMessage && useVrCharacterStore.getState().activeChar === 'mascot'

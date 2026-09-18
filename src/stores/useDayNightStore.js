@@ -21,6 +21,36 @@ async function persistWorldState(state) {
   })
 }
 
+// El DevToolsPanel del admin es global (se puede abrir desde cualquier
+// página, no solo estando dentro de /vr) pero el mecanismo de sincronización
+// en vivo (applyRemoteState) solo llegaba a los demás jugadores vía VR
+// presence, que useVrMultiplayer solo trackea mientras el admin está
+// físicamente montado en VRPage — si el admin cambiaba la hora desde el
+// Dashboard, quedaba guardado en Supabase pero nadie ya conectado a la
+// plaza lo veía hasta su próxima recarga. Este broadcast directo sobre el
+// mismo canal 'vr:campus' (evento 'world_state', ver useVrMultiplayer.js)
+// llega en vivo sin importar en qué página esté el admin — mismo patrón de
+// canal reusable/perezoso que /discurso en GmConsole.jsx.
+let worldStateChannel = null
+function broadcastWorldState(state) {
+  if (!supabase) return
+  if (!worldStateChannel) {
+    worldStateChannel = supabase.channel('vr:campus', { config: { broadcast: { self: false } } })
+    worldStateChannel.subscribe()
+  }
+  worldStateChannel.send({
+    type: 'broadcast',
+    event: 'world_state',
+    payload: {
+      mode: state.mode,
+      manualBaseHour: state.manualBaseHour,
+      manualBaseAtMs: state.manualBaseAtMs,
+      season: state.season,
+      weather: state.weather,
+    },
+  })
+}
+
 // Hora real del sistema (no un timer de juego): por defecto sigue el reloj
 // real minuto a minuto. Un admin puede forzar una hora puntual desde
 // DevToolsPanel — desde ahí el reloj sigue avanzando normal (1 hora real =
@@ -63,10 +93,10 @@ export const useDayNightStore = create((set, get) => ({
     })
   },
 
-  setManualHour: (hour) => { set({ mode: 'manual', manualBaseHour: hour, manualBaseAtMs: Date.now() }); persistWorldState(get()) },
-  useRealTime: () => { set({ mode: 'real' }); persistWorldState(get()) },
-  setSeason: (season) => { set({ season }); persistWorldState(get()) },
-  setWeather: (weather) => { set({ weather }); persistWorldState(get()) },
+  setManualHour: (hour) => { set({ mode: 'manual', manualBaseHour: hour, manualBaseAtMs: Date.now() }); persistWorldState(get()); broadcastWorldState(get()) },
+  useRealTime: () => { set({ mode: 'real' }); persistWorldState(get()); broadcastWorldState(get()) },
+  setSeason: (season) => { set({ season }); persistWorldState(get()); broadcastWorldState(get()) },
+  setWeather: (weather) => { set({ weather }); persistWorldState(get()); broadcastWorldState(get()) },
 
   // Applied by useVrMultiplayer when it sees an admin's tracked world-state
   // in VR presence — keeps every connected player's sky/weather in sync with

@@ -117,6 +117,17 @@ export function useVrMultiplayer({
       remoteActionsRef.current.set(payload.id, payload)
     })
 
+    // Cambio de hora/estación/clima disparado desde CUALQUIER página (el
+    // DevToolsPanel del admin es global, no solo dentro de /vr) — ver
+    // broadcastWorldState en useDayNightStore.js. Complementa el presence
+    // 'sync' de arriba, que solo entrega el estado a quien se conecta
+    // DESPUÉS del cambio; este evento avisa en vivo a quien ya estaba
+    // conectado en ese momento.
+    channel.on('broadcast', { event: 'world_state' }, ({ payload }) => {
+      if (!payload) return
+      useDayNightStore.getState().applyRemoteState(payload)
+    })
+
     channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
       if (!payload || payload.id === playerId) return
       // Whispers carry a `target` player id and are only shown to that
