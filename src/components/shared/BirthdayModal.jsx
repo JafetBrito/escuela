@@ -31,7 +31,7 @@ export default function BirthdayModal() {
 
   const handleGoToParty = () => {
     handleClose()
-    navigate('/vr')
+    navigate('/vr/cumpleanos')
   }
 
   return (
@@ -71,7 +71,7 @@ export default function BirthdayModal() {
           onClick={handleGoToParty}
           className="mt-2 w-full rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-text hover:border-primary"
         >
-          🎉 Ir a tu fiesta en el Campus VR →
+          🎉 Ir a tu fiesta →
         </button>
 
         <button

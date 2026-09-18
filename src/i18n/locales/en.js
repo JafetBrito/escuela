@@ -1329,6 +1329,7 @@ export const en = {
       anfiteatro: 'Amphitheater',
       room: 'My Room',
       campus: 'VR Campus',
+      birthday: 'Your Birthday Party',
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

@@ -5,12 +5,9 @@ import { useSpawnedNpcStore } from '../../stores/useSpawnedNpcStore'
 import { MOB_TYPES } from '../../data/mobRegistry'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, VR_NPCS } from '../../data/vrNpcRegistry'
 import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
-import { BIRTHDAY_NPC_ID, buildBirthdaySpeech } from '../../data/birthdaySpeech'
 import { supabase } from '../../services/supabase/client'
-import { useAuthStore } from '../../stores/useAuthStore'
 import { useBirthdayStore } from '../../stores/useBirthdayStore'
 import { LOCAL_SPEECH_EVENT } from '../vr/NpcSpeechPlayer'
-import { LOCAL_PARTY_EVENT } from '../vr/BirthdayDecorations'
 
 const SUMMONABLE_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
 const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -32,7 +29,7 @@ const COMMAND_PALETTE = [
   { cmd: '/who ', desc: 'Buscar jugador' },
   { cmd: '/target ', desc: 'Cambiar a quién afectan los comandos' },
   { cmd: '/discurso ', desc: 'Disparar ahora el discurso programado de un NPC (prueba)' },
-  { cmd: '/cumpleanos ', desc: 'Simular la fiesta de cumpleaños (prueba, sin esperar la fecha real)' },
+  { cmd: '/cumpleanos', desc: 'Abrir el modal de cumpleaños sin esperar la fecha real (prueba)' },
 ]
 
 const HELP_LINES = [
@@ -49,7 +46,7 @@ const HELP_LINES = [
   '  /who <texto>           — busca jugadores por correo o nombre',
   '  /target <correo|yo>    — cambia a quién afectan los comandos',
   '  /discurso <npcId>      — dispara ahora el discurso programado de ese NPC (ej. oliver), para probarlo sin esperar a la hora',
-  '  /cumpleanos [nombre]   — simula la fiesta de cumpleaños completa (canción + globos + modal de regalo), sin esperar la fecha real',
+  '  /cumpleanos             — abre el modal de cumpleaños sin esperar la fecha real; su botón "Ir a tu fiesta" lleva al mapa privado',
 ]
 
 // Admin-only "GM console" (World of Warcraft moderator-style): a command
@@ -189,49 +186,14 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
           }
         }
       } else if (cmd === 'cumpleanos') {
-        // Simula la fiesta completa (canción de Oliver + globos + modal de
-        // regalo) sin esperar la fecha real ni tocar lastClaimedYear — mismo
-        // criterio que /discurso: solo para probar/demostrar el sistema.
-        let channel = channelRef?.current
-        for (let i = 0; i < 10 && !channel; i++) {
-          await new Promise((r) => setTimeout(r, 300))
-          channel = channelRef?.current
-        }
-        if (!channel) {
-          if (!standaloneChannelRef.current) {
-            log('⏳ Abriendo conexión temporal al Campus (no estás dentro del mundo VR)…')
-            const ch = supabase.channel('vr:campus', { config: { broadcast: { self: false } } })
-            const subscribed = await new Promise((resolve) => {
-              const timeout = setTimeout(() => resolve(false), 8000)
-              ch.subscribe((status) => {
-                if (status === 'SUBSCRIBED') { clearTimeout(timeout); resolve(true) }
-                else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                  clearTimeout(timeout); resolve(false)
-                }
-              })
-            })
-            if (subscribed) {
-              standaloneChannelRef.current = ch
-            } else {
-              supabase.removeChannel(ch)
-              log('❌ No se pudo abrir la conexión temporal (revisa tu internet e inténtalo de nuevo).')
-            }
-          }
-          channel = standaloneChannelRef.current
-        }
-        if (!channel) {
-          log('❌ No hay conexión al mundo compartido todavía — espera a que "Conectado" aparezca arriba y vuelve a intentar.')
-        } else {
-          const name = args.join(' ') || useAuthStore.getState().profile?.display_name || 'alguien especial'
-          const speechPayload = { npcId: BIRTHDAY_NPC_ID, script: buildBirthdaySpeech(name), startedAt: Date.now() }
-          channel.send({ type: 'broadcast', event: 'npc_speech', payload: speechPayload })
-          window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, { detail: speechPayload }))
-          const partyPayload = { name, startedAt: Date.now() }
-          channel.send({ type: 'broadcast', event: 'birthday_party', payload: partyPayload })
-          window.dispatchEvent(new CustomEvent(LOCAL_PARTY_EVENT, { detail: partyPayload }))
-          useBirthdayStore.getState().forceOpen()
-          log(`✅ Fiesta de cumpleaños de "${name}" disparada — deberías verla/oírla tú también ahora mismo, y el modal de regalo debería abrirse.`)
-        }
+        // Abre el modal de cumpleaños sin esperar la fecha real ni tocar
+        // lastClaimedYear (ver useBirthdayStore.js) — el botón "Ir a tu
+        // fiesta" del modal ya lleva a /vr/cumpleanos, que también respeta
+        // este mismo debugForceOpen para dejar entrar sin ser tu cumpleaños
+        // de verdad. La canción/globos los dispara ese mapa privado solo,
+        // no hace falta ningún broadcast desde aquí.
+        useBirthdayStore.getState().forceOpen()
+        log('✅ Modal de cumpleaños abierto en modo de prueba — usa su botón "Ir a tu fiesta" para entrar al mapa.')
       } else if (cmd === 'target') {
         const query = args.join(' ')
         if (!query || query === 'yo') {

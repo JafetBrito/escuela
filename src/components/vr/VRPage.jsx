@@ -12,7 +12,7 @@ import MascotCompanion from '../mascot/MascotCompanion'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
-import { getVrNpcById, VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
+import { getVrNpcById, VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC } from '../../data/vrNpcRegistry'
 import { localizeNpcDialogue } from '../../data/vrNpcTranslations'
 import { getGlobalMissionById, evaluateMission } from '../../data/globalMissionsRegistry'
 import { localizeMission } from '../../data/globalMissionsTranslations'
@@ -43,7 +43,7 @@ import { useNpcSpeechScheduler } from './useNpcSpeechScheduler'
 import NpcSpeechPlayer, { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
 import BirthdayDecorations, { LOCAL_PARTY_EVENT } from './BirthdayDecorations'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
-import { isBirthdayToday } from '../../stores/useBirthdayStore'
+import { useBirthdayStore, isBirthdayToday } from '../../stores/useBirthdayStore'
 import { BIRTHDAY_NPC_ID, buildBirthdaySpeech } from '../../data/birthdaySpeech'
 import MobField from './MobField'
 import { useMobStore } from '../../stores/useMobStore'
@@ -1549,7 +1549,7 @@ function IdleNpc({ config, playerPositionRef }) {
     // Felicitación fija si hoy es el cumpleaños de quien mira (ver
     // isBirthdayToday/useBirthdayStore.js) — tiene prioridad sobre la IA y
     // las líneas normales, mismo criterio en Jafet/Einstein/Korin.
-    if (config.birthdayLine && isBirthdayToday(useAuthStore.getState().profile?.birthdate)) {
+    if (config.birthdayLine && (isBirthdayToday(useAuthStore.getState().profile?.birthdate) || useBirthdayStore.getState().debugForceOpen)) {
       text = config.birthdayLine
     }
     if (!text && config.aiPrompt) {
@@ -2235,6 +2235,129 @@ function VideoScreenModal({ onClose }) {
   )
 }
 
+// Mapa privado y separado para la fiesta de cumpleaños — el mundo original
+// hecho a mano con Three.js (useCampusGround.js: plaza, monumento, fuente,
+// Gran Aula, biblioteca...) antes de que USE_CAMPUS_GLB lo reemplazara por
+// el modelo 3D actual. Pedido explícito: no reusar el Campus GLB normal,
+// sino este — "el que construimos nosotros con código". Mundo privado de
+// un solo jugador (como RoomWorld/AnfiteatroWorld): no necesita
+// multiplayer real, así que la canción de Oliver y los globos se disparan
+// solo con el eco local (LOCAL_SPEECH_EVENT/LOCAL_PARTY_EVENT), sin abrir
+// ningún canal de broadcast.
+const BIRTHDAY_SPAWN = [0, 0, -4]
+const BIRTHDAY_EXIT_PORTAL = [0, 0, 14]
+
+function BirthdayPartyWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange }) {
+  const { t, lang } = useI18n()
+  const { model, groundRayHeight } = useCampusGround()
+  const profile = useAuthStore((s) => s.profile)
+  const firedRef = useRef(false)
+  // channelRef sin canal real — NpcSpeechPlayer/BirthdayDecorations ya
+  // escuchan su evento LOCAL_* sin necesitar un channelRef.current válido,
+  // solo lo piden como prop porque también saben escuchar un canal real
+  // cuando existe (mundo compartido).
+  const noChannelRef = useRef(null)
+
+  useEffect(() => {
+    if (firedRef.current) return
+    firedRef.current = true
+    const name = profile?.display_name || 'alguien especial'
+    const speechPayload = { npcId: BIRTHDAY_NPC_ID, script: buildBirthdaySpeech(name), startedAt: Date.now() }
+    window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, { detail: speechPayload }))
+    const partyPayload = { name, startedAt: Date.now() }
+    window.dispatchEvent(new CustomEvent(LOCAL_PARTY_EVENT, { detail: partyPayload }))
+  }, [profile?.display_name])
+
+  const guestNpcs = useMemo(() => [
+    { ...localizeNpcDialogue(OLIVER_NPC, lang), position: [0, 0, 3], scale: 1.6 },
+    { ...localizeNpcDialogue(JAFET_NPC, lang), position: [-4, 0, 0] },
+    { ...localizeNpcDialogue(EINSTEIN_NPC, lang), position: [4, 0, 0] },
+    { ...localizeNpcDialogue(SHOPKEEPER_NPC, lang), position: [0, 0, -8] },
+  ], [lang])
+
+  return (
+    <>
+      <primitive object={model} />
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[GROUND_RADIUS, 0.5, GROUND_RADIUS]} position={[0, -0.5, 0]} />
+      </RigidBody>
+      {guestNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
+      <NpcSpeechPlayer channelRef={noChannelRef} />
+      <BirthdayDecorations channelRef={noChannelRef} />
+      <Player
+        mascot={mascot}
+        skin={skin}
+        scenery={model}
+        groundRayHeight={groundRayHeight}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        spawnAt={BIRTHDAY_SPAWN}
+      />
+      <Portal
+        position={BIRTHDAY_EXIT_PORTAL}
+        color="#f97316"
+        label={t('vr.portalLabels.exitToCampus')}
+        playerPositionRef={playerPositionRef}
+        onNearbyChange={onNearPortalChange}
+      />
+    </>
+  )
+}
+
+// Pantalla de introducción de la fiesta — se muestra al entrar a
+// /vr/cumpleanos, ANTES de aparecer en el mapa. `BIRTHDAY_VIDEO_URL` queda
+// en null a propósito: no existe todavía un video real de cumpleaños, así
+// que se muestra una intro animada con CSS/emojis en su lugar. Si más
+// adelante se graba un video real, basta con poner aquí su URL (mismo
+// patrón que PRESENTATION_VIDEO_URL) para que se use un iframe en su lugar.
+const BIRTHDAY_VIDEO_URL = null
+
+function BirthdayIntroScreen({ name, onEnter }) {
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#1a0f2e] to-[#0f0818] p-4">
+      <div className="pointer-events-none absolute inset-0 text-4xl">
+        {['🎈', '🎉', '🎊', '🎂', '🎁', '⭐'].map((emoji, i) => (
+          <span
+            key={i}
+            className="absolute animate-bounce"
+            style={{ left: `${(i * 17 + 5) % 100}%`, top: `${(i * 23 + 8) % 90}%`, animationDelay: `${i * 0.3}s`, animationDuration: '2.4s' }}
+          >
+            {emoji}
+          </span>
+        ))}
+      </div>
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-primary/30 bg-surface/95 p-6 text-center shadow-2xl">
+        {BIRTHDAY_VIDEO_URL ? (
+          <div className="mb-4 aspect-video w-full overflow-hidden rounded-xl">
+            <iframe
+              src={BIRTHDAY_VIDEO_URL}
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Feliz cumpleaños"
+            />
+          </div>
+        ) : (
+          <p className="text-6xl">🎂</p>
+        )}
+        <p className="mt-3 text-2xl font-extrabold text-text">¡Feliz cumpleaños, {name}!</p>
+        <p className="mt-1 text-sm text-text-muted">Todo el campus te está esperando para celebrar.</p>
+        <button
+          type="button"
+          onClick={onEnter}
+          className="mt-5 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-background hover:opacity-90"
+        >
+          🎉 Entrar a la fiesta →
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
 // the player, NPCs, remote players, and the portal to the player's Room.
 // When roomMode/anfiteatroMode/worldTreeMode=true, renders the respective world.
@@ -2264,6 +2387,7 @@ function World({
   anfiteatroMode,
   worldTreeMode,
   testMode,
+  birthdayMode,
 }) {
   // Called unconditionally (before any of the per-mode early returns below)
   // so it always runs in the same order across renders of a mounted World
@@ -2346,6 +2470,22 @@ function World({
     )
   }
 
+  if (birthdayMode) {
+    return (
+      <BirthdayPartyWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+      />
+    )
+  }
+
   if (roomMode) {
     return (
       <RoomWorld
@@ -2381,7 +2521,6 @@ function World({
       <IdleNpc config={localizeNpcDialogue(JAFET_NPC, lang)}    playerPositionRef={playerPositionRef} />
       {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={localizeNpcDialogue(npc, lang)} playerPositionRef={playerPositionRef} />)}
       <NpcSpeechPlayer channelRef={channelRef} />
-      <BirthdayDecorations channelRef={channelRef} />
       <MobField />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
@@ -3256,7 +3395,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false }) {
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false }) {
   const { t, lang } = useI18n()
   const navigate = useNavigate()
   const keysRef = useMovementKeys()
@@ -3282,7 +3421,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
   // Admin's hour/season/weather (DevToolsPanel) is mirrored to every
   // connected player via VR presence — see useVrMultiplayer's worldState
@@ -3316,36 +3455,22 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // resto del multiplayer.
   useNpcSpeechScheduler({ channelRef, enabled: !isPrivateWorld })
 
-  // Fiesta de cumpleaños: si hoy es el cumpleaños de esta cuenta
-  // (profiles.birthdate), dispara UNA vez por entrada al Campus el mismo
-  // broadcast npc_speech (Oliver cantando Las Mañanitas) + un evento hermano
-  // 'birthday_party' que enciende los globos de BirthdayDecorations para
-  // TODOS los conectados, no solo para quien cumple años. channelRef tarda
-  // un instante en poblarse (useVrMultiplayer conecta async) — mismo
-  // reintento corto que ya usa GmConsole para /discurso.
-  const birthdayFiredRef = useRef(false)
+  // /vr/cumpleanos es un mapa privado aparte (BirthdayPartyWorld) — nada se
+  // dispara en el Campus normal. Si alguien llega a esa ruta sin ser
+  // realmente su cumpleaños (ni estar probándolo con /cumpleanos en la
+  // Consola GM), lo regresa al dashboard en vez de dejarlo ver la fiesta.
   useEffect(() => {
-    if (isPrivateWorld || birthdayFiredRef.current) return
-    if (!isBirthdayToday(profile?.birthdate)) return
+    if (!birthdayMode) return
+    const ok = isBirthdayToday(profile?.birthdate) || useBirthdayStore.getState().debugForceOpen
+    if (!ok) navigate('/dashboard')
+  }, [birthdayMode, profile?.birthdate, navigate])
 
-    let interval = null
-    const tryFire = () => {
-      const channel = channelRef.current
-      if (!channel) return false
-      birthdayFiredRef.current = true
-      const name = accountName || 'alguien especial'
-      const speechPayload = { npcId: BIRTHDAY_NPC_ID, script: buildBirthdaySpeech(name), startedAt: Date.now() }
-      channel.send({ type: 'broadcast', event: 'npc_speech', payload: speechPayload })
-      window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, { detail: speechPayload }))
-      const partyPayload = { name, startedAt: Date.now() }
-      channel.send({ type: 'broadcast', event: 'birthday_party', payload: partyPayload })
-      window.dispatchEvent(new CustomEvent(LOCAL_PARTY_EVENT, { detail: partyPayload }))
-      return true
-    }
-    if (!tryFire()) interval = setInterval(() => { if (tryFire()) clearInterval(interval) }, 500)
-    return () => { if (interval) clearInterval(interval) }
-  }, [isPrivateWorld, profile?.birthdate, accountName, channelRef])
   const [vrReady, setVrReady] = useState(false)
+  // Intro de la fiesta (animación + botón "Entrar") — se muestra antes que
+  // cualquier otra cosa, incluida la pantalla normal de "pulsa una tecla
+  // para entrar", así que nada del mapa/canción/decoración arranca hasta
+  // que el jugador confirma que quiere entrar.
+  const [birthdayIntroSeen, setBirthdayIntroSeen] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
   const [nearClassNodeId, setNearClassNodeId] = useState(null)
   const [classSelectionStep, setClassSelectionStep] = useState('player') // 'player' | 'oliver' | 'done'
@@ -3766,6 +3891,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               roomMode={roomMode}
               anfiteatroMode={anfiteatroMode}
               testMode={testMode}
+              birthdayMode={birthdayMode}
             />
             {/* Parked companion mesh when follow mode is off */}
             <StayedCompanion mascot={mascot} skin={skin} avatarId={vrAvatarId} />
@@ -4127,10 +4253,17 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         )}
 
         {/* VR Loading Screen — shown until user presses any key */}
-        {!vrReady && (
+        {birthdayMode && !birthdayIntroSeen && (
+          <BirthdayIntroScreen
+            name={accountName || 'estrella del campus'}
+            onEnter={() => { setBirthdayIntroSeen(true); setVrReady(true) }}
+          />
+        )}
+
+        {!vrReady && !(birthdayMode && !birthdayIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={birthdayMode ? t('vr.worldNames.birthday') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 
