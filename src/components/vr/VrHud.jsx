@@ -474,6 +474,10 @@ export default function VrHud({
   isPrivateWorld = false,
   playerPosRef = null,
   onUseSkill,
+  // Salón de Clases: variante del sistema sin habilidades/combate visible —
+  // no toca isPrivateWorld (eso sigue afectando Room/Anfiteatro/etc. igual
+  // que siempre), es un prop aparte a propósito.
+  hideSkillBar = false,
 }) {
   return (
     <>
@@ -509,9 +513,11 @@ export default function VrHud({
           </div>
 
           {/* Bottom-center: skill bar (draggable) — sits above the XpBar (22px) */}
-          <div className="pointer-events-none absolute bottom-8 left-1/2 z-20 -translate-x-1/2">
-            <SkillBar onUseSkill={onUseSkill} />
-          </div>
+          {!hideSkillBar && (
+            <div className="pointer-events-none absolute bottom-8 left-1/2 z-20 -translate-x-1/2">
+              <SkillBar onUseSkill={onUseSkill} />
+            </div>
+          )}
 
           {/* Bottom: XP bar strip */}
           <XpBar />

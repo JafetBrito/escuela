@@ -44,6 +44,7 @@ import NpcSpeechPlayer, { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
 import NpcDialogueBox from './NpcDialogueBox'
 import ClassEndPanel from './ClassEndPanel'
 import ClassLessonRunner from './ClassLessonRunner'
+import ClassroomIntroModal from './ClassroomIntroModal'
 import { useClassSessionStore } from '../../stores/useClassSessionStore'
 import { VR_CLASSES, getVrClassById } from '../../data/vrClassRegistry'
 import BirthdayDecorations, { LOCAL_PARTY_EVENT } from './BirthdayDecorations'
@@ -354,22 +355,51 @@ function CampusGlbWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
 // CampusGlbWorld, por la misma razón: un salón real tiene mesas/escritorios
 // a otras alturas, no un solo piso plano.
 function useLabRoomGround() {
-  return useImportedGlbGround('/MODELOS 3D/SALON DE CLASES/computer_lab.glb')
+  // computer_lab.glb viene modelado a otra escala que "metros reales" — el
+  // auto-detect de useImportedGlbGround lo daba por bueno (cae dentro del
+  // rango que confía tal cual), pero en la práctica el maestro y el
+  // alumno se veían como hormigas junto a los escritorios. Agrandar a los
+  // personajes en vez de esto (intento anterior, 10x) arreglaba el
+  // tamaño pero hacía que caminar se sintiera raro — velocidad/animación
+  // siguen calibradas para el tamaño normal. Encoger el modelo en su lugar
+  // corrige ambas cosas a la vez. 0.15 es una primera estimación.
+  return useImportedGlbGround('/MODELOS 3D/SALON DE CLASES/computer_lab.glb', 0.15)
 }
 
-// Posición por defecto del maestro si una clase no trae la suya propia
-// (cls.teacherPosition, ver vrClassRegistry.js).
-const DEFAULT_TEACHER_POSITION = [3, 0, 3]
+// Proyector del salón — mismo patrón que CampusVideoScreen (iframe sobre un
+// panel 3D), pero de momento solo con el video de prueba que ya existía
+// (PRESENTATION_VIDEO_URL), sin control propio: es decoración/recurso
+// fijo, no un paso de la clase (eso es <ClassVideoStep> en
+// ClassLessonRunner.jsx, para cuando una clase traiga su propio video).
+function ClassProjectorScreen({ position }) {
+  const { t } = useI18n()
+  return (
+    <group position={position}>
+      <mesh position={[0, 0, -0.05]}>
+        <boxGeometry args={[2.4, 1.4, 0.06]} />
+        <meshStandardMaterial color="#0a0a14" />
+      </mesh>
+      <Html position={[0, 0, 0]} center distanceFactor={6} occlude={false}>
+        <div style={{ width: '260px', height: '150px', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
+          <iframe
+            width="260"
+            height="150"
+            src={PRESENTATION_VIDEO_URL}
+            title={t('vr.videoScreen.title')}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{ width: '100%', height: '100%', display: 'block' }}
+          />
+        </div>
+      </Html>
+    </group>
+  )
+}
 
-// El modelo del salón (computer_lab.glb) está a otra escala que el resto
-// del juego — sin esto, el maestro y el alumno se ven como hormigas junto
-// a los escritorios ("como un pequeño conejo" fue el reporte real). 10x
-// iguala mucho mejor la proporción de una persona contra los muebles.
-const CLASS_CHARACTER_SCALE = 10
-
-function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, classId }) {
+function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onNearComputerChange, classId }) {
   const { t, lang } = useI18n()
-  const { model, groundRayHeight } = useLabRoomGround()
+  const { model, groundRayHeight, footprintX, footprintZ } = useLabRoomGround()
   // Mundo privado de un solo jugador (como BirthdayPartyWorld) — sin canal
   // real, NpcSpeechPlayer solo necesita esta ref para saber que no hay
   // broadcast que escuchar, ya usa el eco local (LOCAL_SPEECH_EVENT) sin él.
@@ -377,17 +407,28 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   // Sin classId (admin entrando a /vr/salon a secas, para probar) cae en la
   // primera clase del registro — así el admin siempre ve el flujo completo.
   const cls = getVrClassById(classId) ?? Object.values(VR_CLASSES)[0]
-  const teacherPosition = cls.teacherPosition ?? DEFAULT_TEACHER_POSITION
+
+  // Layout como fracciones del tamaño REAL medido del salón (footprintX/Z,
+  // ver useImportedGlbGround) en vez de coordenadas fijas a ojo — así el
+  // maestro, el portal y la terminal quedan separados entre sí y dentro de
+  // las paredes sin importar el factor de escala exacto que termine
+  // haciendo falta ajustar. Reporte real: "está todo muy junto".
+  const spawnPosition = useMemo(() => [0, 0, -footprintZ * 0.1], [footprintZ])
+  const teacherPosition = useMemo(() => [footprintX * 0.22, 0, footprintZ * 0.08], [footprintX, footprintZ])
+  const portalPosition = useMemo(() => [-footprintX * 0.28, 0, footprintZ * 0.18], [footprintX, footprintZ])
+  const terminalPosition = useMemo(() => [footprintX * 0.1, 0, -footprintZ * 0.22], [footprintX, footprintZ])
+  const projectorPosition = useMemo(() => [0, 1.6, -footprintZ * 0.32], [footprintZ])
 
   useEffect(() => {
     useClassSessionStore.getState().setActiveClass(cls.id)
+    useClassSessionStore.getState().setTeacherPosition(teacherPosition)
     return () => useClassSessionStore.getState().reset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cls.id])
 
   const teacherNpc = useMemo(() => ({
     ...localizeNpcDialogue(JAFET_NPC, lang),
     position: teacherPosition,
-    scale: NPC_SCALE * CLASS_CHARACTER_SCALE,
   }), [lang, teacherPosition])
 
   // El guion completo ya no se dispara de un jalón aquí — ClassLessonRunner
@@ -411,6 +452,10 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
       </Html>
       <IdleNpc config={teacherNpc} playerPositionRef={playerPositionRef} onInteract={handleTalkToTeacher} />
       <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />
+      <ClassProjectorScreen position={projectorPosition} />
+      {/* Terminal del salón — para que el admin (o quien la necesite) pueda
+          abrir la Consola GM sin salir del salón (ej. para probar /fly). */}
+      <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} position={new THREE.Vector3(...terminalPosition)} radius={2.2} />
       <Player
         mascot={mascot}
         skin={skin}
@@ -420,13 +465,12 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
         cameraRef={cameraRef}
         playerPositionRef={playerPositionRef}
         playerRotationRef={playerRotationRef}
-        visualScale={CLASS_CHARACTER_SCALE}
         authorName={authorName}
         playerId={playerId}
-        spawnAt={[0, 0, 0]}
+        spawnAt={spawnPosition}
       />
       <Portal
-        position={[0, 0, 6]}
+        position={portalPosition}
         color="#38bdf8"
         label={t('vr.portalLabels.exitToCampus')}
         playerPositionRef={playerPositionRef}
@@ -2595,6 +2639,7 @@ function World({
         authorName={authorName}
         playerId={playerId}
         onNearPortalChange={onNearPortalChange}
+        onNearComputerChange={onNearComputerChange}
         classId={classId}
       />
     )
@@ -3597,6 +3642,10 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // para entrar", así que nada del mapa/canción/decoración arranca hasta
   // que el jugador confirma que quiere entrar.
   const [birthdayIntroSeen, setBirthdayIntroSeen] = useState(false)
+  // Instrucciones del Salón de Clases — mismo criterio que la intro de
+  // cumpleaños: bloquea el mundo hasta que se cierra, para que "el usuario
+  // entra, ve las instrucciones, y ENTONCES ya entra al mundo" en ese orden.
+  const [classIntroSeen, setClassIntroSeen] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
   const [nearClassNodeId, setNearClassNodeId] = useState(null)
   const [classSelectionStep, setClassSelectionStep] = useState('player') // 'player' | 'oliver' | 'done'
@@ -3967,15 +4016,20 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             vignetteDarkness={0.38}
             multisampling={0}
           />
-          {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color */}
-          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode} />
+          {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color.
+              classroomMode se excluye a propósito — un salón interior no
+              debería mostrar cielo/nubes/hora del día (pedido explícito:
+              "no quiero que salga en esta parte, pero no se lo quites al
+              sistema global"). Solo afecta este modo, el Campus real sigue
+              con campusMode=true de siempre. */}
+          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !classroomMode} />
           {flashlightOn && flashlightPurchased && (
             <FlashlightSpot playerPositionRef={playerPositionRef} cameraRef={cameraRef} />
           )}
           {/* Non-campus modes: static lighting (intensity 0 in campus so they don't stack) */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : 0}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : '#000000'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : classroomMode ? 1.1 : 0}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : classroomMode ? '#ffffff' : '#000000'}
           />
           <directionalLight
             position={[20, 30, 10]}
@@ -4237,6 +4291,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           isPrivateWorld={isPrivateWorld}
           playerPosRef={playerPositionRef}
           onUseSkill={handleUseSkill}
+          hideSkillBar={classroomMode}
         />
         <LootToast />
 
@@ -4393,7 +4448,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           />
         )}
 
-        {!vrReady && !(birthdayMode && !birthdayIntroSeen) && (
+        {classroomMode && !classIntroSeen && (
+          <ClassroomIntroModal
+            classId={classId}
+            onClose={() => { setClassIntroSeen(true); setVrReady(true) }}
+          />
+        )}
+
+        {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
             worldName={birthdayMode ? t('vr.worldNames.birthday') : classroomMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}

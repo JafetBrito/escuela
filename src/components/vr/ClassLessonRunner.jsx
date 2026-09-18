@@ -139,12 +139,16 @@ export default function ClassLessonRunner() {
     if (firedStepRef.current === stepIndex) return
     firedStepRef.current = stepIndex
     if (step.type === 'dialogue') {
+      // La posición real la calcula ClassroomWorld (depende del tamaño
+      // medido del modelo 3D) y la publica en el store — cls.teacherPosition
+      // es solo un valor de respaldo por si algo todavía no la publicó.
+      const position = useClassSessionStore.getState().teacherPosition ?? cls.teacherPosition
       window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, {
         detail: {
           npcId: cls.npcId,
           script: step.text,
           classId: cls.id,
-          position: cls.teacherPosition,
+          position,
           startedAt: Date.now(),
         },
       }))

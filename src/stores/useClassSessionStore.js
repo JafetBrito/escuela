@@ -15,11 +15,18 @@ export const useClassSessionStore = create((set) => ({
   ended: false,   // true cuando ya no quedan pasos
   stepIndex: 0,
   paused: false,  // true mientras el panel de "pregunta a mitad de clase" está abierto
+  // Dónde está parado el maestro DENTRO de este salón — ClassroomWorld lo
+  // calcula (depende del tamaño real del modelo 3D, ver footprintX/Z de
+  // useImportedGlbGround) y lo publica aquí para que ClassLessonRunner
+  // dispare cada paso de diálogo con la misma posición, sin que ambos
+  // tengan que recalcularla por separado.
+  teacherPosition: null,
 
-  setActiveClass: (classId) => set({ activeClassId: classId, started: false, ended: false, stepIndex: 0, paused: false }),
+  setActiveClass: (classId) => set({ activeClassId: classId, started: false, ended: false, stepIndex: 0, paused: false, teacherPosition: null }),
+  setTeacherPosition: (teacherPosition) => set({ teacherPosition }),
   start: () => set({ started: true }),
   nextStep: () => set((s) => ({ stepIndex: s.stepIndex + 1 })),
   end: () => set({ ended: true }),
   setPaused: (paused) => set({ paused }),
-  reset: () => set({ activeClassId: null, started: false, ended: false, stepIndex: 0, paused: false }),
+  reset: () => set({ activeClassId: null, started: false, ended: false, stepIndex: 0, paused: false, teacherPosition: null }),
 }))

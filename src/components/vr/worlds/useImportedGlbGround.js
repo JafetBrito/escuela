@@ -7,7 +7,12 @@ import * as THREE from 'three'
 // small the source asset is. Used by every GLB-imported world (campus, the
 // Árbol/temple tutorial world) so the floor/scale fixes only live in one
 // place.
-export function useImportedGlbGround(url) {
+// `scaleOverride`, cuando se da, reemplaza por completo el auto-detect de
+// abajo — para un asset con la geometría modelada a una escala interna que
+// no representa metros reales (ej. computer_lab.glb: cae "sano" dentro del
+// rango 4-2000 así que el auto-detect lo daba por bueno, pero en la
+// práctica se veía 5-10x más grande de lo que debería junto al jugador).
+export function useImportedGlbGround(url, scaleOverride) {
   const { scene } = useGLTF(url)
 
   return useMemo(() => {
@@ -34,7 +39,7 @@ export function useImportedGlbGround(url) {
     // wildly off, so the player isn't left a giant or a speck next to the
     // imported map.
     const maxDimension = Math.max(size.x, size.z) || 1
-    const scale = maxDimension > 4 && maxDimension < 2000 ? 1 : 40 / maxDimension
+    const scale = scaleOverride ?? (maxDimension > 4 && maxDimension < 2000 ? 1 : 40 / maxDimension)
     clone.scale.setScalar(scale)
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale)
     clone.updateMatrixWorld(true)
@@ -55,5 +60,5 @@ export function useImportedGlbGround(url) {
 
     const groundRayHeight = size.y * scale + 5
     return { model: clone, groundRayHeight, footprintX: size.x * scale, footprintZ: size.z * scale }
-  }, [scene])
+  }, [scene, scaleOverride])
 }
