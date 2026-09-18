@@ -227,6 +227,27 @@ export const useAuthStore = create((set, get) => ({
     if (error) throw error
   },
 
+  // Self-service profile edit (ej. birthdate en Ajustes) — a diferencia de
+  // useAdminUsersStore, aquí SIEMPRE es la propia fila (RLS "profiles:
+  // update own"), pero el mismo problema silencioso aplica: un
+  // .update().eq() sin .select() no distingue "guardado" de "RLS bloqueó,
+  // 0 filas". Mismo chequeo que setAgeProfile en useAdminUsersStore.js.
+  updateProfile: async (patch) => {
+    if (!supabase) throw new Error('Supabase no está configurado todavía.')
+    const { profile } = get()
+    if (!profile) throw new Error('No hay una cuenta cargada.')
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(patch)
+      .eq('id', profile.id)
+      .select('id')
+    if (error) throw error
+    if (!data || data.length === 0) {
+      throw new Error('La base de datos no aceptó el cambio (0 filas).')
+    }
+    set({ profile: { ...profile, ...patch } })
+  },
+
   // --- Legacy/local-mode helpers (used when Supabase isn't configured) ---
 
   unlock: (license) => set({ license, isUnlocked: true }),

@@ -40,8 +40,11 @@ import BashTerminalModal from './BashTerminalModal'
 import FourthWallPhone from './FourthWallPhone'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { useNpcSpeechScheduler } from './useNpcSpeechScheduler'
-import NpcSpeechPlayer from './NpcSpeechPlayer'
+import NpcSpeechPlayer, { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
+import BirthdayDecorations, { LOCAL_PARTY_EVENT } from './BirthdayDecorations'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
+import { isBirthdayToday } from '../../stores/useBirthdayStore'
+import { BIRTHDAY_NPC_ID, buildBirthdaySpeech } from '../../data/birthdaySpeech'
 import MobField from './MobField'
 import { useMobStore } from '../../stores/useMobStore'
 import { useSpawnedNpcStore } from '../../stores/useSpawnedNpcStore'
@@ -1539,7 +1542,13 @@ function IdleNpc({ config, playerPositionRef }) {
 
   const sayOneLine = useCallback(async () => {
     let text
-    if (config.aiPrompt) {
+    // Felicitación fija si hoy es el cumpleaños de quien mira (ver
+    // isBirthdayToday/useBirthdayStore.js) — tiene prioridad sobre la IA y
+    // las líneas normales, mismo criterio en Jafet/Einstein/Korin.
+    if (config.birthdayLine && isBirthdayToday(useAuthStore.getState().profile?.birthdate)) {
+      text = config.birthdayLine
+    }
+    if (!text && config.aiPrompt) {
       const { activeCredentialId } = useSettingsStore.getState()
       const hasConnection = useAiCredentialsStore.getState().connections.some((c) => c.id === activeCredentialId)
       if (hasConnection) {
@@ -2365,6 +2374,7 @@ function World({
       <IdleNpc config={localizeNpcDialogue(JAFET_NPC, lang)}    playerPositionRef={playerPositionRef} />
       {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={localizeNpcDialogue(npc, lang)} playerPositionRef={playerPositionRef} />)}
       <NpcSpeechPlayer channelRef={channelRef} />
+      <BirthdayDecorations channelRef={channelRef} />
       <MobField />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
@@ -3298,6 +3308,36 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // useNpcSpeechScheduler.js. Solo aplica al Campus compartido, igual que el
   // resto del multiplayer.
   useNpcSpeechScheduler({ channelRef, enabled: !isPrivateWorld })
+
+  // Fiesta de cumpleaños: si hoy es el cumpleaños de esta cuenta
+  // (profiles.birthdate), dispara UNA vez por entrada al Campus el mismo
+  // broadcast npc_speech (Oliver cantando Las Mañanitas) + un evento hermano
+  // 'birthday_party' que enciende los globos de BirthdayDecorations para
+  // TODOS los conectados, no solo para quien cumple años. channelRef tarda
+  // un instante en poblarse (useVrMultiplayer conecta async) — mismo
+  // reintento corto que ya usa GmConsole para /discurso.
+  const birthdayFiredRef = useRef(false)
+  useEffect(() => {
+    if (isPrivateWorld || birthdayFiredRef.current) return
+    if (!isBirthdayToday(profile?.birthdate)) return
+
+    let interval = null
+    const tryFire = () => {
+      const channel = channelRef.current
+      if (!channel) return false
+      birthdayFiredRef.current = true
+      const name = accountName || 'alguien especial'
+      const speechPayload = { npcId: BIRTHDAY_NPC_ID, script: buildBirthdaySpeech(name), startedAt: Date.now() }
+      channel.send({ type: 'broadcast', event: 'npc_speech', payload: speechPayload })
+      window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, { detail: speechPayload }))
+      const partyPayload = { name, startedAt: Date.now() }
+      channel.send({ type: 'broadcast', event: 'birthday_party', payload: partyPayload })
+      window.dispatchEvent(new CustomEvent(LOCAL_PARTY_EVENT, { detail: partyPayload }))
+      return true
+    }
+    if (!tryFire()) interval = setInterval(() => { if (tryFire()) clearInterval(interval) }, 500)
+    return () => { if (interval) clearInterval(interval) }
+  }, [isPrivateWorld, profile?.birthdate, accountName, channelRef])
   const [vrReady, setVrReady] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
   const [nearClassNodeId, setNearClassNodeId] = useState(null)

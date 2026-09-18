@@ -196,6 +196,10 @@ export const SHOPKEEPER_NPC = {
   position: [0, 0, 7],
   bubbleColor: '#fde68a',
   dialogue: '¡Bienvenido, viajero! Soy Korin, el mercader del Campus. Tengo objetos únicos para tu aventura. ¿Quieres ver mi mercancía?',
+  // Mostrado en vez de una línea al azar cuando es el cumpleaños de quien
+  // mira (ver isBirthdayToday en useBirthdayStore.js) — mismo mecanismo en
+  // JAFET_NPC/EINSTEIN_NPC y OLIVER_NPC (que además canta, ver birthdaySpeech.js).
+  birthdayLine: '¡Feliz cumpleaños! Como regalo de la casa, hoy todo se ve más bonito. 🎁🛒',
   lines: [
     '¡Bienvenido a mi puesto! Tengo los mejores objetos del campus. 🛒',
     '¿Buscas algo especial? Habla conmigo para ver la tienda.',
@@ -219,6 +223,7 @@ export const JAFET_NPC = {
   mascotId: 10,          // mage_elder.glb
   position: [0, 0, -11], // North-center, near the Grand Hall road
   bubbleColor: '#c4b5fd',
+  birthdayLine: '¡Feliz cumpleaños! Que este nuevo año esté lleno de magia, aprendizaje y buenas aventuras. 🎂✨',
   lines: [
     'Bienvenido al campus. Tu aventura comienza aquí. 🌟',
     'Cada día que estudias es un hechizo que se graba en tu memoria. ✨',
@@ -334,6 +339,7 @@ export const EINSTEIN_NPC = {
   mascotId: 9,
   position: [-4, 0, -4],
   bubbleColor: '#c7d2fe',
+  birthdayLine: '¡Feliz cumpleaños! Científicamente hablando, hoy es el día exacto del año en que más croquetas deberías comer. 🎉🎂',
   // Marks this NPC as one whose dialogue revolves around AI — only players
   // with the ai_engineer class get a passive visual highlight on NPCs
   // tagged this way (see IdleNpc in VRPage.jsx).

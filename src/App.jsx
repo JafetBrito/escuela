@@ -42,6 +42,7 @@ import LevelUpAnnouncer from './components/shared/LevelUpAnnouncer'
 import TextSelectionMenu from './components/shared/TextSelectionMenu'
 import DevToolsPanel from './components/shared/DevToolsPanel'
 import AiCredentialsLoader from './components/shared/AiCredentialsLoader'
+import BirthdayModal from './components/shared/BirthdayModal'
 import { useLibraryStore } from './stores/useLibraryStore'
 import { useSyncStatusStore } from './stores/useSyncStatusStore'
 import { useSwUpdateStore } from './stores/useSwUpdateStore'
@@ -229,6 +230,7 @@ export default function App() {
       <AiCredentialsLoader />
       <SyncErrorBanner />
       <UpdatingBanner />
+      <BirthdayModal />
 
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 

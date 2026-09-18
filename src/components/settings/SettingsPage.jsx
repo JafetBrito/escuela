@@ -77,6 +77,7 @@ export default function SettingsPage() {
   const visibleAiCategories = isKidsProfile ? [] : AI_CATEGORIES
   const signOut = useAuthStore((s) => s.signOut)
   const updatePassword = useAuthStore((s) => s.updatePassword)
+  const updateProfile = useAuthStore((s) => s.updateProfile)
   const coins = useCurrencyStore((s) => s.coins)
   const popupPositions = usePopupPositionStore((s) => s.positions)
   const setPopupScale = usePopupPositionStore((s) => s.setScale)
@@ -89,6 +90,7 @@ export default function SettingsPage() {
 
   const [newPassword, setNewPassword] = useState('')
   const [passwordStatus, setPasswordStatus] = useState('')
+  const [birthdateStatus, setBirthdateStatus] = useState('')
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
@@ -142,6 +144,18 @@ export default function SettingsPage() {
       lock()
     }
     navigate('/')
+  }
+
+  const handleBirthdateChange = async (e) => {
+    const birthdate = e.target.value
+    setBirthdateStatus('')
+    try {
+      await updateProfile({ birthdate: birthdate || null })
+      setBirthdateStatus('Guardado')
+      setTimeout(() => setBirthdateStatus(''), 2000)
+    } catch (err) {
+      setBirthdateStatus(`❌ ${err.message}`)
+    }
   }
 
   const handleChangePassword = async (e) => {
@@ -279,6 +293,24 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </div>
+
+                  {(session || googleUser) && (
+                    <div className="border-t border-border pt-3">
+                      <p className="text-sm font-semibold text-text">🎂 Tu cumpleaños</p>
+                      <p className="mt-1 text-xs text-text-muted">
+                        Guárdalo para desbloquear un mensaje, un regalo y una fiesta en el Campus VR ese día.
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <input
+                          type="date"
+                          defaultValue={profile?.birthdate ?? ''}
+                          onChange={handleBirthdateChange}
+                          className="rounded-lg border border-border bg-background px-3 py-2 text-text outline-none focus:border-primary"
+                        />
+                        {birthdateStatus && <span className="text-sm text-primary">{birthdateStatus}</span>}
+                      </div>
+                    </div>
+                  )}
 
                   {isEmailProvider && (
                     <form onSubmit={handleChangePassword} className="border-t border-border pt-3">
