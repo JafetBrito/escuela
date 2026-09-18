@@ -12,9 +12,13 @@ const WINDOW_MINUTES = 2 // ventana de disparo: hora exacta ± 2 min
 // día a targetUtcHour. El candado de "una vez al día" (npc_speech_log) no
 // aplica en este modo — su restricción unique es por día, no por ventana de
 // minutos, así que cada cliente conectado simplemente reemite el broadcast
-// cuando le toca, sin tocar la tabla. Volver a `null` cuando ya no haga
-// falta probar así (deja el comportamiento real: una vez al día).
-const TEST_INTERVAL_MINUTES = 10
+// cuando le toca, sin tocar la tabla. Vuelto a `null` (comportamiento real:
+// una vez al día) — repetir el discurso de Oliver (varios minutos) cada 10
+// minutos dejaba speechSynthesis ocupado gran parte del tiempo, así que
+// mensajes de chat y diálogos de otros NPCs quedaban encolados sin sonar
+// hasta que Oliver terminaba — el bug real detrás de "veo el chat pero no
+// lo escucho".
+const TEST_INTERVAL_MINUTES = null
 
 // Truco de offset fijo (sin librería de zonas horarias): resta el offset
 // UTC-6 antes de leer año/mes/día en UTC — da la fecha calendario de Ciudad
