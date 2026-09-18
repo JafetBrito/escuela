@@ -291,7 +291,10 @@ export function Player({
       }
       group.current.position.set(pos.x, pos.y, pos.z)
     } else {
-      // Fallback for worlds without a Rapier ground collider.
+      // Fallback mientras el colisionador Rapier todavía no existe — un
+      // trimesh pesado (ej. computer_lab.glb, un salón entero) tarda varios
+      // frames en construirse de forma asíncrona, así que este camino SÍ se
+      // usa de verdad al entrar a esos mundos, no solo en mundos sin física.
       const groundY = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
       if (pos.y <= groundY) {
         pos.y = groundY
@@ -300,6 +303,14 @@ export function Player({
       }
       velocityY.current += GRAVITY * delta
       pos.y += velocityY.current * delta
+      // Sin esto, el body kinematic se queda congelado en su posición
+      // inicial (fijada una sola vez al montar) mientras dura este modo.
+      // En cuanto el colisionador Rapier terminaba de construirse, el otro
+      // branch leía body.translation() —esa posición vieja— y TELETRANSPORTABA
+      // al jugador de vuelta ahí de golpe, a menudo en el aire sobre una
+      // mesa o fuera del piso real: el bug real detrás de "siempre te caes
+      // al vacío al entrar". Mantenerlo sincronizado aquí también evita el salto.
+      if (body) body.setNextKinematicTranslation({ x: pos.x, y: pos.y, z: pos.z })
     }
 
     if (meshGroup.current) {

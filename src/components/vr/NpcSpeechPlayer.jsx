@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BubbleStack } from './engine'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
@@ -112,15 +111,29 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
         if (i >= chunks.length) {
           setActive(null)
           useNpcSpeechStore.getState().clear()
-          // Si este guion era el de una clase (ClassroomWorld), avisa que
-          // terminó para que <ClassEndPanel> habilite la pregunta libre.
-          if (payload.classId) useClassSessionStore.getState().end()
+          // Si este guion era el de un paso de clase (ClassLessonRunner),
+          // avisa que este paso terminó — el runner decide si el siguiente
+          // paso es otro diálogo, una reflexión, o si ya no queda nada y
+          // toca mostrar <ClassEndPanel>.
+          if (payload.classId) useClassSessionStore.getState().nextStep()
           return
         }
         const text = chunks[i]
         setActive({ npc, bubble: { id: i, text } })
         useNpcSpeechStore.getState().setChunk(text, i, chunks.length)
-        const advance = () => speakChunk(i + 1)
+        // Pregunta a mitad de clase (ver ClassLessonRunner): si alguien
+        // pausó para preguntar algo, espera a que se reanude antes de
+        // seguir con el siguiente fragmento — sin esto, el guion seguiría
+        // avanzando de fondo mientras se lee/escribe la respuesta de la IA.
+        const advance = () => {
+          if (!payload.classId || !useClassSessionStore.getState().paused) {
+            speakChunk(i + 1)
+            return
+          }
+          const unsub = useClassSessionStore.subscribe((s) => {
+            if (!s.paused) { unsub(); speakChunk(i + 1) }
+          })
+        }
         const canHear = useVrSettingsStore.getState().npcVoice && window.speechSynthesis && nearRef.current
         if (canHear) {
           const utt = new SpeechSynthesisUtterance(text)
@@ -149,9 +162,9 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
       if (window.speechSynthesis) window.speechSynthesis.cancel()
       setActive(null)
       useNpcSpeechStore.getState().clear()
-      // Saltar una clase también cuenta como "terminarla" — si no, el
-      // alumno que salta nunca vería el panel de preguntas.
-      if (activeClassIdRef.current) useClassSessionStore.getState().end()
+      // Saltar un paso de clase también cuenta como "terminarlo" — avanza
+      // igual que si el guion hubiera terminado solo.
+      if (activeClassIdRef.current) useClassSessionStore.getState().nextStep()
     }
     window.addEventListener(NPC_SPEECH_SKIP_EVENT, onSkip)
 
@@ -182,15 +195,11 @@ export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
     }
   }, [channelRef])
 
-  if (!active) return null
-  // Mismo cálculo de baseY que IdleNpc en VRPage.jsx (npcScale*2 + 1.0) — si
-  // el NPC tiene una escala propia (ej. OLIVER_NPC.scale), la burbuja flota
-  // sobre su cabeza real en vez de quedar enterrada en un cuerpo agrandado.
-  // 0.26 es el mismo NPC_SCALE por defecto que usa IdleNpc.
-  const npcScale = active.npc.scale ?? 0.26
-  return (
-    <group position={active.npc.position}>
-      <BubbleStack bubbles={[active.bubble]} baseY={npcScale * 2 + 1.0} color={active.npc.bubbleColor} />
-    </group>
-  )
+  // Ya no dibuja la burbuja 3D flotante — <NpcDialogueBox> (2D, fuera del
+  // Canvas) es la única interfaz del discurso ahora. Mostrar ambas a la vez
+  // duplicaba el mismo texto en pantalla (una vez en la burbuja morada, sin
+  // buen formato/justificado, y otra vez en la caja de abajo) — reportado
+  // en vivo como "distrae, se ve raro, sale dos veces". Este componente es
+  // puro motor/lógica ahora, sin salida visual propia.
+  return null
 }

@@ -43,6 +43,7 @@ import { useNpcSpeechScheduler } from './useNpcSpeechScheduler'
 import NpcSpeechPlayer, { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
 import NpcDialogueBox from './NpcDialogueBox'
 import ClassEndPanel from './ClassEndPanel'
+import ClassLessonRunner from './ClassLessonRunner'
 import { useClassSessionStore } from '../../stores/useClassSessionStore'
 import { VR_CLASSES, getVrClassById } from '../../data/vrClassRegistry'
 import BirthdayDecorations, { LOCAL_PARTY_EVENT } from './BirthdayDecorations'
@@ -356,11 +357,15 @@ function useLabRoomGround() {
   return useImportedGlbGround('/MODELOS 3D/SALON DE CLASES/computer_lab.glb')
 }
 
-// Dónde está parado el maestro dentro del Salón de Clases — no es la misma
-// posición que JAFET_NPC tiene en el Campus (ver la `position` que viaja en
-// el payload de npc_speech para que la burbuja/caja de diálogo aparezcan
-// aquí y no allá).
-const CLASS_TEACHER_POSITION = [3, 0, 3]
+// Posición por defecto del maestro si una clase no trae la suya propia
+// (cls.teacherPosition, ver vrClassRegistry.js).
+const DEFAULT_TEACHER_POSITION = [3, 0, 3]
+
+// El modelo del salón (computer_lab.glb) está a otra escala que el resto
+// del juego — sin esto, el maestro y el alumno se ven como hormigas junto
+// a los escritorios ("como un pequeño conejo" fue el reporte real). 10x
+// iguala mucho mejor la proporción de una persona contra los muebles.
+const CLASS_CHARACTER_SCALE = 10
 
 function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, classId }) {
   const { t, lang } = useI18n()
@@ -372,36 +377,26 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   // Sin classId (admin entrando a /vr/salon a secas, para probar) cae en la
   // primera clase del registro — así el admin siempre ve el flujo completo.
   const cls = getVrClassById(classId) ?? Object.values(VR_CLASSES)[0]
+  const teacherPosition = cls.teacherPosition ?? DEFAULT_TEACHER_POSITION
 
   useEffect(() => {
     useClassSessionStore.getState().setActiveClass(cls.id)
     return () => useClassSessionStore.getState().reset()
   }, [cls.id])
 
-  // El modelo del salón (computer_lab.glb) está a otra escala que el resto
-  // del juego — sin esto, el maestro y el alumno se ven como hormigas junto
-  // a los escritorios. 4x iguala más o menos la proporción real de una
-  // persona contra los muebles del salón.
-  const CLASS_CHARACTER_SCALE = 4
-
   const teacherNpc = useMemo(() => ({
     ...localizeNpcDialogue(JAFET_NPC, lang),
-    position: CLASS_TEACHER_POSITION,
+    position: teacherPosition,
     scale: NPC_SCALE * CLASS_CHARACTER_SCALE,
-  }), [lang])
+  }), [lang, teacherPosition])
 
+  // El guion completo ya no se dispara de un jalón aquí — ClassLessonRunner
+  // (ver más abajo en el HUD de VRPage) dispara cada paso (diálogo,
+  // reflexión, video) en orden según cls.steps. Hablarle al maestro solo
+  // arranca la sesión.
   const handleTalkToTeacher = () => {
     if (useClassSessionStore.getState().started) return
     useClassSessionStore.getState().start()
-    window.dispatchEvent(new CustomEvent(LOCAL_SPEECH_EVENT, {
-      detail: {
-        npcId: cls.npcId,
-        script: cls.script,
-        classId: cls.id,
-        position: CLASS_TEACHER_POSITION,
-        startedAt: Date.now(),
-      },
-    }))
   }
 
   return (
@@ -4138,6 +4133,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
 
         {hudVisible && <NpcDialogueBox />}
+        {hudVisible && classroomMode && <ClassLessonRunner />}
         {hudVisible && classroomMode && <ClassEndPanel />}
 
         {!isPrivateWorld && (
