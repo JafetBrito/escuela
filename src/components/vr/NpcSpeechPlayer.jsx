@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
 import { BubbleStack } from './engine'
 import { useVrSettingsStore } from '../../stores/useVrSettingsStore'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
+import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, getVrNpcById } from '../../data/vrNpcRegistry'
 
 // El canal 'vr:campus' se abre con broadcast self:false (useVrMultiplayer.js)
@@ -13,6 +16,17 @@ import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, getVrNpcById } from '../../data/vr
 // dispara también sobre sí mismo, sin tocar el self:false del canal
 // compartido (que sigue evitando eco en pos/action/chat).
 export const LOCAL_SPEECH_EVENT = 'oliver:npc-speech-local'
+
+// Disparado por el botón "Saltar conversación" de <NpcDialogueBox> — corta
+// el discurso completo para quien lo dispara (solo local, no afecta a
+// otros jugadores que también estén escuchando).
+export const NPC_SPEECH_SKIP_EVENT = 'oliver:npc-speech-skip'
+
+// Radio dentro del cual se ve/escucha el discurso — pedido explícito: el
+// diálogo (caja RPG + audio) solo existe para quien está físicamente cerca
+// del NPC que habla, no para todo el mundo conectado. Quien está lejos no
+// se entera hasta que camina hacia allá.
+const SPEECH_HEAR_RADIUS = 14
 
 const SINGLETON_NPCS = { [OLIVER_NPC.id]: OLIVER_NPC, [EINSTEIN_NPC.id]: EINSTEIN_NPC, [JAFET_NPC.id]: JAFET_NPC }
 function findNpc(npcId) {
@@ -40,14 +54,33 @@ function chunkScript(text) {
 
 // Escucha el broadcast 'npc_speech' (ver useNpcSpeechScheduler.js) en el
 // mismo canal `vr:campus` que ya usa useVrMultiplayer/useVoiceChat, y
-// reproduce el guion completo fragmento a fragmento como burbujas flotantes
-// sobre el NPC — con audio si useVrSettingsStore.npcVoice está activado
-// (mismo flag que ya respeta IdleNpc), solo subtítulos si no. Nunca lanza
-// error hacia afuera: si el NPC del payload no existe en el registro, o no
-// hay speechSynthesis, simplemente no reproduce nada.
-export default function NpcSpeechPlayer({ channelRef }) {
+// reproduce el guion completo fragmento a fragmento — como burbuja flotante
+// sobre el NPC en el mundo 3D, Y como una caja de diálogo estilo RPG en la
+// interfaz 2D (ver <NpcDialogueBox>, que lee el mismo useNpcSpeechStore).
+// El audio (y la caja 2D) solo se activan para quien está cerca del NPC
+// (SPEECH_HEAR_RADIUS); quien está lejos ve avanzar el guion en silencio
+// para que la sesión no se quede esperando a que alguien se acerque.
+// Nunca lanza error hacia afuera: si el NPC del payload no existe en el
+// registro, o no hay speechSynthesis, simplemente no reproduce nada.
+export default function NpcSpeechPlayer({ channelRef, playerPositionRef }) {
   const [active, setActive] = useState(null) // { npc, bubble: { id, text } }
   const sessionRef = useRef(0)
+  const nearRef = useRef(false)
+  const npcVecRef = useRef(new THREE.Vector3())
+
+  // Proximidad jugador↔NPC recalculada cada frame (por eso vive en un
+  // useFrame dentro del <Canvas>, no en el componente 2D) — solo escribe al
+  // store cuando el valor realmente cambia, para no disparar un re-render
+  // de <NpcDialogueBox> en cada frame.
+  useFrame(() => {
+    if (!active || !playerPositionRef?.current) return
+    npcVecRef.current.set(...active.npc.position)
+    const near = playerPositionRef.current.distanceTo(npcVecRef.current) <= SPEECH_HEAR_RADIUS
+    if (near !== nearRef.current) {
+      nearRef.current = near
+      useNpcSpeechStore.getState().setIsNear(near)
+    }
+  })
 
   useEffect(() => {
     const onSpeech = ({ payload }) => {
@@ -55,7 +88,13 @@ export default function NpcSpeechPlayer({ channelRef }) {
       if (!npc || !payload?.script) return
       const session = ++sessionRef.current
       const chunks = chunkScript(payload.script)
-      useNpcSpeechStore.getState().setActive(npc.id)
+      useNpcSpeechStore.getState().setActive(npc)
+      // Anuncio en el chat del mundo — mismo mecanismo para cualquier NPC
+      // con discurso programado, no solo Oliver, pensado como "sistema"
+      // reutilizable para cuando existan más NPCs-maestro con diálogos.
+      useWorldChatStore.getState().addSystemMessage(
+        `🗣️ ${npc.name} está compartiendo algo en el Campus — acércate para escucharlo.`,
+      )
 
       const speakChunk = (i) => {
         if (session !== sessionRef.current) return
@@ -66,8 +105,10 @@ export default function NpcSpeechPlayer({ channelRef }) {
         }
         const text = chunks[i]
         setActive({ npc, bubble: { id: i, text } })
+        useNpcSpeechStore.getState().setChunk(text, i, chunks.length)
         const advance = () => speakChunk(i + 1)
-        if (useVrSettingsStore.getState().npcVoice && window.speechSynthesis) {
+        const canHear = useVrSettingsStore.getState().npcVoice && window.speechSynthesis && nearRef.current
+        if (canHear) {
           const utt = new SpeechSynthesisUtterance(text)
           utt.lang = 'es-ES'
           utt.rate = 0.98
@@ -75,13 +116,27 @@ export default function NpcSpeechPlayer({ channelRef }) {
           utt.onerror = advance
           window.speechSynthesis.speak(utt)
         } else {
-          // Sin voz: igual avanza el subtítulo, a un ritmo de lectura
-          // razonable en vez de esperar un onend que nunca va a llegar.
+          // Lejos del NPC, o sin voz activada: igual avanza el guion en
+          // silencio, a un ritmo de lectura razonable, para que la
+          // conversación no se quede congelada esperando a nadie.
           setTimeout(advance, Math.max(2000, text.length * 90))
         }
       }
       speakChunk(0)
     }
+
+    // "Saltar conversación" — corta el discurso completo para este cliente
+    // (invalida la sesión para que ningún speakChunk en curso siga
+    // avanzando) y calla la voz si estaba sonando. Es un corte deliberado
+    // de la PROPIA conversación del jugador, no una interrupción ajena —
+    // por eso sí es correcto llamar aquí a speechSynthesis.cancel().
+    const onSkip = () => {
+      sessionRef.current += 1
+      if (window.speechSynthesis) window.speechSynthesis.cancel()
+      setActive(null)
+      useNpcSpeechStore.getState().clear()
+    }
+    window.addEventListener(NPC_SPEECH_SKIP_EVENT, onSkip)
 
     // channelRef.current puede seguir siendo null en este primer efecto —
     // World vive dentro de un <Suspense> (carga de modelos GLB) que a veces
@@ -106,6 +161,7 @@ export default function NpcSpeechPlayer({ channelRef }) {
       sessionRef.current += 1
       if (interval) clearInterval(interval)
       window.removeEventListener(LOCAL_SPEECH_EVENT, onLocalSpeech)
+      window.removeEventListener(NPC_SPEECH_SKIP_EVENT, onSkip)
     }
   }, [channelRef])
 

@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import MascotMesh from '../../mascot/MascotMesh'
 import { useGameStore, PLAYER_AVATARS } from '../../../stores/useGameStore'
 import { useVrSettingsStore } from '../../../stores/useVrSettingsStore'
+import { useFlyModeStore } from '../../../stores/useFlyModeStore'
 import { useVrCharacterStore } from '../../../stores/useVrCharacterStore'
 import { useDevCalibrationStore } from '../../../stores/useDevCalibrationStore'
 import { useChatBubbles, BubbleStack, colorFromId } from './ChatBubbles'
@@ -118,6 +119,7 @@ export function Player({
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const fov = useVrSettingsStore((s) => s.fov)
   const noClip = useVrSettingsStore((s) => s.noClip)
+  const flying = useFlyModeStore((s) => s.enabled)
   const avatarId = useGameStore((s) => s.player.avatarId)
   const activeChar = useVrCharacterStore((s) => s.activeChar)
   const companionFollows = useVrCharacterStore((s) => s.companionFollows)
@@ -228,7 +230,9 @@ export function Player({
     }
 
     // Wall collision via raycasts (fast, works against any scenery geometry).
-    if (!noClip) {
+    // Flying (admin /fly, see useFlyModeStore) also passes through walls —
+    // same as WoW's .fly, meant for scouting a map freely.
+    if (!noClip && !flying) {
       const chestY = pos.y + PLAYER_HEIGHT * 0.6
       if (stepX !== 0) {
         const dir = stepX > 0 ? AXIS_X : AXIS_X.clone().negate()
@@ -246,16 +250,26 @@ export function Player({
     pos.x += stepX
     pos.z += stepZ
 
-    // Gravity + jump via Rapier character controller (only Y axis).
-    // The CC detects a flat ground CuboidCollider when one exists; raycasts
-    // handle walls above and stand in for gravity in worlds (room, anfi,
-    // tree, or any future mission) that don't add one.
-    // Guard: body.collider(0) returns undefined during the first Rapier tick
-    // before colliders are fully initialized — passing undefined crashes the
-    // controller and kills the WebGL context. Fall through to the raycast
-    // fallback in that case.
+    // Vuelo de admin: sin gravedad, sube/baja libre con Espacio/Shift, sin
+    // pasar por el character controller de Rapier (que solo sabe moverse en
+    // Y por gravedad/salto, no por un input vertical libre).
     const body = bodyRef.current
-    if (body && body.numColliders() > 0) {
+    if (flying) {
+      const FLY_SPEED = MOVE_SPEED * 1.6
+      if (keys[' '] || keys['spacebar']) pos.y += FLY_SPEED * delta
+      if (keys['shift']) pos.y -= FLY_SPEED * delta
+      velocityY.current = 0
+      if (body) body.setNextKinematicTranslation({ x: pos.x, y: pos.y, z: pos.z })
+      group.current.position.set(pos.x, pos.y, pos.z)
+    } else if (body && body.numColliders() > 0) {
+      // Gravity + jump via Rapier character controller (only Y axis).
+      // The CC detects a flat ground CuboidCollider when one exists; raycasts
+      // handle walls above and stand in for gravity in worlds (room, anfi,
+      // tree, or any future mission) that don't add one.
+      // Guard: body.collider(0) returns undefined during the first Rapier tick
+      // before colliders are fully initialized — passing undefined crashes the
+      // controller and kills the WebGL context. Fall through to the raycast
+      // fallback in that case.
       const t = body.translation()
       // Sync XZ from our raycast-resolved position, apply CC only for Y
       const desiredY = { x: 0, y: velocityY.current * delta, z: 0 }

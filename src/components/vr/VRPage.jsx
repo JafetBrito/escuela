@@ -41,6 +41,7 @@ import FourthWallPhone from './FourthWallPhone'
 import { useVrMultiplayer, isVrRealtimeAvailable } from './useVrMultiplayer'
 import { useNpcSpeechScheduler } from './useNpcSpeechScheduler'
 import NpcSpeechPlayer, { LOCAL_SPEECH_EVENT } from './NpcSpeechPlayer'
+import NpcDialogueBox from './NpcDialogueBox'
 import BirthdayDecorations, { LOCAL_PARTY_EVENT } from './BirthdayDecorations'
 import { useNpcSpeechStore } from '../../stores/useNpcSpeechStore'
 import { useBirthdayStore, isBirthdayToday } from '../../stores/useBirthdayStore'
@@ -2277,7 +2278,7 @@ function BirthdayPartyWorld({ mascot, skin, keysRef, cameraRef, playerPositionRe
         <CuboidCollider args={[GROUND_RADIUS, 0.5, GROUND_RADIUS]} position={[0, -0.5, 0]} />
       </RigidBody>
       {guestNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
-      <NpcSpeechPlayer channelRef={noChannelRef} />
+      <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />
       <BirthdayDecorations channelRef={noChannelRef} />
       <Player
         mascot={mascot}
@@ -2515,7 +2516,7 @@ function World({
       <IdleNpc config={localizeNpcDialogue(EINSTEIN_NPC, lang)} playerPositionRef={playerPositionRef} />
       <IdleNpc config={localizeNpcDialogue(JAFET_NPC, lang)}    playerPositionRef={playerPositionRef} />
       {VR_NPCS.map((npc) => <VrNpc key={npc.id} npc={localizeNpcDialogue(npc, lang)} playerPositionRef={playerPositionRef} />)}
-      <NpcSpeechPlayer channelRef={channelRef} />
+      <NpcSpeechPlayer channelRef={channelRef} playerPositionRef={playerPositionRef} />
       <MobField />
       <CampusVideoScreen onOpen={onOpenVideoScreen} />
       <DailyRewardBox playerPositionRef={playerPositionRef} onNearChange={onNearDailyRewardChange} />
@@ -3998,6 +3999,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
         {/* Presentation video screen modal */}
         {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
+
+        {hudVisible && <NpcDialogueBox />}
 
         {!isPrivateWorld && (
           <WorldMap open={mapOpen} onClose={() => setMapOpen(false)} playerPositionRef={playerPositionRef} playerRotationRef={playerRotationRef} />

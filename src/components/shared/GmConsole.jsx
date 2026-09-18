@@ -7,6 +7,7 @@ import { OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, VR_NPCS } from '..
 import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
 import { supabase } from '../../services/supabase/client'
 import { useBirthdayStore } from '../../stores/useBirthdayStore'
+import { useFlyModeStore } from '../../stores/useFlyModeStore'
 import { LOCAL_SPEECH_EVENT } from '../vr/NpcSpeechPlayer'
 
 const SUMMONABLE_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
@@ -30,6 +31,7 @@ const COMMAND_PALETTE = [
   { cmd: '/target ', desc: 'Cambiar a quién afectan los comandos' },
   { cmd: '/discurso ', desc: 'Disparar ahora el discurso programado de un NPC (prueba)' },
   { cmd: '/cumpleanos', desc: 'Abrir el modal de cumpleaños sin esperar la fecha real (prueba)' },
+  { cmd: '/fly ', desc: 'Volar (on/off) — solo admin, para explorar mapas' },
 ]
 
 const HELP_LINES = [
@@ -47,6 +49,7 @@ const HELP_LINES = [
   '  /target <correo|yo>    — cambia a quién afectan los comandos',
   '  /discurso <npcId>      — dispara ahora el discurso programado de ese NPC (ej. oliver), para probarlo sin esperar a la hora',
   '  /cumpleanos             — abre el modal de cumpleaños sin esperar la fecha real; su botón "Ir a tu fiesta" lleva al mapa privado',
+  '  /fly on|off             — activa/desactiva el vuelo libre (como .fly en WoW), para explorar mapas sin quedarte atorado',
 ]
 
 // Admin-only "GM console" (World of Warcraft moderator-style): a command
@@ -194,6 +197,19 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
         // no hace falta ningún broadcast desde aquí.
         useBirthdayStore.getState().forceOpen()
         log('✅ Modal de cumpleaños abierto en modo de prueba — usa su botón "Ir a tu fiesta" para entrar al mapa.')
+      } else if (cmd === 'fly') {
+        // Solo local (useFlyModeStore no persiste) — esta consola ya es
+        // admin-only (ver TerminalModal en VRPage.jsx / la ruta
+        // /admin/comandos), así que no hace falta otro chequeo aquí.
+        const arg = norm(args[0])
+        if (arg !== 'on' && arg !== 'off') {
+          log('Usa /fly on o /fly off.')
+        } else {
+          useFlyModeStore.getState().setEnabled(arg === 'on')
+          log(arg === 'on'
+            ? '✅ Vuelo activado — Espacio para subir, Shift para bajar.'
+            : '✅ Vuelo desactivado.')
+        }
       } else if (cmd === 'target') {
         const query = args.join(' ')
         if (!query || query === 'yo') {
