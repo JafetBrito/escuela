@@ -28,12 +28,11 @@ export default function BirthdayModal() {
   }
 
   const handleGoToParty = () => {
-    handleClose()
-    // Navegación dura (no navigate() de react-router) a propósito: pedido
-    // explícito para que la transición sea siempre un arranque limpio de
-    // /vr/cumpleanos, sin arrastrar estado/modales de donde sea que
-    // estuviera parado antes (ej. el picker de mascota o el tablón de
-    // versión quedando abiertos encima de la intro de la fiesta).
+    // OJO: nunca llamar aquí a handleClose()/dismissForceOpen() — borraría
+    // el sessionStorage justo antes de navegar, y /vr/cumpleanos volvería a
+    // rebotar al dashboard en modo de prueba (bug real, encontrado probando
+    // esto en vivo). La navegación dura ya recarga la página entera, así
+    // que no hace falta "cerrar" nada local aquí.
     window.location.href = '/vr/cumpleanos'
   }
 
