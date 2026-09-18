@@ -7,6 +7,7 @@ import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { useI18n } from '../../i18n'
+import { useDayNightStore } from '../../stores/useDayNightStore'
 import TargetFrame from './TargetFrame'
 
 // ─── Minimap world bounds (campus VR coordinate space) ─────────────────────
@@ -438,11 +439,20 @@ function VrUtilBar({
 }
 
 // ─── Real-time clock ──────────────────────────────────────────────────────
+// Muestra la hora DEL MUNDO (la misma que usa DayNightCycle para el cielo),
+// no la del reloj del sistema — si un admin fuerza una hora desde DevTools
+// (se guarda para todos, ver useDayNightStore), el reloj y el cielo antes
+// se contradecían (reloj 1 pm, campus de noche).
 function DayNightClock() {
   const { lang } = useI18n()
-  const [now, setNow] = useState(() => new Date())
+  const manual = useDayNightStore((s) => s.mode === 'manual')
+  const worldNow = () => {
+    const t = useDayNightStore.getState().getTimeOfDay()
+    return new Date(2000, 0, 1, Math.floor(t), Math.floor((t % 1) * 60))
+  }
+  const [now, setNow] = useState(worldNow)
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000)
+    const id = setInterval(() => setNow(worldNow()), 1000)
     return () => clearInterval(id)
   }, [])
   const h = now.getHours()
@@ -453,7 +463,7 @@ function DayNightClock() {
       className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-full px-3 py-1 text-white/90 tabular-nums"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', fontSize: 13, fontWeight: 700 }}
     >
-      {icon} {label}
+      {icon} {label}{manual && <span title="Hora forzada por un admin" className="text-[10px] opacity-70">🔧</span>}
     </div>
   )
 }
