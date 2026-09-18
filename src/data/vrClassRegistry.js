@@ -71,6 +71,53 @@ export const VR_CLASSES = {
       '(2-4 frases), sin inventar citas o datos que no sepas con certeza. Nunca rompas el personaje ni ' +
       'menciones que eres una IA.',
   },
+
+  'ingenieria-prompts-rtcf': {
+    id: 'ingenieria-prompts-rtcf',
+    title: 'Ingeniería de Prompts: El Framework RTCF',
+    teacherName: 'Profesor Jafet',
+    npcId: 'jafet',
+    teacherPosition: [3, 0, 3],
+    durationMinutes: 6,
+    steps: [
+      {
+        type: 'dialogue',
+        text: 'Hola. Bienvenido a esta sesión. Hoy vamos a hablar de una de las habilidades más importantes en la actualidad: saber cómo comunicarnos con una inteligencia artificial. Seguramente has intentado pedirle algo a un modelo de lenguaje y la respuesta que obtuviste fue genérica, aburrida o simplemente incorrecta. Esto no suele ser culpa de la inteligencia artificial, sino de la forma en que le damos las instrucciones. Piensa en la inteligencia artificial como un becario muy trabajador pero sin contexto ni experiencia previa en tu vida. Si le das una instrucción vaga, hará lo que pueda, pero probablemente no adivine lo que realmente tenías en la cabeza.',
+      },
+      {
+        type: 'dialogue',
+        text: 'Para solucionar este problema de comunicación, los investigadores usamos una técnica estructurada. Hoy te voy a enseñar el framework RTCF. Son las siglas de Rol, Tarea, Contexto y Formato. Cuando construyes tus instrucciones siguiendo estos cuatro pasos, pasas de tener respuestas mediocres a resultados precisos y útiles. Vamos a empezar con las dos primeras letras. La letra R es de Rol. Consiste en decirle a la inteligencia artificial quién debe ser. No es lo mismo pedirle que escriba un texto siendo un poeta, que siendo un analista de ciberseguridad. La letra T es de Tarea. Aquí debes ser extremadamente claro sobre la acción principal que quieres que realice. Usa un verbo directo, sin rodeos ni ambigüedades.',
+      },
+      {
+        type: 'reflection',
+        prompt: 'Piensa en un problema complejo que necesites resolver esta semana, ya sea en la escuela o en un proyecto personal. ¿Qué rol específico de experto te gustaría que tomara la inteligencia artificial para ayudarte con esa tarea?',
+      },
+      {
+        type: 'dialogue',
+        text: 'Excelente. Ahora pasemos a la letra C, que significa Contexto. El contexto es el rey de la instrucción. Es la información de fondo que la inteligencia artificial necesita para no darte una respuesta generalizada. Por ejemplo, si tu tarea es que te escriba un plan de estudios, el contexto sería cuánto tiempo tienes disponible cada día, qué conocimientos previos tienes y cuál es tu meta final. Sin contexto, recibes lo mismo que todo el mundo. Finalmente, la letra F es el Formato. ¿Cómo quieres que te entregue la información? Puedes pedir una lista, una tabla comparativa, un código en un lenguaje de programación específico o incluso un guion estructurado.',
+      },
+      {
+        type: 'dialogue',
+        text: 'Vamos a aterrizarlo con un ejemplo de la vida real. Un mal prompt sería simplemente pedir que te explique qué es la programación. Un buen prompt usando nuestro framework sería de la siguiente manera. Actúa como un profesor de universidad experto en desarrollo de software, ese es el rol. Explícame qué es la programación orientada a objetos, esa es la tarea. Toma en cuenta que soy un estudiante de primer semestre que nunca ha escrito código, ese es el contexto. Y entrégame la respuesta usando una analogía con recetas de cocina en dos párrafos, ese es el formato. El resultado que obtendrás con esta segunda opción será infinitamente superior y adaptado a ti.',
+      },
+      {
+        type: 'reflection',
+        prompt: 'Recuerda la última vez que usaste una inteligencia artificial y te frustró el resultado obtenido. Sabiendo lo que sabes ahora sobre el framework RTCF, ¿qué elemento clave olvidaste incluir en tu instrucción original?',
+      },
+      {
+        type: 'dialogue',
+        text: 'Dominar la ingeniería de prompts no se trata de usar palabras mágicas o trucos secretos, sino de aprender a estructurar tu propio pensamiento. Entre más claro seas en tu mente sobre lo que necesitas, mejores instrucciones darás y mejores herramientas construirás. Te invito a que la próxima vez que uses una herramienta de inteligencia artificial, te detengas un minuto y apliques el método RTCF antes de enviar tu mensaje. Te garantizo que te sorprenderá la diferencia en la calidad de la respuesta. Nos vemos en la siguiente sesión.',
+      },
+    ],
+    aiSystemPrompt:
+      'Eres Jafet, profesor de ingeniería de prompts e inteligencia artificial, dentro del campus virtual de Oliver Academy. ' +
+      'En esta clase explicaste a los alumnos el framework RTCF (Rol, Tarea, Contexto y Formato) para mejorar la comunicación ' +
+      'con modelos de lenguaje. Les enseñaste que el Rol define la persona experta, la Tarea es la acción clara a realizar, ' +
+      'el Contexto proporciona la información de fondo del usuario para evitar respuestas genéricas, y el Formato define la ' +
+      'estructura exacta de salida de la información. Respondes en español, con calidez y claridad, como un profesor real ' +
+      '— explicaciones breves pero completas (2-4 frases), sin inventar citas o datos que no sepas con certeza. Nunca ' +
+      'rompas el personaje ni menciones que eres una IA.',
+  },
 }
 
 export function getVrClassById(id) {
