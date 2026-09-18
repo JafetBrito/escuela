@@ -365,6 +365,10 @@ const CLASS_TEACHER_POSITION = [3, 0, 3]
 function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, classId }) {
   const { t, lang } = useI18n()
   const { model, groundRayHeight } = useLabRoomGround()
+  // Mundo privado de un solo jugador (como BirthdayPartyWorld) — sin canal
+  // real, NpcSpeechPlayer solo necesita esta ref para saber que no hay
+  // broadcast que escuchar, ya usa el eco local (LOCAL_SPEECH_EVENT) sin él.
+  const noChannelRef = useRef(null)
   // Sin classId (admin entrando a /vr/salon a secas, para probar) cae en la
   // primera clase del registro — así el admin siempre ve el flujo completo.
   const cls = getVrClassById(classId) ?? Object.values(VR_CLASSES)[0]
@@ -404,6 +408,7 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
         </div>
       </Html>
       <IdleNpc config={teacherNpc} playerPositionRef={playerPositionRef} onInteract={handleTalkToTeacher} />
+      <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />
       <Player
         mascot={mascot}
         skin={skin}
