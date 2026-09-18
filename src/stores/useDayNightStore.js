@@ -55,6 +55,14 @@ function broadcastWorldState(state) {
 // real minuto a minuto. Un admin puede forzar una hora puntual desde
 // DevToolsPanel — desde ahí el reloj sigue avanzando normal (1 hora real =
 // 1 hora de juego) a partir de la hora forzada, nunca se queda congelado.
+// Una hora forzada caduca sola: como se guarda para TODOS y el reloj sigue
+// corriendo desde ahí, una prueba vieja de un admin dejaba el campus de
+// noche a mediodía indefinidamente ("son las 10:40 pm y sigue de noche").
+// Pasado este tiempo se vuelve a la hora real sin que nadie tenga que
+// acordarse de apagarla.
+export const MANUAL_HOUR_TTL_MS = 2 * 3_600_000
+export const isManualActive = (s) => s.mode === 'manual' && Date.now() - s.manualBaseAtMs < MANUAL_HOUR_TTL_MS
+
 export const useDayNightStore = create((set, get) => ({
   mode: 'real', // 'real' | 'manual'
   manualBaseHour: 12,
@@ -66,8 +74,8 @@ export const useDayNightStore = create((set, get) => ({
   weather: 'despejado',
 
   getTimeOfDay() {
-    const { mode, manualBaseHour, manualBaseAtMs } = get()
-    if (mode === 'manual') {
+    const { manualBaseHour, manualBaseAtMs } = get()
+    if (isManualActive(get())) {
       const elapsedHours = (Date.now() - manualBaseAtMs) / 3_600_000
       return (((manualBaseHour + elapsedHours) % 24) + 24) % 24
     }

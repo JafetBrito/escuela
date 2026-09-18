@@ -7,7 +7,7 @@ import { useVrCharacterStore } from '../../stores/useVrCharacterStore'
 import { VR_NPCS, OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC } from '../../data/vrNpcRegistry'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { useI18n } from '../../i18n'
-import { useDayNightStore } from '../../stores/useDayNightStore'
+import { useDayNightStore, isManualActive } from '../../stores/useDayNightStore'
 import TargetFrame from './TargetFrame'
 
 // ─── Minimap world bounds (campus VR coordinate space) ─────────────────────
@@ -445,14 +445,16 @@ function VrUtilBar({
 // se contradecían (reloj 1 pm, campus de noche).
 function DayNightClock() {
   const { lang } = useI18n()
-  const manual = useDayNightStore((s) => s.mode === 'manual')
-  const worldNow = () => {
+  const read = () => {
     const t = useDayNightStore.getState().getTimeOfDay()
-    return new Date(2000, 0, 1, Math.floor(t), Math.floor((t % 1) * 60))
+    return {
+      now: new Date(2000, 0, 1, Math.floor(t), Math.floor((t % 1) * 60)),
+      manual: isManualActive(useDayNightStore.getState()),
+    }
   }
-  const [now, setNow] = useState(worldNow)
+  const [{ now, manual }, setReading] = useState(read)
   useEffect(() => {
-    const id = setInterval(() => setNow(worldNow()), 1000)
+    const id = setInterval(() => setReading(read()), 1000)
     return () => clearInterval(id)
   }, [])
   const h = now.getHours()
