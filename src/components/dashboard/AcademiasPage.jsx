@@ -6,7 +6,6 @@ import courses from '../../data/courses.json'
 import { MAIN_CATEGORIES } from '../../data/categoryTaxonomy'
 import { localizeCategoryName } from '../../data/categoryTranslations'
 import { useI18n } from '../../i18n'
-import { ACADEMIES } from '../../data/academies'
 
 // Punto de entrada único para "escuelas" — antes Escuelas (categorías
 // generales), Academia de Idiomas y Academia de Ciberseguridad vivían
@@ -89,16 +88,6 @@ export default function AcademiasPage() {
                 <p className="text-xs text-text-muted">{t('dashboard.academias.chinaBlurb')}</p>
               </div>
             </Link>
-          </div>
-
-          {/* Mapa VR de cada academia (identidad propia sobre el campo base) */}
-          <h2 className="mb-3 mt-8 text-xs font-black uppercase tracking-widest text-text-muted/60">🕶️ Campus VR por academia</h2>
-          <div className="flex flex-wrap gap-2">
-            {Object.values(ACADEMIES).map((a) => (
-              <a key={a.id} href={`/vr/academia/${a.id}`} className="rounded-full border border-border px-4 py-2 text-sm font-semibold text-text-muted transition hover:border-primary hover:text-primary">
-                {a.emoji} {a.name}
-              </a>
-            ))}
           </div>
 
           {/* Escuelas por categoría — antes la pestaña "Escuelas" del Dashboard */}
