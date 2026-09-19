@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ACADEMIES } from '../../data/academies'
 import { useNavigate, Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import ProgressSync from '../learning/ProgressSync'
@@ -309,6 +310,21 @@ export default function SettingsPage() {
                         />
                         {birthdateStatus && <span className="text-sm text-primary">{birthdateStatus}</span>}
                       </div>
+                    </div>
+                  )}
+
+                  {(session || googleUser) && (
+                    <div className="border-t border-border pt-3">
+                      <p className="text-sm font-semibold text-text">🏛️ Tu academia</p>
+                      <p className="mt-1 text-xs text-text-muted">Define el aspecto de tu mapa en el Campus VR.</p>
+                      <select
+                        defaultValue={profile?.academy_id ?? ''}
+                        onChange={(e) => updateProfile({ academy_id: e.target.value || null }).catch(() => {})}
+                        className="mt-2 rounded-lg border border-border bg-background px-3 py-2 text-text outline-none focus:border-primary"
+                      >
+                        <option value="">Sin academia</option>
+                        {Object.values(ACADEMIES).map((a) => <option key={a.id} value={a.id}>{a.emoji} {a.name}</option>)}
+                      </select>
                     </div>
                   )}
 
