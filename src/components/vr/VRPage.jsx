@@ -4,6 +4,7 @@ import { Html, useGLTF } from '@react-three/drei'
 import { Physics, RigidBody, CapsuleCollider, CuboidCollider, useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getAcademy } from '../../data/academies'
 import { useI18n } from '../../i18n'
 import AppTopBar from '../shared/AppTopBar'
 import PageVideoModal from '../shared/PageVideoModal'
@@ -489,14 +490,47 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
 // finos. Un piso plano con un solo CuboidCollider no tiene ese problema —
 // además de ser justo lo pedido: un lugar liviano para probar sin cargar
 // toda la escuela.
+// Con /vr/academia/:academyId el mismo campo plano toma la identidad de esa
+// academia (piso, rejilla, emblema y props de src/data/academies.js).
+function AcademyDecor({ academy }) {
+  const c = academy.accent
+  const mat = <meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.25} />
+  return (
+    <>
+      <Html position={[0, 9, -18]} center distanceFactor={14} occlude={false}>
+        <div style={{ textAlign: 'center', color: c, fontWeight: 900, fontFamily: 'serif', textShadow: '0 0 12px #000a', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 90 }}>{academy.emoji}</div>
+          <div style={{ fontSize: 34 }}>{academy.name}</div>
+        </div>
+      </Html>
+      {academy.props === 'columns' && [-10, -5, 5, 10].map((x) => (
+        <mesh key={x} position={[x, 3, -18]}><cylinderGeometry args={[0.7, 0.7, 6, 16]} />{mat}</mesh>
+      ))}
+      {academy.props === 'pylons' && [-9, -3, 3, 9].map((x) => (
+        <mesh key={x} position={[x, 2.5, -18]}><boxGeometry args={[0.8, 5, 0.8]} />{mat}</mesh>
+      ))}
+      {academy.props === 'hospital' && (
+        <group position={[0, 0, -20]}>
+          <mesh position={[0, 3, 0]}><boxGeometry args={[14, 6, 5]} /><meshStandardMaterial color="#f4f8fa" /></mesh>
+          <mesh position={[0, 4, 2.6]}><boxGeometry args={[3, 0.8, 0.2]} />{mat}</mesh>
+          <mesh position={[0, 4, 2.6]}><boxGeometry args={[0.8, 3, 0.2]} />{mat}</mesh>
+        </group>
+      )}
+    </>
+  )
+}
+
 function TestGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId }) {
+  const { academyId } = useParams()
+  const academy = getAcademy(academyId)
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color="#3a6b3a" />
+        <meshStandardMaterial color={academy?.ground ?? '#3a6b3a'} />
       </mesh>
-      <gridHelper args={[200, 40, '#5a8a5a', '#4a7a4a']} position={[0, 0.01, 0]} />
+      <gridHelper args={[200, 40, academy?.grid ?? '#5a8a5a', academy?.grid ?? '#4a7a4a']} position={[0, 0.01, 0]} />
+      {academy && <AcademyDecor academy={academy} />}
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[100, 0.5, 100]} position={[0, -0.5, 0]} />
       </RigidBody>

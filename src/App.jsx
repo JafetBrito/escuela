@@ -1015,6 +1015,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/vr/academia/:academyId"
+          element={
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage testMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/vr/cueva-platon"
