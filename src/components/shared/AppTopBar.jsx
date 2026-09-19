@@ -148,6 +148,7 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
   const session = useAuthStore((s) => s.session)
   const profile = useAuthStore((s) => s.profile)
   const isTeacher = useAuthStore((s) => s.isTeacher)
+  const isDirector = useAuthStore((s) => s.isDirector)
   const signOut = useAuthStore((s) => s.signOut)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
   const { t, lang, setLang } = useI18n()
@@ -275,6 +276,12 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
         >
           🏫 {t('nav.items.academias')}
         </Link>
+
+        {isDirector?.() && (
+          <Link to="/director" onClick={closeAll} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-text-muted transition-colors hover:text-text">
+            🏛️ Director
+          </Link>
+        )}
 
         {/* Profesor — solo visible para cuentas promovidas por un admin
             (profiles.role === 'teacher', ver AdminTeachersPage.jsx) */}
@@ -474,6 +481,12 @@ export default function AppTopBar({ variant = 'full', backTo = '/dashboard', bac
           >
             🏫 {t('nav.items.academias')}
           </Link>
+
+          {isDirector?.() && (
+            <Link to="/director" onClick={closeAll} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-text-muted transition-colors hover:text-text">
+              🏛️ Director
+            </Link>
+          )}
 
           {isTeacher?.() && (
             <Link

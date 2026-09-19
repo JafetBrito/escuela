@@ -340,6 +340,7 @@ export const useAuthStore = create((set, get) => ({
   // signup directo. Ve sus propios cursos asignados y su bandeja de
   // reflexiones (ver src/components/teacher/).
   isTeacher: () => get().profile?.role === 'teacher',
+  isDirector: () => get().profile?.role === 'director',
 
   // Live voice (mic dictation in VR chat): admins always have it; everyone
   // else needs it explicitly granted via the admin's "Voz" panel, which

@@ -110,6 +110,7 @@ const AdminOracleReviewPage = lazy(() => import('./components/admin/AdminOracleR
 const AdminTeachersPage = lazy(() => import('./components/admin/AdminTeachersPage'))
 const AdminEmailsPage = lazy(() => import('./components/admin/AdminEmailsPage'))
 const AdminAiSettingsPage = lazy(() => import('./components/admin/AdminAiSettingsPage'))
+const DirectorPage = lazy(() => import('./components/director/DirectorPage'))
 const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
 const TeacherReflectionsPage = lazy(() => import('./components/teacher/TeacherReflectionsPage'))
 const TeacherProfilePage = lazy(() => import('./components/teacher/TeacherProfilePage'))
@@ -738,6 +739,16 @@ export default function App() {
             /admin/alumnos/:id vs. el resto de /admin/*, que no colisionan
             porque ninguna otra ruta admin usa un segmento dinámico al mismo
             nivel). */}
+        <Route
+          path="/director"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <DirectorPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profesor"
           element={
