@@ -79,6 +79,16 @@ export default function AcademiasPage() {
               </div>
             </Link>
             <Link
+              to="/academia-filosofia"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-amber-600/20 to-stone-500/10 p-5 transition hover:border-amber-500/40"
+            >
+              <span className="text-4xl">🏛️</span>
+              <div>
+                <p className="font-extrabold text-text">Academia de Filosofía</p>
+                <p className="text-xs text-text-muted">Lógica, ética y las grandes preguntas.</p>
+              </div>
+            </Link>
+            <Link
               to="/academia-china"
               className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-red-600/20 to-amber-500/10 p-5 transition hover:border-red-500/40"
             >
