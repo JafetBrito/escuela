@@ -4,6 +4,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import VideoPlayer from '../video/VideoPlayer'
 import HubContent from './HubContent'
+import WatchRoomCard from './WatchRoomCard'
 import { useLiveClassStore, classShortCode } from '../../stores/useLiveClassStore'
 import { VR_CLASSES } from '../../data/vrClassRegistry'
 
@@ -196,6 +197,7 @@ export default function AvailableClassesPage() {
 
           {!openClassEntry && (
             <div className="mt-6 space-y-3">
+              <WatchRoomCard />
               <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🕶️ Clases en Realidad Virtual</p>
               {Object.values(VR_CLASSES).map((c) => <VrClassCard key={c.id} cls={c} />)}
             </div>

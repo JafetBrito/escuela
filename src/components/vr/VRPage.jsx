@@ -374,7 +374,7 @@ function useLabRoomGround() {
 // (PRESENTATION_VIDEO_URL), sin control propio: es decoración/recurso
 // fijo, no un paso de la clase (eso es <ClassVideoStep> en
 // ClassLessonRunner.jsx, para cuando una clase traiga su propio video).
-function ClassProjectorScreen({ position }) {
+function ClassProjectorScreen({ position, src = PRESENTATION_VIDEO_URL, emptyMessage = '' }) {
   const { t } = useI18n()
   return (
     <group position={position}>
@@ -384,23 +384,28 @@ function ClassProjectorScreen({ position }) {
       </mesh>
       <Html position={[0, 0, 0]} center distanceFactor={6} occlude={false}>
         <div style={{ width: '260px', height: '150px', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
-          <iframe
-            width="260"
-            height="150"
-            src={PRESENTATION_VIDEO_URL}
-            title={t('vr.videoScreen.title')}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            style={{ width: '100%', height: '100%', display: 'block' }}
-          />
+          {src ? (
+            <iframe
+              width="260"
+              height="150"
+              src={src}
+              title={t('vr.videoScreen.title')}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100%', height: '100%', display: 'block' }}
+            />
+          ) : (
+            <div style={{ color: '#fff', font: '600 12px system-ui', textAlign: 'center', padding: 16 }}>{emptyMessage}</div>
+          )}
         </div>
       </Html>
     </group>
   )
 }
 
-function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onNearComputerChange, classId }) {
+function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearPortalChange, onNearComputerChange, classId, watchRoom = false, remoteTransformsRef, remoteActionsRef, onSelectPlayer }) {
+  const streamUrl = useVrStreamStore((s) => s.embedUrl)
   const { t, lang } = useI18n()
   const { model, groundRayHeight, footprintX, footprintZ } = useLabRoomGround()
   // Mundo privado de un solo jugador (como BirthdayPartyWorld) — sin canal
@@ -416,18 +421,23 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
   // maestro, el portal y la terminal quedan separados entre sí y dentro de
   // las paredes sin importar el factor de escala exacto que termine
   // haciendo falta ajustar. Reporte real: "está todo muy junto".
-  const spawnPosition = useMemo(() => [0, 0, -footprintZ * 0.1], [footprintZ])
+  // En una sala compartida cada quien aparece en un punto distinto (según su id) para no encimarse.
+  const spawnPosition = useMemo(() => {
+    const jitter = watchRoom ? ([...playerId].reduce((n, c) => n + c.charCodeAt(0), 0) % 7 - 3) * 1.2 : 0
+    return [jitter, 0, -footprintZ * 0.1]
+  }, [footprintZ, watchRoom, playerId])
   const teacherPosition = useMemo(() => [footprintX * 0.22, 0, footprintZ * 0.08], [footprintX, footprintZ])
   const portalPosition = useMemo(() => [-footprintX * 0.28, 0, footprintZ * 0.18], [footprintX, footprintZ])
   const terminalPosition = useMemo(() => [footprintX * 0.1, 0, -footprintZ * 0.22], [footprintX, footprintZ])
   const projectorPosition = useMemo(() => [0, 1.6, -footprintZ * 0.32], [footprintZ])
 
   useEffect(() => {
+    if (watchRoom) return // sin maestro ni sesión de clase
     useClassSessionStore.getState().setActiveClass(cls.id)
     useClassSessionStore.getState().setTeacherPosition(teacherPosition)
     return () => useClassSessionStore.getState().reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cls.id])
+  }, [cls.id, watchRoom])
 
   const teacherNpc = useMemo(() => ({
     ...localizeNpcDialogue(JAFET_NPC, lang),
@@ -448,12 +458,15 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
       <primitive object={model} />
       <Html position={[0, 3.2, 0]} center distanceFactor={14}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
-          🏫 {cls.title} · {cls.teacherName} · {cls.durationMinutes} min
+          {watchRoom ? '🔴 Sala de transmisión' : `🏫 ${cls.title} · ${cls.teacherName} · ${cls.durationMinutes} min`}
         </div>
       </Html>
-      <IdleNpc config={teacherNpc} playerPositionRef={playerPositionRef} onInteract={handleTalkToTeacher} />
-      <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />
-      <ClassProjectorScreen position={projectorPosition} />
+      {!watchRoom && <IdleNpc config={teacherNpc} playerPositionRef={playerPositionRef} onInteract={handleTalkToTeacher} />}
+      {!watchRoom && <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />}
+      {watchRoom && <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />}
+      {watchRoom
+        ? <ClassProjectorScreen position={projectorPosition} src={streamUrl} emptyMessage="No hay transmisión en vivo ahora. Cuando empiece, se verá aquí." />
+        : <ClassProjectorScreen position={projectorPosition} />}
       {/* Terminal del salón — para que el admin (o quien la necesite) pueda
           abrir la Consola GM sin salir del salón (ej. para probar /fly). */}
       <ComputerTerminal playerPositionRef={playerPositionRef} onNearChange={onNearComputerChange} position={new THREE.Vector3(...terminalPosition)} radius={2.2} />
@@ -2617,6 +2630,7 @@ function World({
   testMode,
   birthdayMode,
   classroomMode,
+  watchRoomMode,
   classId,
 }) {
   // Called unconditionally (before any of the per-mode early returns below)
@@ -2734,6 +2748,27 @@ function World({
         authorName={authorName}
         playerId={playerId}
         onNearPortalChange={onNearPortalChange}
+      />
+    )
+  }
+
+  if (watchRoomMode) {
+    return (
+      <ClassroomWorld
+        watchRoom
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearPortalChange={onNearPortalChange}
+        onNearComputerChange={onNearComputerChange}
+        remoteTransformsRef={remoteTransformsRef}
+        remoteActionsRef={remoteActionsRef}
+        onSelectPlayer={onSelectPlayer}
       />
     )
   }
@@ -3665,10 +3700,10 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false }) {
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false, watchRoomMode = false }) {
   const { t, lang } = useI18n()
   const navigate = useNavigate()
-  const { classId } = useParams()
+  const { classId, roomId } = useParams()
   const keysRef = useMovementKeys()
   const { camera: cameraRef, onPointerDown, onPointerMove, onPointerUp, onWheel } = useCameraControls()
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
@@ -3692,7 +3727,9 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode || classroomMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode || classroomMode || watchRoomMode
+  // Sala de transmisión: mundo interior (como el salón) pero COMPARTIDO por su código, con canal propio.
+  const indoorMode = classroomMode || watchRoomMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
   // Admin's hour/season/weather (DevToolsPanel) is mirrored to every
   // connected player via VR presence — see useVrMultiplayer's worldState
@@ -3713,7 +3750,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
     accountId: session?.user?.id ?? null,
     positionRef: playerPositionRef,
     rotationRef: playerRotationRef,
-    enabled: !isPrivateWorld,
+    enabled: !isPrivateWorld || watchRoomMode,
+    channelName: watchRoomMode ? `vr:room:${roomId}` : undefined,
     isAdmin: isAdminForWorldState,
     dnMode,
     dnManualBaseHour,
@@ -4133,14 +4171,14 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               "no quiero que salga en esta parte, pero no se lo quites al
               sistema global"). Solo afecta este modo, el Campus real sigue
               con campusMode=true de siempre. */}
-          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !classroomMode} />
+          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !indoorMode} />
           {flashlightOn && flashlightPurchased && (
             <FlashlightSpot playerPositionRef={playerPositionRef} cameraRef={cameraRef} />
           )}
           {/* Non-campus modes: static lighting (intensity 0 in campus so they don't stack) */}
           <ambientLight
-            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : classroomMode ? 1.1 : 0}
-            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : classroomMode ? '#ffffff' : '#000000'}
+            intensity={anfiteatroMode ? 0.25 : roomMode ? 0.55 : worldTreeMode ? 1.4 : indoorMode ? 1.1 : 0}
+            color={anfiteatroMode ? '#c0a0ff' : roomMode ? '#ffcc88' : worldTreeMode ? '#ccffdd' : indoorMode ? '#ffffff' : '#000000'}
           />
           <directionalLight
             position={[20, 30, 10]}
@@ -4185,6 +4223,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               testMode={testMode}
               birthdayMode={birthdayMode}
               classroomMode={classroomMode}
+              watchRoomMode={watchRoomMode}
               classId={classId}
             />
             {/* Parked companion mesh when follow mode is off */}
@@ -4350,7 +4389,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             ambos textos terminan superpuestos ("a.m." sobre "jugadores
             más"). Mismo criterio que ya usa el minimap (VrMinimap: "hidden
             sm:flex") — es información secundaria, no crítica para jugar. */}
-        {hudVisible && !isPrivateWorld && (
+        {hudVisible && (!isPrivateWorld || watchRoomMode) && (
           <div className="pointer-events-none absolute right-4 top-4 z-20 hidden rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg backdrop-blur sm:block">
             {isVrRealtimeAvailable() ? (
               connected ? (
@@ -4403,7 +4442,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           isPrivateWorld={isPrivateWorld}
           playerPosRef={playerPositionRef}
           onUseSkill={handleUseSkill}
-          hideSkillBar={classroomMode}
+          hideSkillBar={indoorMode}
         />
         <LootToast />
 
@@ -4570,7 +4609,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={birthdayMode ? t('vr.worldNames.birthday') : classroomMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

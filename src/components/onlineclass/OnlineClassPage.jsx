@@ -6,6 +6,7 @@ import VideoPlayer from '../video/VideoPlayer'
 import { ONLINE_CLASS_PLAYLIST } from '../../data/onlineClassPlaylist'
 import { useOnlineChatStore } from '../../stores/useOnlineChatStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useVrStreamStore } from '../../stores/useVrStreamStore'
 
 // "Clase Online": un canal continuo (playlist en bucle) + chat global para
 // todos los que estén viendo. Completamente aparte de las clases en vivo/de
@@ -63,6 +64,13 @@ function GlobalChat() {
 
 export default function OnlineClassPage() {
   const [index, setIndex] = useState(0)
+  // Si hay una transmisión en vivo (ver useVrStreamStore) toma el lugar de la lista;
+  // al apagarse, vuelve la lista normal. Se revisa cada 30 s por si cambia mientras estás aquí.
+  const liveUrl = useVrStreamStore((s) => s.embedUrl)
+  useEffect(() => {
+    const t = setInterval(() => useVrStreamStore.getState().load(), 30_000)
+    return () => clearInterval(t)
+  }, [])
   const current = ONLINE_CLASS_PLAYLIST[index]
   const next = ONLINE_CLASS_PLAYLIST[(index + 1) % ONLINE_CLASS_PLAYLIST.length]
 
@@ -75,13 +83,29 @@ export default function OnlineClassPage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-rose-600 to-orange-500 px-6 py-8 shadow-lg">
-            <h1 className="text-3xl font-extrabold text-white">📺 Clase Online</h1>
-            <p className="mt-1 text-sm font-medium text-white/85">Video continuo — entra cuando quieras y platica con quien más esté viendo.</p>
+            <h1 className="text-3xl font-extrabold text-white">{liveUrl ? '🔴 Clase Online — EN VIVO' : '📺 Clase Online'}</h1>
+            <p className="mt-1 text-sm font-medium text-white/85">{liveUrl ? 'Hay una transmisión en vivo ahora. Al terminar, vuelve el video continuo.' : 'Video continuo — entra cuando quieras y platica con quien más esté viendo.'}</p>
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch">
             <div>
-              {current ? (
+              {liveUrl ? (
+                <>
+                  <div className="aspect-video w-full overflow-hidden rounded-2xl border border-red-500/40 bg-black">
+                    <iframe
+                      src={liveUrl}
+                      title="Transmisión en vivo"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full border-0"
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-red-500">🔴 En vivo</p>
+                    <a href="/vr" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">🕶️ Verla en el campus</a>
+                  </div>
+                </>
+              ) : current ? (
                 <>
                   <VideoPlayer videoId={current.videoId} onEnded={handleEnded} />
                   <p className="mt-3 text-sm font-bold text-text">▶️ {current.title}</p>

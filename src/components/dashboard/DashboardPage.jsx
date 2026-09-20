@@ -24,6 +24,7 @@ import TrajectorySummaryCard from './TrajectorySummaryCard'
 import BadgesSummaryCard from './BadgesSummaryCard'
 import UpcomingDeadlinesCard from './UpcomingDeadlinesCard'
 import ThemedWeekCard from './ThemedWeekCard'
+import LiveStreamBanner from '../shared/LiveStreamBanner'
 import MiniCalendarCard from './MiniCalendarCard'
 import CoursesDonutCard from './CoursesDonutCard'
 import CategoryActivityBarCard from './CategoryActivityBarCard'
@@ -107,6 +108,8 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       {patchNotesOpen && <PatchNotesModal open force onClose={() => setPatchNotesOpen(false)} />}
+
+      <LiveStreamBanner />
 
       <HeroBanner
         displayName={displayName}

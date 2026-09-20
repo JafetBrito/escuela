@@ -36,6 +36,8 @@ export function useVrMultiplayer({
   positionRef,
   rotationRef,
   enabled = true,
+  // Canal de Realtime: el campus usa el compartido; una sala de transmisión usa el suyo (vr:room:<id>).
+  channelName = VR_CHANNEL,
   isAdmin = false,
   // Passed as separate primitives (not one worldState object) so the
   // re-track effect below can depend on them by value instead of by
@@ -60,7 +62,7 @@ export function useVrMultiplayer({
   useEffect(() => {
     if (!enabled || !isVrRealtimeAvailable() || kicked) return
 
-    const channel = supabase.channel(VR_CHANNEL, {
+    const channel = supabase.channel(channelName, {
       config: { presence: { key: playerId }, broadcast: { self: false } },
     })
     channelRef.current = channel
@@ -167,7 +169,7 @@ export function useVrMultiplayer({
     // Only (re)connect when the player's identity changes — name/mascot/skin
     // updates are pushed via the effect below instead of reconnecting.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerId, kicked, enabled])
+  }, [playerId, kicked, enabled, channelName])
 
   // Re-broadcast presence whenever the player's displayed name/mascot/skin
   // changes (e.g. they swap mascots in the Aspecto panel mid-session), or

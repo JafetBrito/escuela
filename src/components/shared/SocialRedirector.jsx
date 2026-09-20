@@ -5,7 +5,7 @@ import { useNotificationsStore } from '../../stores/useNotificationsStore'
 // llega una notificación con el destino; esto te pregunta si quieres ir ahora
 // (así los dos terminan en el mismo lugar). Solo reacciona a las recientes
 // (< 2 min) y una sola vez por notificación.
-const ALLOWED = /^\/(games\/[a-z0-9-]+|vr|mundo)$/
+const ALLOWED = /^\/(games\/[a-z0-9-]+|vr|mundo|vr\/sala\/[a-z0-9]{6,12})$/
 
 export default function SocialRedirector() {
   const notifications = useNotificationsStore((s) => s.notifications)

@@ -215,6 +215,13 @@ export default function App() {
   // Load holiday theme + world hour/season/weather from Supabase so both are
   // applied everywhere and survive the admin's own reload, not just the live
   // in-VR broadcast (see useDayNightStore.persistWorldState).
+  // La transmisión en vivo se revisa cada 45 s para que el aviso del Dashboard
+  // aparezca/desaparezca sin recargar (dentro del campus llega en vivo por Realtime).
+  useEffect(() => {
+    const t = setInterval(() => useVrStreamStore.getState().load(), 45_000)
+    return () => clearInterval(t)
+  }, [])
+
   useEffect(() => {
     useHolidayStore.getState().load()
     useThemedWeekStore.getState().load()
@@ -1032,6 +1039,16 @@ export default function App() {
             <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage classroomMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vr/sala/:roomId"
+          element={
+            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+              <Suspense fallback={<RouteFallback />}>
+                <VRPage watchRoomMode />
               </Suspense>
             </ProtectedRoute>
           }
