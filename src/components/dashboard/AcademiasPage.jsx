@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
@@ -26,6 +26,15 @@ const SUB_ICONS = {
 // /escuela/ciberseguridad), aquí solo son la puerta de entrada.
 export default function AcademiasPage() {
   const { t, lang } = useI18n()
+  const gridRef = useRef(null)
+
+  // ponytail: filtra por el texto ya renderizado de cada tarjeta (sin acentos) en vez de
+  // mantener una lista de datos aparte; suficiente mientras sean ~25 tarjetas.
+  const norm = (x) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  const handleSearch = (e) => {
+    const q = norm(e.target.value.trim())
+    Array.from(gridRef.current?.children ?? []).forEach((el) => { el.style.display = norm(el.textContent).includes(q) ? '' : 'none' })
+  }
 
   const schoolCards = useMemo(() => MAIN_CATEGORIES.flatMap((m) => m.subcategories
     .filter((s) => !HAS_OWN_PAGE.includes(s.name))
@@ -48,8 +57,15 @@ export default function AcademiasPage() {
             <p className="mt-1 text-sm font-medium text-white/85">{t('dashboard.academias.subtitle')}</p>
           </div>
 
-          {/* Academias con casa propia */}
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <input
+            type="search"
+            onChange={handleSearch}
+            placeholder="🔍 Buscar academia o escuela..."
+            className="mt-6 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text outline-none focus:border-primary"
+          />
+
+          {/* Academias con casa propia + escuelas */}
+          <div ref={gridRef} className="mt-4 grid gap-3 sm:grid-cols-2">
             <Link
               to="/academia-ia"
               className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-lime-600/20 to-emerald-500/10 p-5 transition hover:border-emerald-500/40"
