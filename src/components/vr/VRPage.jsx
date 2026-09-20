@@ -2431,6 +2431,29 @@ function BirthdayPartyWorld({ mascot, skin, keysRef, cameraRef, playerPositionRe
   // cuando existe (mundo compartido).
   const noChannelRef = useRef(null)
 
+  // /exportarmapa (GmConsole, admin) — vuelca el campus procedural (código)
+  // a un .glb descargable para abrirlo/editarlo en Blender y, si se quiere,
+  // reemplazar el código por ese modelo.
+  useEffect(() => {
+    const onExport = async () => {
+      const { GLTFExporter } = await import('three/examples/jsm/exporters/GLTFExporter.js')
+      new GLTFExporter().parse(
+        model,
+        (glb) => {
+          const a = document.createElement('a')
+          a.href = URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' }))
+          a.download = 'campus-tradicional.glb'
+          a.click()
+          URL.revokeObjectURL(a.href)
+        },
+        (err) => console.error('[exportarmapa]', err),
+        { binary: true },
+      )
+    }
+    window.addEventListener('export-map-glb', onExport)
+    return () => window.removeEventListener('export-map-glb', onExport)
+  }, [model])
+
   useEffect(() => {
     if (firedRef.current) return
     firedRef.current = true

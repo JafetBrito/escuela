@@ -31,6 +31,7 @@ const COMMAND_PALETTE = [
   { cmd: '/target ', desc: 'Cambiar a quién afectan los comandos' },
   { cmd: '/discurso ', desc: 'Disparar ahora el discurso programado de un NPC (prueba)' },
   { cmd: '/cumpleanos', desc: 'Abrir el modal de cumpleaños sin esperar la fecha real (prueba)' },
+  { cmd: '/exportarmapa', desc: 'Descargar el campus tradicional como .glb (solo funciona dentro de /vr/cumpleanos)' },
   { cmd: '/fly ', desc: 'Volar (on/off) — solo admin, para explorar mapas' },
 ]
 
@@ -49,6 +50,7 @@ const HELP_LINES = [
   '  /target <correo|yo>    — cambia a quién afectan los comandos',
   '  /discurso <npcId>      — dispara ahora el discurso programado de ese NPC (ej. oliver), para probarlo sin esperar a la hora',
   '  /cumpleanos             — abre el modal de cumpleaños sin esperar la fecha real; su botón "Ir a tu fiesta" lleva al mapa privado',
+  '  /exportarmapa           — descarga el campus tradicional (el hecho en código) como .glb para editarlo en Blender; úsalo estando dentro de /vr/cumpleanos',
   '  /fly on|off             — activa/desactiva el vuelo libre (como .fly en WoW), para explorar mapas sin quedarte atorado',
 ]
 
@@ -197,6 +199,9 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
         // no hace falta ningún broadcast desde aquí.
         useBirthdayStore.getState().forceOpen()
         log('✅ Modal de cumpleaños abierto en modo de prueba — usa su botón "Ir a tu fiesta" para entrar al mapa.')
+      } else if (cmd === 'exportarmapa') {
+        window.dispatchEvent(new Event('export-map-glb'))
+        log('⏳ Exportando… si estás en /vr/cumpleanos se descargará campus-tradicional.glb.')
       } else if (cmd === 'fly') {
         // Solo local (useFlyModeStore no persiste) — esta consola ya es
         // admin-only (ver TerminalModal en VRPage.jsx / la ruta
