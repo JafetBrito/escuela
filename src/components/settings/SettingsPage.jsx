@@ -21,7 +21,7 @@ import { SHOP_ITEMS } from '../../data/shopRegistry'
 import { getMascotById } from '../../data/mascotRegistry'
 import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
 import { saveLocalSnapshot } from '../../services/persistence/localStore'
-import { isSupabaseConfigured } from '../../services/supabase/client'
+import { isSupabaseConfigured, supabase } from '../../services/supabase/client'
 import { providerSupportsTools } from '../../data/aiProviderRegistry'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 
@@ -91,6 +91,7 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [passwordStatus, setPasswordStatus] = useState('')
   const [birthdateStatus, setBirthdateStatus] = useState('')
+  const [avatarStatus, setAvatarStatus] = useState('')
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
@@ -144,6 +145,32 @@ export default function SettingsPage() {
       lock()
     }
     navigate('/')
+  }
+
+  // Foto de perfil: se recorta a un cuadrado de 256px y se sube al bucket
+  // público 'avatars' (migration_072) en <user_id>/avatar.jpg.
+  const handleAvatarFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !session?.user?.id) return
+    setAvatarStatus('Subiendo…')
+    try {
+      const bmp = await createImageBitmap(file)
+      const side = Math.min(bmp.width, bmp.height)
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 256
+      canvas.getContext('2d').drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 256, 256)
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85))
+      const path = `${session.user.id}/avatar.jpg`
+      const { error } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+      if (error) throw error
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      await updateProfile({ avatar_url: `${data.publicUrl}?v=${Date.now()}` })
+      setAvatarStatus('✅ Foto actualizada')
+      setTimeout(() => setAvatarStatus(''), 2500)
+    } catch (err) {
+      setAvatarStatus(`❌ ${err.message ?? 'No se pudo subir la foto'}`)
+    }
   }
 
   const handleBirthdateChange = async (e) => {
@@ -257,14 +284,23 @@ export default function SettingsPage() {
 
                   {(session || googleUser) && (
                     <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
-                      {(profile?.avatar_url || googleUser?.picture) && (
-                        <img src={profile?.avatar_url || googleUser?.picture} alt="" className="h-10 w-10 rounded-full" />
-                      )}
+                      <label className="group relative h-12 w-12 shrink-0 cursor-pointer" title="Cambiar foto de perfil">
+                        {(profile?.avatar_url || googleUser?.picture) ? (
+                          <img src={profile?.avatar_url || googleUser?.picture} alt="" referrerPolicy="no-referrer" className="h-12 w-12 rounded-full object-cover" />
+                        ) : (
+                          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-lg font-bold text-primary">
+                            {(profile?.display_name || googleUser?.name || '?')[0]?.toUpperCase()}
+                          </span>
+                        )}
+                        <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-sm opacity-0 transition group-hover:opacity-100">📷</span>
+                        {session && <input type="file" accept="image/*" onChange={handleAvatarFile} className="hidden" />}
+                      </label>
                       <div>
                         <p className="text-sm font-semibold text-text">
                           {profile?.display_name || googleUser?.name || 'Tu cuenta'}
                         </p>
                         <p className="text-xs text-text-muted">{session?.user?.email || googleUser?.email}</p>
+                        {avatarStatus && <p className="text-xs text-primary">{avatarStatus}</p>}
                       </div>
                       {roleLabel && (
                         <span className="ml-auto rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary">
