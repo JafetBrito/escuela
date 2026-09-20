@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import courses from '../../data/courses.json'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { MAIN_CATEGORIES, getMainCategory } from '../../data/categoryTaxonomy'
@@ -17,6 +17,8 @@ import { CourseCard } from './DashboardPage'
 // sin distraer con un profesor 3D. /escuela-categoria/:id
 export default function MainCategoryPage() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const onlySub = searchParams.get('sub') // desde /academias: solo esa subcategoría
   const navigate = useNavigate()
   const hasAccessToCourse = useAuthStore((s) => s.hasAccessToCourse)
   const progress = useProgressStore((s) => s.progress)
@@ -29,11 +31,11 @@ export default function MainCategoryPage() {
 
   const sections = useMemo(() => {
     if (!mainCategory) return []
-    return mainCategory.subcategories.map((sub) => ({
+    return mainCategory.subcategories.filter((sub) => !onlySub || sub.name === onlySub).map((sub) => ({
       ...sub,
       courses: courses.filter((c) => sub.schoolCategories.includes(c.category ?? 'Otros')),
     }))
-  }, [mainCategory])
+  }, [mainCategory, onlySub])
 
   const progressByCourse = (courseId) => {
     if (!hasCourseData(courseId)) return null

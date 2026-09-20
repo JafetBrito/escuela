@@ -1,11 +1,21 @@
 import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import courses from '../../data/courses.json'
 import { MAIN_CATEGORIES } from '../../data/categoryTaxonomy'
 import { localizeCategoryName } from '../../data/categoryTranslations'
 import { useI18n } from '../../i18n'
+
+// Subcategorías que ya tienen su propia portada arriba — el resto sale como tarjeta genérica.
+const HAS_OWN_PAGE = ['Inteligencia Artificial', 'Ciberseguridad', 'Filosofía', 'Lenguas y Lingüística', 'Medicina y Ciencias de la Salud']
+const SUB_ICONS = {
+  'Matemáticas': '📐', 'Ciencias de la Computación': '💻', 'Lógica': '🧩',
+  'Física': '⚛️', 'Química': '🧪', 'Biología': '🧬', 'Ciencias de la Tierra y el Espacio': '🪐',
+  'Psicología': '🧠', 'Economía y Negocios': '📈', 'Sociología y Antropología': '👥', 'Historia y Geografía': '🗺️', 'Ciencias Políticas y Derecho': '⚖️',
+  'Literatura': '📚', 'Artes Visuales': '🎨', 'Artes Escénicas y Música': '🎭',
+  'Ingeniería': '⚙️', 'Educación': '🎓', 'Agricultura y Veterinaria': '🌾', 'Comunicación y Medios': '📡', 'Herramientas y hábitos': '⚡',
+}
 
 // Punto de entrada único para "escuelas" — antes Escuelas (categorías
 // generales), Academia de Idiomas y Academia de Ciberseguridad vivían
@@ -16,15 +26,17 @@ import { useI18n } from '../../i18n'
 // /escuela/ciberseguridad), aquí solo son la puerta de entrada.
 export default function AcademiasPage() {
   const { t, lang } = useI18n()
-  const navigate = useNavigate()
 
-  const withCounts = useMemo(() => MAIN_CATEGORIES.map((m) => {
-    const subcategories = m.subcategories.map((s) => ({
-      ...s,
+  const schoolCards = useMemo(() => MAIN_CATEGORIES.flatMap((m) => m.subcategories
+    .filter((s) => !HAS_OWN_PAGE.includes(s.name))
+    .map((s) => ({
+      name: s.name,
+      mainId: m.id,
+      accent: m.accent,
+      icon: SUB_ICONS[s.name] ?? m.icon,
+      blurb: s.topics.slice(0, 3).join(', '),
       count: courses.filter((c) => s.schoolCategories.includes(c.category ?? 'Otros')).length,
-    }))
-    return { ...m, subcategories, count: subcategories.reduce((n, s) => n + s.count, 0) }
-  }), [])
+    }))), [])
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
@@ -98,43 +110,19 @@ export default function AcademiasPage() {
                 <p className="text-xs text-text-muted">{t('dashboard.academias.chinaBlurb')}</p>
               </div>
             </Link>
-          </div>
-
-          {/* Escuelas por categoría — antes la pestaña "Escuelas" del Dashboard */}
-          <h2 className="mb-3 mt-8 text-xs font-black uppercase tracking-widest text-text-muted/60">
-            {t('dashboard.schoolsTitle')}
-          </h2>
-          <div className="space-y-4">
-            {withCounts.map((m) => (
-              <div key={m.id} className="overflow-hidden rounded-2xl border border-border bg-surface">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/escuela-categoria/${m.id}`)}
-                  className={`flex w-full items-center justify-between px-5 py-4 text-left bg-gradient-to-r ${m.gradient} transition hover:opacity-95`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl drop-shadow-sm">{m.icon}</span>
-                    <div>
-                      <p className="text-base font-extrabold text-background drop-shadow-sm">{localizeCategoryName(m.title, lang)}</p>
-                      <p className="text-xs font-medium text-background/70">
-                        {m.count} {m.count === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')} · {m.subcategories.length} {t('dashboard.academias.subcategoriesCount')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-background/70 text-lg">→</span>
-                </button>
-                <div className="flex flex-wrap gap-2 p-4">
-                  {m.subcategories.map((s) => (
-                    <Link
-                      key={s.name}
-                      to={`/escuela-categoria/${m.id}`}
-                      className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-text-muted transition hover:border-primary hover:text-primary"
-                    >
-                      {localizeCategoryName(s.name, lang)} <span className="opacity-60">· {s.count}</span>
-                    </Link>
-                  ))}
+            {schoolCards.map((c) => (
+              <Link
+                key={c.name}
+                to={`/escuela-categoria/${c.mainId}?sub=${encodeURIComponent(c.name)}`}
+                className="flex items-center gap-3 rounded-2xl border border-border p-5 transition hover:brightness-95"
+                style={{ background: `linear-gradient(135deg, ${c.accent}33, ${c.accent}11)` }}
+              >
+                <span className="text-4xl">{c.icon}</span>
+                <div>
+                  <p className="font-extrabold text-text">{localizeCategoryName(c.name, lang)}</p>
+                  <p className="text-xs text-text-muted">{c.blurb} · {c.count} {c.count === 1 ? t('dashboard.courseSingular') : t('dashboard.coursePlural')}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
