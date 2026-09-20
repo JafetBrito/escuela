@@ -30,7 +30,6 @@ import CategoryActivityBarCard from './CategoryActivityBarCard'
 import LevelGaugeCard from './LevelGaugeCard'
 import HeroBanner from './HeroBanner'
 import CourseHighlightRow from './CourseHighlightRow'
-import QuickLinksRow from './QuickLinksRow'
 
 // ── Mapa: fila de "regiones" (src/utils/regions.js) con una línea punteada de fondo, estilo mapa
 // de aventura. Cada nodo lleva a la página real de esa academia/categoría.
@@ -118,10 +117,9 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
 
       <CourseHighlightRow courseList={highlightCourses} progressByCourse={progressByCourse} />
 
-      {/* Accesos y mapa del mundo — pedido explícito del usuario: subirlos
+      {/* Mapa del mundo — pedido explícito del usuario: subirlo
           arriba del todo, se perdían hasta abajo de la página y no se
           notaban. */}
-      <QuickLinksRow />
       <WorldMapSection regions={regions} />
 
       <ThemedWeekCard />
