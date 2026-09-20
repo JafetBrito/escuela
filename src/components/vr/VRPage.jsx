@@ -1,4 +1,5 @@
 ﻿import { useVrStreamStore } from '../../stores/useVrStreamStore'
+import StreamHud from './StreamHud'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
@@ -2321,7 +2322,8 @@ const PRESENTATION_VIDEO_URL = 'https://www.youtube.com/embed/1y1qrh58MlA?autopl
 function CampusVideoScreen({ onOpen }) {
   const { t } = useI18n()
   const liveUrl = useVrStreamStore((s) => s.embedUrl)
-  const viewerOpen = useVrStreamStore((s) => s.modalOpen)
+  const viewMode = useVrStreamStore((s) => s.viewMode)
+  const setViewMode = useVrStreamStore((s) => s.setViewMode)
   const meshRef  = useRef()
   const glowRef  = useRef()
 
@@ -2363,7 +2365,7 @@ function CampusVideoScreen({ onOpen }) {
       </mesh>
       {/* Transmisión en vivo (/stream): iframe sobre la pantalla. Se desmonta
           mientras el visor a pantalla completa está abierto para no duplicar el audio. */}
-      {liveUrl && !viewerOpen && (
+      {liveUrl && viewMode === 'screen' && (
         <Html position={[0, 5.5, 0.05]} transform occlude={false} scale={0.0195} distanceFactor={1}>
           <div style={{ width: '690px', height: '388px', background: '#000' }}>
             <iframe
@@ -2374,6 +2376,17 @@ function CampusVideoScreen({ onOpen }) {
               style={{ width: '100%', height: '100%', display: 'block', border: 0 }}
             />
           </div>
+        </Html>
+      )}
+      {liveUrl && viewMode !== 'screen' && (
+        <Html position={[0, 5.5, 0.05]} center distanceFactor={18}>
+          <button
+            type="button"
+            onClick={() => setViewMode('screen')}
+            className="rounded-xl bg-red-600/90 px-5 py-3 text-sm font-black text-white shadow-xl hover:bg-red-500"
+          >
+            🔴 Transmisión en vivo — verla aquí
+          </button>
         </Html>
       )}
       {/* Clickable Html overlay */}
@@ -2404,7 +2417,6 @@ function CampusVideoScreen({ onOpen }) {
 // Full-screen video modal opened from the campus screen or its right-click menu.
 function VideoScreenModal({ onClose }) {
   const { t } = useI18n()
-  const liveUrl = useVrStreamStore((s) => s.embedUrl)
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm"
       onClick={onClose}>
@@ -2416,7 +2428,7 @@ function VideoScreenModal({ onClose }) {
         </button>
         <div className="aspect-video w-full">
           <iframe
-            src={liveUrl ?? PRESENTATION_VIDEO_URL}
+            src={PRESENTATION_VIDEO_URL}
             className="h-full w-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -3746,8 +3758,6 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // entra, ve las instrucciones, y ENTONCES ya entra al mundo" en ese orden.
   const [classIntroSeen, setClassIntroSeen] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
-  const liveStreamUrl = useVrStreamStore((s) => s.embedUrl)
-  useEffect(() => { useVrStreamStore.getState().setModalOpen(videoScreenOpen) }, [videoScreenOpen])
   const [nearClassNodeId, setNearClassNodeId] = useState(null)
   const [classSelectionStep, setClassSelectionStep] = useState('player') // 'player' | 'oliver' | 'done'
   const selectPlayerClass = useGameStore((s) => s.selectPlayerClass)
@@ -4286,15 +4296,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
         {/* Presentation video screen modal */}
         {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
-        {liveStreamUrl && !videoScreenOpen && !isPrivateWorld && (
-          <button
-            type="button"
-            onClick={() => setVideoScreenOpen(true)}
-            className="absolute left-1/2 top-16 z-30 -translate-x-1/2 animate-pulse rounded-full border border-red-400/60 bg-red-600/90 px-4 py-2 text-sm font-black text-white shadow-lg hover:bg-red-500"
-          >
-            🔴 Transmisión en vivo · Ver ahora
-          </button>
-        )}
+        {!isPrivateWorld && <StreamHud />}
 
         {hudVisible && <NpcDialogueBox />}
         {hudVisible && classroomMode && <ClassLessonRunner />}

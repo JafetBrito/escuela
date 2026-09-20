@@ -40,8 +40,10 @@ function broadcast(embedUrl) {
 
 export const useVrStreamStore = create((set) => ({
   embedUrl: null,
-  modalOpen: false, // el visor a pantalla completa está abierto (evita audio doble)
-  setModalOpen: (modalOpen) => set({ modalOpen }),
+  // Cómo ve ESTE usuario la transmisión: 'screen' | 'mini' | 'full' | 'hidden' (ver StreamHud).
+  // Solo un modo a la vez monta el video, para no duplicar el audio.
+  viewMode: 'screen',
+  setViewMode: (viewMode) => set({ viewMode }),
 
   load: async () => {
     if (!supabase) return
@@ -49,13 +51,14 @@ export const useVrStreamStore = create((set) => ({
     set({ embedUrl: safe(data?.value?.embedUrl) })
   },
 
-  applyRemote: (payload) => set({ embedUrl: safe(payload?.embedUrl) }),
+  // Una transmisión nueva (o su fin) siempre arranca en la pantalla del campus.
+  applyRemote: (payload) => set({ embedUrl: safe(payload?.embedUrl), viewMode: 'screen' }),
 
   // Solo admin (la consola GM ya lo es). Devuelve false si el enlace no sirve.
   start: async (input) => {
     const embedUrl = toYouTubeEmbed(input)
     if (!embedUrl) return false
-    set({ embedUrl })
+    set({ embedUrl, viewMode: 'screen' })
     broadcast(embedUrl)
     if (supabase) await supabase.from('platform_settings').upsert({ key: KEY, value: { embedUrl }, updated_at: new Date().toISOString() })
     return true
