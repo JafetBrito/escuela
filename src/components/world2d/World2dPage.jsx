@@ -5,7 +5,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import VrHud from '../vr/VrHud'
 import WorldChat from '../vr/WorldChat'
-import CampusScene, { bridge } from './campusScene'
+import CampusScene, { bridge, SPAWN } from './campusScene'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useLevelStore } from '../../stores/useLevelStore'
 import { useMascotStore } from '../../stores/useMascotStore'
@@ -176,8 +176,8 @@ export default function World2dPage() {
       for (const p of all) {
         if (p.key === userId || !p.name) continue
         seen.add(p.key)
-        scene.addOther(p.key, p.x ?? 1200, p.y ?? 920, p.name, '#60a5fa')
-        scene.moveOther(p.key, p.x ?? 1200, p.y ?? 920)
+        scene.addOther(p.key, p.x ?? SPAWN.x, p.y ?? SPAWN.y, p.name, '#60a5fa')
+        scene.moveOther(p.key, p.x ?? SPAWN.x, p.y ?? SPAWN.y)
       }
       for (const id of Object.keys(bridge.scene?._others ?? {})) {
         if (!seen.has(id)) scene.removeOther(id)
@@ -186,7 +186,7 @@ export default function World2dPage() {
 
     ch.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        ch.track({ world: '2d', x: 1200, y: 920, name: playerName })
+        ch.track({ world: '2d', x: SPAWN.x, y: SPAWN.y, name: playerName })
       }
     })
 
