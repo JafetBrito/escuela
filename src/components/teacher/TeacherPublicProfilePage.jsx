@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useTeacherStore } from '../../stores/useTeacherStore'
@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 export default function TeacherPublicProfilePage() {
   const { id } = useParams()
   const loggedIn = useAuthStore((s) => !!s.session)
+  const [loaded, setLoaded] = useState(false)
   const publicProfile = useTeacherStore((s) => s.publicProfile)
   const publicCourses = useTeacherStore((s) => s.publicCourses)
   const fetchPublicTeacherProfile = useTeacherStore((s) => s.fetchPublicTeacherProfile)
@@ -19,8 +20,7 @@ export default function TeacherPublicProfilePage() {
 
   useEffect(() => {
     if (!id) return
-    fetchPublicTeacherProfile(id)
-    fetchPublicTeacherCourses(id)
+    Promise.all([fetchPublicTeacherProfile(id), fetchPublicTeacherCourses(id)]).finally(() => setLoaded(true))
   }, [id, fetchPublicTeacherProfile, fetchPublicTeacherCourses])
 
   if (!id) return <Navigate to="/dashboard" replace />
@@ -38,7 +38,15 @@ export default function TeacherPublicProfilePage() {
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-2xl space-y-5">
           {!publicProfile ? (
-            <p className="py-10 text-center text-sm text-text-muted">Cargando…</p>
+            loaded ? (
+              <div className="rounded-2xl border border-dashed border-border py-14 text-center">
+                <p className="text-4xl">🔎</p>
+                <p className="mt-2 font-bold">No encontramos a este profesor.</p>
+                <Link to="/login" className="mt-4 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-black text-background hover:opacity-90">Regístrate en Oliver Academy</Link>
+              </div>
+            ) : (
+              <p className="py-10 text-center text-sm text-text-muted">Cargando…</p>
+            )
           ) : (
             <>
               <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-5">

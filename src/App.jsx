@@ -52,6 +52,7 @@ import { useThemedWeekStore } from './stores/useThemedWeekStore'
 import { useBannedWordsStore } from './stores/useBannedWordsStore'
 import { useVrStreamStore } from './stores/useVrStreamStore'
 import SitePresence from './components/shared/SitePresence'
+import SocialRedirector from './components/shared/SocialRedirector'
 import { useDayNightStore } from './stores/useDayNightStore'
 import { useCourseContentStore } from './stores/useCourseContentStore'
 import { useTutorialContentStore } from './stores/useTutorialContentStore'
@@ -243,6 +244,7 @@ export default function App() {
       <UpdatingBanner />
       <BirthdayModal />
       <SitePresence />
+      <SocialRedirector />
 
       {/* 📖 MODAL GLOBAL DEL LECTOR
         Si el usuario abre un libro (openBookId existe), el lector se superpone 

@@ -96,6 +96,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [platformName, setPlatformName] = useState(profile?.display_name ?? '')
   const [nameStatus, setNameStatus] = useState('')
+  const [tagInput, setTagInput] = useState(profile?.tag ?? '')
   const isTeacherAccount = useAuthStore((s) => s.profile?.role === 'teacher')
   const refreshProfile = useAuthStore((s) => s.refreshProfile)
 
@@ -190,14 +191,18 @@ export default function SettingsPage() {
       return
     }
     if (hasProfanity(shown) || hasProfanity(fullName)) { setNameStatus('❌ Ese nombre no está permitido.'); return }
+    if (tagInput && !/^\d{4}$/.test(tagInput)) { setNameStatus('❌ La etiqueta son 4 números.'); return }
     setNameStatus('Guardando…')
     try {
-      await updateProfile({ display_name: shown, full_name: fullName.trim() || null })
+      const patch = { display_name: shown, full_name: fullName.trim() || null }
+      if (tagInput && tagInput !== profile?.tag) patch.tag = tagInput
+      await updateProfile(patch)
       await refreshProfile()
       setNameStatus('✅ Nombres guardados')
       setTimeout(() => setNameStatus(''), 2500)
     } catch (err) {
-      setNameStatus(`❌ ${err.message ?? 'No se pudo guardar'}`)
+      const taken = /tag_taken|profiles_name_tag_uniq|duplicate/i.test(err.message ?? '')
+      setNameStatus(taken ? `❌ #${tagInput} ya está tomado para ese nombre. Elige otros 4 números.` : `❌ ${err.message ?? 'No se pudo guardar'}`)
     }
   }
 
@@ -375,7 +380,9 @@ export default function SettingsPage() {
                           <div className="mt-0.5 flex items-center gap-2">
                             <input value={platformName} onChange={(e) => setPlatformName(e.target.value)} maxLength={20}
                               className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder="Cómo te verán los demás" />
-                            <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-2 font-mono text-sm font-bold text-primary" title="Tu etiqueta única">#{profile?.tag ?? '····'}</span>
+                            <span className="flex shrink-0 items-center rounded-lg bg-primary/10 pl-2 font-mono text-sm font-bold text-primary" title="Elige tus 4 números; si ya están tomados para tu nombre, te avisa">
+                              #<input value={tagInput} onChange={(e) => setTagInput(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" placeholder="0000" className="w-14 bg-transparent px-1 py-2 outline-none" />
+                            </span>
                           </div>
                         </label>
                       </div>

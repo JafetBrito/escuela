@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useNotificationsStore } from '../../stores/useNotificationsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { requestPushPermission } from '../../utils/pushNotify'
+import { useSocialStore } from '../../stores/useSocialStore'
 
 // Ícono + acento de color por tipo de evento — misma lógica de
 // "a qué corresponde" que ya usa handleClick para navegar.
 function notificationMeta(n) {
+  if (n.social_kind === 'friend_request' || n.social_kind === 'friend_accepted') return { icon: '🤝', ring: 'bg-sky-500/15 text-sky-400' }
+  if (n.social_kind === 'gift') return { icon: '🎁', ring: 'bg-amber-500/15 text-amber-400' }
+  if (n.social_kind === 'invite' || n.social_kind === 'invite_accepted') return { icon: '🎯', ring: 'bg-fuchsia-500/15 text-fuchsia-400' }
   if (n.chess_invite_id) return { icon: '♟️', ring: 'bg-indigo-500/15 text-indigo-400' }
   if (n.trivia_invite_id) return { icon: '🎯', ring: 'bg-fuchsia-500/15 text-fuchsia-400' }
   if (n.hospital_invite_id) return { icon: '🏥', ring: 'bg-emerald-500/15 text-emerald-400' }
@@ -76,8 +80,27 @@ export default function NotificationBell() {
     if (!open) requestPushPermission()
   }
 
+  // Solicitudes / regalos / invitaciones: se resuelven aquí mismo.
+  const handleSocial = async (e, n, accept) => {
+    e.stopPropagation()
+    const s = useSocialStore.getState()
+    let r
+    if (n.social_kind === 'friend_request') r = await s.respondRequest(n.social_id, accept)
+    else if (n.social_kind === 'gift') r = await s.respondGift(n.social_id, accept)
+    else if (n.social_kind === 'invite') r = await s.respondInvite(n.social_id, accept)
+    deleteNotification(n.id)
+    if (accept && r?.ok && r.path && (r.kind === 'game' || r.kind === 'vr')) {
+      setOpen(false)
+      window.location.assign(r.path) // navegación dura: los mundos VR/2D arrancan limpios
+    }
+  }
+
   const handleClick = (n) => {
     setOpen(false)
+    if (n.social_kind === 'invite_accepted' && n.social_payload?.path) {
+      window.location.assign(n.social_payload.path)
+      return
+    }
     if (n.chess_invite_id) {
       navigate('/games/mishi-jedrez')
     } else if (n.trivia_invite_id) {
@@ -178,6 +201,15 @@ export default function NotificationBell() {
                         {!n.read_at && <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
                       </div>
                       {n.body && <p className="mt-0.5 text-[11px] leading-snug text-text-muted line-clamp-2">{n.body}</p>}
+                      {['friend_request', 'gift', 'invite'].includes(n.social_kind) && (
+                        <div className="mt-1.5 flex gap-1.5">
+                          <button type="button" onClick={(e) => handleSocial(e, n, true)} className="rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-background hover:opacity-90">Aceptar</button>
+                          <button type="button" onClick={(e) => handleSocial(e, n, false)} className="rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:text-danger">Rechazar</button>
+                        </div>
+                      )}
+                      {n.social_kind === 'invite_accepted' && n.social_payload?.path && (
+                        <p className="mt-1 text-[11px] font-bold text-primary">Toca para ir ahora →</p>
+                      )}
                       <div className="mt-1 flex items-center gap-2">
                         <span className="text-[10px] text-text-muted/70">{timeAgo(n.created_at)}</span>
                         {hasReward && (
