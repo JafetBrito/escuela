@@ -2570,6 +2570,28 @@ function World({
   // change that remounts this component fresh.
   const { lang } = useI18n()
   const spawnedNpcs = useSpawnedNpcStore((s) => s.npcs)
+  const { academyId } = useParams()
+
+  // Mapa de academia: mismo campo plano pero SOLO con lo propio de la academia
+  // (su decoración) — sin los NPCs alineados, mobs, manzano ni terminal del
+  // mapa de pruebas.
+  if (testMode && academyId) {
+    return (
+      <>
+        <TestGroundWorld
+          mascot={mascot}
+          skin={skin}
+          keysRef={keysRef}
+          cameraRef={cameraRef}
+          playerPositionRef={playerPositionRef}
+          playerRotationRef={playerRotationRef}
+          authorName={authorName}
+          playerId={playerId}
+        />
+        <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
+      </>
+    )
+  }
 
   if (testMode) {
     // ponytail: same NPCs/mobs as the real campus, just lined up on a flat
