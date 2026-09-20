@@ -25,6 +25,7 @@ import { useSeenStore } from '../../stores/useSeenStore'
 import { useThemeStore } from '../../stores/useThemeStore'
 import { useRoadmapProgressStore } from '../../stores/useRoadmapProgressStore'
 import { useBirthdayStore } from '../../stores/useBirthdayStore'
+import { useThemedAnswersStore } from '../../stores/useThemedAnswersStore'
 import { buildProgressSnapshot, applyProgressSnapshot } from './progressSnapshot'
 import { saveLocalSnapshot, loadLocalSnapshot } from './localStore'
 import { supabase, isSupabaseConfigured } from '../supabase/client'
@@ -62,6 +63,7 @@ const STORES = [
   useThemeStore,
   useRoadmapProgressStore,
   useBirthdayStore,
+  useThemedAnswersStore,
 ]
 
 // Restores the user's account (license, progress, coins, settings, chat

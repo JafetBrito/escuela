@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import courses from '../../data/courses.json'
-import { dayIndex } from '../../data/themedWeeks'
+import { dayIndex, efemerideOf } from '../../data/themedWeeks'
 import { useThemedWeekStore, resolveThemedWeek } from '../../stores/useThemedWeekStore'
 
 // Tarjeta de la semana temática activa: tema, reto de hoy y cursos destacados.
@@ -14,6 +14,8 @@ export default function ThemedWeekCard() {
     [week],
   )
   if (!week) return null
+  const today = week.days[dayIndex()] ?? {}
+  const efem = efemerideOf()
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
@@ -25,7 +27,10 @@ export default function ThemedWeekCard() {
       <div className="grid gap-4 p-5 lg:grid-cols-2">
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-text-muted/70">🎯 Reto de hoy</p>
-          <p className="mt-1.5 text-sm text-text">{week.daily[dayIndex()]}</p>
+          <p className="mt-1.5 text-sm text-text">{today.question ?? today.task ?? 'Hoy toca descansar y repasar.'}</p>
+          {today.figure && <p className="mt-1.5 text-xs text-text-muted">🧑‍🏫 Figura del día: <span className="font-semibold text-text">{today.figure.name}</span></p>}
+          {efem && <p className="mt-1 text-xs text-text-muted">📆 {efem.text}</p>}
+          <Link to="/semana" className="mt-3 inline-block rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background hover:opacity-90">Abrir el día completo →</Link>
         </div>
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-text-muted/70">📚 Cursos para esta semana</p>

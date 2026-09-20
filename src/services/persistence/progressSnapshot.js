@@ -30,6 +30,7 @@ import { useSeenStore } from '../../stores/useSeenStore'
 import { useThemeStore } from '../../stores/useThemeStore'
 import { useRoadmapProgressStore } from '../../stores/useRoadmapProgressStore'
 import { useBirthdayStore } from '../../stores/useBirthdayStore'
+import { useThemedAnswersStore } from '../../stores/useThemedAnswersStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -153,6 +154,7 @@ export function buildProgressSnapshot() {
     theme: useThemeStore.getState().theme,
     roadmapProgress: useRoadmapProgressStore.getState().done,
     birthday: { lastClaimedYear: useBirthdayStore.getState().lastClaimedYear },
+    themedAnswers: useThemedAnswersStore.getState().entries,
     lastSaved: new Date().toISOString(),
   }
 }
@@ -216,4 +218,5 @@ export function applyProgressSnapshot(snapshot) {
   useThemeStore.getState().loadTheme(snapshot.theme)
   useRoadmapProgressStore.getState().loadRoadmapProgress(snapshot.roadmapProgress)
   useBirthdayStore.getState().loadBirthday(snapshot.birthday ?? {})
+  useThemedAnswersStore.getState().loadEntries(snapshot.themedAnswers)
 }
