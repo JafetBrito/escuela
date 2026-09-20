@@ -22,6 +22,7 @@ import { getMascotById } from '../../data/mascotRegistry'
 import { buildProgressSnapshot } from '../../services/persistence/progressSnapshot'
 import { saveLocalSnapshot } from '../../services/persistence/localStore'
 import { isSupabaseConfigured, supabase } from '../../services/supabase/client'
+import { hasProfanity } from '../../utils/profanityFilter'
 import { providerSupportsTools } from '../../data/aiProviderRegistry'
 import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
 
@@ -92,6 +93,11 @@ export default function SettingsPage() {
   const [passwordStatus, setPasswordStatus] = useState('')
   const [birthdateStatus, setBirthdateStatus] = useState('')
   const [avatarStatus, setAvatarStatus] = useState('')
+  const [fullName, setFullName] = useState(profile?.full_name ?? '')
+  const [platformName, setPlatformName] = useState(profile?.display_name ?? '')
+  const [nameStatus, setNameStatus] = useState('')
+  const isTeacherAccount = useAuthStore((s) => s.profile?.role === 'teacher')
+  const refreshProfile = useAuthStore((s) => s.refreshProfile)
 
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const setMascotName = useSettingsStore((s) => s.setMascotName)
@@ -170,6 +176,28 @@ export default function SettingsPage() {
       setTimeout(() => setAvatarStatus(''), 2500)
     } catch (err) {
       setAvatarStatus(`❌ ${err.message ?? 'No se pudo subir la foto'}`)
+    }
+  }
+
+  // Nombre real (privado) + nombre de plataforma (público). La etiqueta #1234
+  // la asigna un trigger de la base (migration_073) y no cambia al renombrar,
+  // salvo que ya exista alguien con ese mismo nombre y etiqueta.
+  const handleSaveNames = async (e) => {
+    e.preventDefault()
+    const shown = platformName.trim()
+    if (shown.length < 3 || shown.length > 20 || !/^[\p{L}\p{N} ._-]+$/u.test(shown)) {
+      setNameStatus('❌ El nombre de plataforma debe tener 3-20 caracteres (letras, números, espacio . _ -).')
+      return
+    }
+    if (hasProfanity(shown) || hasProfanity(fullName)) { setNameStatus('❌ Ese nombre no está permitido.'); return }
+    setNameStatus('Guardando…')
+    try {
+      await updateProfile({ display_name: shown, full_name: fullName.trim() || null })
+      await refreshProfile()
+      setNameStatus('✅ Nombres guardados')
+      setTimeout(() => setNameStatus(''), 2500)
+    } catch (err) {
+      setNameStatus(`❌ ${err.message ?? 'No se pudo guardar'}`)
     }
   }
 
@@ -330,6 +358,35 @@ export default function SettingsPage() {
                     </select>
                   </div>
 
+                  {session && (
+                    <form onSubmit={handleSaveNames} className="border-t border-border pt-3">
+                      <p className="text-sm font-semibold text-text">🪪 Tus nombres</p>
+                      <p className="mt-1 text-xs text-text-muted">
+                        El nombre real es privado (solo tú y los administradores lo ven). El nombre de plataforma es el que ven los demás, con tu etiqueta única al final.
+                      </p>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <label className="block">
+                          <span className="text-[10px] font-bold uppercase text-text-muted">Nombre real</span>
+                          <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80}
+                            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder="Tu nombre completo" />
+                        </label>
+                        <label className="block">
+                          <span className="text-[10px] font-bold uppercase text-text-muted">Nombre en la plataforma</span>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <input value={platformName} onChange={(e) => setPlatformName(e.target.value)} maxLength={20}
+                              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder="Cómo te verán los demás" />
+                            <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-2 font-mono text-sm font-bold text-primary" title="Tu etiqueta única">#{profile?.tag ?? '····'}</span>
+                          </div>
+                        </label>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Guardar nombres</button>
+                        {profile?.display_name && profile?.tag && <span className="text-xs text-text-muted">Te ven como <span className="font-mono font-bold text-text">{profile.display_name}#{profile.tag}</span></span>}
+                        {nameStatus && <span className="text-xs text-primary">{nameStatus}</span>}
+                      </div>
+                    </form>
+                  )}
+
                   {(session || googleUser) && (
                     <div className="border-t border-border pt-3">
                       <p className="text-sm font-semibold text-text">🎂 Tu cumpleaños</p>
@@ -395,7 +452,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🎨 Apariencia</p>
                   <p className="text-sm text-text-muted">Elige el tema visual de toda la plataforma. Se guarda en tu cuenta — te acompaña a cualquier dispositivo donde inicies sesión.</p>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    {BASE_THEMES.map((th) => (
+                    {BASE_THEMES.filter((th) => !th.teacherOnly || isTeacherAccount).map((th) => (
                       <button
                         key={th.id}
                         type="button"

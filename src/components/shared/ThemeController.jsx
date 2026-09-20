@@ -19,6 +19,8 @@ import NefertitiOverlay from './NefertitiOverlay'
 export default function ThemeController() {
   const theme = useThemeStore((s) => s.theme)
   const isAdmin = useAuthStore((s) => s.isAdmin)
+  const isTeacher = useAuthStore((s) => s.isTeacher)
+  const teacherActive = isTeacher?.() ?? false
   const ageProfile = useAuthStore((s) => s.profile?.age_profile)
   const hackerThemeEnabled = useAdminThemeStore((s) => s.enabled)
   const adminActive = (isAdmin?.() ?? false) && hackerThemeEnabled
@@ -33,6 +35,10 @@ export default function ThemeController() {
       document.documentElement.dataset.theme = forcedAgeTheme
     } else if (explicitTheme) {
       document.documentElement.dataset.theme = explicitTheme
+    } else if (teacherActive) {
+      // Los profesores tienen su propio tema por defecto; si eligen otro, la
+      // franja/insignia de abajo sigue marcándolos como profesor.
+      document.documentElement.dataset.theme = 'teacher'
     } else if (adminActive) {
       document.documentElement.dataset.theme = 'hacker'
     } else {
@@ -41,11 +47,19 @@ export default function ThemeController() {
     return () => {
       document.documentElement.dataset.theme = ''
     }
-  }, [adminActive, theme, forcedAgeTheme])
+  }, [adminActive, teacherActive, theme, forcedAgeTheme])
 
   return (
     <>
       <NefertitiOverlay />
+      {teacherActive && (
+        <>
+          <div className="pointer-events-none fixed inset-x-0 top-0 z-[9998] h-1" style={{ background: 'linear-gradient(90deg, #f59e0b, #a78bfa, #f59e0b)' }} />
+          <div className="pointer-events-none fixed left-1/2 top-1 z-[9999] -translate-x-1/2 rounded-b-lg border border-t-0 border-amber-400/60 bg-indigo-950/95 px-3 py-0.5 text-[10px] font-bold tracking-widest text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.4)]">
+            🧑‍🏫 MODO PROFESOR
+          </div>
+        </>
+      )}
       {adminActive && (
         <div className="pointer-events-none fixed left-1/2 top-0 z-[9999] -translate-x-1/2 rounded-b-lg border border-t-0 border-[#39ff14]/50 bg-black/90 px-3 py-0.5 font-mono text-[10px] tracking-widest text-[#39ff14] shadow-[0_0_12px_rgba(57,255,20,0.5)]">
           ⚡ ADMIN MODE

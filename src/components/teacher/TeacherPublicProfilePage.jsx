@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useTeacherStore } from '../../stores/useTeacherStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 
 // Pública para cualquier alumno logueado (no solo el profesor o un admin) —
 // habilitada por "profiles: anyone can view teacher profiles"
@@ -10,6 +11,7 @@ import { useTeacherStore } from '../../stores/useTeacherStore'
 // desde CourseRoadmapPage.jsx.
 export default function TeacherPublicProfilePage() {
   const { id } = useParams()
+  const loggedIn = useAuthStore((s) => !!s.session)
   const publicProfile = useTeacherStore((s) => s.publicProfile)
   const publicCourses = useTeacherStore((s) => s.publicCourses)
   const fetchPublicTeacherProfile = useTeacherStore((s) => s.fetchPublicTeacherProfile)
@@ -25,7 +27,14 @@ export default function TeacherPublicProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
-      <AppTopBar />
+      {loggedIn ? <AppTopBar /> : (
+        <header className="border-b border-border bg-surface px-4 py-3">
+          <div className="mx-auto flex max-w-2xl items-center justify-between">
+            <Link to="/" className="text-lg font-black">OLIVER <span className="text-primary">ACADEMY</span></Link>
+            <Link to="/login" className="text-sm font-bold text-primary hover:underline">Entrar</Link>
+          </div>
+        </header>
+      )}
       <main className="flex-1 px-4 py-8 md:px-8">
         <div className="mx-auto max-w-2xl space-y-5">
           {!publicProfile ? (
@@ -68,6 +77,12 @@ export default function TeacherPublicProfilePage() {
                   </div>
                 )}
               </div>
+              {!loggedIn && (
+                <div className="rounded-2xl border border-primary/30 bg-primary/10 p-6 text-center">
+                  <p className="text-lg font-black">Aprende con {publicProfile.display_name || 'nuestros profesores'} en Oliver Academy</p>
+                  <Link to="/login" className="mt-3 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-black text-background hover:opacity-90">Regístrate en Oliver Academy</Link>
+                </div>
+              )}
             </>
           )}
         </div>

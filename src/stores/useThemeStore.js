@@ -12,6 +12,9 @@ export const THEMES = [
   { id: 'default', label: 'Oscuro (predeterminado)', icon: '🌙', dataTheme: '' },
   { id: 'light', label: 'Claro', icon: '☀️', dataTheme: 'light' },
   { id: 'desert', label: 'Reina Nefertiti (desierto)', icon: '👑', dataTheme: 'desert' },
+  // Solo para cuentas de profesor (Ajustes lo oculta al resto); ThemeController
+  // lo aplica por defecto a los profesores.
+  { id: 'teacher', label: 'Profesor (exclusivo)', icon: '🧑‍🏫', dataTheme: 'teacher', teacherOnly: true },
 ]
 
 export const useThemeStore = create((set) => ({

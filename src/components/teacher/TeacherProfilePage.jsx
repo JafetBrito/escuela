@@ -22,6 +22,7 @@ export default function TeacherProfilePage() {
   }))
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [copied, setCopied] = useState(false)
 
   if (!isTeacher?.()) {
     return <TeacherShell />
@@ -52,6 +53,19 @@ export default function TeacherProfilePage() {
         <p className="text-sm text-text-muted">
           Esto es lo que ven tus alumnos en la página pública de tus cursos.
         </p>
+
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+          <p className="text-sm font-bold text-text">🔗 Tu enlace público</p>
+          <p className="mt-0.5 text-xs text-text-muted">Cualquiera lo puede abrir, aunque no tenga cuenta, y verá una invitación a registrarse.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <input readOnly value={`${window.location.origin}/profesor/${session.user.id}`} onFocus={(e) => e.target.select()} className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs text-text" />
+            <button
+              type="button"
+              onClick={async () => { await navigator.clipboard.writeText(`${window.location.origin}/profesor/${session.user.id}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+              className="shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-background"
+            >{copied ? '✅ Copiado' : 'Copiar'}</button>
+          </div>
+        </div>
 
         <form onSubmit={handleSave} className="space-y-3 rounded-2xl border border-border bg-surface p-4">
           <div>

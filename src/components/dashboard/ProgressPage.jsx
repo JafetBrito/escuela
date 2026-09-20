@@ -9,7 +9,6 @@ import { supabase } from '../../services/supabase/client'
 import { useProgressStore } from '../../stores/useProgressStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
-import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useTasksStore } from '../../stores/useTasksStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
@@ -20,6 +19,8 @@ import { localizeCategoryName } from '../../data/categoryTranslations'
 import { MASCOTS } from '../../data/mascotRegistry'
 import TodayCourseCard from '../shared/TodayCourseCard'
 import RegionBar from '../shared/RegionBar'
+import ShareProfileCard from './ShareProfileCard'
+import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 
 function SectionTab({ id, label, icon, active, onClick }) {
   return (
@@ -64,10 +65,11 @@ export default function ProgressPage() {
   const profile     = useAuthStore((s) => s.profile)
   const progress    = useProgressStore((s) => s.progress)
   const xp          = useLevelStore((s) => s.xp)
-  const coins       = useCurrencyStore((s) => s.coins)
   const tasks       = useTasksStore((s) => s.tasks)
   const fetchTasks  = useTasksStore((s) => s.fetchMyTasks)
   const selectedMascotId = useMascotStore((s) => s.selectedMascotId)
+  const streak      = useDailyRewardsStore((s) => s.streak)
+  const googlePicture = useAuthStore((s) => s.googleUser?.picture)
   const { level, xpIntoLevel, xpForNextLevel, isMaxLevel } = levelProgress(xp)
   const [activeSection, setActiveSection] = useState('cursos')
 
@@ -117,6 +119,7 @@ export default function ProgressPage() {
 
   const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || t('dashboard.defaultStudent')
   const avatarEmoji = MASCOTS.find((m) => m.id === selectedMascotId)?.icon ?? '👤'
+  const avatarSrc = profile?.avatar_url || googlePicture
 
   const completedCourses = useMemo(() => courses.filter((c) => progressByCourse(c.id) === 100), [progressByCourse])
   const inProgress       = useMemo(() => courses.filter((c) => { const p = progressByCourse(c.id); return p !== null && p > 0 && p < 100 }), [progressByCourse])
@@ -136,19 +139,62 @@ export default function ProgressPage() {
     ? Math.round(graded.reduce((acc, tk) => acc + (tk.grade / tk.grade_max) * 100, 0) / graded.length)
     : null
 
+  const shareSummary = {
+    displayName, level, xp, streak, avgGrade,
+    completed: completedCourses.length,
+    inProgress: inProgress.length,
+    topAreas: topRegions.slice(0, 3).map((r) => ({ name: r.title, pct: Math.round(((r.completed + r.inProgress * 0.5) / r.total) * 100) })),
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
       <AppTopBar />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-4 py-6 space-y-8">
+        <div className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 md:px-8">
 
-          {/* Saludo */}
-          <div>
-            <h1 className="text-2xl font-black text-text">{t('dashboard.progress.greeting', { name: displayName })}</h1>
-            <p className="text-sm text-text-muted mt-0.5">{t('dashboard.progress.subtitle')}</p>
+          {/* Hero: quién eres, nivel, XP y números clave */}
+          <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 shadow-lg">
+            <div className="flex flex-wrap items-center gap-5">
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="" referrerPolicy="no-referrer" className="h-20 w-20 rounded-full border-4 border-white/30 object-cover" />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/30 bg-white/15 text-4xl">{avatarEmoji}</div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-2xl font-black text-white sm:text-3xl">
+                  {displayName}{profile?.tag && <span className="ml-1 font-mono text-lg font-bold text-white/60">#{profile.tag}</span>}
+                </h1>
+                <p className="text-sm font-medium text-white/85">{t('dashboard.progress.subtitle')}</p>
+                <div className="mt-3 max-w-md">
+                  <div className="mb-1 flex justify-between text-xs font-bold text-white/85">
+                    <span>Nivel {level}</span>
+                    <span>{isMaxLevel ? t('dashboard.summary.maxLevelReached') : t('dashboard.summary.xpToLevelUp', { xp: xpForNextLevel - xpIntoLevel })}</span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-white/20">
+                    <div className="h-2.5 rounded-full bg-amber-300" style={{ width: isMaxLevel ? '100%' : `${Math.round((xpIntoLevel / xpForNextLevel) * 100)}%` }} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {[
+                  [xp.toLocaleString(), 'XP'],
+                  [completedCourses.length, 'Completados'],
+                  [inProgress.length, 'En curso'],
+                  [`🔥 ${streak}`, 'Racha'],
+                  [avgGrade !== null ? `${avgGrade}%` : '—', 'Promedio'],
+                ].map(([v, l]) => (
+                  <div key={l} className="flex min-w-20 flex-col items-center rounded-xl bg-white/15 px-4 py-2.5">
+                    <span className="text-xl font-extrabold text-white">{v}</span>
+                    <span className="text-[10px] font-semibold text-white/80">{l}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
+          <div className="grid gap-6 xl:grid-cols-3">
+            <div className="min-w-0 space-y-6 xl:col-span-2">
           {/* Tu curso de hoy — anillos circulares en vez de barras, como en
               el resto del panel. */}
           {todayCourses.length > 0 && (
@@ -162,50 +208,6 @@ export default function ProgressPage() {
             </section>
           )}
 
-          {/* Perfil + XP/monedas */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-surface-hover text-3xl">
-                {avatarEmoji}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-text">{displayName}</p>
-                <p className="text-xs text-text-muted">
-                  {enrolledCourses.length === 1
-                    ? t('dashboard.progress.levelCoursesOne', { level })
-                    : t('dashboard.progress.levelCoursesMany', { level, count: enrolledCourses.length })}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between rounded-2xl border border-primary/30 bg-primary/10 p-4">
-              <div>
-                <p className="text-lg font-black text-primary">{xp.toLocaleString()} XP</p>
-                <p className="text-xs text-text-muted">
-                  {t('dashboard.progress.coinsLabel', { coins: coins.toLocaleString() })} · {isMaxLevel ? t('dashboard.summary.maxLevelReached') : t('dashboard.summary.xpToLevelUp', { xp: xpForNextLevel - xpIntoLevel })}
-                </p>
-              </div>
-              <Link to="/tienda" className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">{t('dashboard.progress.spend')}</Link>
-            </div>
-          </div>
-
-          {/* Accesos rápidos */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Link to="/mascota" className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 p-4 transition hover:border-violet-500/40">
-              <p className="text-2xl">🐾</p>
-              <p className="mt-1 text-sm font-bold text-text">{t('dashboard.progress.talkToMascot')}</p>
-              <p className="text-xs text-text-muted">{t('dashboard.promo.mascotSub')}</p>
-            </Link>
-            <Link to="/logros" className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/5 p-4 transition hover:border-amber-500/40">
-              <p className="text-2xl">🏅</p>
-              <p className="mt-1 text-sm font-bold text-text">{t('dashboard.progress.achievementsTitle')}</p>
-              <p className="text-xs text-text-muted">
-                {completedCourses.length === 1
-                  ? t('dashboard.progress.achievementsCoursesOne')
-                  : t('dashboard.progress.achievementsCoursesMany', { count: completedCourses.length })}
-              </p>
-            </Link>
-          </div>
-
           {/* Avance por área — mismas "regiones" del Mapa de Aventura del
               Dashboard, mostradas aquí como barras comparables. */}
           {topRegions.length > 0 && (
@@ -216,66 +218,6 @@ export default function ProgressPage() {
               </div>
             </section>
           )}
-
-          {/* Recompensas recibidas — historial de XP/monedas ya entregadas
-              (calificaciones, clases, etc.), acentuado con el mismo tono
-              violeta/dorado que la burbuja de recompensa diaria en VR
-              (DailyRewardsBoard.jsx) para que se sienta parte del mismo
-              sistema gamificado. */}
-          <section
-            className="rounded-2xl border p-4"
-            style={{ borderColor: 'rgba(251,191,36,0.25)', background: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(251,191,36,0.04) 100%)' }}
-          >
-            <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.progress.rewardsTitle')}</h2>
-            {rewardsLoading ? (
-              <p className="text-sm text-text-muted">{t('dashboard.progress.rewardsLoading')}</p>
-            ) : rewards.length === 0 ? (
-              <p className="text-sm text-text-muted">{t('dashboard.progress.rewardsEmpty')}</p>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  {rewards.slice(0, rewardsVisible).map((n) => (
-                    <div key={n.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-text">{n.title}</p>
-                        {n.body && <p className="truncate text-xs text-text-muted">{n.body}</p>}
-                        <p className="mt-0.5 text-[10px] text-text-muted/60">
-                          {new Date(n.created_at).toLocaleDateString(t('dashboard.progress.dateLocale'), { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-wrap gap-1.5">
-                        {n.xp_reward > 0 && (
-                          <span
-                            className="rounded-full px-2.5 py-1 text-[11px] font-black text-white"
-                            style={{ background: 'linear-gradient(90deg, #7c3aed, #4f46e5)' }}
-                          >
-                            {t('dashboard.progress.rewardXp', { xp: n.xp_reward })}
-                          </span>
-                        )}
-                        {n.gold_reward > 0 && (
-                          <span
-                            className="rounded-full px-2.5 py-1 text-[11px] font-black text-amber-950"
-                            style={{ background: 'linear-gradient(90deg, #fbbf24, #f59e0b)' }}
-                          >
-                            {t('dashboard.progress.rewardGold', { gold: n.gold_reward })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {rewards.length > rewardsVisible && (
-                  <button
-                    type="button"
-                    onClick={() => setRewardsVisible((v) => v + 10)}
-                    className="mt-2 w-full rounded-xl border border-dashed border-border py-2 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
-                  >
-                    {t('dashboard.progress.rewardsLoadMore')}
-                  </button>
-                )}
-              </>
-            )}
-          </section>
 
           {/* Cursos / Calificaciones / Logros */}
           <section className="space-y-3">
@@ -359,6 +301,89 @@ export default function ProgressPage() {
 
             {activeSection === 'logros' && <AchievementsPanel className="mt-2" />}
           </section>
+            </div>
+            <div className="min-w-0 space-y-6">
+              <ShareProfileCard summary={shareSummary} />
+          {/* Accesos rápidos */}
+          <div className="grid gap-3">
+            <Link to="/mascota" className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/15 to-fuchsia-500/5 p-4 transition hover:border-violet-500/40">
+              <p className="text-2xl">🐾</p>
+              <p className="mt-1 text-sm font-bold text-text">{t('dashboard.progress.talkToMascot')}</p>
+              <p className="text-xs text-text-muted">{t('dashboard.promo.mascotSub')}</p>
+            </Link>
+            <Link to="/logros" className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/5 p-4 transition hover:border-amber-500/40">
+              <p className="text-2xl">🏅</p>
+              <p className="mt-1 text-sm font-bold text-text">{t('dashboard.progress.achievementsTitle')}</p>
+              <p className="text-xs text-text-muted">
+                {completedCourses.length === 1
+                  ? t('dashboard.progress.achievementsCoursesOne')
+                  : t('dashboard.progress.achievementsCoursesMany', { count: completedCourses.length })}
+              </p>
+            </Link>
+          </div>
+
+          {/* Recompensas recibidas — historial de XP/monedas ya entregadas
+              (calificaciones, clases, etc.), acentuado con el mismo tono
+              violeta/dorado que la burbuja de recompensa diaria en VR
+              (DailyRewardsBoard.jsx) para que se sienta parte del mismo
+              sistema gamificado. */}
+          <section
+            className="rounded-2xl border p-4"
+            style={{ borderColor: 'rgba(251,191,36,0.25)', background: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(251,191,36,0.04) 100%)' }}
+          >
+            <h2 className="text-base font-extrabold text-text mb-3">{t('dashboard.progress.rewardsTitle')}</h2>
+            {rewardsLoading ? (
+              <p className="text-sm text-text-muted">{t('dashboard.progress.rewardsLoading')}</p>
+            ) : rewards.length === 0 ? (
+              <p className="text-sm text-text-muted">{t('dashboard.progress.rewardsEmpty')}</p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {rewards.slice(0, rewardsVisible).map((n) => (
+                    <div key={n.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-text">{n.title}</p>
+                        {n.body && <p className="truncate text-xs text-text-muted">{n.body}</p>}
+                        <p className="mt-0.5 text-[10px] text-text-muted/60">
+                          {new Date(n.created_at).toLocaleDateString(t('dashboard.progress.dateLocale'), { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-1.5">
+                        {n.xp_reward > 0 && (
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-black text-white"
+                            style={{ background: 'linear-gradient(90deg, #7c3aed, #4f46e5)' }}
+                          >
+                            {t('dashboard.progress.rewardXp', { xp: n.xp_reward })}
+                          </span>
+                        )}
+                        {n.gold_reward > 0 && (
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-black text-amber-950"
+                            style={{ background: 'linear-gradient(90deg, #fbbf24, #f59e0b)' }}
+                          >
+                            {t('dashboard.progress.rewardGold', { gold: n.gold_reward })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {rewards.length > rewardsVisible && (
+                  <button
+                    type="button"
+                    onClick={() => setRewardsVisible((v) => v + 10)}
+                    className="mt-2 w-full rounded-xl border border-dashed border-border py-2 text-xs font-semibold text-text-muted transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {t('dashboard.progress.rewardsLoadMore')}
+                  </button>
+                )}
+              </>
+            )}
+          </section>
+
+            </div>
+          </div>
         </div>
       </main>
 

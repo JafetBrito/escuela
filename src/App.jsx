@@ -113,6 +113,7 @@ const AdminOracleReviewPage = lazy(() => import('./components/admin/AdminOracleR
 const AdminTeachersPage = lazy(() => import('./components/admin/AdminTeachersPage'))
 const AdminEmailsPage = lazy(() => import('./components/admin/AdminEmailsPage'))
 const AdminAiSettingsPage = lazy(() => import('./components/admin/AdminAiSettingsPage'))
+const PublicProfilePage = lazy(() => import('./components/public/PublicProfilePage'))
 const ThemedWeekPage = lazy(() => import('./components/dashboard/ThemedWeekPage'))
 const DirectorPage = lazy(() => import('./components/director/DirectorPage'))
 const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
@@ -258,6 +259,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/crear-cuenta" element={<CreateAccountPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/u/:slug" element={<Suspense fallback={<RouteFallback />}><PublicProfilePage /></Suspense>} />
         <Route path="/privacidad" element={<PrivacyPage />} />
         <Route path="/terminos" element={<TermsPage />} />
         <Route path="/unlock" element={<PortalPage />} />
@@ -799,11 +801,9 @@ export default function App() {
         <Route
           path="/profesor/:id"
           element={
-            <ProtectedRoute>
-              <Suspense fallback={<RouteFallback />}>
-                <TeacherPublicProfilePage />
-              </Suspense>
-            </ProtectedRoute>
+            <Suspense fallback={<RouteFallback />}>
+              <TeacherPublicProfilePage />
+            </Suspense>
           }
         />
         <Route
