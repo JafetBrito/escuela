@@ -10,6 +10,16 @@
 -- (y nunca datos privados como el nombre real o el correo).
 -- ════════════════════════════════════════════════════════════════════════
 
+-- Autosuficiente: por si esta migración se corre antes que la 073/074, se
+-- asegura la columna tag y la función que arma "Nombre#1234".
+alter table public.profiles add column if not exists tag text;
+
+create or replace function public._profile_label(p_id uuid)
+returns text language sql stable security definer set search_path = public as $$
+  select coalesce(display_name, 'Alguien') || '#' || coalesce(tag, '0000') from public.profiles where id = p_id
+$$;
+revoke execute on function public._profile_label(uuid) from public, anon, authenticated;
+
 create or replace function public._my_teacher_academy()
 returns text language sql stable security definer set search_path = public as $$
   select academy_id from public.profiles where id = auth.uid() and role in ('teacher', 'director')
