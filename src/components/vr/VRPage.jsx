@@ -443,9 +443,7 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
 
   return (
     <>
-      <RigidBody type="fixed" colliders="trimesh">
-        <primitive object={model} />
-      </RigidBody>
+      <primitive object={model} />
       <Html position={[0, 3.2, 0]} center distanceFactor={14}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
           🏫 {cls.title} · {cls.teacherName} · {cls.durationMinutes} min
@@ -469,6 +467,7 @@ function ClassroomWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, p
         authorName={authorName}
         playerId={playerId}
         spawnAt={spawnPosition}
+        raycastGround
       />
       <Portal
         position={portalPosition}

@@ -107,6 +107,10 @@ export function Player({
   // solo agranda el cuerpo visible, no la cápsula de colisión ni la cámara,
   // así que sigue siendo un cambio acotado/cosmético.
   visualScale = 1,
+  // Mundos sin colisionador de suelo en Rapier (ej. el salón de clases): la
+  // gravedad se resuelve solo con el raycast al suelo del `scenery`, sin el
+  // character controller — que si no encuentra collider debajo cae para siempre.
+  raycastGround = false,
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -266,7 +270,7 @@ export function Player({
       velocityY.current = 0
       if (body) body.setNextKinematicTranslation({ x: pos.x, y: pos.y, z: pos.z })
       group.current.position.set(pos.x, pos.y, pos.z)
-    } else if (body && body.numColliders() > 0) {
+    } else if (!raycastGround && body && body.numColliders() > 0) {
       // Gravity + jump via Rapier character controller (only Y axis).
       // The CC detects a flat ground CuboidCollider when one exists; raycasts
       // handle walls above and stand in for gravity in worlds (room, anfi,
