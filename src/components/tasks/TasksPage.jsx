@@ -385,6 +385,8 @@ export default function TasksPage() {
   const delivered = tasks.filter((t) => t.status === 'entregada').length
   const reviewed  = tasks.filter((t) => t.status === 'revisada').length
   const total     = tasks.length
+  const overdue   = tasks.filter((t) => classifyTask(t) === 'overdue').length
+  const urgent    = tasks.filter((t) => classifyTask(t) === 'urgent').length
   const completionPct = total ? Math.round(((delivered + reviewed) / total) * 100) : 0
 
   // ── Subject sidebar ──────────────────────────────────────────────────────────
@@ -420,7 +422,7 @@ export default function TasksPage() {
       <AppTopBar />
 
       <main className="flex-1 px-4 py-6 md:px-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto w-full max-w-[1800px]">
 
           {/* ── Hero stats ──────────────────────────────────────────── */}
           <div
@@ -458,7 +460,15 @@ export default function TasksPage() {
               </div>
 
               {/* Pill counters */}
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col items-center rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5">
+                  <span className="text-xl font-extrabold text-red-400">{overdue}</span>
+                  <span className="text-[10px] font-semibold text-red-500/70">{t('pages.tasks.groupOverdue')}</span>
+                </div>
+                <div className="flex flex-col items-center rounded-xl border border-orange-500/20 bg-orange-500/10 px-4 py-2.5">
+                  <span className="text-xl font-extrabold text-orange-400">{urgent}</span>
+                  <span className="text-[10px] font-semibold text-orange-500/70">{t('pages.tasks.groupUrgent')}</span>
+                </div>
                 <div className="flex flex-col items-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5">
                   <span className="text-xl font-extrabold text-amber-400">{pending}</span>
                   <span className="text-[10px] font-semibold text-amber-500/70">{t('pages.tasks.pending')}</span>
@@ -580,7 +590,7 @@ export default function TasksPage() {
                             {group.tasks.length === 1 ? t('pages.tasks.taskCountOne') : t('pages.tasks.taskCountMany', { n: group.tasks.length })}
                           </span>
                         </div>
-                        <div className="space-y-3">
+                        <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
                           {group.tasks.map((task) => (
                             <TaskCard key={task.id} task={task} onOpen={openTask} />
                           ))}
@@ -607,7 +617,7 @@ export default function TasksPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
                     {submittedTasks.map((task) => (
                       <TaskCard key={task.id} task={task} onOpen={openTask} />
                     ))}
