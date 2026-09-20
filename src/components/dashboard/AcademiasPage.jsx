@@ -3,19 +3,12 @@ import { Link } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import courses from '../../data/courses.json'
-import { MAIN_CATEGORIES } from '../../data/categoryTaxonomy'
+import { MAIN_CATEGORIES, SCHOOL_ICONS } from '../../data/categoryTaxonomy'
 import { localizeCategoryName } from '../../data/categoryTranslations'
 import { useI18n } from '../../i18n'
 
 // Subcategorías que ya tienen su propia portada arriba — el resto sale como tarjeta genérica.
 const HAS_OWN_PAGE = ['Inteligencia Artificial', 'Ciberseguridad', 'Filosofía', 'Lenguas y Lingüística', 'Medicina y Ciencias de la Salud']
-const SUB_ICONS = {
-  'Matemáticas': '📐', 'Ciencias de la Computación': '💻', 'Lógica': '🧩',
-  'Física': '⚛️', 'Química': '🧪', 'Biología': '🧬', 'Ciencias de la Tierra y el Espacio': '🪐',
-  'Psicología': '🧠', 'Economía y Negocios': '📈', 'Sociología y Antropología': '👥', 'Historia y Geografía': '🗺️', 'Ciencias Políticas y Derecho': '⚖️',
-  'Literatura': '📚', 'Artes Visuales': '🎨', 'Artes Escénicas y Música': '🎭',
-  'Ingeniería': '⚙️', 'Educación': '🎓', 'Agricultura y Veterinaria': '🌾', 'Comunicación y Medios': '📡', 'Herramientas y hábitos': '⚡',
-}
 
 // Punto de entrada único para "escuelas" — antes Escuelas (categorías
 // generales), Academia de Idiomas y Academia de Ciberseguridad vivían
@@ -42,7 +35,7 @@ export default function AcademiasPage() {
       name: s.name,
       mainId: m.id,
       accent: m.accent,
-      icon: SUB_ICONS[s.name] ?? m.icon,
+      icon: SCHOOL_ICONS[s.name] ?? m.icon,
       blurb: s.topics.slice(0, 3).join(', '),
       count: courses.filter((c) => s.schoolCategories.includes(c.category ?? 'Otros')).length,
     }))), [])

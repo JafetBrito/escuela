@@ -90,3 +90,13 @@ export const MAIN_CATEGORIES = [
 export function getMainCategory(id) {
   return MAIN_CATEGORIES.find((m) => m.id === id) ?? null
 }
+
+// Ícono de cada escuela (subcategoría) — lo usan /academias y el foro.
+export const SCHOOL_ICONS = {
+  'Matemáticas': '📐', 'Ciencias de la Computación': '💻', 'Lógica': '🧩',
+  'Física': '⚛️', 'Química': '🧪', 'Biología': '🧬', 'Ciencias de la Tierra y el Espacio': '🪐',
+  'Psicología': '🧠', 'Economía y Negocios': '📈', 'Sociología y Antropología': '👥', 'Historia y Geografía': '🗺️', 'Ciencias Políticas y Derecho': '⚖️',
+  'Literatura': '📚', 'Artes Visuales': '🎨', 'Artes Escénicas y Música': '🎭',
+  'Ingeniería': '⚙️', 'Educación': '🎓', 'Agricultura y Veterinaria': '🌾', 'Comunicación y Medios': '📡', 'Herramientas y hábitos': '⚡',
+  'Inteligencia Artificial': '🧠', 'Ciberseguridad': '🔐', 'Filosofía': '🏛️', 'Lenguas y Lingüística': '🌍', 'Medicina y Ciencias de la Salud': '🩺',
+}
