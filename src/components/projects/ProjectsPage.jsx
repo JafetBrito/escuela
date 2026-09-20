@@ -80,6 +80,8 @@ export default function ProjectsPage() {
 
   useEffect(() => { fetchMyProjects() }, [fetchMyProjects])
 
+  const inProgress = projects.filter((p) => p.status === 'en_progreso').length
+  const completed = projects.filter((p) => p.status === 'completado').length
   const filtered = tab === 'todos' ? projects : projects.filter((p) => p.status === tab)
 
   const handleCreate = async ({ title, description }) => {
@@ -98,7 +100,7 @@ export default function ProjectsPage() {
       <AppTopBar />
 
       <main className="flex-1 px-4 py-8 md:px-8">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto w-full max-w-[1800px]">
 
           <div className="flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-8 shadow-lg">
             <div>
@@ -107,13 +109,21 @@ export default function ProjectsPage() {
                 {t('pages.projects.subtitle')}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="shrink-0 rounded-xl bg-white px-4 py-2 text-sm font-bold text-violet-700 hover:opacity-90"
-            >
-              {t('pages.projects.newProject')}
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              {[[projects.length, t('pages.projects.tabAll')], [inProgress, t('pages.projects.tabInProgress')], [completed, t('pages.projects.tabCompletedPlural')]].map(([n, label]) => (
+                <div key={label} className="flex min-w-20 flex-col items-center rounded-xl bg-white/15 px-4 py-2.5">
+                  <span className="text-xl font-extrabold text-white">{n}</span>
+                  <span className="text-[10px] font-semibold text-white/80">{label}</span>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                className="shrink-0 rounded-xl bg-white px-4 py-2 text-sm font-bold text-violet-700 hover:opacity-90"
+              >
+                {t('pages.projects.newProject')}
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 flex gap-1 rounded-xl border border-border bg-surface p-1">
@@ -148,7 +158,7 @@ export default function ProjectsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {filtered.map((p) => (
                   <ProjectCard key={p.id} project={p} onClick={() => navigate(`/proyectos/${p.id}`)} />
                 ))}
