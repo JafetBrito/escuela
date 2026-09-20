@@ -23,6 +23,7 @@ import ProfileSummaryCard from './ProfileSummaryCard'
 import TrajectorySummaryCard from './TrajectorySummaryCard'
 import BadgesSummaryCard from './BadgesSummaryCard'
 import UpcomingDeadlinesCard from './UpcomingDeadlinesCard'
+import ThemedWeekCard from './ThemedWeekCard'
 import MiniCalendarCard from './MiniCalendarCard'
 import CoursesDonutCard from './CoursesDonutCard'
 import CategoryActivityBarCard from './CategoryActivityBarCard'
@@ -122,6 +123,8 @@ function InicioTab({ profile, license, progressByCourse, profileSummary, traject
           notaban. */}
       <QuickLinksRow />
       <WorldMapSection regions={regions} />
+
+      <ThemedWeekCard />
 
       {/* Fila de estadísticas grandes — calco de la referencia (donut / barras / gauge) */}
       <div className="grid gap-4 sm:grid-cols-3">

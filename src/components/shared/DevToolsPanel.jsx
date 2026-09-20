@@ -15,6 +15,8 @@ import { SHOP_ITEMS, SHOP_CATEGORIES } from '../../data/shopRegistry'
 import { findPlayers, runGmCommand, SELF_TARGET, setVoicePermission } from '../../services/admin/gmCommands'
 import { pushSnapshotToCloud } from '../../services/persistence/autoSave'
 import { useHolidayStore, HOLIDAYS } from '../../stores/useHolidayStore'
+import { useThemedWeekStore, resolveThemedWeek } from '../../stores/useThemedWeekStore'
+import { THEMED_WEEKS } from '../../data/themedWeeks'
 import { useDraggablePopup } from '../../hooks/useDraggablePopup'
 import GmConsole from './GmConsole'
 
@@ -125,6 +127,8 @@ export default function DevToolsPanel() {
   const { level, isMaxLevel } = levelProgress(xp)
   const activeHoliday = useHolidayStore((s) => s.activeHoliday)
   const setHoliday = useHolidayStore((s) => s.set)
+  const weekOverride = useThemedWeekStore((s) => s.override)
+  const setWeekOverride = useThemedWeekStore((s) => s.setOverride)
   const hackerThemeEnabled = useAdminThemeStore((s) => s.enabled)
   const toggleHackerTheme = useAdminThemeStore((s) => s.toggle)
 
@@ -415,6 +419,28 @@ export default function DevToolsPanel() {
                   }`}
                 >
                   {meta.icon} {meta.label}
+                </button>
+              ))}
+            </div>
+          </AccordionSection>
+
+          {/* ── Semana temática ──────────────────────────────────── */}
+          <AccordionSection id="themedweek" title="📅 Semana Temática" openId={openSection} setOpenId={setOpenSection}>
+            <p className="text-[10px] text-text-muted">
+              Activa: <span className="font-bold text-text">{resolveThemedWeek(weekOverride)?.title ?? 'Ninguna'}</span>
+              {weekOverride === 'auto' && ' (automática por calendario)'}
+            </p>
+            <div className="mt-1 grid grid-cols-2 gap-1">
+              {[{ id: 'auto', icon: '🗓️', title: 'Automática' }, { id: 'none', icon: '—', title: 'Apagada' }, ...THEMED_WEEKS].map((w) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => setWeekOverride(w.id)}
+                  className={`rounded-lg px-2 py-1 text-xs font-semibold transition ${
+                    weekOverride === w.id ? 'bg-primary text-background' : 'border border-border text-text-muted hover:text-text'
+                  }`}
+                >
+                  {w.icon} {w.title.replace(/^Semana (de la |de las |de los |del )/, '')}
                 </button>
               ))}
             </div>
