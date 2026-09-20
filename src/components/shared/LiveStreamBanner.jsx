@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useVrStreamStore } from '../../stores/useVrStreamStore'
+import { tr } from '../../i18n'
 
 // Aviso de que hay una transmisión en vivo (ver useVrStreamStore). Desaparece
 // solo cuando un admin la apaga. `compact`: versión en una línea.
@@ -12,14 +13,14 @@ export default function LiveStreamBanner() {
       <div className="flex items-center gap-3">
         <span className="h-3 w-3 animate-pulse rounded-full bg-white" />
         <div>
-          <p className="text-lg font-black text-white">🔴 Transmisión en vivo</p>
-          <p className="text-xs font-medium text-white/85">Se está transmitiendo ahora mismo. Únete desde donde prefieras.</p>
+          <p className="text-lg font-black text-white">{tr('🔴 Transmisión en vivo', '🔴 Live broadcast')}</p>
+          <p className="text-xs font-medium text-white/85">{tr('Se está transmitiendo ahora mismo. Únete desde donde prefieras.', 'It\'s being broadcast right now. Join from wherever you prefer.')}</p>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <a href="/vr" className="rounded-lg bg-white px-4 py-2 text-sm font-black text-red-700 hover:opacity-90">🕶️ Ir al campus</a>
-        <Link to="/clase-online" className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/30">📺 Verla aquí</Link>
-        <Link to="/clases-disponibles" className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/30">👥 Ver con amigos</Link>
+        <a href="/vr" className="rounded-lg bg-white px-4 py-2 text-sm font-black text-red-700 hover:opacity-90">{tr('🕶️ Ir al campus', '🕶️ Go to the campus')}</a>
+        <Link to="/clase-online" className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/30">{tr('📺 Verla aquí', '📺 Watch it here')}</Link>
+        <Link to="/clases-disponibles" className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/30">{tr('👥 Ver con amigos', '👥 Watch with friends')}</Link>
       </div>
     </div>
   )

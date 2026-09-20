@@ -13,7 +13,8 @@
  */
 
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+import LocalizedRouter from './i18n/LocalizedRouter'
 import LandingPage from './components/landing/LandingPage'
 import PrivacyPage from './components/legal/PrivacyPage'
 import TermsPage from './components/legal/TermsPage'
@@ -236,7 +237,7 @@ export default function App() {
   }, [])
 
   return (
-    <BrowserRouter>
+    <LocalizedRouter>
       {/* 🌐 COMPONENTES GLOBALES (Fuera del sistema de Rutas)
         Al estar fuera de <Routes>, estos componentes NO se desmontan cuando 
         el usuario cambia de página. 
@@ -1273,7 +1274,7 @@ export default function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </LocalizedRouter>
   )
 }
 

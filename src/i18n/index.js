@@ -110,8 +110,12 @@ export const useLocaleStore = create((set) => ({
   lang: detectLanguage(),
   setLang: (lang) => {
     if (!isSupported(lang)) return
+    const changed = lang !== useLocaleStore.getState().lang
     try { localStorage.setItem('locale', lang) } catch { /* ignore */ }
     set({ lang })
+    // Los textos en línea (tr) y las constantes de módulo se calculan una vez:
+    // recargar es lo que garantiza que TODO cambie de idioma a la vez.
+    if (changed) window.location.reload()
   },
 }))
 
@@ -122,3 +126,11 @@ export function useI18n() {
   const t = (key, values) => translate(lang, key, values)
   return { t, lang, setLang }
 }
+
+// Traducción en línea, para texto que aún no tiene clave en los diccionarios:
+// tr('Buscar…', 'Search…'). Español es la base; inglés cuando el idioma es 'en'
+// (cualquier otro idioma cae a español, igual que las claves sin traducir).
+// Lee el idioma al momento de llamarse, así que sirve también en stores y
+// funciones fuera de componentes. Migrar a claves de diccionario cuando un
+// texto se reutilice o haga falta más de un idioma.
+export const tr = (es, en) => (useLocaleStore.getState().lang === 'en' ? en : es)

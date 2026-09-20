@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
+import { tr } from '../../i18n'
 
 // /u/:slug — perfil de progreso compartido por un alumno (ver ShareProfileCard).
 // Pública: no requiere cuenta. Termina con una invitación a registrarse.
@@ -25,7 +26,7 @@ export default function PublicProfilePage() {
 
   const CTA = (
     <Link to="/login" className="inline-block rounded-xl bg-primary px-6 py-3 text-sm font-black text-background shadow-lg hover:opacity-90">
-      Regístrate en Oliver Academy
+      {tr('Regístrate en Oliver Academy', 'Sign up for Oliver Academy')}
     </Link>
   )
 
@@ -34,17 +35,17 @@ export default function PublicProfilePage() {
       <header className="border-b border-border bg-surface px-4 py-3">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link to="/" className="text-lg font-black">OLIVER <span className="text-primary">ACADEMY</span></Link>
-          <Link to="/login" className="text-sm font-bold text-primary hover:underline">Entrar</Link>
+          <Link to="/login" className="text-sm font-bold text-primary hover:underline">{tr('Entrar', 'Log in')}</Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
         {profile === undefined ? (
-          <p className="py-16 text-center text-sm text-text-muted">Cargando…</p>
+          <p className="py-16 text-center text-sm text-text-muted">{tr('Cargando…', 'Loading…')}</p>
         ) : profile === null ? (
           <div className="rounded-2xl border border-dashed border-border py-16 text-center">
             <p className="text-4xl">🔎</p>
-            <p className="mt-2 font-bold">Este perfil no existe o ya no se comparte.</p>
+            <p className="mt-2 font-bold">{tr('Este perfil no existe o ya no se comparte.', 'This profile does not exist or is no longer shared.')}</p>
             <div className="mt-5">{CTA}</div>
           </div>
         ) : (
@@ -64,15 +65,15 @@ export default function PublicProfilePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat value={profile.level} label="Nivel" />
-              <Stat value={profile.courses_completed} label="Cursos completados" />
-              <Stat value={profile.courses_in_progress} label="Cursos en curso" />
-              <Stat value={`🔥 ${profile.streak}`} label="Racha de días" />
+              <Stat value={profile.level} label={tr('Nivel', 'Level')} />
+              <Stat value={profile.courses_completed} label={tr('Cursos completados', 'Courses completed')} />
+              <Stat value={profile.courses_in_progress} label={tr('Cursos en curso', 'Courses in progress')} />
+              <Stat value={`🔥 ${profile.streak}`} label={tr('Racha de días', 'Day streak')} />
             </div>
 
             {profile.top_areas?.length > 0 && (
               <div className="rounded-2xl border border-border bg-surface p-5">
-                <h2 className="mb-3 text-sm font-extrabold">Sus áreas fuertes</h2>
+                <h2 className="mb-3 text-sm font-extrabold">{tr('Sus áreas fuertes', 'Their strongest areas')}</h2>
                 <div className="space-y-2.5">
                   {profile.top_areas.map((a) => (
                     <div key={a.name}>
@@ -85,9 +86,9 @@ export default function PublicProfilePage() {
             )}
 
             <div className="rounded-2xl border border-primary/30 bg-primary/10 p-6 text-center">
-              <p className="text-lg font-black">¿Quieres subir de nivel como {profile.display_name}?</p>
+              <p className="text-lg font-black">{tr('¿Quieres subir de nivel como', 'Want to level up like')} {profile.display_name}?</p>
               <p className="mx-auto mt-1 max-w-md text-sm text-text-muted">
-                Oliver Academy tiene cursos, clases en vivo, un campus en realidad virtual y una comunidad para aprender de todo, todos los días.
+                {tr('Oliver Academy tiene cursos, clases en vivo, un campus en realidad virtual y una comunidad para aprender de todo, todos los días.', 'Oliver Academy has courses, live classes, a virtual reality campus and a community to learn about everything, every day.')}
               </p>
               <div className="mt-4">{CTA}</div>
             </div>

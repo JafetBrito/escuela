@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useVrStreamStore } from '../../stores/useVrStreamStore'
 import { useSocialStore } from '../../stores/useSocialStore'
+import { tr } from '../../i18n'
 
 // Sala de transmisión: un salón de clases en VR sin maestro, solo con la
 // pantalla donde se ve el directo, que cualquiera puede crear e invitar a sus
@@ -22,26 +23,26 @@ export default function WatchRoomCard() {
     const code = newCode()
     const path = `/vr/sala/${code}`
     const ids = Object.keys(picked).filter((id) => picked[id])
-    const results = await Promise.all(ids.map((id) => useSocialStore.getState().sendInvite(id, 'vr', 'Ver la transmisión en vivo conmigo', { path })))
+    const results = await Promise.all(ids.map((id) => useSocialStore.getState().sendInvite(id, 'vr', tr('Ver la transmisión en vivo conmigo', 'Watch the live broadcast with me'), { path })))
     const failed = results.filter((r) => !r.ok).length
-    if (failed) setMsg(`No se pudo invitar a ${failed} amigo(s).`)
+    if (failed) setMsg(tr(tr(`No se pudo invitar a ${failed} amigo(s).`, `Could not invite ${failed} friend(s).`), `Could not invite ${failed} friend(s).`))
     window.location.assign(path) // navegación dura: el mundo VR arranca limpio
   }
 
   return (
     <div className={`rounded-2xl border p-5 ${live ? 'border-red-500/40 bg-gradient-to-br from-red-600/15 to-rose-500/5' : 'border-border bg-surface'}`}>
-      <p className="text-base font-extrabold text-text">{live ? '🔴 Transmisión en vivo — crea tu sala' : '📺 Sala de transmisión'}</p>
+      <p className="text-base font-extrabold text-text">{live ? tr('🔴 Transmisión en vivo — crea tu sala', '🔴 Live broadcast — create your room') : tr('📺 Sala de transmisión', '📺 Broadcast room')}</p>
       <p className="mt-1 text-xs text-text-muted">
-        Un salón de clases en VR, sin maestro, solo con la pantalla del directo. Invita a tus amigos para platicar mientras lo ven.
-        {!live && ' Cuando haya una transmisión en vivo, podrás crearla aquí.'}
+        {tr('Un salón de clases en VR, sin maestro, solo con la pantalla del directo. Invita a tus amigos para platicar mientras lo ven.', 'A VR classroom with no teacher, just the live screen. Invite your friends to chat while you watch.')}
+        {!live && tr(' Cuando haya una transmisión en vivo, podrás crearla aquí.', ' When there is a live broadcast, you can create one here.')}
       </p>
 
       {live && (
         <>
           <div className="mt-3">
-            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">Invitar amigos (opcional — tienen que aceptar)</p>
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">{tr('Invitar amigos (opcional — tienen que aceptar)', 'Invite friends (optional — they have to accept)')}</p>
             {friends.length === 0 ? (
-              <p className="text-xs text-text-muted">Aún no tienes amigos agregados; puedes crear la sala igual y compartirle el enlace a alguien.</p>
+              <p className="text-xs text-text-muted">{tr('Aún no tienes amigos agregados; puedes crear la sala igual y compartirle el enlace a alguien.', 'You haven\'t added any friends yet; you can still create the room and share the link with someone.')}</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {friends.map((f) => (
@@ -58,7 +59,7 @@ export default function WatchRoomCard() {
             )}
           </div>
           <button type="button" disabled={busy} onClick={create} className="mt-4 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-black text-white hover:bg-red-500 disabled:opacity-50">
-            {busy ? 'Creando…' : '🕶️ Crear sala y entrar'}
+            {busy ? tr('Creando…', 'Creating…') : tr('🕶️ Crear sala y entrar', '🕶️ Create room and enter')}
           </button>
           {msg && <p className="mt-2 text-xs text-amber-500">{msg}</p>}
         </>

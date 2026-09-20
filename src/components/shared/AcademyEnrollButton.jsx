@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { getAcademy } from '../../data/academies'
+import { tr } from '../../i18n'
 
 // Inscribirse (o salirse) de una academia: guarda profiles.academy_id. Con eso
 // los profesores de esa academia te ven en su lista de alumnos y te pueden
@@ -17,10 +18,10 @@ export default function AcademyEnrollButton({ academyId }) {
   const other = academyIdMine && !enrolled ? getAcademy(academyIdMine) : null
 
   const toggle = async () => {
-    if (other && !window.confirm(`Ya estás inscrito en ${other.name}. ¿Cambiarte a esta academia?`)) return
+    if (other && !window.confirm(tr(tr(`Ya estás inscrito en ${other.name}. ¿Cambiarte a esta academia?`, `You are already enrolled in ${other.name}. Switch to this academy?`), `You are already enrolled in ${other.name}. Switch to this academy?`))) return
     setBusy(true)
     setError('')
-    try { await updateProfile({ academy_id: enrolled ? null : academyId }) } catch { setError('No se pudo guardar.') }
+    try { await updateProfile({ academy_id: enrolled ? null : academyId }) } catch { setError(tr('No se pudo guardar.', 'Could not save.')) }
     setBusy(false)
   }
 
@@ -32,7 +33,7 @@ export default function AcademyEnrollButton({ academyId }) {
         disabled={busy}
         className={`mt-3 inline-block rounded-full px-5 py-2 text-sm font-black shadow transition hover:scale-105 disabled:opacity-60 ${enrolled ? 'bg-emerald-500 text-white' : 'bg-white/20 text-white ring-1 ring-white/50'}`}
       >
-        {enrolled ? '✅ Inscrito · salirme' : '🎓 Inscribirme en esta academia'}
+        {enrolled ? tr('✅ Inscrito · salirme', '✅ Enrolled · leave') : tr('🎓 Inscribirme en esta academia', '🎓 Enroll in this academy')}
       </button>
       {error && <p className="mt-1 text-xs text-white/90">{error}</p>}
     </>

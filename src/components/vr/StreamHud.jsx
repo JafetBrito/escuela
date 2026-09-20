@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useVrStreamStore } from '../../stores/useVrStreamStore'
+import { tr } from '../../i18n'
 
 // Controles de la transmisión en vivo (ver useVrStreamStore). La misma
 // transmisión se puede ver en 4 modos, y solo uno a la vez tiene el video
@@ -46,12 +47,12 @@ export default function StreamHud() {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90">
         <div className="absolute left-3 top-3 z-10 flex gap-2">
-          <Btn onClick={() => setMode('mini')} title="Seguir viéndola en una ventana pequeña">🗕 Mini pantalla</Btn>
-          <Btn onClick={() => setMode('screen')} title="Volver a la pantalla del campus">↩ Pantalla del campus</Btn>
-          <Btn onClick={() => setMode('hidden')} title="Dejar de verla">✕ Ocultar</Btn>
+          <Btn onClick={() => setMode('mini')} title={tr('Seguir viéndola en una ventana pequeña', 'Keep watching in a small window')}>{tr('🗕 Mini pantalla', '🗕 Mini screen')}</Btn>
+          <Btn onClick={() => setMode('screen')} title={tr('Volver a la pantalla del campus', 'Back to the campus screen')}>{tr('↩ Pantalla del campus', '↩ Campus screen')}</Btn>
+          <Btn onClick={() => setMode('hidden')} title={tr('Dejar de verla', 'Stop watching')}>{tr('✕ Ocultar', '✕ Hide')}</Btn>
         </div>
         <div className="aspect-video w-full max-w-[95vw] max-h-[90vh]">
-          <iframe src={url} title="Transmisión en vivo" allow={IFRAME_ALLOW} allowFullScreen className="h-full w-full border-0" />
+          <iframe src={url} title={tr('Transmisión en vivo', 'Live broadcast')} allow={IFRAME_ALLOW} allowFullScreen className="h-full w-full border-0" />
         </div>
       </div>
     )
@@ -65,15 +66,15 @@ export default function StreamHud() {
           className="flex cursor-move touch-none items-center justify-between gap-2 bg-red-700/90 px-2 py-1"
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
         >
-          <span className="text-[11px] font-black text-white">🔴 EN VIVO</span>
+          <span className="text-[11px] font-black text-white">{tr('🔴 EN VIVO', '🔴 LIVE')}</span>
           <div className="flex gap-1" onPointerDown={(e) => e.stopPropagation()}>
-            <Btn onClick={() => setMode('full')} title="Pantalla completa">⛶</Btn>
-            <Btn onClick={() => setMode('screen')} title="Volver a la pantalla del campus">↩</Btn>
-            <Btn onClick={() => setMode('hidden')} title="Ocultar">✕</Btn>
+            <Btn onClick={() => setMode('full')} title={tr('Pantalla completa', 'Full screen')}>⛶</Btn>
+            <Btn onClick={() => setMode('screen')} title={tr('Volver a la pantalla del campus', 'Back to the campus screen')}>↩</Btn>
+            <Btn onClick={() => setMode('hidden')} title={tr('Ocultar', 'Hide')}>✕</Btn>
           </div>
         </div>
         <div className="aspect-video w-full">
-          <iframe src={url} title="Transmisión en vivo" allow={IFRAME_ALLOW} allowFullScreen className="h-full w-full border-0" />
+          <iframe src={url} title={tr('Transmisión en vivo', 'Live broadcast')} allow={IFRAME_ALLOW} allowFullScreen className="h-full w-full border-0" />
         </div>
       </div>
     )
@@ -82,10 +83,10 @@ export default function StreamHud() {
   // 'screen' o 'hidden': botón para elegir cómo verla
   return (
     <div className="absolute left-1/2 top-16 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-red-400/60 bg-red-600/90 px-3 py-1.5 text-sm font-black text-white shadow-lg">
-      <span className="animate-pulse">🔴 En vivo</span>
-      {mode === 'hidden' && <Btn onClick={() => setMode('screen')} title="Verla en la pantalla del campus">Ver en pantalla</Btn>}
-      <Btn onClick={() => setMode('mini')} title="Mini pantalla: sigue caminando mientras la ves">🗕 Mini</Btn>
-      <Btn onClick={() => setMode('full')} title="Pantalla completa">⛶ Completa</Btn>
+      <span className="animate-pulse">{tr('🔴 En vivo', '🔴 Live')}</span>
+      {mode === 'hidden' && <Btn onClick={() => setMode('screen')} title={tr('Verla en la pantalla del campus', 'Watch on the campus screen')}>{tr('Ver en pantalla', 'Watch on screen')}</Btn>}
+      <Btn onClick={() => setMode('mini')} title={tr('Mini pantalla: sigue caminando mientras la ves', 'Mini screen: keep walking while you watch')}>{tr('🗕 Mini', '🗕 Mini')}</Btn>
+      <Btn onClick={() => setMode('full')} title={tr('Pantalla completa', 'Full screen')}>{tr('⛶ Completa', '⛶ Full')}</Btn>
     </div>
   )
 }

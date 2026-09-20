@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
 import { useCurrencyStore } from './useCurrencyStore'
+import { tr } from '../i18n'
 
 // Amistades reales entre cuentas (reemplaza la lista de nombres de
 // useFriendsStore): solicitudes que se aceptan, regalos y invitaciones que
@@ -8,9 +9,9 @@ import { useCurrencyStore } from './useCurrencyStore'
 // crean la notificación de la campanita. Las notificaciones accionables se
 // resuelven aquí mismo (respond*), tanto desde /amigos como desde la campanita.
 const call = async (fn, args) => {
-  if (!supabase) return { ok: false, message: 'Sin conexión.' }
+  if (!supabase) return { ok: false, message: tr('Sin conexión.', 'No connection.') }
   const { data, error } = await supabase.rpc(fn, args)
-  if (error) return { ok: false, message: error.message?.includes('function') ? '¿Ya corriste migration_074.sql?' : 'No se pudo completar. Intenta de nuevo.' }
+  if (error) return { ok: false, message: error.message?.includes('function') ? tr('¿Ya corriste migration_074.sql?', 'Did you run migration_074.sql?') : tr('No se pudo completar. Intenta de nuevo.', 'Could not complete. Try again.') }
   return data ?? { ok: true }
 }
 
@@ -32,7 +33,7 @@ export const useSocialStore = create((set, get) => ({
 
   sendRequest: async (text) => {
     const parsed = parseTagged(text)
-    if (!parsed) return { ok: false, message: 'Escríbelo como Nombre#1234 (con su etiqueta de 4 números).' }
+    if (!parsed) return { ok: false, message: tr('Escríbelo como Nombre#1234 (con su etiqueta de 4 números).', 'Type it as Name#1234 (with their 4-digit tag).') }
     const r = await call('friend_request_send', { p_name: parsed.name, p_tag: parsed.tag })
     get().load()
     return r
