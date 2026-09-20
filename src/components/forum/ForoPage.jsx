@@ -19,6 +19,13 @@ const AREAS = [
 ]
 const areaOf = (name) => AREAS.find((a) => a.name === name) ?? AREAS[0]
 const POSTS_LIMIT = 500
+// Insignia según profiles.role (la fija un trigger en la base, migration_071).
+const ROLE_BADGE = { admin: '🛡️ Admin', teacher: '🧑‍🏫 Profesor', director: '🏛️ Director' }
+function RoleBadge({ role }) {
+  return ROLE_BADGE[role]
+    ? <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-extrabold text-primary">{ROLE_BADGE[role]}</span>
+    : null
+}
 
 function timeAgo(iso, t) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000
@@ -116,7 +123,7 @@ export default function ForoPage() {
     const { data, error: err } = await supabase.from('forum_replies')
       .insert({ post_id: post.id, author_id: session.user.id, author_name: authorName, body: text })
       .select().single()
-    if (err || !data) { window.alert('No se pudo enviar la respuesta.'); return }
+    if (err || !data) { console.error('[foro] respuesta', err); window.alert('No se pudo enviar la respuesta. ¿Ya corriste migration_070.sql y migration_071.sql en Supabase?'); return }
     setReplies((rs) => [...rs, data])
     setReplyDrafts((d) => ({ ...d, [post.id]: '' }))
   }
@@ -255,7 +262,7 @@ export default function ForoPage() {
                             {p.author_name.trim().charAt(0).toUpperCase() || '?'}
                           </span>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-text">{p.author_name}</p>
+                            <p className="flex items-center gap-1.5 truncate text-sm font-bold text-text">{p.author_name} <RoleBadge role={p.author_role} /></p>
                             <p className="text-[11px] text-text-muted">{timeAgo(p.created_at, t)}</p>
                           </div>
                         </div>
@@ -287,7 +294,7 @@ export default function ForoPage() {
                             {(repliesByPost[p.id] ?? []).map((r) => (
                               <div key={r.id} className="rounded-xl bg-surface-hover px-3 py-2">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className="text-xs font-bold text-text">{r.author_name} <span className="font-normal text-text-muted">· {timeAgo(r.created_at, t)}</span></p>
+                                  <p className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-text">{r.author_name} <RoleBadge role={r.author_role} /> <span className="font-normal text-text-muted">· {timeAgo(r.created_at, t)}</span></p>
                                   {(isAdmin || r.author_id === session?.user?.id) && (
                                     <button type="button" onClick={() => handleDeleteReply(r)} title="Borrar respuesta" className="text-xs text-text-muted hover:text-danger">🗑️</button>
                                   )}
