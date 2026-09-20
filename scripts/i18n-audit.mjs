@@ -41,6 +41,7 @@ const args = process.argv.slice(2)
 const top = Number(args[args.indexOf('--top') + 1]) || 25
 const rows = []
 let total = 0
+const dump = args.includes('--dump') ? args[args.indexOf('--dump') + 1] : null // muestra las cadenas de un archivo
 
 for (const file of walk(ROOT)) {
   const lines = readFileSync(file, 'utf8').split('\n')
@@ -51,7 +52,7 @@ for (const file of walk(ROOT)) {
     const clean = line
       .replace(/\bt\(\s*['"`][^'"`]+['"`]/g, '')                                                            // t('clave')
       .replace(/\btr\(\s*(['"`])(?:\\.|(?!\1).)*\1\s*,\s*(['"`])(?:\\.|(?!\2).)*\2\s*\)/g, '')            // tr('es', 'en') ya traducido
-    for (const c of candidates(clean)) if (isSpanish(c)) n++
+    for (const c of candidates(clean)) if (isSpanish(c)) { n++; if (dump && file.split('\\').join('/').endsWith(dump)) console.log(JSON.stringify(c.trim())) }
   })
   if (n) { rows.push([relative('.', file), n]); total += n }
 }

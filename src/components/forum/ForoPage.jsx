@@ -3,7 +3,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { supabase } from '../../services/supabase/client'
-import { useI18n } from '../../i18n'
+import { useI18n, tr } from '../../i18n'
 import { MAIN_CATEGORIES, SCHOOL_ICONS } from '../../data/categoryTaxonomy'
 import { localizeCategoryName } from '../../data/categoryTranslations'
 import { blockIfProfane } from '../../utils/profanityFilter'
@@ -20,7 +20,7 @@ const AREAS = [
 const areaOf = (name) => AREAS.find((a) => a.name === name) ?? AREAS[0]
 const POSTS_LIMIT = 500
 // Insignia según profiles.role (la fija un trigger en la base, migration_071).
-const ROLE_BADGE = { admin: '🛡️ Admin', teacher: '🧑‍🏫 Profesor', director: '🏛️ Director' }
+const ROLE_BADGE = { admin: '🛡️ Admin', teacher: tr('🧑‍🏫 Profesor', '🧑‍🏫 Teacher'), director: '🏛️ Director' }
 function RoleBadge({ role }) {
   return ROLE_BADGE[role]
     ? <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-extrabold text-primary">{ROLE_BADGE[role]}</span>
@@ -104,7 +104,7 @@ export default function ForoPage() {
   }
 
   const handleDelete = async (post) => {
-    if (!window.confirm('¿Borrar esta publicación? No se puede deshacer.')) return
+    if (!window.confirm(tr('¿Borrar esta publicación? No se puede deshacer.', 'Delete this post? This cannot be undone.'))) return
     // Un delete bloqueado por RLS no da error, solo 0 filas: se revisa.
     const { data, error: err } = await supabase.from('forum_posts').delete().eq('id', post.id).select('id')
     if (err || !data?.length) { window.alert('No se pudo borrar la publicación.'); return }
@@ -123,13 +123,13 @@ export default function ForoPage() {
     const { data, error: err } = await supabase.from('forum_replies')
       .insert({ post_id: post.id, author_id: session.user.id, author_name: authorName, body: text })
       .select().single()
-    if (err || !data) { console.error('[foro] respuesta', err); window.alert('No se pudo enviar la respuesta. ¿Ya corriste migration_070.sql y migration_071.sql en Supabase?'); return }
+    if (err || !data) { console.error('[foro] respuesta', err); window.alert(tr('No se pudo enviar la respuesta. ¿Ya corriste migration_070.sql y migration_071.sql en Supabase?', 'Could not send the reply. Did you run migration_070.sql and migration_071.sql in Supabase?')); return }
     setReplies((rs) => [...rs, data])
     setReplyDrafts((d) => ({ ...d, [post.id]: '' }))
   }
 
   const handleDeleteReply = async (reply) => {
-    if (!window.confirm('¿Borrar esta respuesta?')) return
+    if (!window.confirm(tr('¿Borrar esta respuesta?', 'Delete this reply?'))) return
     const { data, error: err } = await supabase.from('forum_replies').delete().eq('id', reply.id).select('id')
     if (err || !data?.length) { window.alert('No se pudo borrar la respuesta.'); return }
     setReplies((rs) => rs.filter((r) => r.id !== reply.id))
@@ -146,7 +146,7 @@ export default function ForoPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.forum.title')}</h1>
-              <p className="mt-1 text-sm font-medium text-white/85">{t('pages.forum.subtitle')} · {posts.length} publicaciones</p>
+              <p className="mt-1 text-sm font-medium text-white/85">{t('pages.forum.subtitle')} · {posts.length} {tr('publicaciones', 'posts')}</p>
             </div>
             <button type="button" onClick={openComposer} className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-emerald-700 hover:opacity-90">
               {t('pages.forum.newPost')}
@@ -162,11 +162,11 @@ export default function ForoPage() {
               onChange={(e) => setArea(e.target.value)}
               className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-text md:hidden"
             >
-              <option value="all">📚 Todas las escuelas ({posts.length})</option>
+              <option value="all">{tr('📚 Todas las escuelas', '📚 All schools')} ({posts.length})</option>
               {AREAS.map((a) => <option key={a.name} value={a.name}>{a.icon} {localizeCategoryName(a.name, lang)} ({counts[a.name] ?? 0})</option>)}
             </select>
             <div className="sticky top-4 hidden max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-border bg-surface p-2 md:block">
-              <p className="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted/60">Escuelas</p>
+              <p className="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted/60">{tr('Escuelas', 'Schools')}</p>
               {[{ name: 'all', icon: '📚', accent: '#98ca3f' }, ...AREAS].map((a) => {
                 const active = area === a.name
                 const n = a.name === 'all' ? posts.length : (counts[a.name] ?? 0)
@@ -178,7 +178,7 @@ export default function ForoPage() {
                     className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${active ? '' : 'text-text-muted hover:text-text'}`}
                     style={active ? { backgroundColor: `${a.accent}22`, color: a.accent } : {}}
                   >
-                    <span className="truncate">{a.icon} {a.name === 'all' ? 'Todas las escuelas' : localizeCategoryName(a.name, lang)}</span>
+                    <span className="truncate">{a.icon} {a.name === 'all' ? tr('Todas las escuelas', 'All schools') : localizeCategoryName(a.name, lang)}</span>
                     <span className="shrink-0 rounded-full bg-surface-hover px-2 py-0.5 text-xs text-text-muted">{n}</span>
                   </button>
                 )
@@ -190,13 +190,13 @@ export default function ForoPage() {
           <section className="min-w-0 flex-1">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-extrabold" style={current ? { color: current.accent } : {}}>
-                {current ? `${current.icon} ${localizeCategoryName(current.name, lang)}` : '📚 Todas las escuelas'}
+                {current ? `${current.icon} ${localizeCategoryName(current.name, lang)}` : tr('📚 Todas las escuelas', '📚 All schools')}
               </h2>
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="🔍 Buscar en el foro…"
+                placeholder={tr('🔍 Buscar en el foro…', '🔍 Search the forum…')}
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-primary sm:w-72"
               />
             </div>
@@ -230,7 +230,7 @@ export default function ForoPage() {
                 />
                 {error && <p className="text-xs text-danger">{error}</p>}
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setComposing(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:text-text">Cancelar</button>
+                  <button type="button" onClick={() => setComposing(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:text-text">{tr('Cancelar', 'Cancel')}</button>
                   <button
                     type="submit"
                     disabled={posting || !title.trim() || !body.trim()}
@@ -247,7 +247,7 @@ export default function ForoPage() {
             ) : visible.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-14 text-center">
                 <span className="text-4xl">🗣️</span>
-                <p className="text-sm text-text-muted">{query ? 'Nada coincide con tu búsqueda.' : t('pages.forum.emptyState')}</p>
+                <p className="text-sm text-text-muted">{query ? tr('Nada coincide con tu búsqueda.', 'Nothing matches your search.') : t('pages.forum.emptyState')}</p>
               </div>
             ) : (
               <ul className="grid gap-3 xl:grid-cols-2">
@@ -273,7 +273,7 @@ export default function ForoPage() {
                             </button>
                           )}
                           {canDelete && (
-                            <button type="button" onClick={() => handleDelete(p)} title="Borrar publicación" className="rounded-lg px-2 py-1 text-xs text-text-muted hover:bg-danger/10 hover:text-danger">🗑️</button>
+                            <button type="button" onClick={() => handleDelete(p)} title={tr('Borrar publicación', 'Delete post')} className="rounded-lg px-2 py-1 text-xs text-text-muted hover:bg-danger/10 hover:text-danger">🗑️</button>
                           )}
                         </div>
                       </div>
@@ -286,8 +286,8 @@ export default function ForoPage() {
                           onClick={() => setOpenThreads((o) => ({ ...o, [p.id]: !o[p.id] }))}
                           className="text-xs font-semibold text-primary hover:underline"
                         >
-                          💬 {(repliesByPost[p.id] ?? []).length === 1 ? '1 respuesta' : `${(repliesByPost[p.id] ?? []).length} respuestas`}
-                          {openThreads[p.id] ? ' · ocultar' : ' · responder'}
+                          💬 {(repliesByPost[p.id] ?? []).length === 1 ? tr('1 respuesta', '1 reply') : tr(`${(repliesByPost[p.id] ?? []).length} respuestas`, `${(repliesByPost[p.id] ?? []).length} replies`)}
+                          {openThreads[p.id] ? tr(' · ocultar', ' · hide') : tr(' · responder', ' · reply')}
                         </button>
                         {openThreads[p.id] && (
                           <div className="mt-2 space-y-2">
@@ -296,7 +296,7 @@ export default function ForoPage() {
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-text">{r.author_name} <RoleBadge role={r.author_role} /> <span className="font-normal text-text-muted">· {timeAgo(r.created_at, t)}</span></p>
                                   {(isAdmin || r.author_id === session?.user?.id) && (
-                                    <button type="button" onClick={() => handleDeleteReply(r)} title="Borrar respuesta" className="text-xs text-text-muted hover:text-danger">🗑️</button>
+                                    <button type="button" onClick={() => handleDeleteReply(r)} title={tr('Borrar respuesta', 'Delete reply')} className="text-xs text-text-muted hover:text-danger">🗑️</button>
                                   )}
                                 </div>
                                 <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-text-muted">{r.body}</p>
@@ -307,10 +307,10 @@ export default function ForoPage() {
                                 value={replyDrafts[p.id] ?? ''}
                                 onChange={(e) => setReplyDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
                                 maxLength={1000}
-                                placeholder="Escribe una respuesta…"
+                                placeholder={tr('Escribe una respuesta…', 'Write a reply…')}
                                 className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                               />
-                              <button type="submit" disabled={!(replyDrafts[p.id] ?? '').trim()} className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:bg-primary-hover disabled:opacity-50">Responder</button>
+                              <button type="submit" disabled={!(replyDrafts[p.id] ?? '').trim()} className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:bg-primary-hover disabled:opacity-50">{tr('Responder', 'Reply')}</button>
                             </form>
                           </div>
                         )}

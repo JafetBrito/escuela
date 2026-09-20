@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { tr } from '../../i18n'
 
 // Riel del panel de profesor — mismo espíritu que AdminShell.jsx pero mucho
 // más chico (3 páginas, no 11): Dashboard/Reflexiones/Mi Perfil. Reutilizado
@@ -8,11 +9,11 @@ import { useAuthStore } from '../../stores/useAuthStore'
 // (TeacherPublicProfilePage.jsx NO usa este shell — es pública, cualquier
 // alumno logueado la ve).
 const SECTIONS = [
-  { to: '/profesor', icon: '🏠', label: 'Dashboard', end: true },
-  { to: '/profesor/academia', icon: '🎓', label: 'Mi academia' },
-  { to: '/profesor/clases', icon: '🎥', label: 'Clases en vivo' },
-  { to: '/profesor/reflexiones', icon: '📥', label: 'Reflexiones' },
-  { to: '/profesor/perfil', icon: '🧑‍🏫', label: 'Mi Perfil' },
+  { to: '/profesor', icon: '🏠', label: tr('Dashboard', 'Dashboard'), end: true },
+  { to: '/profesor/academia', icon: '🎓', label: tr('Mi academia', 'My academy') },
+  { to: '/profesor/clases', icon: '🎥', label: tr('Clases en vivo', 'Live classes') },
+  { to: '/profesor/reflexiones', icon: '📥', label: tr('Reflexiones', 'Reflections') },
+  { to: '/profesor/perfil', icon: '🧑‍🏫', label: tr('Mi Perfil', 'My profile') },
 ]
 
 export default function TeacherShell({ children }) {
@@ -23,7 +24,7 @@ export default function TeacherShell({ children }) {
       <div className="flex min-h-screen flex-col bg-background text-text">
         <AppTopBar />
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-text-muted">Acceso restringido a profesores.</p>
+          <p className="text-text-muted">{tr('Acceso restringido a profesores.', 'Access restricted to teachers.')}</p>
         </div>
       </div>
     )

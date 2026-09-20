@@ -13,7 +13,7 @@ import { useTasksStore } from '../../stores/useTasksStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { CATEGORY_META } from '../../data/categoryMeta'
 import { buildRegions } from '../../utils/regions'
-import { useI18n } from '../../i18n'
+import { useI18n, tr } from '../../i18n'
 import { localizeCourseCatalog } from '../../data/courseCatalogTranslations'
 import { localizeCategoryName } from '../../data/categoryTranslations'
 import { MASCOTS } from '../../data/mascotRegistry'
@@ -168,7 +168,7 @@ export default function ProgressPage() {
                 <p className="text-sm font-medium text-white/85">{t('dashboard.progress.subtitle')}</p>
                 <div className="mt-3 max-w-md">
                   <div className="mb-1 flex justify-between text-xs font-bold text-white/85">
-                    <span>Nivel {level}</span>
+                    <span>{tr('Nivel', 'Level')} {level}</span>
                     <span>{isMaxLevel ? t('dashboard.summary.maxLevelReached') : t('dashboard.summary.xpToLevelUp', { xp: xpForNextLevel - xpIntoLevel })}</span>
                   </div>
                   <div className="h-2.5 rounded-full bg-white/20">
@@ -179,10 +179,10 @@ export default function ProgressPage() {
               <div className="flex flex-wrap gap-3">
                 {[
                   [xp.toLocaleString(), 'XP'],
-                  [completedCourses.length, 'Completados'],
-                  [inProgress.length, 'En curso'],
-                  [`🔥 ${streak}`, 'Racha'],
-                  [avgGrade !== null ? `${avgGrade}%` : '—', 'Promedio'],
+                  [completedCourses.length, tr('Completados', 'Completed')],
+                  [inProgress.length, tr('En curso', 'In progress')],
+                  [`🔥 ${streak}`, tr('Racha', 'Streak')],
+                  [avgGrade !== null ? `${avgGrade}%` : '—', tr('Promedio', 'Average')],
                 ].map(([v, l]) => (
                   <div key={l} className="flex min-w-20 flex-col items-center rounded-xl bg-white/15 px-4 py-2.5">
                     <span className="text-xl font-extrabold text-white">{v}</span>

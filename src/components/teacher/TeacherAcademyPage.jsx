@@ -3,6 +3,7 @@ import { supabase } from '../../services/supabase/client'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { getAcademy } from '../../data/academies'
 import TeacherShell from './TeacherShell'
+import { tr } from '../../i18n'
 
 // Mi academia (/profesor/academia): los alumnos inscritos en la academia del
 // profesor, asignarles una tarea y calificar lo que entreguen (migration_076).
@@ -35,7 +36,7 @@ export default function TeacherAcademyPage() {
     const { data, error } = await supabase.rpc('teacher_assign_task', {
       p_students: ids, p_title: form.title, p_description: form.description, p_subject: form.subject || academy?.name || null, p_due: form.due || null,
     })
-    setMsg(error ? '❌ No se pudo asignar. ¿Ya corriste migration_076.sql?' : (data?.ok ? `✅ ${data.message}` : `❌ ${data?.message}`))
+    setMsg(error ? tr('❌ No se pudo asignar. ¿Ya corriste migration_076.sql?', '❌ Could not assign. Did you run migration_076.sql?') : (data?.ok ? `✅ ${data.message}` : `❌ ${data?.message}`))
     if (data?.ok) { setForm({ title: '', description: '', subject: '', due: '' }); setPicked({}); load() }
   }
 
@@ -43,7 +44,7 @@ export default function TeacherAcademyPage() {
     const g = grading[task.id]
     if (!g || g.grade === '' || g.grade == null) return
     const { data } = await supabase.rpc('teacher_grade_task', { p_task: task.id, p_grade: Number(g.grade), p_feedback: g.feedback ?? '' })
-    setMsg(data?.ok ? '✅ Calificación enviada.' : `❌ ${data?.message ?? 'No se pudo calificar.'}`)
+    setMsg(data?.ok ? tr('✅ Calificación enviada.', '✅ Grade sent.') : `❌ ${data?.message ?? tr('No se pudo calificar.', 'Could not grade.')}`)
     if (data?.ok) load()
   }
 
@@ -51,13 +52,13 @@ export default function TeacherAcademyPage() {
     <TeacherShell>
       <div className="space-y-6">
         <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-indigo-600 px-6 py-6 shadow-lg">
-          <h1 className="text-2xl font-black text-white">{academy ? `${academy.emoji} ${academy.name}` : '🎓 Mi academia'}</h1>
-          <p className="mt-1 text-sm font-medium text-white/90">Tus alumnos inscritos, sus tareas y calificaciones.</p>
+          <h1 className="text-2xl font-black text-white">{academy ? `${academy.emoji} ${academy.name}` : tr('🎓 Mi academia', '🎓 My academy')}</h1>
+          <p className="mt-1 text-sm font-medium text-white/90">{tr('Tus alumnos inscritos, sus tareas y calificaciones.', 'Your enrolled students, their tasks and grades.')}</p>
         </div>
 
         {!academy && (
           <p className="rounded-2xl border border-dashed border-border p-6 text-sm text-text-muted">
-            Tu cuenta todavía no pertenece a ninguna academia. Pídele a tu director que te sume desde su panel (/director).
+            {tr('Tu cuenta todavía no pertenece a ninguna academia. Pídele a tu director que te sume desde su panel (/director).', 'Your account doesn\'t belong to an academy yet. Ask your director to add you from their panel (/director).')}
           </p>
         )}
 
@@ -66,25 +67,25 @@ export default function TeacherAcademyPage() {
         {academy && (
           <div className="grid gap-6 xl:grid-cols-2">
             <form onSubmit={assign} className="space-y-3 rounded-2xl border border-border bg-surface p-5">
-              <p className="text-sm font-extrabold text-text">📋 Asignar una tarea</p>
-              <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} maxLength={140} placeholder="Título de la tarea" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
-              <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={4} placeholder="Instrucciones" className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+              <p className="text-sm font-extrabold text-text">{tr('📋 Asignar una tarea', '📋 Assign a task')}</p>
+              <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} maxLength={140} placeholder={tr('Título de la tarea', 'Task title')} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+              <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={4} placeholder={tr('Instrucciones', 'Instructions')} className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
               <div className="flex flex-wrap gap-2">
-                <input value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} placeholder={`Materia (${academy.name})`} className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
+                <input value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} placeholder={`${tr('Materia', 'Subject')} (${academy.name})`} className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
                 <input type="date" value={form.due} onChange={(e) => setForm((f) => ({ ...f, due: e.target.value }))} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" />
               </div>
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-text-muted">Alumnos inscritos ({roster.length})</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-text-muted">{tr('Alumnos inscritos', 'Enrolled students')} ({roster.length})</p>
                   {roster.length > 0 && (
                     <button type="button" onClick={() => setPicked(allSelected ? {} : Object.fromEntries(roster.map((s) => [s.id, true])))} className="text-xs font-semibold text-primary hover:underline">
-                      {allSelected ? 'Quitar todos' : 'Seleccionar todos'}
+                      {allSelected ? tr('Quitar todos', 'Deselect all') : tr('Seleccionar todos', 'Select all')}
                     </button>
                   )}
                 </div>
                 {roster.length === 0 ? (
-                  <p className="text-xs text-text-muted">Aún no hay alumnos inscritos. Se inscriben desde la página de la academia con el botón “Inscribirme”.</p>
+                  <p className="text-xs text-text-muted">{tr('Aún no hay alumnos inscritos. Se inscriben desde la página de la academia con el botón “Inscribirme”.', 'No students are enrolled yet. They enroll from the academy page with the “Enroll” button.')}</p>
                 ) : (
                   <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
                     {roster.map((s) => (
@@ -97,32 +98,32 @@ export default function TeacherAcademyPage() {
                 )}
               </div>
               <button type="submit" disabled={!form.title.trim() || ids.length === 0} className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-background hover:opacity-90 disabled:opacity-40">
-                Asignar a {ids.length} alumno(s)
+                {tr('Asignar a', 'Assign to')} {ids.length} {tr('alumno(s)', 'student(s)')}
               </button>
             </form>
 
             <div className="space-y-3 rounded-2xl border border-border bg-surface p-5">
-              <p className="text-sm font-extrabold text-text">✅ Tareas asignadas ({tasks.length})</p>
-              {tasks.length === 0 && <p className="text-sm text-text-muted">Aún no has asignado tareas.</p>}
+              <p className="text-sm font-extrabold text-text">{tr('✅ Tareas asignadas', '✅ Assigned tasks')} ({tasks.length})</p>
+              {tasks.length === 0 && <p className="text-sm text-text-muted">{tr('Aún no has asignado tareas.', 'You haven\'t assigned any tasks yet.')}</p>}
               <ul className="max-h-[36rem] space-y-2.5 overflow-y-auto">
                 {tasks.map((t) => (
                   <li key={t.id} className="rounded-xl border border-border bg-background p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-bold text-text">{t.title}</p>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${t.status === 'revisada' ? 'bg-emerald-500/15 text-emerald-500' : t.status === 'entregada' ? 'bg-amber-500/15 text-amber-500' : 'bg-surface-hover text-text-muted'}`}>
-                        {t.status === 'revisada' ? `Calificada ${t.grade}/${t.gradeMax}` : t.status === 'entregada' ? 'Entregada — por calificar' : 'Pendiente'}
+                        {t.status === 'revisada' ? `${tr('Calificada', 'Graded')} ${t.grade}/${t.gradeMax}` : t.status === 'entregada' ? tr('Entregada — por calificar', 'Submitted — to grade') : tr('Pendiente', 'Pending')}
                       </span>
                     </div>
-                    <p className="text-[11px] text-text-muted">{t.student}{t.due ? ` · vence ${t.due}` : ''}</p>
+                    <p className="text-[11px] text-text-muted">{t.student}{t.due ? ` ${tr('· vence', '· due')} ${t.due}` : ''}</p>
                     {t.status !== 'revisada' && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         <input type="number" min="0" max={t.gradeMax ?? 10} step="0.1" placeholder={`0-${t.gradeMax ?? 10}`} value={grading[t.id]?.grade ?? ''}
                           onChange={(e) => setGrading((g) => ({ ...g, [t.id]: { ...g[t.id], grade: e.target.value } }))}
                           className="w-20 rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-text outline-none focus:border-primary" />
-                        <input placeholder="Comentario (opcional)" value={grading[t.id]?.feedback ?? ''}
+                        <input placeholder={tr('Comentario (opcional)', 'Comment (optional)')} value={grading[t.id]?.feedback ?? ''}
                           onChange={(e) => setGrading((g) => ({ ...g, [t.id]: { ...g[t.id], feedback: e.target.value } }))}
                           className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-text outline-none focus:border-primary" />
-                        <button type="button" onClick={() => grade(t)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">Calificar</button>
+                        <button type="button" onClick={() => grade(t)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-background">{tr('Calificar', 'Grade')}</button>
                       </div>
                     )}
                     {t.feedback && <p className="mt-1.5 text-xs text-text-muted">💬 {t.feedback}</p>}

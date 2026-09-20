@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNotificationsStore } from '../../stores/useNotificationsStore'
+import { tr } from '../../i18n'
 
 // Cuando un amigo ACEPTA una invitación a un juego o mundo que enviaste, te
 // llega una notificación con el destino; esto te pregunta si quieres ir ahora
@@ -17,7 +18,7 @@ export default function SocialRedirector() {
       handled.current.add(n.id)
       const path = n.social_payload?.path
       if (!path || !ALLOWED.test(path) || Date.now() - new Date(n.created_at).getTime() > 120_000) continue
-      if (window.confirm(`${n.title}\n${n.body ?? ''}\n\n¿Ir ahora?`)) window.location.assign(path)
+      if (window.confirm(`${n.title}\n${n.body ?? ''}\n\n${tr('¿Ir ahora?', 'Go now?')}`)) window.location.assign(path)
     }
   }, [notifications])
 
