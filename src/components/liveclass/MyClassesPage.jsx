@@ -255,7 +255,7 @@ function ClassHub({ onBack }) {
         </div>
       </div>
 
-      <HubContent activeClass={activeClass} />
+      <HubContent activeClass={activeClass} wide />
     </div>
   )
 }
@@ -333,7 +333,7 @@ export default function MyClassesPage() {
           </div>
         )}
         {activeClass && (
-          <div className="mx-auto max-w-2xl">
+          <div className="mx-auto max-w-6xl">
             <ClassHub onBack={closeClass} />
           </div>
         )}

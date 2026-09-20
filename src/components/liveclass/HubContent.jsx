@@ -34,7 +34,8 @@ function SectionHeader({ icon, title, count, tone = 'primary' }) {
 // sin encabezado ni botón de unirse, para poder reutilizarlo tanto en
 // /mis-clases (teléfono) como al lado del video en /clases-disponibles
 // (computadora, modo "verlo aquí mismo") y en la vista previa del admin.
-export default function HubContent({ activeClass }) {
+// `wide`: en pantallas grandes reparte el Hub en dos columnas (contenido | interacción).
+export default function HubContent({ activeClass, wide = false }) {
   const questions       = useLiveClassStore((s) => s.questions)
   const pings           = useLiveClassStore((s) => s.pings)
   const chatMessages     = useLiveClassStore((s) => s.chatMessages)
@@ -89,7 +90,8 @@ export default function HubContent({ activeClass }) {
   const currentIdx = activeClass.agenda?.findIndex((a) => a.label === activeClass.current_topic) ?? -1
 
   return (
-    <div className="space-y-4">
+    <div className={`grid gap-4 ${wide ? 'lg:grid-cols-2 lg:items-start' : ''}`}>
+      <div className="space-y-4">
       {showAttention && (
         <div className="animate-pulse rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center">
           <p className="text-sm font-bold text-amber-400">🔔 ¡Tu profesor te está llamando!</p>
@@ -196,6 +198,9 @@ export default function HubContent({ activeClass }) {
         </div>
       )}
 
+      </div>
+
+      <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-surface p-4">
         <SectionHeader icon="❓" title="Preguntas" count={questions.length} tone="amber" />
         <div className="space-y-2">
@@ -268,6 +273,7 @@ export default function HubContent({ activeClass }) {
       >
         📄 Descargar resumen de la clase
       </Link>
+      </div>
     </div>
   )
 }
