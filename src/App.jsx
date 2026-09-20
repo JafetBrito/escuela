@@ -49,6 +49,7 @@ import { useSyncStatusStore } from './stores/useSyncStatusStore'
 import { useSwUpdateStore } from './stores/useSwUpdateStore'
 import { useHolidayStore } from './stores/useHolidayStore'
 import { useThemedWeekStore } from './stores/useThemedWeekStore'
+import { useBannedWordsStore } from './stores/useBannedWordsStore'
 import { useDayNightStore } from './stores/useDayNightStore'
 import { useCourseContentStore } from './stores/useCourseContentStore'
 import { useTutorialContentStore } from './stores/useTutorialContentStore'
@@ -213,6 +214,7 @@ export default function App() {
   useEffect(() => {
     useHolidayStore.getState().load()
     useThemedWeekStore.getState().load()
+    useBannedWordsStore.getState().load()
     useDayNightStore.getState().load()
     useCourseContentStore.getState().fetchAll()
     useTutorialContentStore.getState().fetchAll()

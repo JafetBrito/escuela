@@ -1,3 +1,4 @@
+import { blockIfProfane } from '../../utils/profanityFilter'
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
@@ -124,6 +125,7 @@ export default function WorldChat({ open, onClose, onOpen, authorName, playerId,
   const handleSubmit = (e) => {
     e.preventDefault()
     const trimmed = text.trim()
+    if (trimmed && blockIfProfane(trimmed)) return // se queda el texto para reescribirlo
     if (trimmed) {
       const whisperMatch = trimmed.match(/^\/(?:w|susurro|whisper)\s+(\S+)\s+([\s\S]+)/i)
       if (whisperMatch) {

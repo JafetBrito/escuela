@@ -6,10 +6,11 @@ import { supabase } from '../../services/supabase/client'
 import { useI18n } from '../../i18n'
 import { MAIN_CATEGORIES, SCHOOL_ICONS } from '../../data/categoryTaxonomy'
 import { localizeCategoryName } from '../../data/categoryTranslations'
+import { blockIfProfane } from '../../utils/profanityFilter'
 
 // Foro por escuelas: cada escuela (subcategoría de la taxonomía) tiene su
 // propia área, más una "General". forum_posts.school (migration_069) guarda a
-// cuál pertenece. Sigue siendo plano (sin respuestas/likes); el autor y los
+// cuál pertenece. Cada publicación tiene respuestas (forum_replies, migration_070); el autor y los
 // admins pueden borrar. Los textos nuevos de esta página están solo en español.
 const GENERAL = 'General'
 const AREAS = [
@@ -34,6 +35,9 @@ export default function ForoPage() {
   const isAdmin = profile?.role === 'admin'
 
   const [posts, setPosts] = useState([])
+  const [replies, setReplies] = useState([])
+  const [openThreads, setOpenThreads] = useState({}) // { [postId]: true }
+  const [replyDrafts, setReplyDrafts] = useState({}) // { [postId]: texto }
   const [loading, setLoading] = useState(true)
   const [area, setArea] = useState('all') // 'all' | nombre de escuela
   const [query, setQuery] = useState('')
@@ -50,6 +54,8 @@ export default function ForoPage() {
     setLoading(true)
     const { data } = await supabase.from('forum_posts').select('*').order('created_at', { ascending: false }).limit(POSTS_LIMIT)
     setPosts(data ?? [])
+    const { data: rs } = await supabase.from('forum_replies').select('*').order('created_at', { ascending: true }).limit(3000)
+    setReplies(rs ?? [])
     setLoading(false)
   }
 
@@ -73,6 +79,7 @@ export default function ForoPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!title.trim() || !body.trim()) return
+    if (blockIfProfane(`${title} ${body}`)) return
     setPosting(true)
     setError('')
     const { error: err } = await supabase.from('forum_posts').insert({
@@ -95,6 +102,30 @@ export default function ForoPage() {
     const { data, error: err } = await supabase.from('forum_posts').delete().eq('id', post.id).select('id')
     if (err || !data?.length) { window.alert('No se pudo borrar la publicación.'); return }
     setPosts((ps) => ps.filter((p) => p.id !== post.id))
+  }
+
+  const repliesByPost = useMemo(() => {
+    const m = {}
+    for (const r of replies) (m[r.post_id] ??= []).push(r)
+    return m
+  }, [replies])
+
+  const handleReply = async (post) => {
+    const text = (replyDrafts[post.id] ?? '').trim()
+    if (!text || blockIfProfane(text)) return
+    const { data, error: err } = await supabase.from('forum_replies')
+      .insert({ post_id: post.id, author_id: session.user.id, author_name: authorName, body: text })
+      .select().single()
+    if (err || !data) { window.alert('No se pudo enviar la respuesta.'); return }
+    setReplies((rs) => [...rs, data])
+    setReplyDrafts((d) => ({ ...d, [post.id]: '' }))
+  }
+
+  const handleDeleteReply = async (reply) => {
+    if (!window.confirm('¿Borrar esta respuesta?')) return
+    const { data, error: err } = await supabase.from('forum_replies').delete().eq('id', reply.id).select('id')
+    if (err || !data?.length) { window.alert('No se pudo borrar la respuesta.'); return }
+    setReplies((rs) => rs.filter((r) => r.id !== reply.id))
   }
 
   const current = area === 'all' ? null : areaOf(area)
@@ -241,6 +272,42 @@ export default function ForoPage() {
                       </div>
                       <p className="mb-1 font-bold text-text">{p.title}</p>
                       <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text-muted">{p.body}</p>
+
+                      <div className="mt-3 border-t border-border/60 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setOpenThreads((o) => ({ ...o, [p.id]: !o[p.id] }))}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          💬 {(repliesByPost[p.id] ?? []).length === 1 ? '1 respuesta' : `${(repliesByPost[p.id] ?? []).length} respuestas`}
+                          {openThreads[p.id] ? ' · ocultar' : ' · responder'}
+                        </button>
+                        {openThreads[p.id] && (
+                          <div className="mt-2 space-y-2">
+                            {(repliesByPost[p.id] ?? []).map((r) => (
+                              <div key={r.id} className="rounded-xl bg-surface-hover px-3 py-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-xs font-bold text-text">{r.author_name} <span className="font-normal text-text-muted">· {timeAgo(r.created_at, t)}</span></p>
+                                  {(isAdmin || r.author_id === session?.user?.id) && (
+                                    <button type="button" onClick={() => handleDeleteReply(r)} title="Borrar respuesta" className="text-xs text-text-muted hover:text-danger">🗑️</button>
+                                  )}
+                                </div>
+                                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-text-muted">{r.body}</p>
+                              </div>
+                            ))}
+                            <form onSubmit={(e) => { e.preventDefault(); handleReply(p) }} className="flex gap-2">
+                              <input
+                                value={replyDrafts[p.id] ?? ''}
+                                onChange={(e) => setReplyDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
+                                maxLength={1000}
+                                placeholder="Escribe una respuesta…"
+                                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                              />
+                              <button type="submit" disabled={!(replyDrafts[p.id] ?? '').trim()} className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:bg-primary-hover disabled:opacity-50">Responder</button>
+                            </form>
+                          </div>
+                        )}
+                      </div>
                     </li>
                   )
                 })}

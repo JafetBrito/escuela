@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLiveClassStore } from '../../stores/useLiveClassStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import ResourceGallery from '../shared/ResourceGallery'
+import { blockIfProfane } from '../../utils/profanityFilter'
 
 const PING_KINDS = [
   { kind: 'mano', icon: '🖐️', label: 'Levantar la mano' },
@@ -63,7 +64,7 @@ export default function HubContent({ activeClass, wide = false }) {
 
   const handleAsk = async (e) => {
     e.preventDefault()
-    if (!draft.trim()) return
+    if (!draft.trim() || blockIfProfane(draft)) return
     await askQuestion(activeClass.id, session?.user?.id, draft)
     setDraft('')
   }
@@ -76,7 +77,7 @@ export default function HubContent({ activeClass, wide = false }) {
 
   const handleSendChat = async (e) => {
     e.preventDefault()
-    if (!chatDraft.trim()) return
+    if (!chatDraft.trim() || blockIfProfane(chatDraft)) return
     const name = profile?.display_name || session?.user?.email || 'Alumno'
     await sendClassChatMessage(activeClass.id, session?.user?.id, name, chatDraft)
     setChatDraft('')

@@ -1,3 +1,4 @@
+import { blockIfProfane } from '../../utils/profanityFilter'
 import { useEffect, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
@@ -29,6 +30,7 @@ function GlobalChat() {
     e.preventDefault()
     if (!draft.trim()) return
     const name = profile?.display_name || session?.user?.email?.split('@')[0] || 'Estudiante'
+    if (blockIfProfane(draft)) return
     await sendMessage(session?.user?.id, name, draft)
     setDraft('')
   }

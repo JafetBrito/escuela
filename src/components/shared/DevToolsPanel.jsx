@@ -17,6 +17,8 @@ import { pushSnapshotToCloud } from '../../services/persistence/autoSave'
 import { useHolidayStore, HOLIDAYS } from '../../stores/useHolidayStore'
 import { useThemedWeekStore, resolveThemedWeek } from '../../stores/useThemedWeekStore'
 import { THEMED_WEEKS } from '../../data/themedWeeks'
+import { useBannedWordsStore } from '../../stores/useBannedWordsStore'
+import { BANNED_WORDS } from '../../data/bannedWords'
 import { useDraggablePopup } from '../../hooks/useDraggablePopup'
 import GmConsole from './GmConsole'
 
@@ -127,6 +129,10 @@ export default function DevToolsPanel() {
   const { level, isMaxLevel } = levelProgress(xp)
   const activeHoliday = useHolidayStore((s) => s.activeHoliday)
   const setHoliday = useHolidayStore((s) => s.set)
+  const bannedExtra = useBannedWordsStore((s) => s.words)
+  const addBanned = useBannedWordsStore((s) => s.add)
+  const removeBanned = useBannedWordsStore((s) => s.remove)
+  const [newBanned, setNewBanned] = useState('')
   const weekOverride = useThemedWeekStore((s) => s.override)
   const setWeekOverride = useThemedWeekStore((s) => s.setOverride)
   const hackerThemeEnabled = useAdminThemeStore((s) => s.enabled)
@@ -419,6 +425,25 @@ export default function DevToolsPanel() {
                   }`}
                 >
                   {meta.icon} {meta.label}
+                </button>
+              ))}
+            </div>
+          </AccordionSection>
+
+          {/* ── Palabras prohibidas ──────────────────────────────── */}
+          <AccordionSection id="banned" title="🚫 Palabras prohibidas" openId={openSection} setOpenId={setOpenSection}>
+            <p className="text-[10px] text-text-muted">
+              Filtro global (foro, chats, preguntas). Base en código: {BANNED_WORDS.length} entradas. Tus palabras extra aplican a todos. Formatos: <span className="font-mono">palabra</span>, <span className="font-mono">prefijo*</span>, <span className="font-mono">~contiene</span>.
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); addBanned(newBanned); setNewBanned('') }} className="mt-1 flex gap-1">
+              <input value={newBanned} onChange={(e) => setNewBanned(e.target.value)} placeholder="nueva palabra…" className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs text-text" />
+              <button type="submit" disabled={!newBanned.trim()} className="rounded-lg bg-primary px-2 py-1 text-xs font-bold text-background disabled:opacity-40">Agregar</button>
+            </form>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {bannedExtra.length === 0 && <span className="text-[10px] text-text-muted">Aún no has agregado palabras.</span>}
+              {bannedExtra.map((w) => (
+                <button key={w} type="button" onClick={() => removeBanned(w)} title="Quitar" className="rounded-full border border-border px-2 py-0.5 text-[11px] text-text-muted hover:border-danger hover:text-danger">
+                  {w} ✕
                 </button>
               ))}
             </div>
