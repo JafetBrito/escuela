@@ -117,6 +117,7 @@ const AdminEmailsPage = lazy(() => import('./components/admin/AdminEmailsPage'))
 const AdminAiSettingsPage = lazy(() => import('./components/admin/AdminAiSettingsPage'))
 const PublicProfilePage = lazy(() => import('./components/public/PublicProfilePage'))
 const ThemedWeekPage = lazy(() => import('./components/dashboard/ThemedWeekPage'))
+const TeacherAcademyPage = lazy(() => import('./components/teacher/TeacherAcademyPage'))
 const DirectorPage = lazy(() => import('./components/director/DirectorPage'))
 const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
 const TeacherReflectionsPage = lazy(() => import('./components/teacher/TeacherReflectionsPage'))
@@ -785,6 +786,16 @@ export default function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <TeacherDashboardPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profesor/academia"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <TeacherAcademyPage />
               </Suspense>
             </ProtectedRoute>
           }

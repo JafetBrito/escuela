@@ -1,3 +1,4 @@
+import AcademyEnrollButton from '../shared/AcademyEnrollButton'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
 import courses from '../../data/courses.json'
@@ -22,6 +23,7 @@ export default function AcademiaFilosofiaPage() {
           <p className="mt-3 text-sm font-medium text-white/85 sm:text-base">Pensar mejor: lógica, ética y las grandes preguntas.</p>
           <p className="mt-2 text-xs font-bold text-white/80">Director: Jafet Brito</p>
           <a href="/vr/academia/filosofia" className="mt-5 inline-block rounded-full bg-background px-5 py-2 text-sm font-black text-text shadow transition hover:scale-105">🕶️ Entrar al campus VR de la academia</a>
+            <div><AcademyEnrollButton academyId="filosofia" /></div>
         </div>
         <div className="mx-auto grid max-w-5xl gap-4 px-4 py-8 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((c) => (

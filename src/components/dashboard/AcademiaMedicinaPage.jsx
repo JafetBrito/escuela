@@ -1,3 +1,4 @@
+import AcademyEnrollButton from '../shared/AcademyEnrollButton'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppTopBar from '../shared/AppTopBar'
@@ -109,6 +110,7 @@ export default function AcademiaMedicinaPage() {
               {t('pages.academiaMedicina.subtitle')}
             </p>
             <a href="/vr/academia/medicina" className="mt-5 inline-block rounded-full bg-background px-5 py-2 text-sm font-black text-text shadow transition hover:scale-105">🕶️ Entrar al campus VR de la academia</a>
+            <div><AcademyEnrollButton academyId="medicina" /></div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
               <span className="rounded-full bg-background/20 px-3 py-1.5 text-xs font-bold text-background backdrop-blur-sm">
                 {t('pages.academiaMedicina.coursesBadge', { count: medCourses.length })}

@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 // alumno logueado la ve).
 const SECTIONS = [
   { to: '/profesor', icon: '🏠', label: 'Dashboard', end: true },
+  { to: '/profesor/academia', icon: '🎓', label: 'Mi academia' },
   { to: '/profesor/reflexiones', icon: '📥', label: 'Reflexiones' },
   { to: '/profesor/perfil', icon: '🧑‍🏫', label: 'Mi Perfil' },
 ]
