@@ -203,6 +203,11 @@ export const useLiveClassStore = create((set, get) => ({
     const { error } = await get().updateClass(classId, { status: 'en_vivo' })
     if (error) return { error }
     const cls = get().classes.find((c) => c.id === classId)
+    // Clase de un profesor (de una academia): el aviso a sus alumnos lo manda la base (migration_077).
+    if (cls?.academy_id) {
+      await supabase.rpc('teacher_notify_live', { p_id: classId })
+      return { error: null }
+    }
     let targets = []
     if (cls?.student_id) {
       targets = [{ id: cls.student_id }]

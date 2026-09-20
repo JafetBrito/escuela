@@ -182,7 +182,8 @@ const TABS = [
 
 // Panel de control de una clase abierta — aquí el profesor organiza todo en
 // vivo mientras enseña desde otra pantalla/pestaña con Jitsi abierto.
-function ControlPanel({ classId, students, onClose }) {
+// `canReward=false` (profesores): oculta la recompensa de XP/oro, que es solo de admin.
+export function ControlPanel({ classId, students, onClose, canReward = true }) {
   const activeClass    = useLiveClassStore((s) => s.activeClass)
   const questions      = useLiveClassStore((s) => s.questions)
   const pings          = useLiveClassStore((s) => s.pings)
@@ -346,6 +347,7 @@ function ControlPanel({ classId, students, onClose }) {
             </div>
           </div>
 
+          {canReward && (
           <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
             <p className="mb-1 text-xs font-bold uppercase tracking-wide text-text-muted">🎁 Recompensa al finalizar la clase</p>
             <p className="mb-2 text-[11px] text-text-muted">Se entrega cuando le das "Finalizar clase" — a este alumno, o a todos los que hayan entrado si la clase es para "Todos los alumnos".</p>
@@ -363,6 +365,7 @@ function ControlPanel({ classId, students, onClose }) {
               <button onClick={handleSaveReward} className="self-end rounded-lg bg-primary px-3 py-2 text-sm font-bold text-background">Guardar</button>
             </div>
           </div>
+          )}
 
           <div className="rounded-2xl border border-border bg-surface p-4">
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">Agenda</p>
