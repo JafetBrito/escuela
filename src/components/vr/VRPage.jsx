@@ -1,4 +1,5 @@
-﻿import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useVrStreamStore } from '../../stores/useVrStreamStore'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import { Physics, RigidBody, CapsuleCollider, CuboidCollider, useRapier } from '@react-three/rapier'
@@ -2319,6 +2320,8 @@ const PRESENTATION_VIDEO_URL = 'https://www.youtube.com/embed/1y1qrh58MlA?autopl
 
 function CampusVideoScreen({ onOpen }) {
   const { t } = useI18n()
+  const liveUrl = useVrStreamStore((s) => s.embedUrl)
+  const viewerOpen = useVrStreamStore((s) => s.modalOpen)
   const meshRef  = useRef()
   const glowRef  = useRef()
 
@@ -2358,7 +2361,23 @@ function CampusVideoScreen({ onOpen }) {
           emissiveIntensity={0.45}
         />
       </mesh>
+      {/* Transmisión en vivo (/stream): iframe sobre la pantalla. Se desmonta
+          mientras el visor a pantalla completa está abierto para no duplicar el audio. */}
+      {liveUrl && !viewerOpen && (
+        <Html position={[0, 5.5, 0.05]} transform occlude={false} scale={0.0195} distanceFactor={1}>
+          <div style={{ width: '690px', height: '388px', background: '#000' }}>
+            <iframe
+              src={liveUrl}
+              title="Transmisión en vivo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100%', height: '100%', display: 'block', border: 0 }}
+            />
+          </div>
+        </Html>
+      )}
       {/* Clickable Html overlay */}
+      {!liveUrl && (
       <Html position={[0, 5.5, 0.02]} center distanceFactor={18}>
         <div
           className="flex flex-col items-center justify-center gap-2 cursor-pointer"
@@ -2371,6 +2390,7 @@ function CampusVideoScreen({ onOpen }) {
           <p className="text-white/60 text-[10px]">{t('vr.videoScreen.clickToView')}</p>
         </div>
       </Html>
+      )}
       {/* Label */}
       <Html position={[0, 10.0, 0]} center distanceFactor={18}>
         <div className="pointer-events-none whitespace-nowrap rounded-full bg-surface/90 px-3 py-1 text-xs font-semibold text-text shadow-lg">
@@ -2384,6 +2404,7 @@ function CampusVideoScreen({ onOpen }) {
 // Full-screen video modal opened from the campus screen or its right-click menu.
 function VideoScreenModal({ onClose }) {
   const { t } = useI18n()
+  const liveUrl = useVrStreamStore((s) => s.embedUrl)
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm"
       onClick={onClose}>
@@ -2395,7 +2416,7 @@ function VideoScreenModal({ onClose }) {
         </button>
         <div className="aspect-video w-full">
           <iframe
-            src={PRESENTATION_VIDEO_URL}
+            src={liveUrl ?? PRESENTATION_VIDEO_URL}
             className="h-full w-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -3725,6 +3746,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   // entra, ve las instrucciones, y ENTONCES ya entra al mundo" en ese orden.
   const [classIntroSeen, setClassIntroSeen] = useState(false)
   const [videoScreenOpen, setVideoScreenOpen] = useState(false)
+  const liveStreamUrl = useVrStreamStore((s) => s.embedUrl)
+  useEffect(() => { useVrStreamStore.getState().setModalOpen(videoScreenOpen) }, [videoScreenOpen])
   const [nearClassNodeId, setNearClassNodeId] = useState(null)
   const [classSelectionStep, setClassSelectionStep] = useState('player') // 'player' | 'oliver' | 'done'
   const selectPlayerClass = useGameStore((s) => s.selectPlayerClass)
@@ -4263,6 +4286,15 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
         {/* Presentation video screen modal */}
         {videoScreenOpen && <VideoScreenModal onClose={() => setVideoScreenOpen(false)} />}
+        {liveStreamUrl && !videoScreenOpen && !isPrivateWorld && (
+          <button
+            type="button"
+            onClick={() => setVideoScreenOpen(true)}
+            className="absolute left-1/2 top-16 z-30 -translate-x-1/2 animate-pulse rounded-full border border-red-400/60 bg-red-600/90 px-4 py-2 text-sm font-black text-white shadow-lg hover:bg-red-500"
+          >
+            🔴 Transmisión en vivo · Ver ahora
+          </button>
+        )}
 
         {hudVisible && <NpcDialogueBox />}
         {hudVisible && classroomMode && <ClassLessonRunner />}

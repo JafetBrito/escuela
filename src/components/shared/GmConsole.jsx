@@ -8,6 +8,7 @@ import { NPC_SPEECHES } from '../../data/npcSpeechRegistry'
 import { supabase } from '../../services/supabase/client'
 import { useBirthdayStore } from '../../stores/useBirthdayStore'
 import { useFlyModeStore } from '../../stores/useFlyModeStore'
+import { useVrStreamStore } from '../../stores/useVrStreamStore'
 import { LOCAL_SPEECH_EVENT } from '../vr/NpcSpeechPlayer'
 
 const SUMMONABLE_NPCS = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
@@ -32,6 +33,7 @@ const COMMAND_PALETTE = [
   { cmd: '/discurso ', desc: 'Disparar ahora el discurso programado de un NPC (prueba)' },
   { cmd: '/cumpleanos', desc: 'Abrir el modal de cumpleaños sin esperar la fecha real (prueba)' },
   { cmd: '/exportarmapa', desc: 'Descargar el campus tradicional como .glb (solo funciona dentro de /vr/cumpleanos)' },
+  { cmd: '/stream ', desc: 'Transmitir un video/directo de YouTube a todo el campus VR (/stream off lo apaga)' },
   { cmd: '/fly ', desc: 'Volar (on/off) — solo admin, para explorar mapas' },
 ]
 
@@ -51,6 +53,7 @@ const HELP_LINES = [
   '  /discurso <npcId>      — dispara ahora el discurso programado de ese NPC (ej. oliver), para probarlo sin esperar a la hora',
   '  /cumpleanos             — abre el modal de cumpleaños sin esperar la fecha real; su botón "Ir a tu fiesta" lleva al mapa privado',
   '  /exportarmapa           — descarga el campus tradicional (el hecho en código) como .glb para editarlo en Blender; úsalo estando dentro de /vr/cumpleanos',
+  '  /stream <enlace|off>    — pone un video o directo de YouTube en la pantalla del campus VR para todos (los que ya están y los que entren); off lo apaga',
   '  /fly on|off             — activa/desactiva el vuelo libre (como .fly en WoW), para explorar mapas sin quedarte atorado',
 ]
 
@@ -202,6 +205,18 @@ export default function GmConsole({ open, onClose, playerPositionRef, channelRef
       } else if (cmd === 'exportarmapa') {
         window.dispatchEvent(new Event('export-map-glb'))
         log('⏳ Exportando… si estás en /vr/cumpleanos se descargará campus-tradicional.glb.')
+      } else if (cmd === 'stream') {
+        const arg = args.join(' ').trim()
+        if (!arg) {
+          log('Usa /stream <enlace de YouTube> o /stream off.')
+        } else if (norm(arg) === 'off') {
+          await useVrStreamStore.getState().stop()
+          log('✅ Transmisión apagada para todos.')
+        } else if (await useVrStreamStore.getState().start(arg)) {
+          log('🔴 Transmisión activada: se ve en la pantalla del campus y en el botón "En vivo" del HUD, para todos los que estén o entren.')
+        } else {
+          log('❌ Enlace no válido. Usa el enlace del video/directo (youtube.com/watch?v=…, youtu.be/…, youtube.com/live/…) o youtube.com/channel/UC… — un enlace @canal no se puede incrustar.')
+        }
       } else if (cmd === 'fly') {
         // Solo local (useFlyModeStore no persiste) — esta consola ya es
         // admin-only (ver TerminalModal en VRPage.jsx / la ruta

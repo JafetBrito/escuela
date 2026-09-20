@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from '../../services/supabase/client'
 import { useVrPresenceStore } from '../../stores/useVrPresenceStore'
 import { useWorldChatStore } from '../../stores/useWorldChatStore'
 import { useDayNightStore } from '../../stores/useDayNightStore'
+import { useVrStreamStore } from '../../stores/useVrStreamStore'
 
 const VR_CHANNEL = 'vr:campus'
 const POSITION_INTERVAL = 120
@@ -126,6 +127,11 @@ export function useVrMultiplayer({
     channel.on('broadcast', { event: 'world_state' }, ({ payload }) => {
       if (!payload) return
       useDayNightStore.getState().applyRemoteState(payload)
+    })
+
+    // Transmisión en vivo activada/apagada por un admin (ver useVrStreamStore).
+    channel.on('broadcast', { event: 'stream' }, ({ payload }) => {
+      useVrStreamStore.getState().applyRemote(payload)
     })
 
     channel.on('broadcast', { event: 'chat' }, ({ payload }) => {

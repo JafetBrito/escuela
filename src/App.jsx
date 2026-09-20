@@ -50,6 +50,7 @@ import { useSwUpdateStore } from './stores/useSwUpdateStore'
 import { useHolidayStore } from './stores/useHolidayStore'
 import { useThemedWeekStore } from './stores/useThemedWeekStore'
 import { useBannedWordsStore } from './stores/useBannedWordsStore'
+import { useVrStreamStore } from './stores/useVrStreamStore'
 import SitePresence from './components/shared/SitePresence'
 import { useDayNightStore } from './stores/useDayNightStore'
 import { useCourseContentStore } from './stores/useCourseContentStore'
@@ -217,6 +218,7 @@ export default function App() {
     useHolidayStore.getState().load()
     useThemedWeekStore.getState().load()
     useBannedWordsStore.getState().load()
+    useVrStreamStore.getState().load()
     useDayNightStore.getState().load()
     useCourseContentStore.getState().fetchAll()
     useTutorialContentStore.getState().fetchAll()
