@@ -104,8 +104,7 @@ function store(file, hash, text) {
   const c = cache.get(p)
   c.data[hash] = text
   mkdirSync(join(DICT_DIR, LANG), { recursive: true })
-  writeFileSync(c.p, JSON.stringify(c.data, null, 0) + '
-')
+  writeFileSync(c.p, JSON.stringify(c.data) + '\n')
 }
 
 // lotes: por caracteres y por cantidad; una cadena muy larga va sola
