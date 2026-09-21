@@ -5,7 +5,7 @@ import VersionBadge from './VersionBadge'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { MASCOTS } from '../../data/mascotRegistry'
-import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES, tr } from '../../i18n'
 import NotificationBell from './NotificationBell'
 import { getUnreadMailCount } from '../../utils/mailboxStorage'
 import RecruiterMode from './RecruiterMode'
@@ -22,22 +22,22 @@ const GROUPS = [
     label: 'Academia',
     icon: '🎓',
     items: [
-      { to: '/mis-clases',   key: 'misClases',    label: 'Mis Clases',   icon: '🎓' },
-      { to: '/oraculo',      key: 'oraculo',      label: 'Oráculo',      icon: '🔮' },
+      { to: '/mis-clases',   key: 'misClases',    label: tr('Mis Clases', 'My Classes'),   icon: '🎓' },
+      { to: '/oraculo',      key: 'oraculo',      label: tr('Oráculo', 'Oracle'),      icon: '🔮' },
       { to: '/tutoriales',   key: 'tutoriales',   label: 'Tutoriales',   icon: '🧭' },
-      { to: '/roadmaps',     key: 'roadmaps',     label: 'Road Maps',    icon: '🗺️' },
-      { to: '/clases-disponibles', key: 'clasesDisponibles', label: 'Clases Disponibles', icon: '🎬' },
-      { to: '/clase-online', key: 'claseOnline',  label: 'Clase Online', icon: '📺' },
+      { to: '/roadmaps',     key: 'roadmaps',     label: tr('Road Maps', 'Roadmaps'),    icon: '🗺️' },
+      { to: '/clases-disponibles', key: 'clasesDisponibles', label: tr('Clases Disponibles', 'Available Classes'), icon: '🎬' },
+      { to: '/clase-online', key: 'claseOnline',  label: tr('Clase Online', 'Online Class'), icon: '📺' },
       { to: '/horario',      key: 'horario',      label: 'Horario',      icon: '🗓️' },
       { to: '/notas',        key: 'notas',        label: 'Notas',        icon: '📝' },
-      { to: '/biblioteca',   key: 'biblioteca',   label: 'Librería',     icon: '📚' },
-      { to: '/estanteria',   key: 'estanteria',   label: 'Mi Estantería', icon: '🗄️' },
+      { to: '/biblioteca',   key: 'biblioteca',   label: tr('Librería', 'Bookstore'),     icon: '📚' },
+      { to: '/estanteria',   key: 'estanteria',   label: tr('Mi Estantería', 'My Bookshelf'), icon: '🗄️' },
       { to: '/blog',         key: 'blog',         label: 'Blog',          icon: '📰' },
-      { to: '/guias',        key: 'guias',        label: 'Guías',        icon: '📖' },
+      { to: '/guias',        key: 'guias',        label: tr('Guías', 'Guides'),        icon: '📖' },
       { to: '/ia',           key: 'ia',           label: 'IA Tools',     icon: '🤖' },
       { to: '/herramientas', key: 'herramientas', label: 'Herramientas', icon: '🔧' },
       { to: '/anuncios',     key: 'anuncios',     label: 'Anuncios',     icon: '📋' },
-      { to: '/cerebro',      key: 'cerebro',      label: 'Segundo Cerebro', icon: '🧠' },
+      { to: '/cerebro',      key: 'cerebro',      label: tr('Segundo Cerebro', 'Second Brain'), icon: '🧠' },
       { to: '/podcasts',     key: 'podcasts',     label: 'Podcasts',     icon: '🎙️' },
     ],
   },
@@ -47,15 +47,15 @@ const GROUPS = [
     label: 'Progreso',
     icon: '🛡️',
     items: [
-      { to: '/progreso',   key: 'miProgreso', label: 'Mi Progreso', icon: '📊' },
-      { to: '/mis-tareas', key: 'misTareas', label: 'Mis Tareas', icon: '📋' },
+      { to: '/progreso',   key: 'miProgreso', label: tr('Mi Progreso', 'My Progress'), icon: '📊' },
+      { to: '/mis-tareas', key: 'misTareas', label: tr('Mis Tareas', 'My Tasks'), icon: '📋' },
       { to: '/proyectos',  key: 'proyectos', label: 'Proyectos',  icon: '📁' },
-      { to: '/examenes',   key: 'examenes',  label: 'Exámenes',   icon: '📝' },
+      { to: '/examenes',   key: 'examenes',  label: tr('Exámenes', 'Exams'),   icon: '📝' },
       { to: '/logros',    key: 'logros',    label: 'Logros',    icon: '🏅' },
       // Antes vivía en "Comunidad" como "Chats" — es historial de
       // conversaciones con la mascota IA, no mensajería entre alumnos, así
       // que encaja mejor aquí (pedido explícito del usuario).
-      { to: '/chats', key: 'historialIA', label: 'Historial de conversaciones con la IA', icon: '💬', hideFor: ['kids'] },
+      { to: '/chats', key: 'historialIA', label: tr('Historial de conversaciones con la IA', 'AI conversation history'), icon: '💬', hideFor: ['kids'] },
     ],
   },
   {
@@ -66,7 +66,7 @@ const GROUPS = [
     items: [
       { to: '/vr',    key: 'vr',    label: 'Campus VR', icon: '🕶️', hideFor: ['kids', 'seniors'] },
       { to: '/mundo', key: 'mundo', label: 'Mundo 2D',  icon: '📱', hideFor: ['kids', 'seniors'] },
-      { to: '/rol',   key: 'rol',   label: 'Mundo ROL', icon: '🎲', hideFor: ['kids', 'seniors'] },
+      { to: '/rol',   key: 'rol',   label: tr('Mundo ROL', 'ROL World'), icon: '🎲', hideFor: ['kids', 'seniors'] },
     ],
   },
   {
@@ -75,8 +75,8 @@ const GROUPS = [
     label: 'Juegos',
     icon: '🎮',
     items: [
-      { to: '/mascota',  key: 'mascota',  label: 'Mi Equipo', icon: '⚔️', hideFor: ['kids', 'seniors'] },
-      { to: '/arbol',    key: 'arbol',    label: 'Árbol',     icon: '🌳', hideFor: ['kids', 'seniors'] },
+      { to: '/mascota',  key: 'mascota',  label: tr('Mi Equipo', 'My Team'), icon: '⚔️', hideFor: ['kids', 'seniors'] },
+      { to: '/arbol',    key: 'arbol',    label: tr('Árbol', 'Tree'),     icon: '🌳', hideFor: ['kids', 'seniors'] },
       { to: '/misiones', key: 'misiones', label: 'Misiones',  icon: '📜', hideFor: ['kids', 'seniors'] },
       { to: '/games',    key: 'games',    label: 'Games',     icon: '🎮', hideFor: ['seniors'] },
       { to: '/arena',    key: 'arena',    label: 'Arena',     icon: '⚔️', hideFor: ['kids', 'seniors'] },

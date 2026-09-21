@@ -9,10 +9,11 @@ import AdminDonutChart from '../admin/AdminDonutChart'
 import { Link, useParams } from 'react-router-dom'
 import { useLiveClassStore, canJoinClass, findClassByCode, classShortCode } from '../../stores/useLiveClassStore'
 import HubContent from './HubContent'
+import { tr } from '../../i18n'
 
 const STATUS_META = {
   programada: { label: 'Programada', cls: 'bg-amber-500/15 text-amber-300 border-amber-400/30', dot: 'bg-amber-300' },
-  en_vivo:    { label: 'En vivo',     cls: 'bg-red-500/15 text-red-300 border-red-400/30',       dot: 'bg-red-400 animate-pulse' },
+  en_vivo:    { label: tr('En vivo', 'Live'),     cls: 'bg-red-500/15 text-red-300 border-red-400/30',       dot: 'bg-red-400 animate-pulse' },
   finalizada: { label: 'Finalizada',  cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30', dot: 'bg-emerald-300' },
 }
 
@@ -56,7 +57,7 @@ function SyncCodeChip({ classId }) {
       type="button"
       onClick={handleCopy}
       className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/20"
-      title="Copiar código para verla en otro dispositivo"
+      title={tr('Copiar código para verla en otro dispositivo', 'Copy code to watch on another device')}
     >
       🔗 <span className="font-mono tracking-widest">{classShortCode(classId)}</span>
       <span>{copied ? '✓ Copiado' : 'Copiar'}</span>
@@ -89,8 +90,8 @@ function ClassList({ classes, onOpen }) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-surface py-16 text-center">
         <span className="text-4xl">📅</span>
-        <p className="font-bold text-text">Aún no hay clases programadas</p>
-        <p className="text-sm text-text-muted">Cuando se programe una clase en vivo, aparecerá aquí.</p>
+        <p className="font-bold text-text">{tr('Aún no hay clases programadas', 'No classes scheduled yet')}</p>
+        <p className="text-sm text-text-muted">{tr('Cuando se programe una clase en vivo, aparecerá aquí.', 'When a live class is scheduled, it will appear here.')}</p>
       </div>
     )
   }
@@ -144,7 +145,7 @@ function Section({ title, classes, onOpen, cap }) {
       {cap && classes.length > cap && (
         <button type="button" onClick={() => setExpanded((v) => !v)}
           className="mt-2 w-full rounded-lg border border-border/60 py-1.5 text-xs font-bold text-primary hover:bg-primary/10">
-          {expanded ? 'Ver menos' : `Ver todas (${classes.length})`}
+          {expanded ? tr('Ver menos', 'See less') : `Ver todas (${classes.length})`}
         </button>
       )}
     </section>
@@ -167,8 +168,8 @@ function SyncCodeInput({ classes, onOpen }) {
 
   return (
     <form onSubmit={handleSubmit} className="mb-6 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-primary/70">🔗 Sincronizar con código</p>
-      <p className="mt-0.5 text-xs text-text-muted">¿Estás viendo una clase en otra pantalla? Escribe el código que te mostró.</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-primary/70">{tr('🔗 Sincronizar con código', '🔗 Sync with code')}</p>
+      <p className="mt-0.5 text-xs text-text-muted">{tr('¿Estás viendo una clase en otra pantalla? Escribe el código que te mostró.', 'Watching a class on another screen? Enter the code it showed you.')}</p>
       <div className="mt-2 flex gap-2">
         <input
           value={code}
@@ -179,7 +180,7 @@ function SyncCodeInput({ classes, onOpen }) {
         />
         <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Conectar</button>
       </div>
-      {error && <p className="mt-1.5 text-xs text-danger">No encontramos una clase con ese código.</p>}
+      {error && <p className="mt-1.5 text-xs text-danger">{tr('No encontramos una clase con ese código.', 'We couldn\'t find a class with that code.')}</p>}
     </form>
   )
 }
@@ -196,7 +197,7 @@ function ClassHub({ onBack }) {
 
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="text-sm text-text-muted hover:text-primary">← Todas mis clases</button>
+      <button onClick={onBack} className="text-sm text-text-muted hover:text-primary">{tr('← Todas mis clases', '← All my classes')}</button>
 
       {/* Tarjeta de anuncio — antes era solo título/descripción/botón; ahora
           trae estado en vivo con punto animado, quién la da, cuántos ya están
@@ -209,7 +210,7 @@ function ClassHub({ onBack }) {
         <div className="relative flex flex-wrap items-center gap-2">
           <StatusPill status={activeClass.status} />
           <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold text-white/90">
-            🧑‍🏫 Con Jafet
+            {tr('🧑‍🏫 Con Jafet', '🧑‍🏫 With Jafet')}
           </span>
           <ConnectedBadge activeClass={activeClass} pings={pings} />
         </div>
@@ -235,7 +236,7 @@ function ClassHub({ onBack }) {
         <div className="relative mt-5 flex flex-wrap items-center gap-2">
           {activeClass.demo_video_id ? (
             <Link to="/clases-disponibles" className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/25">
-              🎬 El video se ve en la computadora — abrir Clases Disponibles →
+              {tr('🎬 El video se ve en la computadora — abrir Clases Disponibles →', '🎬 The video plays on the computer — open Available Classes →')}
             </Link>
           ) : canJoinClass(activeClass) ? (
             <a
@@ -244,7 +245,7 @@ function ClassHub({ onBack }) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-black text-indigo-700 shadow-md transition hover:scale-[1.02] hover:opacity-95 active:scale-100"
             >
-              🎥 Unirse a la videollamada
+              {tr('🎥 Unirse a la videollamada', '🎥 Join the video call')}
             </a>
           ) : (
             <p className="rounded-xl bg-white/10 px-3 py-2 text-sm text-white/80">
@@ -294,7 +295,7 @@ export default function MyClassesPage() {
           <div className="mx-auto max-w-6xl">
             <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
               <h1 className="text-2xl font-black text-white sm:text-3xl">🎓 Mis Clases</h1>
-              <p className="mt-1 text-sm text-white/85">Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.</p>
+              <p className="mt-1 text-sm text-white/85">{tr('Tus clases en vivo con Jafet — la videollamada es en Jitsi Meet, aquí ves la agenda, los recursos y puedes preguntar.', 'Your live classes with Jafet — the video call is on Jitsi Meet; here you see the agenda, the resources and can ask questions.')}</p>
             </div>
 
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -311,8 +312,8 @@ export default function MyClassesPage() {
                   <ClassList classes={classes} onOpen={openClass} />
                 ) : (
                   <>
-                    <Section title="🔴 En vivo ahora" classes={liveClasses} onOpen={openClass} />
-                    <Section title="⏳ Próximas" classes={upcomingClasses} onOpen={openClass} />
+                    <Section title={tr('🔴 En vivo ahora', '🔴 Live now')} classes={liveClasses} onOpen={openClass} />
+                    <Section title={tr('⏳ Próximas', '⏳ Upcoming')} classes={upcomingClasses} onOpen={openClass} />
                     <Section title="✅ Finalizadas" classes={finishedClasses} onOpen={openClass} cap={SHOWN_CAP} />
                   </>
                 )}
@@ -320,11 +321,11 @@ export default function MyClassesPage() {
 
               <div className="space-y-4">
                 <AdminDonutChart
-                  title="📊 Tus clases"
+                  title={tr('📊 Tus clases', '📊 Your classes')}
                   centerLabel={classes.length}
                   slices={[
                     { label: 'Programadas', value: upcomingCount, color: '#fbbf24' },
-                    { label: 'En vivo', value: liveCount, color: '#f87171' },
+                    { label: tr('En vivo', 'Live'), value: liveCount, color: '#f87171' },
                     { label: 'Finalizadas', value: finishedCount, color: '#34d399' },
                   ]}
                 />

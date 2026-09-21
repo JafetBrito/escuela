@@ -2,70 +2,71 @@ import { useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import Calculator from './Calculator'
+import { tr } from '../../i18n'
 
 // ── Formula data ──────────────────────────────────────────────────────────────
 const FORMULA_SECTIONS = [
   {
-    id: 'matematicas', label: 'Matemáticas', icon: '📐', color: 'from-blue-600 to-blue-400',
+    id: 'matematicas', label: tr('Matemáticas', 'Mathematics'), icon: '📐', color: 'from-blue-600 to-blue-400',
     formulas: [
-      { name: 'Fórmula cuadrática',       expr: 'x = (-b ± √(b²−4ac)) / 2a',            desc: 'Raíces de ax² + bx + c = 0' },
-      { name: 'Teorema de Pitágoras',      expr: 'a² + b² = c²',                          desc: 'Relación entre lados de un triángulo rectángulo' },
-      { name: 'Suma de serie aritmética',  expr: 'Sₙ = n(a₁ + aₙ) / 2',                  desc: 'Suma de n términos de una progresión aritmética' },
-      { name: 'Suma de serie geométrica',  expr: 'Sₙ = a(1−rⁿ) / (1−r)',                 desc: 'Suma finita con razón r ≠ 1' },
-      { name: 'Derivada de potencia',      expr: 'd/dx(xⁿ) = nxⁿ⁻¹',                     desc: 'Regla básica de derivación' },
-      { name: 'Integral de potencia',      expr: '∫xⁿ dx = xⁿ⁺¹/(n+1) + C',              desc: 'Para n ≠ −1' },
-      { name: 'Logaritmo — cambio de base',expr: 'log_b(x) = log(x) / log(b)',            desc: 'Conversión entre bases' },
-      { name: 'Binomio de Newton',         expr: '(a+b)ⁿ = Σ C(n,k)·aⁿ⁻ᵏ·bᵏ',           desc: 'Expansión del binomio elevado a n' },
+      { name: tr('Fórmula cuadrática', 'Quadratic formula'),       expr: 'x = (-b ± √(b²−4ac)) / 2a',            desc: tr('Raíces de ax² + bx + c = 0', 'Roots of ax² + bx + c = 0') },
+      { name: tr('Teorema de Pitágoras', 'Pythagorean theorem'),      expr: 'a² + b² = c²',                          desc: tr('Relación entre lados de un triángulo rectángulo', 'Relationship between the sides of a right triangle') },
+      { name: tr('Suma de serie aritmética', 'Sum of an arithmetic series'),  expr: 'Sₙ = n(a₁ + aₙ) / 2',                  desc: tr('Suma de n términos de una progresión aritmética', 'Sum of n terms of an arithmetic progression') },
+      { name: tr('Suma de serie geométrica', 'Sum of a geometric series'),  expr: 'Sₙ = a(1−rⁿ) / (1−r)',                 desc: tr('Suma finita con razón r ≠ 1', 'Finite sum with ratio r ≠ 1') },
+      { name: tr('Derivada de potencia', 'Power rule (derivative)'),      expr: 'd/dx(xⁿ) = nxⁿ⁻¹',                     desc: tr('Regla básica de derivación', 'Basic differentiation rule') },
+      { name: tr('Integral de potencia', 'Power rule (integral)'),      expr: '∫xⁿ dx = xⁿ⁺¹/(n+1) + C',              desc: tr('Para n ≠ −1', 'For n ≠ −1') },
+      { name: tr('Logaritmo — cambio de base', 'Logarithm — change of base'),expr: 'log_b(x) = log(x) / log(b)',            desc: tr('Conversión entre bases', 'Conversion between bases') },
+      { name: tr('Binomio de Newton', 'Binomial theorem'),         expr: '(a+b)ⁿ = Σ C(n,k)·aⁿ⁻ᵏ·bᵏ',           desc: tr('Expansión del binomio elevado a n', 'Expansion of a binomial raised to n') },
     ],
   },
   {
-    id: 'geometria', label: 'Geometría', icon: '📏', color: 'from-purple-600 to-purple-400',
+    id: 'geometria', label: tr('Geometría', 'Geometry'), icon: '📏', color: 'from-purple-600 to-purple-400',
     formulas: [
-      { name: 'Área del círculo',          expr: 'A = πr²',                               desc: 'r = radio' },
-      { name: 'Perímetro del círculo',     expr: 'C = 2πr',                               desc: 'Circunferencia' },
-      { name: 'Área del triángulo',        expr: 'A = (base × altura) / 2',               desc: 'Fórmula general' },
-      { name: 'Volumen de esfera',         expr: 'V = (4/3)πr³',                          desc: 'r = radio' },
-      { name: 'Volumen del cilindro',      expr: 'V = πr²h',                              desc: 'r = radio, h = altura' },
-      { name: 'Área del trapecio',         expr: 'A = (b₁ + b₂) × h / 2',                desc: 'b₁, b₂ = bases paralelas' },
-      { name: 'Ley del coseno',            expr: 'c² = a² + b² − 2ab·cos(C)',             desc: 'Triángulo con ángulo C opuesto a c' },
-      { name: 'Ley del seno',             expr: 'a/sin(A) = b/sin(B) = c/sin(C)',         desc: 'Triángulo cualquiera' },
+      { name: tr('Área del círculo', 'Area of a circle'),          expr: 'A = πr²',                               desc: 'r = radio' },
+      { name: tr('Perímetro del círculo', 'Circumference of a circle'),     expr: 'C = 2πr',                               desc: 'Circunferencia' },
+      { name: tr('Área del triángulo', 'Area of a triangle'),        expr: 'A = (base × altura) / 2',               desc: tr('Fórmula general', 'General formula') },
+      { name: tr('Volumen de esfera', 'Volume of a sphere'),         expr: 'V = (4/3)πr³',                          desc: 'r = radio' },
+      { name: tr('Volumen del cilindro', 'Volume of a cylinder'),      expr: 'V = πr²h',                              desc: 'r = radio, h = altura' },
+      { name: tr('Área del trapecio', 'Area of a trapezoid'),         expr: 'A = (b₁ + b₂) × h / 2',                desc: 'b₁, b₂ = bases paralelas' },
+      { name: tr('Ley del coseno', 'Law of cosines'),            expr: 'c² = a² + b² − 2ab·cos(C)',             desc: tr('Triángulo con ángulo C opuesto a c', 'Triangle with angle C opposite side c') },
+      { name: tr('Ley del seno', 'Law of sines'),             expr: 'a/sin(A) = b/sin(B) = c/sin(C)',         desc: tr('Triángulo cualquiera', 'Any triangle') },
     ],
   },
   {
-    id: 'fisica', label: 'Física', icon: '⚡', color: 'from-amber-600 to-amber-400',
+    id: 'fisica', label: tr('Física', 'Physics'), icon: '⚡', color: 'from-amber-600 to-amber-400',
     formulas: [
-      { name: 'Velocidad media',           expr: 'v = Δx / Δt',                           desc: 'Distancia entre tiempo' },
-      { name: 'Cinemática — velocidad',    expr: 'v = v₀ + at',                           desc: 'v₀=velocidad inicial, a=aceleración' },
-      { name: 'Cinemática — posición',     expr: 'x = x₀ + v₀t + ½at²',                  desc: 'Movimiento uniformemente acelerado' },
-      { name: 'Segunda ley de Newton',     expr: 'F = ma',                                desc: 'Fuerza = masa × aceleración' },
-      { name: 'Ley de gravitación',        expr: 'F = G·m₁·m₂ / r²',                     desc: 'G = 6.674×10⁻¹¹ N·m²/kg²' },
-      { name: 'Energía cinética',          expr: 'Ec = ½mv²',                             desc: 'm = masa, v = velocidad' },
-      { name: 'Energía potencial',         expr: 'Ep = mgh',                              desc: 'g = 9.8 m/s², h = altura' },
-      { name: 'Ley de Ohm',               expr: 'V = I × R',                             desc: 'Voltaje = Corriente × Resistencia' },
-      { name: 'Potencia eléctrica',        expr: 'P = V × I = I²R = V²/R',               desc: 'Watts, Amperes, Ohms' },
-      { name: 'Velocidad de la luz',       expr: 'c = 3×10⁸ m/s',                        desc: 'En el vacío' },
+      { name: tr('Velocidad media', 'Average speed'),           expr: 'v = Δx / Δt',                           desc: tr('Distancia entre tiempo', 'Distance divided by time') },
+      { name: tr('Cinemática — velocidad', 'Kinematics — velocity'),    expr: 'v = v₀ + at',                           desc: tr('v₀=velocidad inicial, a=aceleración', 'v₀=initial velocity, a=acceleration') },
+      { name: tr('Cinemática — posición', 'Kinematics — position'),     expr: 'x = x₀ + v₀t + ½at²',                  desc: tr('Movimiento uniformemente acelerado', 'Uniformly accelerated motion') },
+      { name: tr('Segunda ley de Newton', 'Newton\'s second law'),     expr: 'F = ma',                                desc: tr('Fuerza = masa × aceleración', 'Force = mass × acceleration') },
+      { name: tr('Ley de gravitación', 'Law of gravitation'),        expr: 'F = G·m₁·m₂ / r²',                     desc: 'G = 6.674×10⁻¹¹ N·m²/kg²' },
+      { name: tr('Energía cinética', 'Kinetic energy'),          expr: 'Ec = ½mv²',                             desc: 'm = masa, v = velocidad' },
+      { name: tr('Energía potencial', 'Potential energy'),         expr: 'Ep = mgh',                              desc: 'g = 9.8 m/s², h = altura' },
+      { name: tr('Ley de Ohm', 'Ohm\'s law'),               expr: 'V = I × R',                             desc: 'Voltaje = Corriente × Resistencia' },
+      { name: tr('Potencia eléctrica', 'Electric power'),        expr: 'P = V × I = I²R = V²/R',               desc: 'Watts, Amperes, Ohms' },
+      { name: tr('Velocidad de la luz', 'Speed of light'),       expr: 'c = 3×10⁸ m/s',                        desc: tr('En el vacío', 'In a vacuum') },
     ],
   },
   {
-    id: 'quimica', label: 'Química', icon: '🧪', color: 'from-emerald-600 to-emerald-400',
+    id: 'quimica', label: tr('Química', 'Chemistry'), icon: '🧪', color: 'from-emerald-600 to-emerald-400',
     formulas: [
-      { name: 'Número de moles',           expr: 'n = m / M',                             desc: 'm = masa (g), M = masa molar (g/mol)' },
-      { name: 'Ley del gas ideal',         expr: 'PV = nRT',                              desc: 'R = 8.314 J/mol·K' },
-      { name: 'Concentración molar',       expr: 'C = n / V',                             desc: 'mol/L (Molar)' },
+      { name: tr('Número de moles', 'Number of moles'),           expr: 'n = m / M',                             desc: 'm = masa (g), M = masa molar (g/mol)' },
+      { name: tr('Ley del gas ideal', 'Ideal gas law'),         expr: 'PV = nRT',                              desc: 'R = 8.314 J/mol·K' },
+      { name: tr('Concentración molar', 'Molar concentration'),       expr: 'C = n / V',                             desc: 'mol/L (Molar)' },
       { name: 'pH',                        expr: 'pH = −log[H⁺]',                         desc: 'Medida de acidez' },
-      { name: 'Constante de Avogadro',     expr: 'Nₐ = 6.022×10²³ mol⁻¹',                desc: 'Partículas por mol' },
-      { name: 'Ecuación de Arrhenius',     expr: 'k = A·e^(−Eₐ/RT)',                      desc: 'Velocidad de reacción vs temperatura' },
+      { name: tr('Constante de Avogadro', 'Avogadro\'s constant'),     expr: 'Nₐ = 6.022×10²³ mol⁻¹',                desc: tr('Partículas por mol', 'Particles per mole') },
+      { name: tr('Ecuación de Arrhenius', 'Arrhenius equation'),     expr: 'k = A·e^(−Eₐ/RT)',                      desc: tr('Velocidad de reacción vs temperatura', 'Reaction rate vs temperature') },
     ],
   },
   {
-    id: 'estadistica', label: 'Estadística', icon: '📊', color: 'from-rose-600 to-rose-400',
+    id: 'estadistica', label: tr('Estadística', 'Statistics'), icon: '📊', color: 'from-rose-600 to-rose-400',
     formulas: [
-      { name: 'Media aritmética',          expr: 'x̄ = (Σxᵢ) / n',                        desc: 'Promedio de n valores' },
-      { name: 'Varianza',                  expr: 'σ² = Σ(xᵢ − x̄)² / n',                  desc: 'Dispersión de los datos' },
-      { name: 'Desviación estándar',       expr: 'σ = √(Σ(xᵢ − x̄)² / n)',                desc: 'Raíz de la varianza' },
-      { name: 'Probabilidad',             expr: 'P(A) = casos favorables / total',        desc: 'Eventos equiprobables' },
+      { name: tr('Media aritmética', 'Arithmetic mean'),          expr: 'x̄ = (Σxᵢ) / n',                        desc: tr('Promedio de n valores', 'Average of n values') },
+      { name: 'Varianza',                  expr: 'σ² = Σ(xᵢ − x̄)² / n',                  desc: tr('Dispersión de los datos', 'Data dispersion') },
+      { name: tr('Desviación estándar', 'Standard deviation'),       expr: 'σ = √(Σ(xᵢ − x̄)² / n)',                desc: tr('Raíz de la varianza', 'Square root of the variance') },
+      { name: 'Probabilidad',             expr: 'P(A) = casos favorables / total',        desc: tr('Eventos equiprobables', 'Equally likely events') },
       { name: 'Combinatoria',              expr: 'C(n,k) = n! / (k!(n−k)!)',              desc: '"n choose k"' },
-      { name: 'Permutaciones',             expr: 'P(n,k) = n! / (n−k)!',                  desc: 'Ordenaciones de k de n elementos' },
+      { name: 'Permutaciones',             expr: 'P(n,k) = n! / (n−k)!',                  desc: tr('Ordenaciones de k de n elementos', 'Arrangements of k out of n elements') },
     ],
   },
 ]
@@ -177,7 +178,7 @@ export default function ToolsPage() {
 
   const TABS = [
     { id: 'calculadora', label: 'Calculadora', icon: '🔢' },
-    { id: 'formulas',    label: 'Fórmulas',    icon: '📐' },
+    { id: 'formulas',    label: tr('Fórmulas', 'Formulas'),    icon: '📐' },
     { id: 'conversor',   label: 'Conversor',   icon: '↔️' },
   ]
 
@@ -192,7 +193,7 @@ export default function ToolsPage() {
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-500 px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">🔧 Herramientas</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Calculadora científica, fórmulas de referencia y conversor de unidades — disponibles sin internet.
+              {tr('Calculadora científica, fórmulas de referencia y conversor de unidades — disponibles sin internet.', 'Scientific calculator, reference formulas and unit converter — available offline.')}
             </p>
           </div>
 
@@ -221,7 +222,7 @@ export default function ToolsPage() {
               <div className="mx-auto max-w-sm rounded-2xl border border-border bg-surface p-4">
                 <Calculator />
                 <p className="mt-3 text-center text-[10px] text-text-muted/50">
-                  Calculadora científica — también disponible como objeto equipable desde la Tienda
+                  {tr('Calculadora científica — también disponible como objeto equipable desde la Tienda', 'Scientific calculator — also available as an equippable item from the Shop')}
                 </p>
               </div>
             )}
@@ -267,7 +268,7 @@ export default function ToolsPage() {
             {/* ── Conversor ── */}
             {activeTab === 'conversor' && (
               <div className="rounded-2xl border border-border bg-surface p-5">
-                <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-text-muted/60">Conversor de unidades</h2>
+                <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-text-muted/60">{tr('Conversor de unidades', 'Unit converter')}</h2>
                 <UnitConverter />
               </div>
             )}

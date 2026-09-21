@@ -7,6 +7,7 @@ import HubContent from './HubContent'
 import WatchRoomCard from './WatchRoomCard'
 import { useLiveClassStore, classShortCode } from '../../stores/useLiveClassStore'
 import { VR_CLASSES } from '../../data/vrClassRegistry'
+import { tr } from '../../i18n'
 
 // Clases "de práctica": no se programan, no tienen horario ni ventana de
 // espera — siempre están ahí. El video vive en ESTA página (computadora).
@@ -40,7 +41,7 @@ function SyncModal({ cls, onChoose, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <span className="text-3xl">🔗</span>
-        <h2 className="mt-2 text-lg font-extrabold text-text">Sincroniza tu experiencia</h2>
+        <h2 className="mt-2 text-lg font-extrabold text-text">{tr('Sincroniza tu experiencia', 'Sync your experience')}</h2>
         <p className="mt-1 text-sm text-text-muted">
           "{cls.title}" tiene un Hub con agenda, recursos y misiones. ¿Cómo quieres verlo?
         </p>
@@ -53,7 +54,7 @@ function SyncModal({ cls, onChoose, onClose }) {
           >
             <span className="text-xl">📱</span>
             <div>
-              <p className="text-sm font-bold text-text">En mi teléfono</p>
+              <p className="text-sm font-bold text-text">{tr('En mi teléfono', 'On my phone')}</p>
               <p className="text-xs text-text-muted">El video se queda aquí en la computadora — abre <b>Mis Clases</b> en tu teléfono para el Hub.</p>
             </div>
           </button>
@@ -64,8 +65,8 @@ function SyncModal({ cls, onChoose, onClose }) {
           >
             <span className="text-xl">💻</span>
             <div>
-              <p className="text-sm font-bold text-text">Aquí mismo, lado a lado</p>
-              <p className="text-xs text-text-muted">Video y Hub juntos en esta pantalla — útil si solo tienes un dispositivo.</p>
+              <p className="text-sm font-bold text-text">{tr('Aquí mismo, lado a lado', 'Right here, side by side')}</p>
+              <p className="text-xs text-text-muted">{tr('Video y Hub juntos en esta pantalla — útil si solo tienes un dispositivo.', 'Video and Hub together on this screen — useful if you only have one device.')}</p>
             </div>
           </button>
         </div>
@@ -114,7 +115,7 @@ function ClassPlayer({ cls, mode, onBack }) {
 
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="text-sm text-text-muted hover:text-primary">← Todas las clases disponibles</button>
+      <button onClick={onBack} className="text-sm text-text-muted hover:text-primary">{tr('← Todas las clases disponibles', '← All available classes')}</button>
 
       <div>
         <h1 className="text-xl font-extrabold text-text">{cls.title}</h1>
@@ -125,12 +126,12 @@ function ClassPlayer({ cls, mode, onBack }) {
         <>
           <VideoPlayer videoId={cls.demo_video_id} />
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary/70">📱 En tu teléfono</p>
-            <p className="mt-1 text-sm text-text-muted">Abre Mis Clases → "Sincronizar con código" y escribe:</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-primary/70">{tr('📱 En tu teléfono', '📱 On your phone')}</p>
+            <p className="mt-1 text-sm text-text-muted">Abre Mis Clases → tr('Sincronizar con código', 'Sync with code') y escribe:</p>
             <p className="mt-3 font-mono text-4xl font-black tracking-[0.2em] text-primary">{classShortCode(cls.id)}</p>
-            <p className="mt-3 text-xs text-text-muted">Ahí verás la agenda, los recursos y podrás hacer preguntas en tiempo real mientras ves el video aquí.</p>
+            <p className="mt-3 text-xs text-text-muted">{tr('Ahí verás la agenda, los recursos y podrás hacer preguntas en tiempo real mientras ves el video aquí.', 'There you\'ll see the agenda, the resources and you can ask questions in real time while you watch the video here.')}</p>
             <Link to="/mis-clases" className="mt-4 inline-block rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
-              ¿Ya estás ahí? Abrir Mis Clases →
+              {tr('¿Ya estás ahí? Abrir Mis Clases →', 'Already there? Open My Classes →')}
             </Link>
           </div>
         </>
@@ -153,12 +154,12 @@ function ClassPlayer({ cls, mode, onBack }) {
           <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
             <div className="flex items-center gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
               <span className="text-lg">🎯</span>
-              <p className="text-sm font-extrabold text-text">Hub de la clase</p>
+              <p className="text-sm font-extrabold text-text">{tr('Hub de la clase', 'Class Hub')}</p>
               <span className="ml-auto flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sincronizado
               </span>
             </div>
-            {activeClass ? <HubContent activeClass={activeClass} /> : <p className="text-sm text-text-muted">Cargando Hub…</p>}
+            {activeClass ? <HubContent activeClass={activeClass} /> : <p className="text-sm text-text-muted">{tr('Cargando Hub…', 'Loading Hub…')}</p>}
           </div>
         </div>
       )}
@@ -190,15 +191,15 @@ export default function AvailableClassesPage() {
         <div className={`mx-auto ${openClassEntry?.mode === 'sideBySide' ? 'max-w-[1400px]' : 'max-w-3xl'}`}>
           {!openClassEntry && (
             <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-8 shadow-lg">
-              <h1 className="text-3xl font-extrabold text-white">🎬 Clases Disponibles</h1>
-              <p className="mt-1 text-sm font-medium text-white/85">Clases de práctica siempre abiertas — sin horario, sin espera. Entra cuando quieras.</p>
+              <h1 className="text-3xl font-extrabold text-white">{tr('🎬 Clases Disponibles', '🎬 Available Classes')}</h1>
+              <p className="mt-1 text-sm font-medium text-white/85">{tr('Clases de práctica siempre abiertas — sin horario, sin espera. Entra cuando quieras.', 'Practice classes always open — no schedule, no waiting. Join whenever you like.')}</p>
             </div>
           )}
 
           {!openClassEntry && (
             <div className="mt-6 space-y-3">
               <WatchRoomCard />
-              <p className="text-xs font-bold uppercase tracking-wide text-text-muted">🕶️ Clases en Realidad Virtual</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{tr('🕶️ Clases en Realidad Virtual', '🕶️ Virtual Reality Classes')}</p>
               {Object.values(VR_CLASSES).map((c) => <VrClassCard key={c.id} cls={c} />)}
             </div>
           )}
@@ -207,12 +208,12 @@ export default function AvailableClassesPage() {
             {openClassEntry ? (
               <ClassPlayer cls={openClassEntry.cls} mode={openClassEntry.mode} onBack={() => setOpenClassEntry(null)} />
             ) : loading ? (
-              <p className="py-12 text-center text-sm text-text-muted">Cargando…</p>
+              <p className="py-12 text-center text-sm text-text-muted">{tr('Cargando…', 'Loading…')}</p>
             ) : availableClasses.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-surface py-16 text-center">
                 <span className="text-4xl">🎬</span>
-                <p className="font-bold text-text">Sin clases disponibles todavía</p>
-                <p className="text-sm text-text-muted">Cuando el profesor publique una clase de práctica, aparecerá aquí.</p>
+                <p className="font-bold text-text">{tr('Sin clases disponibles todavía', 'No classes available yet')}</p>
+                <p className="text-sm text-text-muted">{tr('Cuando el profesor publique una clase de práctica, aparecerá aquí.', 'When the teacher publishes a practice class, it will appear here.')}</p>
               </div>
             ) : (
               <div className="space-y-3">

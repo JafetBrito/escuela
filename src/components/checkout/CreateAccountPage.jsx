@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useGameStore } from '../../stores/useGameStore'
 import { isSupabaseConfigured } from '../../services/supabase/client'
 import { renderGoogleButton, isGoogleAuthConfigured } from '../../services/auth/googleAuth'
+import { tr } from '../../i18n'
 
 const FACEBOOK_ENABLED = import.meta.env.VITE_ENABLE_FACEBOOK_LOGIN === 'true'
 
@@ -70,7 +71,7 @@ export default function CreateAccountPage() {
       // here and tell the user. Disable "Confirm email" in the Supabase
       // dashboard (Authentication > Providers > Email) to skip this.
       if (!data.session) {
-        setError('Te enviamos un correo de confirmación. Ábrelo, confirma tu cuenta e inicia sesión para crear tu personaje — si no confirmas, tu progreso no se guardará en la nube.')
+        setError(tr('Te enviamos un correo de confirmación. Ábrelo, confirma tu cuenta e inicia sesión para crear tu personaje — si no confirmas, tu progreso no se guardará en la nube.', 'We sent you a confirmation email. Open it, confirm your account and log in to create your character — if you don\'t confirm, your progress won\'t be saved to the cloud.'))
         return
       }
       finishSignup(nickname)
@@ -94,7 +95,7 @@ export default function CreateAccountPage() {
       <header className="flex items-center justify-between px-6 py-4 md:px-10">
         <Link to="/"><Logo /></Link>
         <Link to="/login" className="text-sm text-text-muted transition-colors hover:text-text">
-          ¿Ya tienes cuenta? →
+          {tr('¿Ya tienes cuenta? →', 'Already have an account? →')}
         </Link>
       </header>
 
@@ -111,7 +112,7 @@ export default function CreateAccountPage() {
                   <span className="text-primary">Oliver Academy</span>
                 </h1>
                 <p className="mt-3 max-w-md text-base text-text-muted">
-                  El campus virtual donde aprendes, exploras y creces junto a tu compañero mágico.
+                  {tr('El campus virtual donde aprendes, exploras y creces junto a tu compañero mágico.', 'The virtual campus where you learn, explore and grow alongside your magical companion.')}
                 </p>
               </div>
 
@@ -122,7 +123,7 @@ export default function CreateAccountPage() {
                     className="aspect-video w-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    title="Bienvenida a Oliver Academy"
+                    title={tr('Bienvenida a Oliver Academy', 'Welcome to Oliver Academy')}
                   />
                 ) : (
                   <div className="relative flex aspect-video w-full flex-col items-center justify-center gap-4 bg-gradient-to-br from-surface to-background">
@@ -137,7 +138,7 @@ export default function CreateAccountPage() {
                         </Suspense>
                       </Canvas>
                     </div>
-                    <p className="text-sm font-semibold text-text-muted">🎬 Video de bienvenida próximamente</p>
+                    <p className="text-sm font-semibold text-text-muted">{tr('🎬 Video de bienvenida próximamente', '🎬 Welcome video coming soon')}</p>
                   </div>
                 )}
               </div>
@@ -157,12 +158,12 @@ export default function CreateAccountPage() {
               </div>
 
               <Button className="w-full max-w-xs py-4 text-base" onClick={() => setStep(1)}>
-                ¡Crear mi cuenta! 🚀
+                {tr('¡Crear mi cuenta! 🚀', 'Create my account! 🚀')}
               </Button>
 
               <p className="text-xs text-text-muted">
                 ¿Ya tienes una cuenta?{' '}
-                <Link to="/login" className="font-bold text-primary hover:underline">Inicia sesión</Link>
+                <Link to="/login" className="font-bold text-primary hover:underline">{tr('Inicia sesión', 'Log in')}</Link>
               </p>
             </div>
           )}
@@ -170,9 +171,9 @@ export default function CreateAccountPage() {
           {/* ═══════ STEP 1 — CUENTA ═══════ */}
           {step === 1 && (
             <div className="mx-auto max-w-md rounded-3xl border border-border bg-surface p-6 shadow-lg md:p-8">
-              <h2 className="mb-1 text-2xl font-black">Crea tu cuenta</h2>
+              <h2 className="mb-1 text-2xl font-black">{tr('Crea tu cuenta', 'Create your account')}</h2>
               <p className="mb-6 text-sm text-text-muted">
-                Elige tu nombre y crea tu acceso — ya puedes ver y tomar tus cursos.
+                {tr('Elige tu nombre y crea tu acceso — ya puedes ver y tomar tus cursos.', 'Choose your name and create your access — you can already view and take your courses.')}
                 Cuando quieras, desde el dashboard puedes crear tu mascota y entrar
                 al mundo VR. Las APIs se configuran luego en Ajustes.
               </p>
@@ -184,22 +185,22 @@ export default function CreateAccountPage() {
                       Nombre
                       <input type="text" required value={nickname}
                         onChange={(e) => setNickname(e.target.value)}
-                        placeholder="¿Cómo te llamarán en el campus?"
+                        placeholder={tr('¿Cómo te llamarán en el campus?', 'What will you be called on the campus?')}
                         maxLength={24}
                         className="rounded-xl border border-border bg-background px-4 py-3 text-text outline-none transition focus:border-primary" />
                     </label>
                     <label className="flex flex-col gap-1.5 text-sm font-semibold">
-                      Correo electrónico
+                      {tr('Correo electrónico', 'Email')}
                       <input type="email" required value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="tu@correo.com"
                         className="rounded-xl border border-border bg-background px-4 py-3 text-text outline-none transition focus:border-primary" />
                     </label>
                     <label className="flex flex-col gap-1.5 text-sm font-semibold">
-                      Contraseña
+                      {tr('Contraseña', 'Password')}
                       <input type="password" required minLength={6} value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder={tr('Mínimo 6 caracteres', 'At least 6 characters')}
                         className="rounded-xl border border-border bg-background px-4 py-3 text-text outline-none transition focus:border-primary" />
                     </label>
 
@@ -211,51 +212,51 @@ export default function CreateAccountPage() {
                         className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
                       />
                       <span>
-                        Esta cuenta es para mi hijo/a <span className="text-text-muted/70">(la aprobará un administrador antes de poder usarse)</span>
+                        Esta cuenta es para mi hijo/a <span className="text-text-muted/70">{tr('(la aprobará un administrador antes de poder usarse)', '(an administrator will approve it before it can be used)')}</span>
                       </span>
                     </label>
 
                     {session ? (
                       <Button type="button" onClick={() => finishSignup(nickname)}>
-                        Ya tienes sesión — continuar →
+                        {tr('Ya tienes sesión — continuar →', 'You\'re already logged in — continue →')}
                       </Button>
                     ) : (
                       <Button type="submit" disabled={status === 'processing'} className="py-3 text-base">
-                        {status === 'processing' ? 'Creando cuenta…' : 'Crear cuenta y continuar →'}
+                        {status === 'processing' ? tr('Creando cuenta…', 'Creating account…') : 'Crear cuenta y continuar →'}
                       </Button>
                     )}
 
                     <p className="text-center text-[11px] text-text-muted">
                       Al crear tu cuenta aceptas nuestro{' '}
-                      <Link to="/privacidad" target="_blank" className="font-semibold text-primary hover:underline">Aviso de Privacidad</Link>
+                      <Link to="/privacidad" target="_blank" className="font-semibold text-primary hover:underline">{tr('Aviso de Privacidad', 'Privacy Notice')}</Link>
                       {' '}y nuestros{' '}
-                      <Link to="/terminos" target="_blank" className="font-semibold text-primary hover:underline">Términos de Uso</Link>.
+                      <Link to="/terminos" target="_blank" className="font-semibold text-primary hover:underline">{tr('Términos de Uso', 'Terms of Use')}</Link>.
                     </p>
                   </form>
 
                   <div className="my-5 flex items-center gap-3">
                     <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs uppercase tracking-wide text-text-muted">o regístrate con</span>
+                    <span className="text-xs uppercase tracking-wide text-text-muted">{tr('o regístrate con', 'or sign up with')}</span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Button variant="secondary" onClick={() => handleOAuth('google')}>🟢 Continuar con Google</Button>
+                    <Button variant="secondary" onClick={() => handleOAuth('google')}>{tr('🟢 Continuar con Google', '🟢 Continue with Google')}</Button>
                     {FACEBOOK_ENABLED && (
-                      <Button variant="secondary" onClick={() => handleOAuth('facebook')}>🔵 Continuar con Facebook</Button>
+                      <Button variant="secondary" onClick={() => handleOAuth('facebook')}>{tr('🔵 Continuar con Facebook', '🔵 Continue with Facebook')}</Button>
                     )}
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center gap-4 text-center">
                   <p className="text-sm text-text-muted">
-                    Las cuentas en la nube no están configuradas. Puedes continuar con Google para el modo local.
+                    {tr('Las cuentas en la nube no están configuradas. Puedes continuar con Google para el modo local.', 'Cloud accounts are not configured. You can continue with Google for local mode.')}
                   </p>
                   <div ref={googleButtonRef} />
                   {!isGoogleAuthConfigured() && (
-                    <p className="text-xs text-text-muted">Google Auth tampoco está configurado aún.</p>
+                    <p className="text-xs text-text-muted">{tr('Google Auth tampoco está configurado aún.', 'Google Auth is not configured yet either.')}</p>
                   )}
-                  <Button onClick={() => finishSignup(nickname)} className="mt-1">Continuar sin cuenta →</Button>
+                  <Button onClick={() => finishSignup(nickname)} className="mt-1">{tr('Continuar sin cuenta →', 'Continue without an account →')}</Button>
                 </div>
               )}
 
@@ -266,7 +267,7 @@ export default function CreateAccountPage() {
               )}
 
               <div className="mt-4 flex justify-start">
-                <Button variant="ghost" onClick={() => setStep(0)}>← Atrás</Button>
+                <Button variant="ghost" onClick={() => setStep(0)}>{tr('← Atrás', '← Back')}</Button>
               </div>
             </div>
           )}

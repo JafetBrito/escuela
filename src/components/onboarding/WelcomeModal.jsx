@@ -7,26 +7,27 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useMascotMemoryStore } from '../../stores/useMascotMemoryStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getTransport } from '../../services/chat/transports'
+import { tr } from '../../i18n'
 
 const PLACEMENT_QUESTIONS = [
   {
     id: 'q1',
-    prompt: '¿Has usado antes alguna herramienta de IA para resumir o analizar documentos?',
-    options: ['Nunca', 'Alguna vez', 'La uso seguido'],
+    prompt: tr('¿Has usado antes alguna herramienta de IA para resumir o analizar documentos?', 'Have you ever used an AI tool to summarize or analyze documents?'),
+    options: [tr('Nunca', 'Never'), tr('Alguna vez', 'Once in a while'), tr('La uso seguido', 'I use it often')],
   },
   {
     id: 'q2',
-    prompt: '¿Qué tan cómodo te sientes subiendo archivos a herramientas en la nube?',
-    options: ['Nada cómodo', 'Algo cómodo', 'Muy cómodo'],
+    prompt: tr('¿Qué tan cómodo te sientes subiendo archivos a herramientas en la nube?', 'How comfortable are you uploading files to cloud tools?'),
+    options: [tr('Nada cómodo', 'Not comfortable'), tr('Algo cómodo', 'Somewhat comfortable'), tr('Muy cómodo', 'Very comfortable')],
   },
   {
     id: 'q3',
-    prompt: '¿Cuál es tu objetivo principal con este curso?',
-    options: ['Estudiar / investigar', 'Trabajo o productividad', 'Solo por curiosidad'],
+    prompt: tr('¿Cuál es tu objetivo principal con este curso?', 'What is your main goal with this course?'),
+    options: [tr('Estudiar / investigar', 'Study / research'), tr('Trabajo o productividad', 'Work or productivity'), tr('Solo por curiosidad', 'Just out of curiosity')],
   },
   {
     id: 'q4',
-    prompt: '¿Cómo describirías tu nivel general con herramientas digitales?',
+    prompt: tr('¿Cómo describirías tu nivel general con herramientas digitales?', 'How would you describe your overall level with digital tools?'),
     options: ['Principiante', 'Intermedio', 'Avanzado'],
   },
 ]
@@ -110,7 +111,7 @@ export default function WelcomeModal({ courseId }) {
       })
       .catch(() => {
         setPlan(
-          'No pudimos generar tu plan en este momento, pero puedes pedírselo a tu mascota desde el Chat cuando quieras: solo dile "dame mi plan de estudio para este curso".',
+          tr('No pudimos generar tu plan en este momento, pero puedes pedírselo a tu mascota desde el Chat cuando quieras: solo dile "dame mi plan de estudio para este curso".', 'We could not generate your plan right now, but you can ask your pet from the Chat any time: just tell it "give me my study plan for this course".'),
         )
         setPlanStatus('done')
       })
@@ -166,14 +167,14 @@ export default function WelcomeModal({ courseId }) {
 
           {step === 0 && hasWelcome && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-3xl font-bold">Bienvenido al curso 🎉</h2>
+              <h2 className="text-3xl font-bold">{tr('Bienvenido al curso 🎉', 'Welcome to the course 🎉')}</h2>
               <p className="text-text-muted">
                 <span className="text-text">{courseData.title}</span>. {courseData.welcome.topicIntro}
               </p>
               {courseData.welcome.requirements?.length > 0 && (
                 <div className="rounded-xl border border-border bg-background p-4">
                   <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
-                    Requisitos para este curso
+                    {tr('Requisitos para este curso', 'Requirements for this course')}
                   </p>
                   <ul className="flex flex-col gap-1 text-sm text-text-muted">
                     {courseData.welcome.requirements.map((req, i) => (
@@ -184,7 +185,7 @@ export default function WelcomeModal({ courseId }) {
               )}
               <div className="rounded-xl border border-border bg-background p-4">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Lo que vas a recorrer
+                  {tr('Lo que vas a recorrer', 'What you\'ll go through')}
                 </p>
                 <ul className="grid gap-1 text-sm text-text-muted sm:grid-cols-2">
                   {courseData.modules.map((m) => (
@@ -203,14 +204,14 @@ export default function WelcomeModal({ courseId }) {
 
           {step === 0 && !hasWelcome && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-3xl font-bold">¡Gracias por tu compra! 🎉</h2>
+              <h2 className="text-3xl font-bold">{tr('¡Gracias por tu compra! 🎉', 'Thanks for your purchase! 🎉')}</h2>
               <p className="text-text-muted">
                 Bienvenido a <span className="text-text">{courseData.title}</span>.{' '}
                 {courseData.description}
               </p>
               <div className="rounded-xl border border-border bg-background p-4">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  Lo que vas a recorrer
+                  {tr('Lo que vas a recorrer', 'What you\'ll go through')}
                 </p>
                 <ul className="grid gap-1 text-sm text-text-muted sm:grid-cols-2">
                   {courseData.modules.map((m) => (
@@ -237,7 +238,7 @@ export default function WelcomeModal({ courseId }) {
 
           {!hasWelcome && step === 2 && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-2xl font-bold">Así funciona el menú de tu mascota</h2>
+              <h2 className="text-2xl font-bold">{tr('Así funciona el menú de tu mascota', 'How your pet\'s menu works')}</h2>
               <p className="text-text-muted">
                 Tócala en la esquina inferior de la pantalla para abrir su menú con cinco
                 secciones:
@@ -270,9 +271,9 @@ export default function WelcomeModal({ courseId }) {
                   </p>
                 </div>
                 <div className="rounded-xl border border-border bg-background p-4 sm:col-span-2">
-                  <p className="text-lg">🖼️ Galería</p>
+                  <p className="text-lg">{tr('🖼️ Galería', '🖼️ Gallery')}</p>
                   <p className="mt-1 text-sm text-text-muted">
-                    Tus capturas de pantalla tomadas con el objeto Cámara, listas para etiquetar.
+                    {tr('Tus capturas de pantalla tomadas con el objeto Cámara, listas para etiquetar.', 'Your screenshots taken with the Camera item, ready to tag.')}
                   </p>
                 </div>
               </div>
@@ -280,7 +281,7 @@ export default function WelcomeModal({ courseId }) {
                 Debajo del video encontrarás los recursos de cada clase y tus{' '}
                 <span className="text-text">MISIONES</span>: tareas que completas hablando con tu
                 mascota y usando tus objetos. Al terminarlas, el botón{' '}
-                <span className="text-text">"Siguiente clase"</span> te lleva a la próxima clase
+                <span className="text-text">tr('Siguiente clase', 'Next class')</span> te lleva a la próxima clase
                 con una celebración.
               </p>
             </div>
@@ -288,9 +289,9 @@ export default function WelcomeModal({ courseId }) {
 
           {isQuestionStep && currentQuestion && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-2xl font-bold">Evaluación rápida</h2>
+              <h2 className="text-2xl font-bold">{tr('Evaluación rápida', 'Quick assessment')}</h2>
               <p className="text-text-muted">
-                Esto ayuda a tu mascota a adaptar sus explicaciones y armar tu plan de estudio.
+                {tr('Esto ayuda a tu mascota a adaptar sus explicaciones y armar tu plan de estudio.', 'This helps your pet adapt its explanations and build your study plan.')}
               </p>
               <p className="text-lg font-semibold text-text">{currentQuestion.prompt}</p>
               <div className="flex flex-col gap-2">
@@ -319,10 +320,10 @@ export default function WelcomeModal({ courseId }) {
 
           {isPlanStep && (
             <div className="flex flex-col gap-4">
-              <h2 className="text-2xl font-bold">Tu plan de estudio personalizado</h2>
+              <h2 className="text-2xl font-bold">{tr('Tu plan de estudio personalizado', 'Your personalized study plan')}</h2>
               {planStatus === 'loading' && (
                 <p className="text-text-muted">
-                  Tu mascota está revisando tus respuestas y armando tu plan… 🧠✨
+                  {tr('Tu mascota está revisando tus respuestas y armando tu plan… 🧠✨', 'Your pet is reviewing your answers and building your plan… 🧠✨')}
                 </p>
               )}
               {planStatus === 'done' && (
@@ -352,8 +353,8 @@ export default function WelcomeModal({ courseId }) {
           >
             {isLastStep
               ? isPlanStep && planStatus !== 'done'
-                ? 'Generando plan…'
-                : 'Comenzar curso'
+                ? tr('Generando plan…', 'Generating plan…')
+                : tr('Comenzar curso', 'Start course')
               : 'Siguiente'}
           </button>
         </div>

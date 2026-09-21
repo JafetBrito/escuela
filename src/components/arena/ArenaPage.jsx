@@ -7,22 +7,23 @@ import { useCombatStore } from '../../stores/useCombatStore'
 import { useGameStore, PLAYER_CLASSES } from '../../stores/useGameStore'
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import { formatCurrency } from '../../utils/currency'
+import { tr } from '../../i18n'
 
 const BATTLE_NPCS = VR_NPCS.filter((n) => n.battle)
 
 const CATEGORY_LABEL = {
-  programming: '💻 Programación',
+  programming: tr('💻 Programación', '💻 Programming'),
   cyber:       '🔒 Ciberseguridad',
   ai:          '🤖 Inteligencia Artificial',
-  design:      '🎨 Diseño',
-  philosophy:  '🦉 Filosofía',
+  design:      tr('🎨 Diseño', '🎨 Design'),
+  philosophy:  tr('🦉 Filosofía', '🦉 Philosophy'),
   general:     '📚 General',
 }
 
 function difficultyLabel(level) {
-  if (level <= 3) return { text: 'Fácil',   color: '#22c55e' }
+  if (level <= 3) return { text: tr('Fácil', 'Easy'),   color: '#22c55e' }
   if (level <= 6) return { text: 'Medio',   color: '#f59e0b' }
-  return              { text: 'Difícil', color: '#ef4444' }
+  return              { text: tr('Difícil', 'Hard'), color: '#ef4444' }
 }
 
 function EnemyCard({ npc, onChallenge }) {
@@ -66,8 +67,8 @@ function EnemyCard({ npc, onChallenge }) {
       <div className="grid grid-cols-3 gap-2 text-center">
         {[
           { label: 'HP',        value: npc.battleStats.hp },
-          { label: 'Min daño',  value: npc.battleStats.minDamage },
-          { label: 'Max daño',  value: npc.battleStats.maxDamage },
+          { label: tr('Min daño', 'Min damage'),  value: npc.battleStats.minDamage },
+          { label: tr('Max daño', 'Max damage'),  value: npc.battleStats.maxDamage },
         ].map(({ label, value }) => (
           <div key={label} className="rounded-xl border border-border bg-background/40 py-2">
             <p className="text-base font-black text-text">{value}</p>
@@ -105,7 +106,7 @@ function PlayerStatsCard() {
 
   return (
     <div className="rounded-3xl border border-border bg-surface p-5">
-      <p className="mb-3 text-xs font-black uppercase tracking-wider text-text-muted">Tu estado</p>
+      <p className="mb-3 text-xs font-black uppercase tracking-wider text-text-muted">{tr('Tu estado', 'Your status')}</p>
 
       <div className="flex items-center gap-3 mb-4">
         {classDef && (
@@ -115,7 +116,7 @@ function PlayerStatsCard() {
           </span>
         )}
         <div>
-          <p className="font-black text-text">{classDef?.name ?? 'Sin clase'}</p>
+          <p className="font-black text-text">{classDef?.name ?? tr('Sin clase', 'No class')}</p>
           <p className="text-xs text-text-muted">{player.skills.unlocked.length} habilidades desbloqueadas</p>
         </div>
       </div>
@@ -134,7 +135,7 @@ function PlayerStatsCard() {
       {/* Energy bar */}
       <div className="mb-4">
         <div className="mb-1 flex justify-between text-[10px] text-text-muted">
-          <span>Energía</span><span>{player.energy.current}/{player.energy.max}</span>
+          <span>{tr('Energía', 'Energy')}</span><span>{player.energy.current}/{player.energy.max}</span>
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/20">
           <div className="h-full rounded-full bg-blue-500 transition-all"
@@ -175,9 +176,9 @@ export default function ArenaPage() {
         {/* Hero */}
         <div className="mb-8 text-center">
           <div className="mb-3 text-6xl">⚔️</div>
-          <h1 className="text-4xl font-black">Arena de Combate</h1>
+          <h1 className="text-4xl font-black">{tr('Arena de Combate', 'Combat Arena')}</h1>
           <p className="mt-2 text-text-muted">
-            Desafía a los guardianes del campus. Responde preguntas correctamente para atacar.
+            {tr('Desafía a los guardianes del campus. Responde preguntas correctamente para atacar.', 'Challenge the campus guardians. Answer questions correctly to attack.')}
           </p>
         </div>
 
@@ -199,7 +200,7 @@ export default function ArenaPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           {/* Enemy cards */}
           <div className="flex flex-col gap-5 lg:col-span-3">
-            <h2 className="text-lg font-black text-text">Guardianes disponibles</h2>
+            <h2 className="text-lg font-black text-text">{tr('Guardianes disponibles', 'Available guardians')}</h2>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {BATTLE_NPCS.map((npc) => (
                 <EnemyCard key={npc.id} npc={npc} onChallenge={startBattle} />
@@ -209,10 +210,10 @@ export default function ArenaPage() {
 
           {/* Player stats sidebar */}
           <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-black text-text">Tu estado</h2>
+            <h2 className="text-lg font-black text-text">{tr('Tu estado', 'Your status')}</h2>
             <PlayerStatsCard />
             <div className="rounded-2xl border border-border/60 bg-surface/40 px-4 py-3 text-xs text-text-muted">
-              💡 Mejora tus habilidades en <strong className="text-text">Mi Árbol</strong> antes de entrar a la arena.
+              💡 Mejora tus habilidades en <strong className="text-text">{tr('Mi Árbol', 'My Tree')}</strong> antes de entrar a la arena.
             </div>
           </div>
         </div>

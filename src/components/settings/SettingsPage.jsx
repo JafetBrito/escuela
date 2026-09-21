@@ -24,7 +24,7 @@ import { saveLocalSnapshot } from '../../services/persistence/localStore'
 import { isSupabaseConfigured, supabase } from '../../services/supabase/client'
 import { hasProfanity } from '../../utils/profanityFilter'
 import { providerSupportsTools } from '../../data/aiProviderRegistry'
-import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES, tr } from '../../i18n'
 
 const ROLE_LABELS = {
   admin: 'Administrador',
@@ -47,7 +47,7 @@ const ACCOUNT_CATEGORIES = [
 ]
 
 const AI_CATEGORIES = [
-  { id: 'nucleo', label: '🧠 Núcleo (conexión)' },
+  { id: 'nucleo', label: tr('🧠 Núcleo (conexión)', '🧠 Core (connection)') },
   { id: 'identidad', label: '✨ Identidad y Alma' },
   { id: 'personalidad', label: '🎭 Personalidad' },
   { id: 'usuario', label: '🙋 Usuario' },
@@ -160,7 +160,7 @@ export default function SettingsPage() {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file || !session?.user?.id) return
-    setAvatarStatus('Subiendo…')
+    setAvatarStatus(tr('Subiendo…', 'Uploading…'))
     try {
       const bmp = await createImageBitmap(file)
       const side = Math.min(bmp.width, bmp.height)
@@ -187,12 +187,12 @@ export default function SettingsPage() {
     e.preventDefault()
     const shown = platformName.trim()
     if (shown.length < 3 || shown.length > 20 || !/^[\p{L}\p{N} ._-]+$/u.test(shown)) {
-      setNameStatus('❌ El nombre de plataforma debe tener 3-20 caracteres (letras, números, espacio . _ -).')
+      setNameStatus(tr('❌ El nombre de plataforma debe tener 3-20 caracteres (letras, números, espacio . _ -).', '❌ The platform name must be 3-20 characters (letters, numbers, space . _ -).'))
       return
     }
-    if (hasProfanity(shown) || hasProfanity(fullName)) { setNameStatus('❌ Ese nombre no está permitido.'); return }
-    if (tagInput && !/^\d{4}$/.test(tagInput)) { setNameStatus('❌ La etiqueta son 4 números.'); return }
-    setNameStatus('Guardando…')
+    if (hasProfanity(shown) || hasProfanity(fullName)) { setNameStatus(tr('❌ Ese nombre no está permitido.', '❌ That name is not allowed.')); return }
+    if (tagInput && !/^\d{4}$/.test(tagInput)) { setNameStatus(tr('❌ La etiqueta son 4 números.', '❌ The tag is 4 digits.')); return }
+    setNameStatus(tr('Guardando…', 'Saving…'))
     try {
       const patch = { display_name: shown, full_name: fullName.trim() || null }
       if (tagInput && tagInput !== profile?.tag) patch.tag = tagInput
@@ -202,7 +202,7 @@ export default function SettingsPage() {
       setTimeout(() => setNameStatus(''), 2500)
     } catch (err) {
       const taken = /tag_taken|profiles_name_tag_uniq|duplicate/i.test(err.message ?? '')
-      setNameStatus(taken ? `❌ #${tagInput} ya está tomado para ese nombre. Elige otros 4 números.` : `❌ ${err.message ?? 'No se pudo guardar'}`)
+      setNameStatus(taken ? tr(`❌ #${tagInput} ya está tomado para ese nombre. Elige otros 4 números.`, `❌ #${tagInput} is already taken for that name. Pick another 4 digits.`) : `❌ ${err.message ?? 'No se pudo guardar'}`)
     }
   }
 
@@ -223,7 +223,7 @@ export default function SettingsPage() {
     setPasswordStatus('')
     try {
       await updatePassword(newPassword)
-      setPasswordStatus('Contraseña actualizada')
+      setPasswordStatus(tr('Contraseña actualizada', 'Password updated'))
       setNewPassword('')
     } catch (err) {
       setPasswordStatus(err.message)
@@ -261,7 +261,7 @@ export default function SettingsPage() {
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-600 to-slate-800 px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">{t('pages.settings.title')}</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              Configura tu cuenta, tu mascota y la IA que la conecta.
+              {tr('Configura tu cuenta, tu mascota y la IA que la conecta.', 'Set up your account, your pet and the AI that powers it.')}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-white">
               <Link to="/notas" className="rounded-full bg-background/20 px-3 py-1 hover:bg-background/30">📝 Notas</Link>
@@ -292,7 +292,7 @@ export default function SettingsPage() {
 
               {visibleAiCategories.length > 0 && (
                 <>
-                  <p className="mt-3 px-3 text-[11px] font-bold uppercase tracking-wider text-text-muted/70">Inteligencia Artificial</p>
+                  <p className="mt-3 px-3 text-[11px] font-bold uppercase tracking-wider text-text-muted/70">{tr('Inteligencia Artificial', 'Artificial Intelligence')}</p>
                   {visibleAiCategories.map((c) => (
                     <button
                       key={c.id}
@@ -317,7 +317,7 @@ export default function SettingsPage() {
 
                   {(session || googleUser) && (
                     <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
-                      <label className="group relative h-12 w-12 shrink-0 cursor-pointer" title="Cambiar foto de perfil">
+                      <label className="group relative h-12 w-12 shrink-0 cursor-pointer" title={tr('Cambiar foto de perfil', 'Change profile picture')}>
                         {(profile?.avatar_url || googleUser?.picture) ? (
                           <img src={profile?.avatar_url || googleUser?.picture} alt="" referrerPolicy="no-referrer" className="h-12 w-12 rounded-full object-cover" />
                         ) : (
@@ -330,7 +330,7 @@ export default function SettingsPage() {
                       </label>
                       <div>
                         <p className="text-sm font-semibold text-text">
-                          {profile?.display_name || googleUser?.name || 'Tu cuenta'}
+                          {profile?.display_name || googleUser?.name || tr('Tu cuenta', 'Your account')}
                         </p>
                         <p className="text-xs text-text-muted">{session?.user?.email || googleUser?.email}</p>
                         {avatarStatus && <p className="text-xs text-primary">{avatarStatus}</p>}
@@ -344,7 +344,7 @@ export default function SettingsPage() {
                   )}
 
                   <div>
-                    <p className="text-sm text-text-muted">Monedas y nivel</p>
+                    <p className="text-sm text-text-muted">{tr('Monedas y nivel', 'Coins and level')}</p>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <CurrencyBadge amount={coins} />
                       <LevelBadge />
@@ -365,29 +365,29 @@ export default function SettingsPage() {
 
                   {session && (
                     <form onSubmit={handleSaveNames} className="border-t border-border pt-3">
-                      <p className="text-sm font-semibold text-text">🪪 Tus nombres</p>
+                      <p className="text-sm font-semibold text-text">{tr('🪪 Tus nombres', '🪪 Your names')}</p>
                       <p className="mt-1 text-xs text-text-muted">
-                        El nombre real es privado (solo tú y los administradores lo ven). El nombre de plataforma es el que ven los demás, con tu etiqueta única al final.
+                        {tr('El nombre real es privado (solo tú y los administradores lo ven). El nombre de plataforma es el que ven los demás, con tu etiqueta única al final.', 'Your real name is private (only you and the administrators can see it). The platform name is what others see, with your unique tag at the end.')}
                       </p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         <label className="block">
-                          <span className="text-[10px] font-bold uppercase text-text-muted">Nombre real</span>
+                          <span className="text-[10px] font-bold uppercase text-text-muted">{tr('Nombre real', 'Real name')}</span>
                           <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80}
-                            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder="Tu nombre completo" />
+                            className="mt-0.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder={tr('Tu nombre completo', 'Your full name')} />
                         </label>
                         <label className="block">
-                          <span className="text-[10px] font-bold uppercase text-text-muted">Nombre en la plataforma</span>
+                          <span className="text-[10px] font-bold uppercase text-text-muted">{tr('Nombre en la plataforma', 'Platform name')}</span>
                           <div className="mt-0.5 flex items-center gap-2">
                             <input value={platformName} onChange={(e) => setPlatformName(e.target.value)} maxLength={20}
-                              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder="Cómo te verán los demás" />
-                            <span className="flex shrink-0 items-center rounded-lg bg-primary/10 pl-2 font-mono text-sm font-bold text-primary" title="Elige tus 4 números; si ya están tomados para tu nombre, te avisa">
+                              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary" placeholder={tr('Cómo te verán los demás', 'How others will see you')} />
+                            <span className="flex shrink-0 items-center rounded-lg bg-primary/10 pl-2 font-mono text-sm font-bold text-primary" title={tr('Elige tus 4 números; si ya están tomados para tu nombre, te avisa', 'Choose your 4 digits; if they\'re already taken for your name, you\'ll be told')}>
                               #<input value={tagInput} onChange={(e) => setTagInput(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" placeholder="0000" className="w-14 bg-transparent px-1 py-2 outline-none" />
                             </span>
                           </div>
                         </label>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">Guardar nombres</button>
+                        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:opacity-90">{tr('Guardar nombres', 'Save names')}</button>
                         {profile?.display_name && profile?.tag && <span className="text-xs text-text-muted">Te ven como <span className="font-mono font-bold text-text">{profile.display_name}#{profile.tag}</span></span>}
                         {nameStatus && <span className="text-xs text-primary">{nameStatus}</span>}
                       </div>
@@ -396,9 +396,9 @@ export default function SettingsPage() {
 
                   {(session || googleUser) && (
                     <div className="border-t border-border pt-3">
-                      <p className="text-sm font-semibold text-text">🎂 Tu cumpleaños</p>
+                      <p className="text-sm font-semibold text-text">{tr('🎂 Tu cumpleaños', '🎂 Your birthday')}</p>
                       <p className="mt-1 text-xs text-text-muted">
-                        Guárdalo para desbloquear un mensaje, un regalo y una fiesta en el Campus VR ese día.
+                        {tr('Guárdalo para desbloquear un mensaje, un regalo y una fiesta en el Campus VR ese día.', 'Save it to unlock a message, a gift and a party on the VR Campus that day.')}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <input
@@ -414,12 +414,12 @@ export default function SettingsPage() {
 
                   {isEmailProvider && (
                     <form onSubmit={handleChangePassword} className="border-t border-border pt-3">
-                      <p className="text-sm font-semibold text-text">Cambiar contraseña</p>
+                      <p className="text-sm font-semibold text-text">{tr('Cambiar contraseña', 'Change password')}</p>
                       <div className="mt-2 flex flex-wrap items-end gap-2">
                         <input
                           type="password" minLength={6} value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Nueva contraseña"
+                          placeholder={tr('Nueva contraseña', 'New password')}
                           className="rounded-lg border border-border bg-background px-3 py-2 text-text outline-none focus:border-primary"
                         />
                         <button type="submit" disabled={newPassword.length < 6}
@@ -433,9 +433,9 @@ export default function SettingsPage() {
 
                   {!supabaseReady && (
                     <div className="border-t border-border pt-3">
-                      <p className="text-sm font-semibold text-text">Copia de seguridad local</p>
+                      <p className="text-sm font-semibold text-text">{tr('Copia de seguridad local', 'Local backup')}</p>
                       <p className="mt-1 text-xs text-text-muted">
-                        Sin una cuenta en la nube, tu progreso solo vive en este navegador. Descarga un archivo de respaldo para seguir donde lo dejaste en otro dispositivo.
+                        {tr('Sin una cuenta en la nube, tu progreso solo vive en este navegador. Descarga un archivo de respaldo para seguir donde lo dejaste en otro dispositivo.', 'Without a cloud account, your progress only lives in this browser. Download a backup file to pick up where you left off on another device.')}
                       </p>
                       <div className="mt-2"><ProgressSync /></div>
                     </div>
@@ -444,11 +444,11 @@ export default function SettingsPage() {
                   <div className="border-t border-border pt-3">
                     <p className="text-xs text-text-muted">
                       {supabaseReady
-                        ? 'Tu progreso, mascota y configuración se guardan en tu cuenta y se sincronizan entre dispositivos.'
-                        : 'Tu progreso se guarda solo en este navegador — usa la copia de seguridad local de arriba para llevarlo a otro dispositivo.'}
+                        ? tr('Tu progreso, mascota y configuración se guardan en tu cuenta y se sincronizan entre dispositivos.', 'Your progress, pet and settings are saved to your account and synced across devices.')
+                        : tr('Tu progreso se guarda solo en este navegador — usa la copia de seguridad local de arriba para llevarlo a otro dispositivo.', 'Your progress is saved only in this browser — use the local backup above to take it to another device.')}
                     </p>
                     <button onClick={handleLogout} className="mt-3 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:border-danger hover:text-danger">
-                      Cerrar sesión
+                      {tr('Cerrar sesión', 'Log out')}
                     </button>
                   </div>
                 </section>
@@ -457,7 +457,7 @@ export default function SettingsPage() {
               {category === 'apariencia' && (
                 <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5">
                   <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🎨 Apariencia</p>
-                  <p className="text-sm text-text-muted">Elige el tema visual de toda la plataforma. Se guarda en tu cuenta — te acompaña a cualquier dispositivo donde inicies sesión.</p>
+                  <p className="text-sm text-text-muted">{tr('Elige el tema visual de toda la plataforma. Se guarda en tu cuenta — te acompaña a cualquier dispositivo donde inicies sesión.', 'Choose the visual theme for the whole platform. It is saved to your account — it follows you to any device where you log in.')}</p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {BASE_THEMES.filter((th) => !th.teacherOnly || isTeacherAccount).map((th) => (
                       <button
@@ -493,7 +493,7 @@ export default function SettingsPage() {
                       >
                         <span className="text-3xl opacity-50">🔒</span>
                         <span className="text-sm font-semibold">{NEFERTITI_THEME.label}</span>
-                        <span className="text-xs font-semibold text-primary">🛍️ Ir a la tienda de temas</span>
+                        <span className="text-xs font-semibold text-primary">{tr('🛍️ Ir a la tienda de temas', '🛍️ Go to the themes shop')}</span>
                       </Link>
                     )}
                   </div>
@@ -529,7 +529,7 @@ export default function SettingsPage() {
                     </p>
                     <textarea
                       value={soulRules} onChange={(e) => setSoulRules(e.target.value)} rows={4}
-                      placeholder="Ej: Nunca le digas al estudiante que abandone sus estudios. Siempre responde en español."
+                      placeholder={tr('Ej: Nunca le digas al estudiante que abandone sus estudios. Siempre responde en español.', 'E.g. Never tell the student to give up their studies. Always answer in English.')}
                       className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
                     />
                   </div>
@@ -548,15 +548,15 @@ export default function SettingsPage() {
                       </select>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-text">Nivel de detalle</p>
+                      <p className="text-sm font-semibold text-text">{tr('Nivel de detalle', 'Level of detail')}</p>
                       <select value={aiVerbosity} onChange={(e) => setAiVerbosity(e.target.value)}
                         className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary">
                         {AI_VERBOSITY.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-text">Instrucciones personalizadas</p>
-                      <p className="mt-1 text-sm text-text-muted">Se añaden al final del system prompt, para matizar lo anterior.</p>
+                      <p className="text-sm font-semibold text-text">{tr('Instrucciones personalizadas', 'Custom instructions')}</p>
+                      <p className="mt-1 text-sm text-text-muted">{tr('Se añaden al final del system prompt, para matizar lo anterior.', 'They are added at the end of the system prompt, to refine the above.')}</p>
                       <textarea
                         value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} rows={5}
                         className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
@@ -564,7 +564,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <button onClick={handleSaveAi} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90">
-                        Guardar y actualizar
+                        {tr('Guardar y actualizar', 'Save and update')}
                       </button>
                       {saved && <span className="text-sm text-primary">✅ Cambios guardados</span>}
                     </div>
@@ -589,7 +589,7 @@ export default function SettingsPage() {
                                   active ? 'cursor-default bg-primary/20 text-primary' : 'border border-border text-text-muted hover:border-primary/40 hover:text-text'
                                 }`}
                               >
-                                {active ? '✓ Activa' : 'Usar esta personalidad'}
+                                {active ? '✓ Activa' : tr('Usar esta personalidad', 'Use this personality')}
                               </button>
                             </div>
                           )
@@ -604,11 +604,11 @@ export default function SettingsPage() {
                 <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
                   <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🙋 Usuario</p>
                   <p className="text-sm text-text-muted">
-                    Lo que tu mascota debería saber siempre sobre ti — tu estilo de aprendizaje, tus metas, lo que te cuesta más.
+                    {tr('Lo que tu mascota debería saber siempre sobre ti — tu estilo de aprendizaje, tus metas, lo que te cuesta más.', 'What your pet should always know about you — your learning style, your goals, what you find hardest.')}
                   </p>
                   <textarea
                     value={userProfile} onChange={(e) => setUserProfile(e.target.value)} rows={5}
-                    placeholder="Ej: Aprendo mejor con ejemplos visuales. Estoy preparándome para un examen de admisión."
+                    placeholder={tr('Ej: Aprendo mejor con ejemplos visuales. Estoy preparándome para un examen de admisión.', 'E.g. I learn best with visual examples. I am preparing for an entrance exam.')}
                     className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-text outline-none focus:border-primary"
                   />
                 </section>
@@ -617,7 +617,7 @@ export default function SettingsPage() {
               {category === 'agentes' && (
                 <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
                   <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🤖 Agentes</p>
-                  <p className="text-sm text-text-muted">El modo cambia qué prioriza tu mascota al responder, sin perder su identidad ni su alma.</p>
+                  <p className="text-sm text-text-muted">{tr('El modo cambia qué prioriza tu mascota al responder, sin perder su identidad ni su alma.', 'The mode changes what your pet prioritizes when answering, without losing its identity or soul.')}</p>
                   <div className="grid gap-2 sm:grid-cols-3">
                     {AGENT_MODES.map((m) => (
                       <button
@@ -638,7 +638,7 @@ export default function SettingsPage() {
                 <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
                   <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🛠️ Herramientas</p>
                   <p className="text-sm text-text-muted">
-                    Capacidades reales que tu mascota puede usar durante la conversación (function calling).
+                    {tr('Capacidades reales que tu mascota puede usar durante la conversación (function calling).', 'Real capabilities your pet can use during the conversation (function calling).')}
                   </p>
                   {!toolsSupported && (
                     <p className="rounded-lg border border-dashed border-border px-3 py-2 text-xs text-text-muted">
@@ -677,11 +677,11 @@ export default function SettingsPage() {
                   </p>
                   <label className="flex items-center gap-3">
                     <input type="checkbox" checked={heartbeatEnabled} onChange={(e) => setHeartbeatEnabled(e.target.checked)} />
-                    <span className="text-sm text-text">Activar heartbeat</span>
+                    <span className="text-sm text-text">{tr('Activar heartbeat', 'Enable heartbeat')}</span>
                   </label>
                   {heartbeatEnabled && (
                     <div>
-                      <p className="text-sm font-semibold text-text">Minutos de inactividad antes de hablar</p>
+                      <p className="text-sm font-semibold text-text">{tr('Minutos de inactividad antes de hablar', 'Minutes of inactivity before speaking')}</p>
                       <input
                         type="number" min="2" max="120" value={heartbeatMinutes}
                         onChange={(e) => setHeartbeatMinutes(Number(e.target.value))}
@@ -696,7 +696,7 @@ export default function SettingsPage() {
 
               {category === 'notion' && (
                 <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">🗒️ Integración con Notion</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-text-muted">{tr('🗒️ Integración con Notion', '🗒️ Notion integration')}</p>
                   <p className="text-sm text-text-muted">
                     Pega tu integration token y el ID de tu base de datos de Notion para enviar tus notas desde{' '}
                     <Link to="/notas" className="text-primary hover:underline">Notas</Link>. Si el navegador bloquea
@@ -704,7 +704,7 @@ export default function SettingsPage() {
                   </p>
 
                   {notionConnected ? (
-                    <p className="text-sm text-primary">🔒 Token de Notion configurado.</p>
+                    <p className="text-sm text-primary">{tr('🔒 Token de Notion configurado.', '🔒 Notion token configured.')}</p>
                   ) : (
                     <div className="flex gap-2">
                       <input
@@ -714,16 +714,16 @@ export default function SettingsPage() {
                       />
                       <button onClick={handleSaveNotion} disabled={!notionKeyInput.trim() || notionSaving}
                         className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-background disabled:opacity-50">
-                        {notionSaving ? 'Guardando…' : 'Guardar'}
+                        {notionSaving ? tr('Guardando…', 'Saving…') : 'Guardar'}
                       </button>
                     </div>
                   )}
 
                   <div>
-                    <p className="text-sm font-semibold text-text">Notion Database ID</p>
+                    <p className="text-sm font-semibold text-text">{tr('Notion Database ID', 'Notion Database ID')}</p>
                     <input
                       type="text" value={notionDatabaseId} onChange={(e) => setNotionDatabaseId(e.target.value)}
-                      placeholder="32 caracteres, lo encuentras en la URL de tu base de datos"
+                      placeholder={tr('32 caracteres, lo encuentras en la URL de tu base de datos', '32 characters, you can find it in your database URL')}
                       className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 font-mono text-text outline-none focus:border-primary"
                     />
                   </div>
@@ -749,7 +749,7 @@ export default function SettingsPage() {
                     Los elementos flotantes (Radio, Cámara) se arrastran desde su asa <strong>⠿</strong>. Ajusta su tamaño.
                   </p>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {[{ id: 'radio', label: '🎵 Radio' }, { id: 'camara', label: '📸 Cámara' }].map(({ id, label }) => (
+                    {[{ id: 'radio', label: '🎵 Radio' }, { id: 'camara', label: tr('📸 Cámara', '📸 Camera') }].map(({ id, label }) => (
                       <div key={id} className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-text">{label}</span>
@@ -765,7 +765,7 @@ export default function SettingsPage() {
                     ))}
                   </div>
                   <button onClick={resetPopups} className="self-start rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-text-muted transition-colors hover:border-danger/40 hover:text-danger">
-                    🔄 Restablecer tamaños y posiciones
+                    {tr('🔄 Restablecer tamaños y posiciones', '🔄 Reset sizes and positions')}
                   </button>
                 </section>
               )}

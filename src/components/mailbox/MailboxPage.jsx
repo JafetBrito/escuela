@@ -3,7 +3,7 @@ import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import { useFriendsStore } from '../../stores/useFriendsStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useI18n } from '../../i18n'
+import { useI18n, tr } from '../../i18n'
 import { MAILBOX_INBOX_KEY } from '../../utils/mailboxStorage'
 
 // Buzón de correo del alumno — extraído de FriendsPage.jsx (donde vivía
@@ -29,12 +29,12 @@ function systemMessage(id, from, subject, body) {
 }
 
 const SYSTEM_MESSAGES = [
-  systemMessage('sys-1', 'oliver.school', '🌳 Bienvenido al campus', 'El Árbol del Mundo te espera. Elige tu clase y comienza tu aventura.'),
-  systemMessage('sys-2', 'oliver.school', '🎯 Completa tu primera misión', 'Visita la página de Misiones y acepta tu primera tarea para ganar monedas y XP.'),
+  systemMessage('sys-1', 'oliver.school', tr('🌳 Bienvenido al campus', '🌳 Welcome to the campus'), tr('El Árbol del Mundo te espera. Elige tu clase y comienza tu aventura.', 'The World Tree awaits you. Choose your class and begin your adventure.')),
+  systemMessage('sys-2', 'oliver.school', tr('🎯 Completa tu primera misión', '🎯 Complete your first quest'), tr('Visita la página de Misiones y acepta tu primera tarea para ganar monedas y XP.', 'Visit the Quests page and accept your first task to earn coins and XP.')),
 ]
 
 const FOLDERS = [
-  { id: 'inbox',   label: 'Bandeja de entrada', icon: '📥' },
+  { id: 'inbox',   label: tr('Bandeja de entrada', 'Inbox'), icon: '📥' },
   { id: 'sent',    label: 'Enviados',           icon: '📤' },
   { id: 'compose', label: 'Redactar',           icon: '✏️' },
 ]
@@ -142,7 +142,7 @@ export default function MailboxPage() {
             {list && !selected && (
               list.length === 0 ? (
                 <p className="py-16 text-center text-sm text-text-muted">
-                  {folder === 'inbox' ? 'La bandeja está vacía.' : 'Aún no has enviado ningún mensaje.'}
+                  {folder === 'inbox' ? tr('La bandeja está vacía.', 'The inbox is empty.') : tr('Aún no has enviado ningún mensaje.', 'You haven\'t sent any messages yet.')}
                 </p>
               ) : (
                 <ul className="divide-y divide-border">
@@ -156,7 +156,7 @@ export default function MailboxPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className={`truncate text-sm ${!msg.read ? 'font-bold text-text' : 'text-text-muted'}`}>
-                            {folder === 'inbox' ? (msg.from ?? 'Desconocido') : (msg.to ?? 'Sin destinatario')}
+                            {folder === 'inbox' ? (msg.from ?? 'Desconocido') : (msg.to ?? tr('Sin destinatario', 'No recipient'))}
                           </span>
                           {!msg.read && folder === 'inbox' && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
                         </div>
@@ -173,7 +173,7 @@ export default function MailboxPage() {
               <div>
                 <button type="button" onClick={() => setSelected(null)}
                   className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text">
-                  ← Volver
+                  {tr('← Volver', '← Back')}
                 </button>
                 <div className="mb-4 rounded-xl border border-border bg-background p-4">
                   <p className="mb-1 text-xs text-text-muted">
@@ -204,11 +204,11 @@ export default function MailboxPage() {
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-text-muted">Para (nombre en VR)</label>
+                    <label className="text-xs font-bold text-text-muted">{tr('Para (nombre en VR)', 'To (VR name)')}</label>
                     <input
                       value={composeTo}
                       onChange={(e) => setComposeTo(e.target.value)}
-                      placeholder="Nombre del jugador…"
+                      placeholder={tr('Nombre del jugador…', 'Player name…')}
                       className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                     />
                   </div>
@@ -229,7 +229,7 @@ export default function MailboxPage() {
                     required
                     value={composeSub}
                     onChange={(e) => setComposeSub(e.target.value)}
-                    placeholder="Asunto del mensaje…"
+                    placeholder={tr('Asunto del mensaje…', 'Message subject…')}
                     className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                   />
                 </div>
@@ -240,25 +240,25 @@ export default function MailboxPage() {
                     rows={6}
                     value={composeBody}
                     onChange={(e) => setComposeBody(e.target.value)}
-                    placeholder="Escribe tu mensaje…"
+                    placeholder={tr('Escribe tu mensaje…', 'Write your message…')}
                     className="resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none focus:border-primary"
                   />
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-text-muted">
-                    {composeEmail ? 'Se abrirá tu cliente de email al enviar.' : 'Sin email: solo se guarda localmente.'}
+                    {composeEmail ? tr('Se abrirá tu cliente de email al enviar.', 'Your email client will open when you send.') : tr('Sin email: solo se guarda localmente.', 'No email: it is only saved locally.')}
                   </p>
                   <button
                     type="submit"
                     disabled={!composeSub.trim() || !composeBody.trim()}
                     className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-background transition-colors hover:bg-primary-hover disabled:opacity-50"
                   >
-                    {composeEmail ? '✉️ Enviar por email' : '💾 Guardar'}
+                    {composeEmail ? tr('✉️ Enviar por email', '✉️ Send by email') : tr('💾 Guardar', '💾 Save')}
                   </button>
                 </div>
                 {friends.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[10px] text-text-muted">Amigos rápidos:</span>
+                    <span className="text-[10px] text-text-muted">{tr('Amigos rápidos:', 'Quick friends:')}</span>
                     {friends.map((f) => (
                       <button
                         key={f}

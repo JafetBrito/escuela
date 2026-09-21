@@ -10,58 +10,58 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { getMascotById } from '../../data/mascotRegistry'
 import { CATEGORY_META, getCategoryMeta } from '../../data/categoryMeta'
 import { isSupabaseConfigured } from '../../services/supabase/client'
-import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES } from '../../i18n'
+import { useI18n, SUPPORTED_LANGUAGES, LANGUAGE_NAMES, tr } from '../../i18n'
 
 const ORANGE_CAT = getMascotById(8)
 
 const STEPS = [
   {
     icon: '🔑',
-    title: '1. Consigue tu llave',
-    text: 'Regístrate gratis con Google para probar el curso demo, o compra una llave de un curso o la llave maestra para todos.',
+    title: tr('1. Consigue tu llave', '1. Get your key'),
+    text: tr('Regístrate gratis con Google para probar el curso demo, o compra una llave de un curso o la llave maestra para todos.', 'Sign up free with Google to try the demo course, or buy a single-course key or the master key for all of them.'),
   },
   {
     icon: '🤖',
-    title: '2. Conoce a tu mascota',
-    text: 'Elige una mascota IA en 3D que te acompaña en cada clase, responde tus dudas y celebra tu progreso.',
+    title: tr('2. Conoce a tu mascota', '2. Meet your pet'),
+    text: tr('Elige una mascota IA en 3D que te acompaña en cada clase, responde tus dudas y celebra tu progreso.', 'Choose a 3D AI pet that goes with you in every class, answers your questions and celebrates your progress.'),
   },
   {
     icon: '🚀',
     title: '3. Aprende y gana',
-    text: 'Avanza por misiones, gana monedas y experiencia, y personaliza tu mascota en la tienda con objetos y skins.',
+    text: tr('Avanza por misiones, gana monedas y experiencia, y personaliza tu mascota en la tienda con objetos y skins.', 'Progress through quests, earn coins and experience, and customize your pet in the shop with items and skins.'),
   },
 ]
 
 const FEATURES = [
   {
     icon: '🔑',
-    title: 'Dos tipos de llave',
-    text: 'Una llave de un solo curso te da acceso a ese curso. Una llave maestra te abre todos los cursos, ahora y a futuro.',
+    title: tr('Dos tipos de llave', 'Two kinds of key'),
+    text: tr('Una llave de un solo curso te da acceso a ese curso. Una llave maestra te abre todos los cursos, ahora y a futuro.', 'A single-course key gives you access to that course. A master key opens every course, now and in the future.'),
   },
   {
     icon: '🪙',
-    title: 'Gana monedas',
-    text: 'Cada misión que completas dentro de un curso te da monedas para gastar en la tienda de objetos, libros y personalidades de IA.',
+    title: tr('Gana monedas', 'Earn coins'),
+    text: tr('Cada misión que completas dentro de un curso te da monedas para gastar en la tienda de objetos, libros y personalidades de IA.', 'Every quest you complete inside a course gives you coins to spend in the shop on items, books and AI personalities.'),
   },
   {
     icon: '🤖',
-    title: 'Tu mascota IA',
-    text: 'En cada curso te acompaña una mascota 3D que responde tus dudas y te guía clase por clase.',
+    title: tr('Tu mascota IA', 'Your AI pet'),
+    text: tr('En cada curso te acompaña una mascota 3D que responde tus dudas y te guía clase por clase.', 'In every course a 3D pet accompanies you, answers your questions and guides you lesson by lesson.'),
   },
   {
     icon: '📚',
-    title: 'Biblioteca incluida',
-    text: 'Explora una biblioteca por categorías con libros gratuitos y de pago para reforzar lo que aprendes.',
+    title: tr('Biblioteca incluida', 'Library included'),
+    text: tr('Explora una biblioteca por categorías con libros gratuitos y de pago para reforzar lo que aprendes.', 'Explore a library by category with free and paid books to reinforce what you learn.'),
   },
   {
     icon: '🏆',
-    title: 'Logros y niveles',
-    text: 'Sube de nivel, desbloquea logros y presume tus medallas por cada curso completado.',
+    title: tr('Logros y niveles', 'Achievements and levels'),
+    text: tr('Sube de nivel, desbloquea logros y presume tus medallas por cada curso completado.', 'Level up, unlock achievements and show off your medals for every course you complete.'),
   },
   {
     icon: '🎨',
-    title: 'Personalización total',
-    text: 'Cambia el skin, los accesorios y los objetos de tu mascota para hacerla única.',
+    title: tr('Personalización total', 'Total customization'),
+    text: tr('Cambia el skin, los accesorios y los objetos de tu mascota para hacerla única.', 'Change your pet\'s skin, accessories and items to make it unique.'),
   },
 ]
 
@@ -312,8 +312,8 @@ export default function LandingPage() {
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted md:px-12">
         <p>{t('landing.footer', { year: new Date().getFullYear() })}</p>
         <p className="mt-2 flex items-center justify-center gap-4 text-xs">
-          <Link to="/privacidad" className="hover:text-text hover:underline">Aviso de Privacidad</Link>
-          <Link to="/terminos" className="hover:text-text hover:underline">Términos de Uso</Link>
+          <Link to="/privacidad" className="hover:text-text hover:underline">{tr('Aviso de Privacidad', 'Privacy Notice')}</Link>
+          <Link to="/terminos" className="hover:text-text hover:underline">{tr('Términos de Uso', 'Terms of Use')}</Link>
         </p>
       </footer>
 
