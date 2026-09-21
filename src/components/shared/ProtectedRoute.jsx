@@ -6,7 +6,10 @@ import { isSupabaseConfigured } from '../../services/supabase/client'
 import GlobalItemEffects from './GlobalItemEffects'
 import PendingApprovalScreen from './PendingApprovalScreen'
 
-export default function ProtectedRoute({ children, requireTutorial = false, blockAgeProfiles = [] }) {
+// waitForCourses=false: la ruta no lee el contenido de cursos, así que no espera a que
+// termine de bajar la tabla `courses` completa (con todas las lecciones). Los mundos
+// VR lo usan: esa descarga los retrasaba varios segundos antes de empezar a cargar.
+export default function ProtectedRoute({ children, requireTutorial = false, blockAgeProfiles = [], waitForCourses = true }) {
   const authReady  = useAuthStore((s) => s.authReady)
   const session    = useAuthStore((s) => s.session)
   const isUnlocked = useAuthStore((s) => s.isUnlocked)
@@ -30,7 +33,7 @@ export default function ProtectedRoute({ children, requireTutorial = false, bloc
   // ~20 componentes que ya los usan no tengan que cambiar), lo que solo
   // funciona si el fetch ya resolvió antes de que cualquiera de ellos monte
   // por primera vez. Este gate hace justo eso, igual que el de authReady.
-  if (!coursesLoaded) {
+  if (waitForCourses && !coursesLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-text-muted">
         Cargando…

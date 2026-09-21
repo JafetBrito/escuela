@@ -47,6 +47,7 @@ const TOP = {
     progreso: 'progress',
     proyectos: 'projects',
     reclutador: 'recruiter',
+    'salon-de-la-fama-hacker': 'hacker-hall-of-fame',
     rol: 'roleplay',
     semana: 'week',
     terminos: 'terms',

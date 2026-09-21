@@ -120,6 +120,7 @@ const PublicProfilePage = lazy(() => import('./components/public/PublicProfilePa
 const ThemedWeekPage = lazy(() => import('./components/dashboard/ThemedWeekPage'))
 const TeacherAcademyPage = lazy(() => import('./components/teacher/TeacherAcademyPage'))
 const TeacherLiveClassesPage = lazy(() => import('./components/teacher/TeacherLiveClassesPage'))
+const HackerHallOfFamePage = lazy(() => import('./components/dashboard/HackerHallOfFamePage'))
 const DirectorPage = lazy(() => import('./components/director/DirectorPage'))
 const TeacherDashboardPage = lazy(() => import('./components/teacher/TeacherDashboardPage'))
 const TeacherReflectionsPage = lazy(() => import('./components/teacher/TeacherReflectionsPage'))
@@ -773,6 +774,16 @@ export default function App() {
           }
         />
         <Route
+          path="/salon-de-la-fama-hacker"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <HackerHallOfFamePage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/director"
           element={
             <ProtectedRoute>
@@ -1019,7 +1030,7 @@ export default function App() {
         <Route
           path="/vr"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage />
               </Suspense>
@@ -1029,7 +1040,7 @@ export default function App() {
         <Route
           path="/vr/room"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage roomMode />
               </Suspense>
@@ -1039,7 +1050,7 @@ export default function App() {
         <Route
           path="/vr/anfiteatro"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage anfiteatroMode />
               </Suspense>
@@ -1049,7 +1060,7 @@ export default function App() {
         <Route
           path="/vr/cumpleanos"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage birthdayMode />
               </Suspense>
@@ -1059,7 +1070,7 @@ export default function App() {
         <Route
           path="/vr/salon"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage classroomMode />
               </Suspense>
@@ -1069,7 +1080,7 @@ export default function App() {
         <Route
           path="/vr/sala/:roomId"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage watchRoomMode />
               </Suspense>
@@ -1079,7 +1090,7 @@ export default function App() {
         <Route
           path="/vr/salon/:classId"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage classroomMode />
               </Suspense>
@@ -1089,7 +1100,7 @@ export default function App() {
         <Route
           path="/vr/pruebas"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage testMode />
               </Suspense>
@@ -1099,7 +1110,7 @@ export default function App() {
         <Route
           path="/vr/academia/:academyId"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage testMode />
               </Suspense>
@@ -1110,7 +1121,7 @@ export default function App() {
         <Route
           path="/vr/cueva-platon"
           element={
-            <ProtectedRoute requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VrCueva />
               </Suspense>

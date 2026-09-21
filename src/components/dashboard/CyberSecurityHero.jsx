@@ -4,6 +4,8 @@
 // de centro de mando: rejilla técnica, barrido de radar, texto de terminal,
 // anillos de señal — reutiliza el acento teal ya definido en categoryMeta.js
 // (Ciberseguridad.accent = #2dd4bf) para no inventar una paleta nueva.
+import { Link } from 'react-router-dom'
+
 export default function CyberSecurityHero({ courseCount }) {
   return (
     <div className="relative overflow-hidden bg-[#050b0a] px-6 py-14 sm:py-20">
@@ -48,6 +50,14 @@ export default function CyberSecurityHero({ courseCount }) {
         <p className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full border border-[#2dd4bf]/30 bg-[#2dd4bf]/10 px-4 py-1.5 font-mono text-xs font-bold text-[#2dd4bf]">
           &gt; {courseCount} módulos de entrenamiento disponibles
         </p>
+        <div className="mt-5">
+          <Link
+            to="/salon-de-la-fama-hacker"
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-300/10 px-5 py-2.5 text-sm font-black text-amber-200 shadow-[0_0_20px_rgba(252,211,77,0.15)] transition hover:bg-amber-300/20"
+          >
+            🏆 Salón de la Fama Hacker · <span className="font-mono text-xs">nuevo: Ken Thompson</span>
+          </Link>
+        </div>
       </div>
     </div>
   )
