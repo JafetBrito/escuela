@@ -1,15 +1,17 @@
 {
-  "_": "Traducción automática del CONTENIDO (src/data, stores, lib, services). Ver scripts/translate-data.mjs.",
+  "_": "Traducción automática de datos Y componentes (JSX). Ver scripts/translate-data.mjs.",
   "roots": [
     "src/data",
     "src/stores",
     "src/lib",
-    "src/services"
+    "src/services",
+    "src/components"
   ],
   "excludeDirs": [
     "i18n",
     "locales",
-    "glossaryTranslations"
+    "glossaryTranslations",
+    "admin"
   ],
   "excludeFiles": [
     "categoryTaxonomy.js",
@@ -58,5 +60,18 @@
   "excludePatterns": [
     "Translations?\\.js$",
     "\\.test\\."
+  ],
+  "jsxAttrs": [
+    "placeholder",
+    "title",
+    "alt",
+    "aria-label",
+    "label",
+    "description",
+    "text",
+    "subtitle",
+    "caption",
+    "tooltip",
+    "helper"
   ]
 }

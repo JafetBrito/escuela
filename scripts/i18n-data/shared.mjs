@@ -1,6 +1,7 @@
 // Utilidades compartidas por el plugin de Vite (vite-plugin.mjs) y el script de
-// traducción (../translate-data.mjs): qué cadenas de un archivo de datos se
-// traducen y cómo se identifican (hash del texto en español).
+// traducción (../translate-data.mjs): qué cadenas de un archivo se traducen
+// (datos, stores, lib, services Y componentes .jsx) y cómo se identifican (hash
+// del texto en español).
 import { parseAst } from 'rollup/parseAst'
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, basename, sep } from 'node:path'
@@ -28,7 +29,7 @@ const ACCENTS = /[áéíóúñ¿¡]/i
 // ¿Esta cadena parece texto en español para personas (y no un id, ruta, clase CSS…)?
 export function isTranslatable(text) {
   const t = text.trim()
-  if (t.length < 6) return false
+  if (t.length < 4) return false
   if (/^(https?:|\/|#|\.|data:|[\w.:@/-]+$)/.test(t)) return false
   if (!/[A-Za-zÁÉÍÓÚáéíóúñÑ]{3}/.test(t)) return false
   const words = t.split(/\s+/).length
@@ -38,26 +39,22 @@ export function isTranslatable(text) {
 
 const EXCLUDE_RES = (CONFIG.excludePatterns ?? []).map((r) => new RegExp(r))
 const excludedName = (name) => CONFIG.excludeFiles.includes(name) || EXCLUDE_RES.some((re) => re.test(name))
-
 const COMPARE = new Set(['===', '!==', '==', '!='])
+const STRING_ARG_FNS = new Set(['includes', 'startsWith', 'endsWith', 'indexOf'])
 const deny = new Set(CONFIG.denyKeys)
+const ATTRS = new Set(CONFIG.jsxAttrs)
+const SKIP_ELEMENTS = new Set(['code', 'pre', 'style', 'script', 'kbd', 'samp'])
 
-// Devuelve [{ start, end, value }] con las cadenas traducibles de un módulo JS.
-// Se saltan las que se usan como identificadores: claves de objeto, imports,
-// comparaciones, `case`, y valores bajo claves de config.denyKeys.
-export function collectStrings(code) {
-  const ast = parseAst(code)
-  const found = []
+const isJsx = (file) => /\.jsx$/.test(file)
+const parse = (code, file) => parseAst(code, { jsx: isJsx(file) })
+
+// Recorre un AST llamando a fn(node, parent, ancestors). ancestors incluye al nodo.
+function walk(ast, fn) {
   const stack = []
   const visit = (node, parent) => {
     if (!node || typeof node.type !== 'string') return
     stack.push(node)
-    let value = null
-    if (node.type === 'Literal' && typeof node.value === 'string' && !node.regex) value = node.value
-    else if (node.type === 'TemplateLiteral' && node.expressions.length === 0 && node.quasis.length === 1) value = node.quasis[0].value.cooked
-    if (value != null && parent && isTranslatable(value) && !skipContext(node, parent)) {
-      found.push({ start: node.start, end: node.end, value })
-    }
+    fn(node, parent, stack)
     for (const k of Object.keys(node)) {
       if (k === 'type' || k === 'start' || k === 'end') continue
       const v = node[k]
@@ -66,39 +63,97 @@ export function collectStrings(code) {
     }
     stack.pop()
   }
-  const skipContext = (node, parent) => {
-    if (parent.type === 'ImportDeclaration' || parent.type === 'ExportAllDeclaration' || parent.type === 'ImportExpression') return true
-    if (parent.type === 'ExportNamedDeclaration' && parent.source === node) return true
-    if (parent.type === 'Property' && parent.key === node && !parent.computed) return true
-    if (parent.type === 'BinaryExpression' && COMPARE.has(parent.operator)) return true
-    if (parent.type === 'SwitchCase' && parent.test === node) return true
-    if (parent.type === 'MemberExpression' && parent.property === node && parent.computed) return true
-    if (parent.type === 'TaggedTemplateExpression') return true
-    if (parent.type === 'ExpressionStatement' && parent.directive) return true
-    // valor (o elemento de un arreglo) bajo una clave prohibida: { category: 'Matemáticas' }
-    for (let i = stack.length - 2; i >= 0; i--) {
-      const a = stack[i]
-      if (a.type === 'ArrayExpression') continue
-      if (a.type === 'Property' && !a.computed && a.key && (a.key.name ?? a.key.value) && deny.has(a.key.name ?? a.key.value)) return true
-      break
-    }
-    return false
-  }
   visit(ast, null)
+}
+
+// Cadenas que el código COMPARA o busca (=== 'Todos', case 'x', .includes('y')):
+// son identificadores, no texto de pantalla. Si una aparece así en cualquier
+// archivo, no se traduce en ninguno (si no, la comparación dejaría de coincidir).
+let identifiers = null
+export function identifierStrings() {
+  if (identifiers) return identifiers
+  identifiers = new Set()
+  for (const f of listDataFiles()) {
+    let ast
+    try { ast = parse(readFileSync(f, 'utf8'), f) } catch { continue }
+    walk(ast, (n, parent) => {
+      if (n.type === 'Literal' && typeof n.value === 'string' && parent) {
+        if ((parent.type === 'BinaryExpression' && COMPARE.has(parent.operator)) || (parent.type === 'SwitchCase' && parent.test === n)) identifiers.add(n.value)
+        if (parent.type === 'CallExpression' && parent.callee?.type === 'MemberExpression' && STRING_ARG_FNS.has(parent.callee.property?.name) && parent.arguments.includes(n)) identifiers.add(n.value)
+      }
+    })
+  }
+  return identifiers
+}
+
+const normalizeJsx = (v) => v.split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
+
+// Devuelve [{ start, end, value, mode }] con las cadenas traducibles de un módulo.
+//   mode 'js'   → literal de JS: se envuelve con __t(hash, literal)
+//   mode 'attr' → atributo JSX de texto (placeholder="…"): {__t(hash, "…")}
+//   mode 'text' → texto entre etiquetas JSX: {__t(hash, "…")} conservando los espacios de alrededor
+export function collectStrings(code, file = 'x.js') {
+  const ast = parse(code, file)
+  const ident = identifierStrings()
+  const found = []
+  walk(ast, (node, parent, stack) => {
+    if (!parent) return
+    if (node.type === 'JSXText') {
+      if (stack.some((a) => a.type === 'JSXElement' && SKIP_ELEMENTS.has(a.openingElement.name?.name))) return
+      const value = normalizeJsx(node.value)
+      if (!value || !isTranslatable(value) || ident.has(value)) return
+      const lead = node.raw.length - node.raw.trimStart().length
+      const trail = node.raw.length - node.raw.trimEnd().length
+      found.push({ start: node.start + lead, end: node.end - trail, value, mode: 'text' })
+      return
+    }
+    let value = null
+    if (node.type === 'Literal' && typeof node.value === 'string' && !node.regex) value = node.value
+    else if (node.type === 'TemplateLiteral' && node.expressions.length === 0 && node.quasis.length === 1) value = node.quasis[0].value.cooked
+    if (value == null || !isTranslatable(value) || ident.has(value.trim())) return
+    if (parent.type === 'JSXAttribute') {
+      if (node.type === 'Literal' && ATTRS.has(parent.name?.name)) found.push({ start: node.start, end: node.end, value, mode: 'attr' })
+      return
+    }
+    if (skipContext(node, parent, stack)) return
+    found.push({ start: node.start, end: node.end, value, mode: 'js' })
+  })
   return found
+}
+
+function skipContext(node, parent, stack) {
+  if (parent.type === 'ImportDeclaration' || parent.type === 'ExportAllDeclaration' || parent.type === 'ImportExpression') return true
+  if (parent.type === 'ExportNamedDeclaration' && parent.source === node) return true
+  if (parent.type === 'Property' && parent.key === node && !parent.computed) return true
+  if (parent.type === 'BinaryExpression' && COMPARE.has(parent.operator)) return true
+  if (parent.type === 'SwitchCase' && parent.test === node) return true
+  if (parent.type === 'MemberExpression' && parent.property === node && parent.computed) return true
+  if (parent.type === 'TaggedTemplateExpression') return true
+  if (parent.type === 'ExpressionStatement' && parent.directive) return true
+  // ya traducido a mano: tr('es', 'en') / t('clave')
+  if (parent.type === 'CallExpression' && parent.callee?.type === 'Identifier' && (parent.callee.name === 'tr' || parent.callee.name === 't')) return true
+  if (parent.type === 'JSXExpressionContainer' && stack.length > 2 && stack[stack.length - 3]?.type === 'JSXAttribute' && !ATTRS.has(stack[stack.length - 3].name?.name)) return true
+  // valor (o elemento de un arreglo) bajo una clave prohibida: { category: 'Matemáticas' }
+  for (let i = stack.length - 2; i >= 0; i--) {
+    const a = stack[i]
+    if (a.type === 'ArrayExpression') continue
+    if (a.type === 'Property' && !a.computed && a.key && (a.key.name ?? a.key.value) && deny.has(a.key.name ?? a.key.value)) return true
+    break
+  }
+  return false
 }
 
 // Archivos que se procesan (rutas relativas a la raíz del proyecto, con /).
 export function listDataFiles(root = '.') {
   const out = []
-  const walk = (dir) => {
+  const walkDir = (dir) => {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name)
-      if (statSync(p).isDirectory()) { if (!CONFIG.excludeDirs.includes(name)) walk(p) }
-      else if (/\.(m?js)$/.test(name) && !excludedName(name)) out.push(p.split(sep).join('/'))
+      if (statSync(p).isDirectory()) { if (!CONFIG.excludeDirs.includes(name)) walkDir(p) }
+      else if (/\.(m?jsx?)$/.test(name) && !excludedName(name)) out.push(p.split(sep).join('/'))
     }
   }
-  for (const r of CONFIG.roots) if (existsSync(join(root, r))) walk(join(root, r))
+  for (const r of CONFIG.roots) if (existsSync(join(root, r))) walkDir(join(root, r))
   return out
 }
 
@@ -106,7 +161,7 @@ export function isDataFile(id) {
   const p = id.split(sep).join('/').split('?')[0]
   const rel = p.includes('/src/') ? 'src/' + p.split('/src/').pop() : p
   if (!CONFIG.roots.some((r) => rel.startsWith(r + '/'))) return false
-  if (!/\.(m?js)$/.test(rel)) return false
+  if (!/\.(m?jsx?)$/.test(rel)) return false
   const parts = rel.split('/')
   if (parts.some((d) => CONFIG.excludeDirs.includes(d))) return false
   return !excludedName(basename(rel))

@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
 import { collectStrings, isDataFile, hashText, allTranslatedHashes } from './shared.mjs'
 
-// Plugin de Vite: en los archivos de datos (src/data, stores, lib, services)
+// Plugin de Vite: en los archivos de datos y de interfaz (ver config.json)
 // envuelve cada cadena en español que YA tenga traducción en
 // src/data/i18n/<idioma>/*.json como __t('<hash>', 'texto original').
 // En español __t devuelve el original (costo ~cero); en otro idioma devuelve la
@@ -16,17 +16,26 @@ export default function i18nDataPlugin() {
     name: 'oliver-i18n-data',
     enforce: 'pre',
     transform(code, id) {
-      if (!isDataFile(id)) return null
+      const file = id.split('?')[0]
+      if (!isDataFile(file)) return null
       hashes ??= allTranslatedHashes()
       if (hashes.size === 0) return null
       let found
-      try { found = collectStrings(code) } catch { return null } // archivo con JSX u otra sintaxis: se deja igual
+      try { found = collectStrings(code, file) } catch { return null } // sintaxis que no se pudo analizar: se deja igual
       const hits = found.filter((f) => hashes.has(hashText(f.value)))
       if (hits.length === 0) return null
       const s = new MagicString(code)
       for (const h of hits) {
-        s.prependLeft(h.start, `__t(${JSON.stringify(hashText(h.value))}, `)
-        s.appendRight(h.end, ')')
+        const call = `__t(${JSON.stringify(hashText(h.value))}, `
+        if (h.mode === 'text') {
+          s.overwrite(h.start, h.end, `{${call}${JSON.stringify(h.value)})}`)
+        } else if (h.mode === 'attr') {
+          s.prependLeft(h.start, `{${call}`)
+          s.appendRight(h.end, ')}')
+        } else {
+          s.prependLeft(h.start, call)
+          s.appendRight(h.end, ')')
+        }
       }
       s.prepend(`import { __t } from ${JSON.stringify(RUNTIME)};\n`)
       return { code: s.toString(), map: s.generateMap({ hires: true }) }

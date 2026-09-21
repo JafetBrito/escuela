@@ -1,5 +1,6 @@
-// Traduce el CONTENIDO de la plataforma (lecciones, glosario, preguntas de juegos,
-// tienda, misiones, etc.: cadenas dentro de src/data, stores, lib y services) del
+// Traduce el CONTENIDO y la INTERFAZ de la plataforma (lecciones, glosario, juegos,
+// tienda, misiones y también textos de componentes .jsx: src/data, stores, lib,
+// services y components) del
 // español a otro idioma usando la API de Claude, y guarda el resultado en
 // src/data/i18n/<idioma>/<archivo>.json. El plugin de Vite y el runtime hacen el
 // resto: en ese idioma el sitio muestra la traducción, sin tocar ningún archivo de datos.
@@ -38,7 +39,7 @@ const byFile = new Map() // archivo → Map(hash → texto)
 const seen = new Set()
 for (const f of files) {
   let found
-  try { found = collectStrings(readFileSync(f, 'utf8')) } catch (e) { console.warn(`  (se omite ${f}: no se pudo analizar — ${e.message.split('\n')[0]})`); continue }
+  try { found = collectStrings(readFileSync(f, 'utf8'), f) } catch (e) { console.warn(`  (se omite ${f}: no se pudo analizar — ${e.message.split('\n')[0]})`); continue }
   const m = new Map()
   for (const { value } of found) {
     const h = hashText(value)
@@ -95,17 +96,16 @@ async function callClaude(items, attempt = 0) {
   return out
 }
 
-const fileDict = (f) => {
-  const p = join(DICT_DIR, LANG, basename(f).replace(/\.(m?js)$/, '.json'))
-  return { p, data: existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {} }
-}
-const cache = new Map()
+const dictPath = (f) => join(DICT_DIR, LANG, basename(f).replace(/\.(m?jsx?)$/, '.json'))
+const cache = new Map() // ruta del .json → { p, data } (archivos con el mismo nombre comparten .json)
 function store(file, hash, text) {
-  if (!cache.has(file)) cache.set(file, fileDict(file))
-  const c = cache.get(file)
+  const p = dictPath(file)
+  if (!cache.has(p)) cache.set(p, { p, data: existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {} })
+  const c = cache.get(p)
   c.data[hash] = text
   mkdirSync(join(DICT_DIR, LANG), { recursive: true })
-  writeFileSync(c.p, JSON.stringify(c.data, null, 0) + '\n')
+  writeFileSync(c.p, JSON.stringify(c.data, null, 0) + '
+')
 }
 
 // lotes: por caracteres y por cantidad; una cadena muy larga va sola
