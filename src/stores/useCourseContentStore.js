@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../services/supabase/client'
+import { cacheGet, cacheSet } from '../utils/idbCache'
 
 // Fuente de verdad de los cursos — reemplaza src/data/courses.json (catálogo)
 // y src/data/courseRegistry.js (contenido) por la tabla public.courses
@@ -22,45 +23,53 @@ import { supabase } from '../services/supabase/client'
 // dentro del bundle inicial de JS (ninguno pasa por React.lazy), así que
 // esto reemplaza "bundleado siempre" por "descargado siempre" — mismo orden
 // de magnitud, no peor.
+const CACHE_KEY = 'courses-v1'
+
+// OJO: NO usar el embed `profiles!teacher_id(...)` acá — a diferencia de
+// student_tasks (donde profiles!student_id sí resuelve porque apunta a
+// profiles), `courses.teacher_id` referencia auth.users(id), no
+// profiles(id) directo. PostgREST no puede inferir esa relación
+// transitiva y devuelve error en TODA la consulta ("could not find a
+// relationship"), lo que dejaba `catalog`/`courses` vacíos y bloqueaba
+// la entrada a absolutamente todos los cursos (bug real, encontrado
+// 2026-09-07). El nombre del profesor se resuelve aparte, en
+// CourseRoadmapPage.jsx, con una consulta propia y aislada.
+async function refresh(set) {
+  const { data, error } = await supabase.from('courses').select('*')
+  if (error) {
+    // `loaded` se pone en true IGUAL en el error (con catálogo vacío): ProtectedRoute bloquea
+    // toda la app hasta que sea true, y si se queda en false NADIE entra a ninguna ruta.
+    console.error('[useCourseContentStore.fetchAll]', error)
+    set((st) => (st.loaded ? { loading: false } : { loaded: true, loading: false }))
+    return []
+  }
+  const catalog = data ?? []
+  set({ catalog, courses: Object.fromEntries(catalog.map((c) => [c.id, c])), loaded: true, loading: false })
+  cacheSet(CACHE_KEY, catalog)
+  return catalog
+}
+
 export const useCourseContentStore = create((set, get) => ({
   catalog: [],       // array de las 48 filas (incluye `modules`, no solo metadata)
   courses: {},        // { [id]: fila } — derivado de `catalog`, para lookup por id
   loaded: false,
   loading: false,
 
+  // Stale-while-revalidate: la tabla completa (con todas las lecciones) es pesada y
+  // ProtectedRoute bloquea el render hasta que `loaded` es true. Si ya hay una copia de la
+  // visita anterior (IndexedDB), se usa AL INSTANTE y se refresca en segundo plano; solo la
+  // primera visita (sin copia) espera a la red. Lo refrescado queda en el store y en la
+  // caché para la próxima carga — los componentes que ya montaron siguen con la copia.
   fetchAll: async () => {
     if (get().loaded || get().loading) return get().catalog
     set({ loading: true })
-    // OJO: NO usar el embed `profiles!teacher_id(...)` acá — a diferencia de
-    // student_tasks (donde profiles!student_id sí resuelve porque apunta a
-    // profiles), `courses.teacher_id` referencia auth.users(id), no
-    // profiles(id) directo. PostgREST no puede inferir esa relación
-    // transitiva y devuelve error en TODA la consulta ("could not find a
-    // relationship"), lo que dejaba `catalog`/`courses` vacíos y bloqueaba
-    // la entrada a absolutamente todos los cursos (bug real, encontrado
-    // 2026-09-07). El nombre del profesor se resuelve aparte, en
-    // CourseRoadmapPage.jsx, con una consulta propia y aislada — si esa
-    // falla, solo se pierde la línea "Impartido por…", no el curso entero.
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-    if (error) {
-      // OJO: `loaded` se pone en true IGUAL en el error (con catálogo
-      // vacío) — no en false. ProtectedRoute.jsx bloquea el render de toda
-      // la app hasta que `loaded` sea true; si esto se queda en false para
-      // siempre (ej. porque migration_024/025.sql todavía no se corrieron
-      // en Supabase y la tabla `courses` no existe), NADIE puede entrar a
-      // ninguna ruta protegida — pantalla de "Cargando…" infinita para
-      // todo el mundo. Mejor degradar a "sin cursos" que tumbar la app
-      // entera mientras la migración no esté aplicada.
-      console.error('[useCourseContentStore.fetchAll]', error)
-      set({ loaded: true, loading: false })
-      return []
+    const cached = await cacheGet(CACHE_KEY)
+    if (Array.isArray(cached) && cached.length > 0) {
+      set({ catalog: cached, courses: Object.fromEntries(cached.map((c) => [c.id, c])), loaded: true, loading: false })
+      refresh(set) // sin await: no bloquea
+      return cached
     }
-    const catalog = data ?? []
-    const courses = Object.fromEntries(catalog.map((c) => [c.id, c]))
-    set({ catalog, courses, loaded: true, loading: false })
-    return catalog
+    return refresh(set)
   },
 
   // Usado por AdminCoursesPage — sube el curso completo de una sola vez
