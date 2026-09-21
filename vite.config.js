@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
+import i18nDataPlugin from './scripts/i18n-data/vite-plugin.mjs'
 
 // Git-derived build metadata, injected at build time so the app can show
 // exactly which commit is running with zero manual bumping. The commit
@@ -38,6 +39,7 @@ export default defineConfig({
     __RECENT_COMMITS__: JSON.stringify(recentCommits(8)),
   },
   plugins: [
+    i18nDataPlugin(), // traducciones del contenido (ver scripts/translate-data.mjs)
     react(),
     VitePWA({
       registerType: 'autoUpdate',

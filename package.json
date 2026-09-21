@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "i18n:audit": "node scripts/i18n-audit.mjs",
+    "i18n:data": "node scripts/translate-data.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

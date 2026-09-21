@@ -1,0 +1,62 @@
+{
+  "_": "Traducción automática del CONTENIDO (src/data, stores, lib, services). Ver scripts/translate-data.mjs.",
+  "roots": [
+    "src/data",
+    "src/stores",
+    "src/lib",
+    "src/services"
+  ],
+  "excludeDirs": [
+    "i18n",
+    "locales",
+    "glossaryTranslations"
+  ],
+  "excludeFiles": [
+    "categoryTaxonomy.js",
+    "categoryMeta.js",
+    "categoryTranslations.js",
+    "regions.js",
+    "courseCatalogTranslations.js",
+    "gamesCatalogTranslations.js",
+    "taskTypes.js"
+  ],
+  "minWords": 2,
+  "denyKeys": [
+    "id",
+    "key",
+    "slug",
+    "icon",
+    "emoji",
+    "color",
+    "accent",
+    "gradient",
+    "type",
+    "kind",
+    "status",
+    "role",
+    "path",
+    "to",
+    "href",
+    "src",
+    "url",
+    "file",
+    "component",
+    "category",
+    "subcategory",
+    "schoolCategories",
+    "categories",
+    "field",
+    "className",
+    "model",
+    "provider",
+    "npcId",
+    "courseId",
+    "moduleId",
+    "tag",
+    "action"
+  ],
+  "excludePatterns": [
+    "Translations?\\.js$",
+    "\\.test\\."
+  ]
+}
