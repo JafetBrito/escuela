@@ -1,0 +1,96 @@
+📋 My Tasks
+🥽 My Room
+🥽 Plato's Cave
+🧪 Test Map
+📋 Task Management
+📁 Project Management
+🎓 My Classes (Admin)
+📝 Graduation exams
+🎙️ Podcast Management
+🧒 Age Profiles
+❌ No results for that player.
+☁️ Sync
+🖥️ Command console
+Run /additem, /addcoins, /setlevel, /npcadd, /target and more — open the console window to type commands.
+The "hacker" theme that only you see as admin. You can turn it off if you no longer need to see it.
+email or name (empty = me)
+Places an instanced monster near the VR Campus spawn.
+🎙️ My voice: ON
+🔇 My voice: OFF
+— saved for everyone.
+Global filter (forum, chats, questions). Base in code:
+entries. Your extra words apply to everyone. Formats:
+You haven't added any words yet.
+📅 Themed Week
+ (automatic by calendar)
+Automatic
+Dev tools (admin) — drag to move
+View this help
+IDs of Shop items
+Give an item to the Avatar/Pet bag
+Remove an item from a bag
+Give XP (with notice)
+Unlock pet by id
+Change who the commands affect
+Trigger an NPC's scheduled speech now (test)
+Open the birthday modal without waiting for the real date (test)
+Download the traditional campus as .glb (only works inside /vr/cumpleanos)
+Broadcast a YouTube video/live stream to the whole VR campus (/stream off turns it off)
+Fly (on/off) — admin only, to explore maps
+🖥️ GM Console — type /help to see the commands.
+⏳ Opening a temporary connection to the Campus (you're not inside the VR world)…
+❌ Could not open the temporary connection (check your internet and try again).
+❌ There is no connection to the shared world yet — wait for "Connected" to appear above and try again.
+✅ Birthday modal opened in test mode — use its "Go to your party" button to enter the map.
+⏳ Exporting… if you're in /vr/cumpleanos, campus-tradicional.glb will be downloaded.
+Use /stream <YouTube link> or /stream off.
+✅ Broadcast turned off for everyone.
+🔴 Broadcast activated: it shows on the campus screen and in the HUD's "Live" button, for everyone who is here or joins.
+❌ Invalid link. Use the video/live link (youtube.com/watch?v=…, youtu.be/…, youtube.com/live/…) or youtube.com/channel/UC… — an @channel link can't be embedded.
+✅ Flight enabled — Space to go up, Shift to go down.
+No player found with that email/name.
+Add a comment (optional)…
+📝 To my notes
+You leveled up!
+Delete all notifications? This action cannot be undone.
+Delete all
+You have no notifications yet.
+Delete notification
+is typing…
+👋 Welcome!
+🚫 Stop showing
+Last update
+Release Notes
+Current version:
+Got it! 🎮
+Your account is awaiting approval
+An administrator still has to review and approve this account before you can enter the platform. Try again later.
+Log out
+Drag to move
+Next song
+Open radio player
+Open radio player (drag to move)
+A complete educational platform built solo: courses, multiplayer 3D world, RPG-style gamification, an AI assistant with its own memory and an admin panel — all in React + Supabase.
+The dashboard unifies tasks, projects, exams and quests into a single actionable feed — before, each system lived on its own page and the student had to check them one by one.
+The 3D campus (Three.js) isn't just aesthetics: it moves social interaction and quests out of the flat browser, with live voice, AI NPCs and mini-games — the bet is that teaching feels less like an LMS and more like a shared world.
+2D version (Phaser) of the same world, for those without hardware for 3D — synchronized with the VR campus via Supabase Realtime.
+Live classes have an ephemeral chat, a text-to-speech queue and a PDF summary generated when the session closes, so something tangible remains without depending on a recording.
+Each course's content lives in Supabase, not hardcoded in the bundle — a teacher can edit a class without touching code or redeploying the site.
+Custom admin panel: account approval, task grading, exam generation, live control of the VR world — built to measure instead of a generic CMS.
+XP/level achievement system in RPG style: the idea is that finishing a course feels like character progress, not a checked box.
+🕵️ Recruiter Mode — demo view, access expires in
+💡 Why this exists
+Why this part of the project exists
+(no translation)
+Save to my notes
+Saved!
+Ask your pet
+Your pet
+Copy to clipboard
+Copied!
+Search on Google
+Could not translate
+(maximum)
+❌ Not enough coins.
+Who is « 
+Choose which bag to save it to.

@@ -127,7 +127,7 @@ function ClassPlayer({ cls, mode, onBack }) {
           <VideoPlayer videoId={cls.demo_video_id} />
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-primary/70">{tr('📱 En tu teléfono', '📱 On your phone')}</p>
-            <p className="mt-1 text-sm text-text-muted">Abre Mis Clases → tr('Sincronizar con código', 'Sync with code') y escribe:</p>
+            <p className="mt-1 text-sm text-text-muted">{tr('Abre Mis Clases → "Sincronizar con código" y escribe:', 'Open My Classes → "Sync with code" and type:')}</p>
             <p className="mt-3 font-mono text-4xl font-black tracking-[0.2em] text-primary">{classShortCode(cls.id)}</p>
             <p className="mt-3 text-xs text-text-muted">{tr('Ahí verás la agenda, los recursos y podrás hacer preguntas en tiempo real mientras ves el video aquí.', 'There you\'ll see the agenda, the resources and you can ask questions in real time while you watch the video here.')}</p>
             <Link to="/mis-clases" className="mt-4 inline-block rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">

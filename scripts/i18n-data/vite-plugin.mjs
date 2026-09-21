@@ -16,6 +16,7 @@ export default function i18nDataPlugin() {
     name: 'oliver-i18n-data',
     enforce: 'pre',
     transform(code, id) {
+      code = code.replace(/^﻿/, '') // el parser ignora el BOM y desfasa todas las posiciones
       const file = id.split('?')[0]
       if (!isDataFile(file)) return null
       hashes ??= allTranslatedHashes()

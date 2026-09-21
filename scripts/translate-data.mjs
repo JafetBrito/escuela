@@ -67,7 +67,7 @@ console.log(`\n${total} cadenas en ${byFile.size} archivos · ${pending.length} 
 if (flag('--dry') || pending.length === 0) process.exit(0)
 
 const KEY = process.env.ANTHROPIC_API_KEY
-if (!KEY) { console.error('\nFalta ANTHROPIC_API_KEY en el entorno. Ejemplo (PowerShell):  $env:ANTHROPIC_API_KEY="sk-ant-…"; node scripts/translate-data.mjs'); process.exit(1) }
+if (!KEY && !flag('--export') && !flag('--import')) { console.error('\nFalta ANTHROPIC_API_KEY en el entorno. Ejemplo (PowerShell):  $env:ANTHROPIC_API_KEY="sk-ant-…"; node scripts/translate-data.mjs'); process.exit(1) }
 
 // ── 2. Traducir por lotes ───────────────────────────────────────────────────
 const SYSTEM = `You are a professional translator for an educational platform (courses, quizzes, glossary, game text, shop items). Translate each Spanish string into natural, fluent ${LANG_NAMES[LANG] ?? LANG}.
@@ -105,6 +105,35 @@ function store(file, hash, text) {
   c.data[hash] = text
   mkdirSync(join(DICT_DIR, LANG), { recursive: true })
   writeFileSync(c.p, JSON.stringify(c.data) + '\n')
+}
+
+
+// ── Modo manual (sin llave de API) ──────────────────────────────────────────
+//   --export lote.json [--limit N] [--only x]   → escribe los textos pendientes (arreglo) + lote.hashes.json
+//   --import lote.en.json --from lote.json       → guarda la traducción (arreglo del mismo largo y orden)
+// Sirve para que una persona o un asistente traduzca sin pasar por la API.
+if (flag('--export')) {
+  const out = opt('--export')
+  const chunk = pending.slice(0, Number(opt('--limit', 0)) || pending.length)
+  writeFileSync(out, JSON.stringify(chunk.map((p) => p.text), null, 1))
+  writeFileSync(out.replace(/\.json$/, '.hashes.json'), JSON.stringify(chunk.map((p) => ({ file: p.file, hash: p.hash }))))
+  console.log(`Exportadas ${chunk.length} cadenas a ${out}`)
+  process.exit(0)
+}
+if (flag('--import')) {
+  const from = opt('--from')
+  const en = JSON.parse(readFileSync(opt('--import'), 'utf8'))
+  const es = JSON.parse(readFileSync(from, 'utf8'))
+  const meta = JSON.parse(readFileSync(from.replace(/\.json$/, '.hashes.json'), 'utf8'))
+  if (![en.length, es.length].every((n) => n === meta.length)) { console.error(`El largo no coincide: original ${es.length}, traducción ${en.length}`); process.exit(1) }
+  let ok = 0, skipped = 0
+  meta.forEach((m, i) => {
+    if (en[i] === '') { store(m.file, m.hash, es[i]); ok++; return } // "" = dejar el original (idioma de estudio, código, prompts de IA…)
+    if (typeof en[i] !== 'string' || !en[i].trim() || tagCount(en[i]) !== tagCount(es[i])) { skipped++; return }
+    store(m.file, m.hash, en[i]); ok++
+  })
+  console.log(`Importadas ${ok}, omitidas ${skipped} (con etiquetas HTML distintas)`)
+  process.exit(0)
 }
 
 // lotes: por caracteres y por cantidad; una cadena muy larga va sola

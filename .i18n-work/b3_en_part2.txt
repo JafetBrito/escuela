@@ -1,0 +1,53 @@
+
+
+Zafir, the magical merchant
+"Welcome back! I have freshly forged new items, each with its own characteristics. Take a look, or ask me anything you like."
+You already have everything in the shop! Come back soon for more items.
+They are activated from Settings when purchased
+🔒 This personality's instructions are revealed when you buy it.
+No class
+No Oliver class
+🎒 Bags — drag to equip
+No items available yet.
+This Oliver style doesn't have its own combat stats yet.
+Choose a class in the World Tree to see your combat stats.
+🔧 Coming soon: the power and speed of your gear will modify these stats.
+My Skill Tree
+Unlock and manage your combat skills
+🧑‍🏫 Teacher Panel
+Your assigned courses and the reflections your students send you.
+Your courses (
+You don't have any assigned courses yet — ask an admin to assign you one from /admin/cursos.
+All caught up ✅
+🧑‍🏫 My Teacher Profile
+This is what your students see on the public page of your courses.
+🔗 Your public link
+Anyone can open it, even without an account, and will see an invitation to sign up.
+Public name
+Your name
+Profile picture (URL)
+Public bio
+Tell your students who you are…
+We couldn't find this teacher.
+Sign up for Oliver Academy
+Also teaches
+No other assigned courses.
+Learn with
+at Oliver Academy
+📥 Reflections from your students
+All caught up ✅ — no reflection has arrived yet.
+a/sin(A) = b/sin(B) = c/sin(C)
+Measure of acidity
+Vertical video coming soon
+We're recording a vertical version of this class so it looks better on your phone. In the meantime, here's the regular video.
+🐈‍⬛ BashMishi Terminal
+🎂 Happy birthday,
+Do you have any questions left about what
+talked about? Ask directly.
+Write your question…
+💭 A moment to think
+I've thought about it, continue →
+Class video
+❓ Ask
+The class is paused — when you finish, continue where you left off.
+Continue the class →
