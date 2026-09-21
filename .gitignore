@@ -39,4 +39,5 @@ videos-output/
 *.njsproj
 *.sln
 *.sw?
-public\proyecto".i18n-work/
+public\proyecto"
+.i18n-work/
