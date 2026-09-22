@@ -20,7 +20,8 @@
     "regions.js",
     "courseCatalogTranslations.js",
     "gamesCatalogTranslations.js",
-    "taskTypes.js"
+    "taskTypes.js",
+    "matrixData.js"
   ],
   "minWords": 2,
   "denyKeys": [
