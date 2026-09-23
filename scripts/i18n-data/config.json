@@ -11,6 +11,7 @@
     "i18n",
     "locales",
     "glossaryTranslations",
+    "translations",
     "admin"
   ],
   "excludeFiles": [
@@ -21,7 +22,8 @@
     "courseCatalogTranslations.js",
     "gamesCatalogTranslations.js",
     "taskTypes.js",
-    "matrixData.js"
+    "matrixData.js",
+    "coursePromptEngineering.js"
   ],
   "minWords": 2,
   "denyKeys": [
