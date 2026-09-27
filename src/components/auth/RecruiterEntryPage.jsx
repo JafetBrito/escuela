@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '../../services/supabase/client'
 import { useAuthStore } from '../../stores/useAuthStore'
 
 // Puerta de entrada para /reclutador/:token — valida el token contra
-// recruiter_passes (migration_033.sql) y, si sigue vivo, activa
+// recruiter_passes (migration_033.sql; validación por RPC desde migration_078.sql) y, si sigue vivo, activa
 // useAuthStore.enterRecruiterMode() y manda a /dashboard. Sin
 // ProtectedRoute: quien visita este link todavía no tiene sesión.
 export default function RecruiterEntryPage() {
@@ -21,17 +21,13 @@ export default function RecruiterEntryPage() {
         if (!cancelled) setStatus('error')
         return
       }
-      const { data } = await supabase
-        .from('recruiter_passes')
-        .select('token, expires_at')
-        .eq('token', token)
-        .maybeSingle()
+      const { data: expiresAt } = await supabase.rpc('validate_recruiter_pass', { p_token: token })
       if (cancelled) return
-      if (!data || new Date(data.expires_at).getTime() <= Date.now()) {
+      if (!expiresAt || new Date(expiresAt).getTime() <= Date.now()) {
         setStatus('expired')
         return
       }
-      enterRecruiterMode(data.token, data.expires_at)
+      enterRecruiterMode(token, expiresAt)
       navigate('/dashboard', { replace: true })
     }
     run()
