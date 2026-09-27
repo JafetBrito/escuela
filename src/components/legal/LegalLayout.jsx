@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import Logo from '../shared/Logo'
+import { LEGAL, legalMissing } from '../../data/legalConfig'
 
 // Layout mínimo y público (sin AppTopBar, que asume sesión) para Aviso de
 // Privacidad y Términos de Uso — deben poder leerse ANTES de crear cuenta,
 // desde /privacidad y /terminos, enlazados desde el pie de la landing y el
 // formulario de registro (CreateAccountPage.jsx).
-export default function LegalLayout({ title, updated, children }) {
+export default function LegalLayout({ title, children }) {
   return (
     <div className="min-h-screen bg-background text-text">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
@@ -22,7 +23,12 @@ export default function LegalLayout({ title, updated, children }) {
 
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="text-3xl font-black text-text">{title}</h1>
-        <p className="mt-1 text-xs text-text-muted">Última actualización: {updated}</p>
+        <p className="mt-1 text-xs text-text-muted">Última actualización: {LEGAL.updated}</p>
+        {legalMissing().length > 0 && (
+          <p className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            Faltan datos del responsable por completar en <code>src/data/legalConfig.js</code>: {legalMissing().join(', ')}.
+          </p>
+        )}
         <div className="prose-legal mt-8 space-y-6 text-sm leading-relaxed text-text">
           {children}
         </div>
@@ -41,3 +47,6 @@ export function LegalSection({ title, children }) {
     </section>
   )
 }
+
+// Datos del responsable, ya formateados; si falta alguno lo marca visiblemente.
+export const L = (k) => LEGAL[k] ?? `[falta: ${k}]`

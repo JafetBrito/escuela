@@ -198,9 +198,9 @@ export default function CreateAccountPage() {
                     </label>
                     <label className="flex flex-col gap-1.5 text-sm font-semibold">
                       {tr('Contraseña', 'Password')}
-                      <input type="password" required minLength={6} value={password}
+                      <input type="password" required minLength={8} value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder={tr('Mínimo 6 caracteres', 'At least 6 characters')}
+                        placeholder={tr('Mínimo 8 caracteres', 'At least 8 characters')}
                         className="rounded-xl border border-border bg-background px-4 py-3 text-text outline-none transition focus:border-primary" />
                     </label>
 
@@ -226,12 +226,16 @@ export default function CreateAccountPage() {
                       </Button>
                     )}
 
-                    <p className="text-center text-[11px] text-text-muted">
-                      Al crear tu cuenta aceptas nuestro{' '}
-                      <Link to="/privacidad" target="_blank" className="font-semibold text-primary hover:underline">{tr('Aviso de Privacidad', 'Privacy Notice')}</Link>
-                      {' '}y nuestros{' '}
-                      <Link to="/terminos" target="_blank" className="font-semibold text-primary hover:underline">{tr('Términos de Uso', 'Terms of Use')}</Link>.
-                    </p>
+                    <label className="flex items-start gap-2 text-[11px] text-text-muted">
+                      <input type="checkbox" required className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-primary" />
+                      <span>
+                        {tr('He leído y acepto el', 'I have read and accept the')}{' '}
+                        <Link to="/privacidad" target="_blank" className="font-semibold text-primary hover:underline">{tr('Aviso de Privacidad', 'Privacy Notice')}</Link>
+                        {' '}{tr('y los', 'and the')}{' '}
+                        <Link to="/terminos" target="_blank" className="font-semibold text-primary hover:underline">{tr('Términos de Uso', 'Terms of Use')}</Link>.
+                        {isChildSignup && ' ' + tr('Declaro ser madre, padre o tutor del menor.', 'I declare I am the parent or guardian of the minor.')}
+                      </span>
+                    </label>
                   </form>
 
                   <div className="my-5 flex items-center gap-3">
