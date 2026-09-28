@@ -325,7 +325,7 @@ export const COURSE_CATALOG_EN = {
   },
   'course-linux-instalacion': {
     title: 'Install Linux: Your First Distro',
-    description: 'Pick a distribution, try it risk-free (Live USB, virtual machine, WSL), and install it alongside Windows. Coming soon.',
+    description: 'Pick a distribution, try it risk-free (WSL, virtual machine, Live USB), and install it safely: backup, partitions, dual boot, and first boot. With interactive consoles.',
   },
   'course-linux-permisos': {
     title: 'Users, Permissions, and Processes',

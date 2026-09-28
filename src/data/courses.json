@@ -789,13 +789,13 @@
   {
     "id": "course-linux-instalacion",
     "title": "Instala Linux: Tu Primera Distro",
-    "description": "Elige una distribución, pruébala sin riesgo (USB Live, máquina virtual, WSL) e instálala junto a Windows. Próximamente.",
+    "description": "Elige una distribución, pruébala sin riesgo (WSL, máquina virtual, USB Live) e instálala con seguridad: respaldo, particiones, doble arranque y primer arranque. Con consolas interactivas.",
     "icon": "💿",
     "color": "#38bdf8",
     "category": "Linux",
     "subcategory": "Administración de Sistemas",
     "difficulty": "principiante",
-    "locked": true
+    "locked": false
   },
   {
     "id": "course-linux-permisos",
