@@ -1244,11 +1244,17 @@ export const en = {
       hintPrefix: 'Press',
       hintSuffix: 'or click outside to close',
       worlds: {
+        mapa: { name: 'World Map', desc: 'Pick your destination' },
         campus: { name: 'Main Campus', desc: 'The university world' },
         room: { name: 'My Room', desc: 'Your private space' },
         anfiteatro: { name: 'Amphitheater', desc: 'Theater with a live screen' },
         ciudad: { name: 'City', desc: 'Coming soon…' },
       },
+    atlasMap: {
+      title: '🗺️ World Map',
+      back: 'Back to the Plaza',
+      hint: 'Drag to look around · Click a stop to travel',
+    },
     },
     worldMap: {
       title: '🗺️ Campus Map — Oliver Academy',

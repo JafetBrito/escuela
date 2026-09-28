@@ -646,11 +646,17 @@ export const fr = {
       hintPrefix: 'Appuie sur',
       hintSuffix: 'ou clique en dehors pour fermer',
       worlds: {
+        mapa: { name: 'Carte du Monde', desc: 'Choisis ta destination' },
         campus: { name: 'Campus Principal', desc: 'Le monde universitaire' },
         room: { name: 'Ma Chambre', desc: 'Ton espace privé' },
         anfiteatro: { name: 'Amphithéâtre', desc: 'Théâtre avec un écran en direct' },
         ciudad: { name: 'Ville', desc: 'Bientôt disponible…' },
       },
+    atlasMap: {
+      title: '🗺️ Carte du Monde',
+      back: 'Retour à la Place',
+      hint: 'Glisse pour regarder autour · Clique sur une étape pour voyager',
+    },
     },
     worldMap: {
       title: '🗺️ Carte du Campus — Oliver Academy',

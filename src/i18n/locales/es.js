@@ -1248,11 +1248,17 @@ export const es = {
       hintPrefix: 'Pulsa',
       hintSuffix: 'o haz clic fuera para cerrar',
       worlds: {
+        mapa: { name: 'Mapa del Mundo', desc: 'Elige tu destino' },
         campus: { name: 'Campus Principal', desc: 'El mundo universitario' },
         room: { name: 'Mi Room', desc: 'Tu espacio privado' },
         anfiteatro: { name: 'Anfiteatro', desc: 'Teatro con pantalla en vivo' },
         ciudad: { name: 'Ciudad', desc: 'Próximamente…' },
       },
+    atlasMap: {
+      title: '🗺️ Mapa del Mundo',
+      back: 'Volver a la Plaza',
+      hint: 'Arrastra para girar · Clic en una parada para viajar',
+    },
     },
     worldMap: {
       title: '🗺️ Mapa del Campus — Oliver Academy',

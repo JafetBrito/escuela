@@ -28,6 +28,7 @@ import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
 import AcademiaIAPage from './components/dashboard/AcademiaIAPage'
 import AcademiaMedicinaPage from './components/dashboard/AcademiaMedicinaPage'
 import AcademiaLinuxPage from './components/dashboard/AcademiaLinuxPage'
+import WorldMapPage from './components/vr/WorldMapPage'
 import AcademiaFilosofiaPage from './components/dashboard/AcademiaFilosofiaPage'
 import AcademiaChinaPage from './components/dashboard/AcademiaChinaPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
@@ -1052,6 +1053,16 @@ export default function App() {
             <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage roomMode />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vr/mapa"
+          element={
+            <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+              <Suspense fallback={<RouteFallback />}>
+                <WorldMapPage />
               </Suspense>
             </ProtectedRoute>
           }

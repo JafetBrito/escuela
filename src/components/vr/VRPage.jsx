@@ -3223,6 +3223,7 @@ function ArenaConfirmPopup({ onClose }) {
 // Full-screen transport picker: 4 world cards (2 available, 2 locked future
 // destinations). Opened by clicking/pressing E at the campus portal.
 const TRANSPORT_WORLDS = [
+  { id: 'mapa',       emoji: '🗺️', available: true,  path: '/vr/mapa' },
   { id: 'campus',     emoji: '🏫', available: true,  path: '/vr' },
   { id: 'room',       emoji: '🏠', available: true,  path: '/vr/room' },
   { id: 'anfiteatro', emoji: '🎭', available: true,  path: '/vr/anfiteatro' },
