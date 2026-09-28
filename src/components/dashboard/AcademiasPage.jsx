@@ -8,7 +8,7 @@ import { localizeCategoryName } from '../../data/categoryTranslations'
 import { useI18n } from '../../i18n'
 
 // Subcategorías que ya tienen su propia portada arriba — el resto sale como tarjeta genérica.
-const HAS_OWN_PAGE = ['Inteligencia Artificial', 'Ciberseguridad', 'Filosofía', 'Lenguas y Lingüística', 'Medicina y Ciencias de la Salud']
+const HAS_OWN_PAGE = ['Inteligencia Artificial', 'Ciberseguridad', 'Filosofía', 'Lenguas y Lingüística', 'Medicina y Ciencias de la Salud', 'Linux']
 
 // Punto de entrada único para "escuelas" — antes Escuelas (categorías
 // generales), Academia de Idiomas y Academia de Ciberseguridad vivían
@@ -97,6 +97,16 @@ export default function AcademiasPage() {
               <div>
                 <p className="font-extrabold text-text">{t('nav.items.academiaMedicina')}</p>
                 <p className="text-xs text-text-muted">{t('dashboard.academias.medicinaBlurb')}</p>
+              </div>
+            </Link>
+            <Link
+              to="/academia-linux"
+              className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-yellow-500/20 to-green-500/10 p-5 transition hover:border-yellow-500/40"
+            >
+              <span className="text-4xl">🐧</span>
+              <div>
+                <p className="font-extrabold text-text">{t('nav.items.academiaLinux')}</p>
+                <p className="text-xs text-text-muted">{t('dashboard.academias.linuxBlurb')}</p>
               </div>
             </Link>
             <Link

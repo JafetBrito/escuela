@@ -14,6 +14,7 @@ const TOP = {
     'academia-ia': 'ai-academy',
     'academia-idiomas': 'languages-academy',
     'academia-medicina': 'medicine-academy',
+    'academia-linux': 'linux-academy',
     academias: 'academies',
     ajustes: 'settings',
     amigos: 'friends',

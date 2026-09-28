@@ -50,7 +50,7 @@ export default function GitTerminalSim({ courseId, module, className = '' }) {
       setHint(checkpoint.hint)
       return
     }
-    setHistory((cur) => [...cur, { input, success: checkpoint.success }])
+    setHistory((cur) => [...cur, { input, success: checkpoint.success, output: checkpoint.output }])
     setHint(null)
     setInput('')
     if (isLast) {
@@ -82,6 +82,7 @@ export default function GitTerminalSim({ courseId, module, className = '' }) {
         {history.map((h, i) => (
           <div key={i} className="space-y-1">
             <p className="text-emerald-400/60">$ {h.input}</p>
+            {h.output && <pre className="overflow-x-auto whitespace-pre text-xs text-emerald-200/80">{h.output}</pre>}
             <p className="text-emerald-300">✅ {h.success}</p>
           </div>
         ))}

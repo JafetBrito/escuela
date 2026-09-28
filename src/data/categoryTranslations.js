@@ -219,6 +219,13 @@ export const CATEGORY_NAME_EN = {
   'Seguridad Personal': 'Personal Security',
   'Software y Sistemas': 'Software & Systems',
   'Terminal y Sistemas': 'Terminal & Systems',
+  Linux: 'Linux',
+  'Historia y Cultura': 'History & Culture',
+  'Linux en Móvil': 'Linux on Mobile',
+  'Administración de Sistemas': 'Systems Administration',
+  'Terminal y Bash': 'Terminal & Bash',
+  'Historia y Software Libre': 'History & Free Software',
+  'Linux en Móvil (Termux)': 'Linux on Mobile (Termux)',
 }
 
 // Traducción al francés — solo los términos que usan la Academia de IA y la

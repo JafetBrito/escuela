@@ -222,16 +222,6 @@
     "locked": true
   },
   {
-    "id": "course-bash",
-    "title": "Bash desde Cero",
-    "description": "Domina la terminal de Linux/Mac: navegación, archivos, pipes, grep, permisos y scripts. Con terminal interactiva para practicar en cada lección.",
-    "icon": "🐚",
-    "color": "#22c55e",
-    "category": "Programación",
-    "subcategory": "Terminal y Sistemas",
-    "locked": false
-  },
-  {
     "id": "course-git-github",
     "title": "Git y GitHub: de Cero a Experto",
     "description": "El curso más completo de la escuela sobre control de versiones: desde por qué existe Git (con su historia real) hasta rebase, colaboración en equipo y automatización con GitHub Actions — con clases dedicadas de Consola Interactiva para practicar cada comando.",
@@ -758,10 +748,87 @@
     "description": "La introducción más sencilla posible a la terminal: qué es, cómo se abre y los comandos básicos para moverte sin miedo. Pensado para quien nunca ha escrito un comando en su vida.",
     "icon": "⌨️",
     "color": "#38bdf8",
-    "category": "Programación",
+    "category": "Linux",
     "subcategory": "Terminal y Sistemas",
     "difficulty": "principiante",
     "locked": false
+  },
+  {
+    "id": "course-bash",
+    "title": "Bash desde Cero",
+    "description": "Domina la terminal de Linux/Mac: navegación, archivos, pipes, grep, permisos y scripts. Con terminal interactiva para practicar en cada lección.",
+    "icon": "🐚",
+    "color": "#22c55e",
+    "category": "Linux",
+    "subcategory": "Terminal y Sistemas",
+    "locked": false,
+    "difficulty": "principiante"
+  },
+  {
+    "id": "course-historia-linux",
+    "title": "Historia de Linux: del Software Libre al Mundo Entero",
+    "description": "De los mainframes de los años 50 a tu teléfono: Unix, Stallman y GNU, Linus Torvalds en 1991, las distribuciones y el código abierto. Con consolas interactivas para probar lo que aprendes.",
+    "icon": "🐧",
+    "color": "#facc15",
+    "category": "Linux",
+    "subcategory": "Historia y Cultura",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-termux",
+    "title": "Termux: Linux en tu Bolsillo",
+    "description": "Convierte tu teléfono Android en una terminal Linux real, sin root: pkg, scripts, Python, Git, SSH, la API del teléfono, automatizaciones y una distro Debian completa. Con consolas interactivas.",
+    "icon": "📱",
+    "color": "#22c55e",
+    "category": "Linux",
+    "subcategory": "Linux en Móvil",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-linux-instalacion",
+    "title": "Instala Linux: Tu Primera Distro",
+    "description": "Elige una distribución, pruébala sin riesgo (USB Live, máquina virtual, WSL) e instálala junto a Windows. Próximamente.",
+    "icon": "💿",
+    "color": "#38bdf8",
+    "category": "Linux",
+    "subcategory": "Administración de Sistemas",
+    "difficulty": "principiante",
+    "locked": true
+  },
+  {
+    "id": "course-linux-permisos",
+    "title": "Usuarios, Permisos y Procesos",
+    "description": "Cómo Linux decide quién puede hacer qué: usuarios, grupos, chmod, sudo y cómo ver y controlar lo que corre en tu sistema. Próximamente.",
+    "icon": "🔑",
+    "color": "#f97316",
+    "category": "Linux",
+    "subcategory": "Administración de Sistemas",
+    "difficulty": "intermedio",
+    "locked": true
+  },
+  {
+    "id": "course-linux-redes-ssh",
+    "title": "Redes y SSH en Linux",
+    "description": "Direcciones IP, puertos, DNS, curl, SSH y llaves: conecta máquinas y entiende qué pasa cuando abres una página web. Próximamente.",
+    "icon": "🌐",
+    "color": "#a78bfa",
+    "category": "Linux",
+    "subcategory": "Administración de Sistemas",
+    "difficulty": "intermedio",
+    "locked": true
+  },
+  {
+    "id": "course-linux-servidor",
+    "title": "Tu Primer Servidor Linux",
+    "description": "Monta un servidor web real con nginx, systemd, firewall y HTTPS, y aprende a mantenerlo seguro. Próximamente.",
+    "icon": "🖥️",
+    "color": "#ef4444",
+    "category": "Linux",
+    "subcategory": "Administración de Sistemas",
+    "difficulty": "intermedio",
+    "locked": true
   },
   {
     "id": "course-aprender-a-aprender",

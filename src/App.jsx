@@ -27,6 +27,7 @@ import LanguageSyllabusPage from './components/dashboard/LanguageSyllabusPage'
 import AcademiaIdiomasPage from './components/dashboard/AcademiaIdiomasPage'
 import AcademiaIAPage from './components/dashboard/AcademiaIAPage'
 import AcademiaMedicinaPage from './components/dashboard/AcademiaMedicinaPage'
+import AcademiaLinuxPage from './components/dashboard/AcademiaLinuxPage'
 import AcademiaFilosofiaPage from './components/dashboard/AcademiaFilosofiaPage'
 import AcademiaChinaPage from './components/dashboard/AcademiaChinaPage'
 import MainCategoryPage from './components/dashboard/MainCategoryPage'
@@ -372,6 +373,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AcademiaMedicinaPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academia-linux"
+          element={
+            <ProtectedRoute>
+              <AcademiaLinuxPage />
             </ProtectedRoute>
           }
         />

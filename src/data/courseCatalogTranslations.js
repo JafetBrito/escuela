@@ -315,6 +315,30 @@ export const COURSE_CATALOG_EN = {
     title: 'Open Source',
     description: 'What open source software is, why it matters, and how to start contributing to real projects: licenses, pull requests, and the culture behind open source. Coming soon.',
   },
+  'course-historia-linux': {
+    title: 'History of Linux: From Free Software to the Whole World',
+    description: 'From 1950s mainframes to your phone: Unix, Stallman and GNU, Linus Torvalds in 1991, distributions, and open source. With interactive consoles to try what you learn.',
+  },
+  'course-termux': {
+    title: 'Termux: Linux in Your Pocket',
+    description: 'Turn your Android phone into a real Linux terminal, no root needed: pkg, scripts, Python, Git, SSH, the phone API, automation, and a full Debian distro. With interactive consoles.',
+  },
+  'course-linux-instalacion': {
+    title: 'Install Linux: Your First Distro',
+    description: 'Pick a distribution, try it risk-free (Live USB, virtual machine, WSL), and install it alongside Windows. Coming soon.',
+  },
+  'course-linux-permisos': {
+    title: 'Users, Permissions, and Processes',
+    description: 'How Linux decides who can do what: users, groups, chmod, sudo, and how to see and control what runs on your system. Coming soon.',
+  },
+  'course-linux-redes-ssh': {
+    title: 'Networking and SSH on Linux',
+    description: 'IP addresses, ports, DNS, curl, SSH, and keys: connect machines and understand what happens when you open a web page. Coming soon.',
+  },
+  'course-linux-servidor': {
+    title: 'Your First Linux Server',
+    description: 'Set up a real web server with nginx, systemd, a firewall, and HTTPS, and learn to keep it secure. Coming soon.',
+  },
   'course-consola-basica': {
     title: 'Command Line: First Steps',
     description: "The simplest possible introduction to the terminal: what it is, how to open it, and the basic commands to move around without fear. Built for someone who has never typed a command in their life.",

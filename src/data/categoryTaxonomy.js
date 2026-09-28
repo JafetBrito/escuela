@@ -17,6 +17,7 @@ export const MAIN_CATEGORIES = [
       { name: 'Ciencias de la Computación', topics: ['Arquitectura de Sistemas', 'Desarrollo de Software', 'Bases de Datos'], schoolCategories: ['Programación'] },
       { name: 'Inteligencia Artificial', topics: ['Modelos de Lenguaje', 'Prompt Engineering', 'Automatización con IA'], schoolCategories: ['Inteligencia Artificial'] },
       { name: 'Ciberseguridad', topics: ['Ethical Hacking', 'Criptografía', 'Seguridad de Redes', 'Seguridad Ofensiva y Defensiva'], schoolCategories: ['Ciberseguridad'] },
+      { name: 'Linux', topics: ['Terminal y Bash', 'Historia y Software Libre', 'Linux en Móvil (Termux)', 'Administración de Sistemas'], schoolCategories: ['Linux'] },
       { name: 'Lógica', topics: ['Lógica Clásica', 'Lógica Matemática', 'Lógica Computacional'], schoolCategories: ['Lógica'] },
     ],
   },
@@ -98,5 +99,5 @@ export const SCHOOL_ICONS = {
   'Psicología': '🧠', 'Economía y Negocios': '📈', 'Sociología y Antropología': '👥', 'Historia y Geografía': '🗺️', 'Ciencias Políticas y Derecho': '⚖️',
   'Literatura': '📚', 'Artes Visuales': '🎨', 'Artes Escénicas y Música': '🎭',
   'Ingeniería': '⚙️', 'Educación': '🎓', 'Agricultura y Veterinaria': '🌾', 'Comunicación y Medios': '📡', 'Herramientas y hábitos': '⚡',
-  'Inteligencia Artificial': '🧠', 'Ciberseguridad': '🔐', 'Filosofía': '🏛️', 'Lenguas y Lingüística': '🌍', 'Medicina y Ciencias de la Salud': '🩺',
+  'Inteligencia Artificial': '🧠', 'Ciberseguridad': '🔐', 'Filosofía': '🏛️', 'Lenguas y Lingüística': '🌍', 'Medicina y Ciencias de la Salud': '🩺', 'Linux': '🐧',
 }

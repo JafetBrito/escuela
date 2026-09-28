@@ -4,6 +4,7 @@
 export const ACADEMIES = {
   filosofia: { id: 'filosofia', name: 'Academia de Filosofía', emoji: '🏛️', ground: '#8a7f6a', grid: '#b8ad94', accent: '#e8c766', props: 'columns' },
   medicina: { id: 'medicina', name: 'Academia de Medicina', emoji: '🩺', ground: '#dfe9ee', grid: '#a9c4cf', accent: '#2aa6a0', props: 'hospital' }, // ponytail: cruz simple, falta modelo .glb de hospital
+  linux: { id: 'linux', name: 'Academia de Linux', emoji: '🐧', ground: '#0b1410', grid: '#166534', accent: '#facc15', props: 'pylons' },
   ia: { id: 'ia', name: 'Academia de IA', emoji: '🧠', ground: '#1b2233', grid: '#2f7f6f', accent: '#5ef0c0', props: 'pylons' },
 }
 
