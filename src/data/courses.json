@@ -120,6 +120,39 @@
     "locked": false
   },
   {
+    "id": "course-domina-gemini",
+    "title": "Domina Gemini: Guía Completa",
+    "description": "Todo lo que necesitas para sacarle el máximo provecho a Gemini: la app, Google AI Studio, Gems personalizados, su integración con Gmail/Docs/Sheets, su ventana de contexto enorme, y cómo se compara honestamente con Claude y GPT.",
+    "icon": "♊",
+    "color": "#4285f4",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Herramientas de IA",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-repositorio-prompts",
+    "title": "El Gran Repositorio de Prompts: Cientos de Ejemplos Listos para Usar",
+    "description": "Una biblioteca enorme de prompts ya escritos para escribir, estudiar, programar, hacer negocios, crear y decidir — más un módulo a fondo sobre cómo usar JSON para pedirle a la IA respuestas estructuradas.",
+    "icon": "📚",
+    "color": "#f97316",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Prompt Engineering",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
+    "id": "course-ml-fundamentos",
+    "title": "Aprendizaje Automático: Cómo Piensa una Máquina",
+    "description": "La mecánica real detrás de la IA, sin fórmulas complicadas: qué significa \"entrenar\" un modelo, los tres estilos de aprendizaje, cómo funciona una red neuronal por dentro, y cómo se mide si un modelo es realmente bueno.",
+    "icon": "⚙️",
+    "color": "#818cf8",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Modelos de IA",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
     "id": "course-004",
     "title": "Gestión del tiempo para estudiantes",
     "description": "Técnicas probadas como Pomodoro, time-blocking y la matriz de Eisenhower, adaptadas a la vida real de un estudiante con tareas, exámenes y vida fuera de la escuela. Aprenderás a identificar por qué procrastinas y a construir un sistema que sí sostengas. Próximamente.",
@@ -349,7 +382,7 @@
   },
   {
     "id": "course-claude-mayores",
-    "title": "Claude para Todos",
+    "title": "Primeros Pasos con Claude",
     "description": "Aprende a usar Claude, un asistente de inteligencia artificial, paso a paso y sin prisa — para cualquier persona, sin experiencia previa necesaria. Sin mundos virtuales, con videos y un chat sencillo.",
     "icon": "🤝",
     "color": "#fb923c",

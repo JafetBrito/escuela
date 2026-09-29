@@ -123,6 +123,18 @@ export const COURSE_CATALOG_EN = {
     title: 'AI Ethics and Impact on Society',
     description: 'Data bias, the black box problem, the job market, misinformation, privacy, and the alignment problem: the big questions AI raises, without fear or blind optimism.',
   },
+  'course-domina-gemini': {
+    title: 'Master Gemini: Complete Guide',
+    description: "Everything you need to get the most out of Gemini: the app, Google AI Studio, custom Gems, its integration with Gmail/Docs/Sheets, its huge context window, and how it honestly compares to Claude and GPT.",
+  },
+  'course-repositorio-prompts': {
+    title: 'The Great Prompt Repository: Hundreds of Ready-to-Use Examples',
+    description: 'A huge library of ready-written prompts for writing, studying, coding, business, creativity, and decision-making — plus an in-depth module on using JSON to get structured responses from AI.',
+  },
+  'course-ml-fundamentos': {
+    title: 'Machine Learning: How a Machine Thinks',
+    description: 'The real mechanics behind AI, without complicated formulas: what "training" a model means, the three learning styles, how a neural network works inside, and how you measure whether a model is actually good.',
+  },
   'course-bash': {
     title: 'Bash from Scratch',
     description: 'Master the Linux/Mac terminal: navigation, files, pipes, grep, permissions, and scripts. With an interactive terminal to practice in every lesson.',
@@ -148,7 +160,7 @@ export const COURSE_CATALOG_EN = {
     description: 'Learn to play chess step by step: pieces, openings, tactics, and endgames. With hands-on challenges on the campus board.',
   },
   'course-claude-mayores': {
-    title: 'Claude for Everyone',
+    title: 'First Steps with Claude',
     description: 'Learn to use Claude, an AI assistant, step by step and without rushing — for anyone, no prior experience needed. No virtual worlds, just videos and a simple chat.',
   },
   'course-biologia': {
