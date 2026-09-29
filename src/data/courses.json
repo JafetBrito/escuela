@@ -43,6 +43,83 @@
     "locked": false
   },
   {
+    "id": "course-historia-ia",
+    "title": "Historia de la Inteligencia Artificial",
+    "description": "De Turing y el verano de Dartmouth de 1956 a ChatGPT: los dos \"inviernos de la IA\", el resurgimiento del aprendizaje automático, la revolución del deep learning y los transformers que hicieron posible a Claude, GPT y compañía.",
+    "icon": "🧠",
+    "color": "#98ca3f",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Historia de la IA",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-ia-trucos",
+    "title": "Trucos y Consejos para Sacarle el Máximo Provecho a la IA",
+    "description": "Lo que separa a quien usa la IA \"para preguntas rápidas\" de quien de verdad multiplica su trabajo con ella: dar contexto, iterar, pedir que piense paso a paso, verificar lo que responde, y los errores más comunes.",
+    "icon": "💡",
+    "color": "#fbbf24",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Herramientas de IA",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-panorama-modelos-ia",
+    "title": "Panorama de Modelos de IA: Quién es Quién",
+    "description": "Claude, GPT, Gemini, Llama, DeepSeek y más: quién hace cada modelo, qué significan \"parámetros\" o \"código abierto\", y cómo elegir la herramienta correcta para cada tarea.",
+    "icon": "🧭",
+    "color": "#60a5fa",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Modelos de IA",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
+    "id": "course-actualidad-ia",
+    "title": "Actualidad de la IA: El Estado del Arte",
+    "description": "Una fotografía del panorama de la IA hasta principios de 2026: agentes que usan herramientas, modelos que razonan, IA multimodal, el auge del \"vibe coding\" y la regulación que empieza a llegar.",
+    "icon": "📡",
+    "color": "#f472b6",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Actualidad de la IA",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
+    "id": "course-domina-claude",
+    "title": "Domina Claude: Guía Completa",
+    "description": "Todo lo que necesitas para sacarle el máximo provecho a Claude: Proyectos, Artefactos, trabajar con tus documentos, pensamiento extendido, Claude Code y el enfoque de seguridad detrás de cómo se construye. El curso insignia de la Academia de IA.",
+    "icon": "✳️",
+    "color": "#d97757",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Herramientas de IA",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-ia-generativa",
+    "title": "IA Generativa: Imágenes, Audio y Video",
+    "description": "Cómo funciona la IA que genera imágenes, música, voces y video a partir de una descripción de texto: modelos de difusión sin fórmulas, mejores prompts visuales, y los debates de autoría y desinformación.",
+    "icon": "🎨",
+    "color": "#a78bfa",
+    "category": "Inteligencia Artificial",
+    "subcategory": "IA Generativa",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
+    "id": "course-etica-ia",
+    "title": "Ética e Impacto de la IA en la Sociedad",
+    "description": "Sesgos en los datos, la caja negra, el mercado laboral, la desinformación, la privacidad y el problema de alineación: las preguntas grandes que la IA pone sobre la mesa, sin miedo ni optimismo ciego.",
+    "icon": "🧭",
+    "color": "#34d399",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Ética de la IA",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
     "id": "course-004",
     "title": "Gestión del tiempo para estudiantes",
     "description": "Técnicas probadas como Pomodoro, time-blocking y la matriz de Eisenhower, adaptadas a la vida real de un estudiante con tareas, exámenes y vida fuera de la escuela. Aprenderás a identificar por qué procrastinas y a construir un sistema que sí sostengas. Próximamente.",

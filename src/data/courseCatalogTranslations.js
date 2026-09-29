@@ -95,6 +95,34 @@ export const COURSE_CATALOG_EN = {
     title: 'Introduction to Python',
     description: 'Your first programming language, explained simply and practically: variables, conditionals, loops, and functions, with small exercises you can run and see working instantly. Coming soon.',
   },
+  'course-historia-ia': {
+    title: 'History of Artificial Intelligence',
+    description: 'From Turing and the 1956 Dartmouth summer to ChatGPT: the two "AI winters," the rise of machine learning, the deep learning revolution, and the transformers that made Claude, GPT, and others possible.',
+  },
+  'course-ia-trucos': {
+    title: 'Tips and Tricks to Get the Most Out of AI',
+    description: 'What separates someone who uses AI "for quick questions" from someone who truly multiplies their work with it: giving context, iterating, asking it to think step by step, verifying what it says, and the most common mistakes.',
+  },
+  'course-panorama-modelos-ia': {
+    title: 'AI Model Landscape: Who is Who',
+    description: 'Claude, GPT, Gemini, Llama, DeepSeek, and more: who makes each model, what terms like "parameters" or "open source" mean, and how to pick the right tool for each task.',
+  },
+  'course-actualidad-ia': {
+    title: 'AI Today: The State of the Art',
+    description: 'A snapshot of the AI landscape as of early 2026: agents that use tools, reasoning models, multimodal AI, the rise of "vibe coding," and the regulation starting to arrive.',
+  },
+  'course-domina-claude': {
+    title: 'Master Claude: Complete Guide',
+    description: 'Everything you need to get the most out of Claude: Projects, Artifacts, working with your documents, extended thinking, Claude Code, and the safety approach behind how it is built. The flagship course of the AI Academy.',
+  },
+  'course-ia-generativa': {
+    title: 'Generative AI: Images, Audio, and Video',
+    description: 'How AI that generates images, music, voices, and video from a text description actually works: diffusion models with no formulas, better visual prompts, and the authorship and misinformation debates.',
+  },
+  'course-etica-ia': {
+    title: 'AI Ethics and Impact on Society',
+    description: 'Data bias, the black box problem, the job market, misinformation, privacy, and the alignment problem: the big questions AI raises, without fear or blind optimism.',
+  },
   'course-bash': {
     title: 'Bash from Scratch',
     description: 'Master the Linux/Mac terminal: navigation, files, pipes, grep, permissions, and scripts. With an interactive terminal to practice in every lesson.',
