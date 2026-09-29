@@ -3304,6 +3304,7 @@ const MAX_MAP_ZOOM = 8
 
 function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const playerMarkerRef = useRef(null)
   const playerArrowRef = useRef(null)
   const svgWrapRef = useRef(null)
@@ -3393,9 +3394,23 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
       >
         <div className="mb-2 flex items-center justify-between gap-6">
           <p className="text-sm font-bold" style={{ color: '#e8c477' }}>{t('vr.worldMap.title')}</p>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.worldMap.closeAria')}>
-            ✕
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Este minimapa 2D es solo el campus — el mapa-mundo 3D
+                (/vr/mapa, WorldMapPage.jsx) enlaza aquí porque abrir esto con
+                M ya es un hábito conocido; el portal físico en el mundo lo
+                abre también, pero es mucho menos descubrible. */}
+            <button
+              type="button"
+              onClick={() => navigate('/vr/mapa')}
+              className="rounded-full border px-3 py-1 text-xs font-bold transition hover:scale-105"
+              style={{ borderColor: '#c9a227', color: '#e8c477' }}
+            >
+              🗺️ {t('vr.worldMap.openAtlas')}
+            </button>
+            <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.worldMap.closeAria')}>
+              ✕
+            </button>
+          </div>
         </div>
         {/* Circular viewport — rueda del mouse o pinch para zoom, arrastra para mover */}
         <div
