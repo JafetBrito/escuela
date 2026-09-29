@@ -3222,8 +3222,12 @@ function ArenaConfirmPopup({ onClose }) {
 
 // Full-screen transport picker: 4 world cards (2 available, 2 locked future
 // destinations). Opened by clicking/pressing E at the campus portal.
+// El Mapa 3D del Mundo (/vr/mapa) vive aparte del grid de mundos: no es "un
+// mundo más" como Campus/Room/Anfiteatro, es el punto de partida para elegir
+// a cuál ir — por eso se renderiza como su propio botón destacado arriba del
+// grid, en vez de una casilla igual a las demás.
+const MAP_ENTRY = { id: 'mapa', emoji: '🗺️', path: '/vr/mapa' }
 const TRANSPORT_WORLDS = [
-  { id: 'mapa',       emoji: '🗺️', available: true,  path: '/vr/mapa' },
   { id: 'campus',     emoji: '🏫', available: true,  path: '/vr' },
   { id: 'room',       emoji: '🏠', available: true,  path: '/vr/room' },
   { id: 'anfiteatro', emoji: '🎭', available: true,  path: '/vr/anfiteatro' },
@@ -3252,6 +3256,19 @@ function TransportMenu({ onNavigate, onClose }) {
             ✕
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => onNavigate(MAP_ENTRY.path)}
+          className="mb-3 flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors hover:brightness-110"
+          style={{ borderColor: '#c9a227', background: 'linear-gradient(135deg, rgba(201,162,39,0.18), rgba(201,162,39,0.05))' }}
+        >
+          <span className="text-3xl">{MAP_ENTRY.emoji}</span>
+          <span>
+            <span className="block text-sm font-bold text-text">{t(`vr.transportMenu.worlds.${MAP_ENTRY.id}.name`)}</span>
+            <span className="block text-xs text-text-muted">{t(`vr.transportMenu.worlds.${MAP_ENTRY.id}.desc`)}</span>
+          </span>
+        </button>
 
         <div className="grid grid-cols-2 gap-3">
           {TRANSPORT_WORLDS.map((w) => (
@@ -3304,7 +3321,6 @@ const MAX_MAP_ZOOM = 8
 
 function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
   const { t } = useI18n()
-  const navigate = useNavigate()
   const playerMarkerRef = useRef(null)
   const playerArrowRef = useRef(null)
   const svgWrapRef = useRef(null)
@@ -3394,23 +3410,9 @@ function WorldMap({ open, onClose, playerPositionRef, playerRotationRef }) {
       >
         <div className="mb-2 flex items-center justify-between gap-6">
           <p className="text-sm font-bold" style={{ color: '#e8c477' }}>{t('vr.worldMap.title')}</p>
-          <div className="flex items-center gap-3">
-            {/* Este minimapa 2D es solo el campus — el mapa-mundo 3D
-                (/vr/mapa, WorldMapPage.jsx) enlaza aquí porque abrir esto con
-                M ya es un hábito conocido; el portal físico en el mundo lo
-                abre también, pero es mucho menos descubrible. */}
-            <button
-              type="button"
-              onClick={() => navigate('/vr/mapa')}
-              className="rounded-full border px-3 py-1 text-xs font-bold transition hover:scale-105"
-              style={{ borderColor: '#c9a227', color: '#e8c477' }}
-            >
-              🗺️ {t('vr.worldMap.openAtlas')}
-            </button>
-            <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.worldMap.closeAria')}>
-              ✕
-            </button>
-          </div>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-text" aria-label={t('vr.worldMap.closeAria')}>
+            ✕
+          </button>
         </div>
         {/* Circular viewport — rueda del mouse o pinch para zoom, arrastra para mover */}
         <div

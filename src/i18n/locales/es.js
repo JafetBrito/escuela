@@ -1263,7 +1263,6 @@ export const es = {
     worldMap: {
       title: '🗺️ Mapa del Campus — Oliver Academy',
       closeAria: 'Cerrar mapa',
-      openAtlas: 'Mapa 3D del Mundo',
       forest: 'Bosque de Arces',
       plaza: 'Plaza Central',
       dorms: 'Dormitorios',

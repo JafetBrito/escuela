@@ -1259,7 +1259,6 @@ export const en = {
     worldMap: {
       title: '🗺️ Campus Map — Oliver Academy',
       closeAria: 'Close map',
-      openAtlas: '3D World Map',
       forest: 'Maple Forest',
       plaza: 'Central Plaza',
       dorms: 'Dorms',

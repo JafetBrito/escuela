@@ -661,7 +661,6 @@ export const fr = {
     worldMap: {
       title: '🗺️ Carte du Campus — Oliver Academy',
       closeAria: 'Fermer la carte',
-      openAtlas: 'Carte 3D du Monde',
       forest: 'Forêt d\'Érables',
       plaza: 'Place Centrale',
       dorms: 'Dortoirs',
