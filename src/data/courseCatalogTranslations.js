@@ -135,6 +135,22 @@ export const COURSE_CATALOG_EN = {
     title: 'Machine Learning: How a Machine Thinks',
     description: 'The real mechanics behind AI, without complicated formulas: what "training" a model means, the three learning styles, how a neural network works inside, and how you measure whether a model is actually good.',
   },
+  'course-paperclip': {
+    title: 'Paperclip: Organize a Team of AI Agents',
+    description: 'A newer project than OpenClaw, in the same space: instead of a single assistant, Paperclip organizes entire teams of AI agents as if they were a company, with an org chart, budgets, and approvals.',
+  },
+  'course-historia-agentes-ia': {
+    title: 'History of Autonomous AI Agents',
+    description: 'From the first viral experiments of 2023 to open-source assistants and the tools that coordinate whole teams of agents. The recent, ongoing history of how AI went from answering to acting.',
+  },
+  'course-crea-app-ia': {
+    title: "Build Your First App with AI: A Hands-On Course",
+    description: 'From an idea to a real app published online, built by describing it in natural language: define your app, pick a simple stack, write your first build prompts, debug it, save data, test it, and publish it for free.',
+  },
+  'course-automatizacion-python-ia': {
+    title: 'Automation with Python and AI',
+    description: 'Make your computer work on its own: Python scripts that organize files, call an AI to summarize or classify, and run on a schedule — with error handling included.',
+  },
   'course-bash': {
     title: 'Bash from Scratch',
     description: 'Master the Linux/Mac terminal: navigation, files, pipes, grep, permissions, and scripts. With an interactive terminal to practice in every lesson.',
@@ -348,12 +364,12 @@ export const COURSE_CATALOG_EN = {
     description: "Think like an attacker to defend better: reconnaissance, common vulnerabilities, and how to report findings responsibly, always within an ethical and legal framework. Coming soon.",
   },
   'course-open-claw': {
-    title: 'Open Claw',
-    description: "Explore an open source project from start to finish: how it's structured, how people contribute, and what you can learn by reading other people's code. Coming soon.",
+    title: 'OpenClaw: Your Open-Source AI Assistant',
+    description: "An open-source AI assistant that runs on your own computer and talks to you on WhatsApp, Telegram, Discord, or Slack. Install it, understand its architecture, and learn to read and contribute to a real, very active project.",
   },
   'course-fuentes-abiertas': {
-    title: 'Open Source',
-    description: 'What open source software is, why it matters, and how to start contributing to real projects: licenses, pull requests, and the culture behind open source. Coming soon.',
+    title: 'Open Source Fundamentals',
+    description: "The general rules of any open source project: what it really is, licenses without legal jargon, how to read an unfamiliar repository, the Pull Request workflow, and how a project half the internet depends on stays alive (or doesn't).",
   },
   'course-historia-linux': {
     title: 'History of Linux: From Free Software to the Whole World',

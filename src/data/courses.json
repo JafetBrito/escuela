@@ -153,6 +153,17 @@
     "locked": false
   },
   {
+    "id": "course-crea-app-ia",
+    "title": "Crea tu Primera App con IA: Curso Práctico",
+    "description": "De una idea a una app real, publicada en internet, construida describiéndola en lenguaje natural: define tu app, elige un stack simple, escribe tus primeros prompts de construcción, depura, guarda datos, pruébala y publícala gratis.",
+    "icon": "🚀",
+    "color": "#22c55e",
+    "category": "Inteligencia Artificial",
+    "subcategory": "Creación de Apps con IA",
+    "difficulty": "principiante",
+    "locked": false
+  },
+  {
     "id": "course-004",
     "title": "Gestión del tiempo para estudiantes",
     "description": "Técnicas probadas como Pomodoro, time-blocking y la matriz de Eisenhower, adaptadas a la vida real de un estudiante con tareas, exámenes y vida fuera de la escuela. Aprenderás a identificar por qué procrastinas y a construir un sistema que sí sostengas. Próximamente.",
@@ -834,23 +845,58 @@
   },
   {
     "id": "course-open-claw",
-    "title": "Open Claw",
-    "description": "Explora un proyecto de código abierto de principio a fin: cómo está estructurado, cómo se contribuye y qué puedes aprender leyendo el código de otros. Próximamente.",
-    "icon": "🦾",
+    "title": "OpenClaw: Tu Asistente de IA de Código Abierto",
+    "description": "Un asistente de IA de código abierto que corre en tu propia computadora y te habla en WhatsApp, Telegram, Discord o Slack. Instálalo, entiende su arquitectura, y aprende a leer y contribuir a un proyecto real y muy activo.",
+    "icon": "🦞",
     "color": "#f97316",
     "category": "Programación",
     "subcategory": "Código Abierto",
-    "locked": true
+    "locked": false,
+    "difficulty": "intermedio"
+  },
+  {
+    "id": "course-paperclip",
+    "title": "Paperclip: Organiza un Equipo de Agentes de IA",
+    "description": "Un proyecto más nuevo que OpenClaw, en el mismo terreno: en vez de un solo asistente, Paperclip organiza equipos completos de agentes de IA como si fueran una empresa, con organigrama, presupuestos y aprobaciones.",
+    "icon": "📎",
+    "color": "#0ea5e9",
+    "category": "Programación",
+    "subcategory": "Código Abierto",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
+    "id": "course-historia-agentes-ia",
+    "title": "Historia de los Agentes de IA Autónomos",
+    "description": "De los primeros experimentos virales de 2023 a los asistentes de código abierto y las herramientas que coordinan equipos completos de agentes. La historia reciente y en curso de cómo la IA pasó de responder a actuar.",
+    "icon": "🤖",
+    "color": "#0ea5e9",
+    "category": "Programación",
+    "subcategory": "Código Abierto",
+    "difficulty": "intermedio",
+    "locked": false
+  },
+  {
+    "id": "course-automatizacion-python-ia",
+    "title": "Automatización con Python e IA",
+    "description": "Haz que tu computadora trabaje sola: scripts de Python que organizan archivos, llaman a una IA para resumir o clasificar, y corren solos en un horario — con manejo de errores incluido.",
+    "icon": "🐍",
+    "color": "#eab308",
+    "category": "Programación",
+    "subcategory": "APIs y Automatización",
+    "difficulty": "intermedio",
+    "locked": false
   },
   {
     "id": "course-fuentes-abiertas",
-    "title": "Fuentes Abiertas",
-    "description": "Qué es el software de código abierto, por qué importa, y cómo empezar a contribuir a proyectos reales: licencias, pull requests, y la cultura detrás del open source. Próximamente.",
+    "title": "Fundamentos del Código Abierto",
+    "description": "Las reglas generales de cualquier proyecto de código abierto: qué es realmente, licencias sin jerga legal, cómo leer un repositorio desconocido, el flujo de Pull Requests, y cómo se sostiene (o no) un proyecto del que depende medio internet.",
     "icon": "📖",
     "color": "#84cc16",
     "category": "Programación",
     "subcategory": "Código Abierto",
-    "locked": true
+    "locked": false,
+    "difficulty": "principiante"
   },
   {
     "id": "course-consola-basica",

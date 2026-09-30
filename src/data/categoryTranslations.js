@@ -224,6 +224,7 @@ export const CATEGORY_NAME_EN = {
   'Actualidad de la IA': 'AI Today',
   'Ética de la IA': 'AI Ethics',
   'IA Generativa': 'Generative AI',
+  'Creación de Apps con IA': 'Building Apps with AI',
   Linux: 'Linux',
   'Historia y Cultura': 'History & Culture',
   'Linux en Móvil': 'Linux on Mobile',
