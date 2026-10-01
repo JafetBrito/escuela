@@ -127,10 +127,6 @@ export const COURSE_CATALOG_EN = {
     title: 'Master Gemini: Complete Guide',
     description: "Everything you need to get the most out of Gemini: the app, Google AI Studio, custom Gems, its integration with Gmail/Docs/Sheets, its huge context window, and how it honestly compares to Claude and GPT.",
   },
-  'course-repositorio-prompts': {
-    title: 'The Great Prompt Repository: Hundreds of Ready-to-Use Examples',
-    description: 'A huge library of ready-written prompts for writing, studying, coding, business, creativity, and decision-making — plus an in-depth module on using JSON to get structured responses from AI.',
-  },
   'course-ml-fundamentos': {
     title: 'Machine Learning: How a Machine Thinks',
     description: 'The real mechanics behind AI, without complicated formulas: what "training" a model means, the three learning styles, how a neural network works inside, and how you measure whether a model is actually good.',

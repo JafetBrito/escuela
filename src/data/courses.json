@@ -131,17 +131,6 @@
     "locked": false
   },
   {
-    "id": "course-repositorio-prompts",
-    "title": "El Gran Repositorio de Prompts: Cientos de Ejemplos Listos para Usar",
-    "description": "Una biblioteca enorme de prompts ya escritos para escribir, estudiar, programar, hacer negocios, crear y decidir — más un módulo a fondo sobre cómo usar JSON para pedirle a la IA respuestas estructuradas.",
-    "icon": "📚",
-    "color": "#f97316",
-    "category": "Inteligencia Artificial",
-    "subcategory": "Prompt Engineering",
-    "difficulty": "intermedio",
-    "locked": false
-  },
-  {
     "id": "course-ml-fundamentos",
     "title": "Aprendizaje Automático: Cómo Piensa una Máquina",
     "description": "La mecánica real detrás de la IA, sin fórmulas complicadas: qué significa \"entrenar\" un modelo, los tres estilos de aprendizaje, cómo funciona una red neuronal por dentro, y cómo se mide si un modelo es realmente bueno.",

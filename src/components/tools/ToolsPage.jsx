@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import Calculator from './Calculator'
+import { PROMPT_LIBRARY } from '../../data/promptLibrary'
 import { tr } from '../../i18n'
 
 // ── Formula data ──────────────────────────────────────────────────────────────
@@ -171,6 +172,87 @@ function UnitConverter() {
   )
 }
 
+// ── Prompts ───────────────────────────────────────────────────────────────────
+// Recurso de consulta, no un curso: cada entrada se copia con un clic. El
+// texto entre [corchetes] son placeholders a reemplazar — ver promptLibrary.js.
+function PromptLibrary() {
+  const [query, setQuery] = useState('')
+  const [openCat, setOpenCat] = useState(PROMPT_LIBRARY[0].id)
+  const [copiedKey, setCopiedKey] = useState(null)
+
+  const q = query.trim().toLowerCase()
+  const filtered = useMemo(() => {
+    if (!q) return PROMPT_LIBRARY
+    return PROMPT_LIBRARY
+      .map((cat) => ({ ...cat, items: cat.items.filter((it) => it.prompt.toLowerCase().includes(q) || it.note.toLowerCase().includes(q)) }))
+      .filter((cat) => cat.items.length > 0)
+  }, [q])
+
+  const copy = async (text, key) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500)
+    } catch { /* clipboard sin permiso: el usuario puede seleccionar el texto a mano */ }
+  }
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={tr('🔍 Buscar un prompt (ej. "correo", "depurar", "JSON")...', '🔍 Search a prompt (e.g. "email", "debug", "JSON")...')}
+        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-text outline-none focus:border-primary"
+      />
+      {filtered.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-muted">{tr('Ningún prompt coincide con tu búsqueda.', 'No prompts match your search.')}</p>
+      )}
+      {filtered.map((cat) => (
+        <div key={cat.id} className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <button
+            type="button"
+            onClick={() => setOpenCat(openCat === cat.id ? null : cat.id)}
+            className="flex w-full items-center justify-between gap-3 bg-gradient-to-r from-orange-600/90 to-amber-500/80 px-5 py-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{cat.icon}</span>
+              <span className="font-extrabold text-white">{cat.label}</span>
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">{cat.items.length}</span>
+            </div>
+            <span className="text-white">{(openCat === cat.id || q) ? '▲' : '▼'}</span>
+          </button>
+          {(openCat === cat.id || q) && (
+            <div className="space-y-px bg-border">
+              {cat.intro && <p className="bg-surface px-4 py-3 text-xs text-text-muted">{cat.intro}</p>}
+              {cat.items.map((it, i) => {
+                const key = `${cat.id}-${i}`
+                return (
+                  <div key={key} className="flex items-start justify-between gap-3 bg-surface p-4">
+                    <div className="min-w-0 flex-1">
+                      <code className="block whitespace-pre-wrap break-words font-mono text-sm text-text">{it.prompt}</code>
+                      <p className="mt-1 text-xs text-text-muted/70">{it.note}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copy(it.prompt, key)}
+                      className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                        copiedKey === key ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'
+                      }`}
+                    >
+                      {copiedKey === key ? tr('✓ Copiado', '✓ Copied') : tr('Copiar', 'Copy')}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ToolsPage() {
   const [activeTab, setActiveTab] = useState('calculadora')
@@ -180,6 +262,7 @@ export default function ToolsPage() {
     { id: 'calculadora', label: 'Calculadora', icon: '🔢' },
     { id: 'formulas',    label: tr('Fórmulas', 'Formulas'),    icon: '📐' },
     { id: 'conversor',   label: 'Conversor',   icon: '↔️' },
+    { id: 'prompts',     label: 'Prompts',     icon: '📋' },
   ]
 
   return (
@@ -193,7 +276,7 @@ export default function ToolsPage() {
           <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-500 px-6 py-8 shadow-lg">
             <h1 className="text-3xl font-extrabold text-white drop-shadow-sm">🔧 Herramientas</h1>
             <p className="mt-1 text-sm font-medium text-white/85">
-              {tr('Calculadora científica, fórmulas de referencia y conversor de unidades — disponibles sin internet.', 'Scientific calculator, reference formulas and unit converter — available offline.')}
+              {tr('Calculadora científica, fórmulas de referencia, conversor de unidades y una biblioteca de prompts para copiar — disponibles sin internet.', 'Scientific calculator, reference formulas, a unit converter, and a copyable prompt library — available offline.')}
             </p>
           </div>
 
@@ -270,6 +353,16 @@ export default function ToolsPage() {
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-text-muted/60">{tr('Conversor de unidades', 'Unit converter')}</h2>
                 <UnitConverter />
+              </div>
+            )}
+
+            {/* ── Prompts ── */}
+            {activeTab === 'prompts' && (
+              <div>
+                <p className="mb-3 text-xs text-text-muted">
+                  {tr('Una biblioteca de consulta, no un curso: busca, copia y adapta — reemplaza lo que esté entre [corchetes].', 'A reference library, not a course: search, copy, and adapt — replace anything in [brackets].')}
+                </p>
+                <PromptLibrary />
               </div>
             )}
           </div>
