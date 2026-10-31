@@ -107,7 +107,15 @@ export const PRESETS = {
     hemiSky: '#cfe0ff', hemiGround: '#6f6a8f', hemiI: 1.05, dirCol: '#ffd9a0', dirI: 2.1,
     ridgeNear: '#6a78a8', ridgeFar: '#f2d3bd', bloom: 0.45, glow: 1.0, flies: 0.6, stars: false,
   },
-  dia: PRESETS_GRIEGO.dia, // la versión original no tenía mediodía; reutiliza el cielo claro
+  // "Mañana dorada": mismo lenguaje que el atardecer (horizonte durazno, sol cálido y bajo que da sombras
+  // largas, niebla tibia) pero con cielo azul turquesa — no el azul/blanco lavado de antes.
+  dia: {
+    label: tr('Día', 'Day'), icon: '☀️',
+    skyTop: '#3f86d6', skyMid: '#8fc4ee', skyHor: '#ffdcae',
+    fog: '#f0d3b0', sunCol: '#fff0c4', sunEl: 26, sunAz: 38,
+    hemiSky: '#cfe3ff', hemiGround: '#7d6a4a', hemiI: 0.95, dirCol: '#ffd9a0', dirI: 3.1,
+    ridgeNear: '#5f7fb4', ridgeFar: '#f2d2b0', bloom: 0.42, glow: 0.7, flies: 0.2, stars: false,
+  },
   noche: PRESETS_GRIEGO.noche,
 }
 export function presetForHour(h) {

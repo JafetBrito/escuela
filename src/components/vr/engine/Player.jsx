@@ -22,7 +22,6 @@ import {
   COLLISION_RADIUS,
   WALK_CYCLE_SPEED,
   WALK_BOB_HEIGHT,
-  WALK_TILT,
   TURN_SPEED,
   CAMERA_COLLISION_MARGIN,
   CAMERA_SMOOTHING,
@@ -83,6 +82,19 @@ export function PlayerAvatarBody({ avatarId }) {
   return <MascotMesh mascot={avatarWithOverride} />
 }
 
+// Animación procedural de caminata (los .glb no traen esqueleto ni animaciones, son mallas de una pieza):
+// rebote por paso, balanceo lateral (waddle), inclinación al frente según la velocidad y un respiro al
+// estar quieto. `baseScale` = escala del grupo; el pie queda en el suelo gracias a MODEL_HALF_HEIGHT.
+function animateBody(g, phase, spd, time, baseScale) {
+  const moving = spd > 0.02
+  const bob = moving ? Math.abs(Math.sin(phase)) * WALK_BOB_HEIGHT * 0.7 * Math.min(1.4, spd) : Math.sin(time * 2) * 0.004
+  g.position.y = bob + baseScale * MODEL_HALF_HEIGHT
+  g.rotation.z = moving ? Math.sin(phase) * 0.13 * Math.min(1.2, spd) : 0
+  g.rotation.x = moving ? 0.1 + 0.07 * Math.min(1.8, spd) : 0
+  const sq = moving ? Math.sin(phase * 2) * 0.035 : Math.sin(time * 2) * 0.012
+  g.scale.set(baseScale * (1 - sq * 0.5), baseScale * (1 + sq), baseScale * (1 - sq * 0.5))
+}
+
 // Your mascot, moved with WASD/arrow keys or the touch D-pad. It bobs and
 // tilts while walking, can jump, sits on the scenery's real ground height,
 // and can't walk through scenery geometry — all via raycasts against the
@@ -111,6 +123,10 @@ export function Player({
   // gravedad se resuelve solo con el raycast al suelo del `scenery`, sin el
   // character controller — que si no encuentra collider debajo cae para siempre.
   raycastGround = false,
+  // Luz de relleno que acompaña al personaje, siempre del lado de la cámara: los .glb de avatar tienen
+  // texturas oscuras (chaqueta/pantalón casi negros) y a la sombra de un mundo con poca luz ambiente se
+  // ven como una silueta. Solo la pide la plaza; el resto de mundos conserva su iluminación.
+  fillLight = false,
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -119,6 +135,9 @@ export function Player({
   const { world } = useRapier()
   const cameraTarget = useRef(new THREE.Vector3())
   const walkCycle = useRef(0)
+  const compRef = useRef()
+  const fillRef = useRef()
+  const comp = useRef({ ready: false, phase: 0, yaw: 0, moving: false })
   const velocityY = useRef(0)
   const velocityXZ = useRef(new THREE.Vector3())
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
@@ -153,7 +172,7 @@ export function Player({
     camera.updateProjectionMatrix()
   }, [camera, fov])
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!group.current) return
     const keys = keysRef.current
     const pos = group.current.position
@@ -233,7 +252,7 @@ export function Player({
       let angleDiff = targetAngle - group.current.rotation.y
       angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff))
       group.current.rotation.y += angleDiff * Math.min(1, TURN_SPEED * delta)
-      walkCycle.current += delta * WALK_CYCLE_SPEED
+      walkCycle.current += delta * WALK_CYCLE_SPEED * (0.6 + 0.4 * Math.min(1.8, velocityXZ.current.length() / MOVE_SPEED))
     } else {
       walkCycle.current = 0
     }
@@ -318,11 +337,39 @@ export function Player({
     }
 
     if (meshGroup.current) {
-      const bob = isMoving ? Math.abs(Math.sin(walkCycle.current)) * WALK_BOB_HEIGHT : 0
-      const tilt = isMoving ? Math.sin(walkCycle.current) * WALK_TILT : 0
-      meshGroup.current.position.y = bob + PLAYER_SCALE * visualScale * MODEL_HALF_HEIGHT
-      meshGroup.current.rotation.z = tilt
-      meshGroup.current.rotation.x = isMoving ? WALK_TILT * 0.6 : 0
+      const spd = Math.min(1.8, velocityXZ.current.length() / MOVE_SPEED) // 0 quieto · 1 caminando · 1.8 corriendo
+      animateBody(meshGroup.current, walkCycle.current, spd, state.clock.elapsedTime, PLAYER_SCALE * visualScale)
+    }
+
+    if (fillRef.current) {
+      const dx = camera.position.x - pos.x, dz = camera.position.z - pos.z, d = Math.hypot(dx, dz) || 1
+      fillRef.current.position.set(pos.x + (dx / d) * 0.8, pos.y + 0.55, pos.z + (dz / d) * 0.8)
+    }
+
+    // Compañero: va por su cuenta (no pegado al costado): corre hasta quedar cerca, mira hacia donde
+    // va y camina con el mismo balanceo que el jugador. Si se queda muy lejos (teleport) reaparece cerca.
+    if (companionFollows && compRef.current) {
+      const c = compRef.current, cs = comp.current
+      if (!cs.ready || c.position.distanceTo(pos) > 14) { c.position.set(pos.x - 0.8, pos.y, pos.z - 0.8); cs.ready = true }
+      const dx = pos.x - c.position.x, dz = pos.z - c.position.z, dist = Math.hypot(dx, dz)
+      const STOP = 0.9
+      cs.moving = dist > STOP + 0.05
+      if (cs.moving) {
+        const step = Math.min(MOVE_SPEED * 1.3 * delta, dist - STOP, 0.1 + (dist - STOP) * 6 * delta)
+        c.position.x += (dx / dist) * step
+        c.position.z += (dz / dist) * step
+        cs.phase += delta * WALK_CYCLE_SPEED * 1.1
+        const ta = Math.atan2(dx, dz)
+        cs.yaw += Math.atan2(Math.sin(ta - cs.yaw), Math.cos(ta - cs.yaw)) * Math.min(1, TURN_SPEED * delta)
+      } else {
+        cs.phase = 0
+        cs.yaw += Math.atan2(Math.sin(group.current.rotation.y - cs.yaw), Math.cos(group.current.rotation.y - cs.yaw)) * Math.min(1, 3 * delta)
+      }
+      c.rotation.y = cs.yaw
+      const gy = getGroundY(raycaster, scenery, groundRayHeight, c.position.x, c.position.z)
+      c.position.y += (gy - c.position.y) * Math.min(1, 14 * delta)
+      const inner = c.children[0]
+      if (inner) animateBody(inner, cs.phase, cs.moving ? 1 : 0, state.clock.elapsedTime + 1.7, c.userData.scale)
     }
 
     // Camera orbits around the player based on mouse/touch drag (yaw + pitch)
@@ -423,6 +470,15 @@ export function Player({
         enabledRotations={[false, false, false]}>
         <CapsuleCollider args={[0.08, 0.10]} position={[0, 0.18, 0]} />
       </RigidBody>
+      {fillLight && <pointLight ref={fillRef} color="#fff1dc" intensity={1.8} distance={4} decay={2} />}
+      {/* Compañero que sigue (mascota si juegas con el avatar, y al revés) — en coordenadas de mundo */}
+      {companionFollows && (
+        <group ref={compRef} userData={{ scale: PLAYER_SCALE * (activeChar === 'avatar' ? MASCOT_RELATIVE_SCALE : AVATAR_RELATIVE_SCALE) }}>
+          <group scale={PLAYER_SCALE * (activeChar === 'avatar' ? MASCOT_RELATIVE_SCALE : AVATAR_RELATIVE_SCALE)}>
+            {activeChar === 'avatar' ? <MascotMesh mascot={mascot} skin={skin} /> : <PlayerAvatarBody avatarId={avatarId} />}
+          </group>
+        </group>
+      )}
       {/* Visual group — camera target + mesh + chat bubbles */}
       <group ref={group}>
         {/* Each character keeps its OWN relative scale (AVATAR_RELATIVE_SCALE /
@@ -435,22 +491,12 @@ export function Player({
               <group scale={AVATAR_RELATIVE_SCALE}>
                 <PlayerAvatarBody avatarId={avatarId} />
               </group>
-              {companionFollows && mascot && (
-                <group position={[1.4, 0, 0]} scale={MASCOT_RELATIVE_SCALE}>
-                  <MascotMesh mascot={mascot} skin={skin} />
-                </group>
-              )}
             </>
           ) : (
             <>
               <group scale={MASCOT_RELATIVE_SCALE}>
                 <MascotMesh mascot={mascot} skin={skin} />
               </group>
-              {companionFollows && (
-                <group position={[1.6, 0, 0]} scale={AVATAR_RELATIVE_SCALE}>
-                  <PlayerAvatarBody avatarId={avatarId} />
-                </group>
-              )}
             </>
           )}
         </group>

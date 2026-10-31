@@ -420,12 +420,16 @@ export const OLIVER_CLASSES = {
 // convention (+Z), so the avatar visibly "strafes" instead of facing the way
 // it walks — same kind of fix already applied to mascots in mascotRegistry.js.
 // If a model still looks off after this, flip the sign (Math.PI/2 <-> -Math.PI/2).
+// Los .glb miden ~0.24 de ancho (x) por ~0.74 de fondo (z): la persona mira a lo largo de ±X, no de
+// ±Z. Para que mire hacia +Z (el avance del motor) hay que girarla ±90°, nunca 180° (que la deja igual de
+// de lado). Si de frente se ve de espaldas, cambiar el signo.
+const AVATAR_FACING = -Math.PI / 2
 export const PLAYER_AVATARS = [
   // modelRotationY: los .glb se exportan mirando hacia -Z (dan la espalda), igual
   // que el gato (mascotRegistry usa Math.PI). Math.PI/2 los dejaba de perfil
   // ("caminaba de lado"); Math.PI los alinea con la dirección de avance (+Z).
-  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb', modelRotationY: Math.PI },
-  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb', modelRotationY: Math.PI },
+  { id: 'hombre', icon: '🧑', color: '#3b82f6', label: 'Hombre', modelPath: '/MODELOS 3D/AVATARES/hombre.glb', modelRotationY: AVATAR_FACING },
+  { id: 'mujer',  icon: '👩', color: '#ec4899', label: 'Mujer',  modelPath: '/MODELOS 3D/AVATARES/mujer.glb', modelRotationY: AVATAR_FACING },
 ]
 
 const DEFAULT_PLAYER = {

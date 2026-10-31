@@ -2667,6 +2667,7 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
           skin={skin}
           scenery={shell}
           raycastGround
+          fillLight
           groundRayHeight={40}
           keysRef={keysRef}
           cameraRef={cameraRef}

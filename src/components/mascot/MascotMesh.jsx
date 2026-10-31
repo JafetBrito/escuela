@@ -83,12 +83,29 @@ function GltfMesh({ modelPath, rotationY = 0, offsetY = 0 }) {
     clone.scale.setScalar(scale)
     clone.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
 
+    // Los .glb de Tripo no declaran metallicFactor → glTF asume 1.0 (metal puro). Sin mapa
+    // de entorno un metal refleja "nada" y se ve NEGRO, sin importar cuánta luz haya.
+    clone.traverse((o) => {
+      if (!o.isMesh) return
+      const fix = (m) => {
+        if (!m || m.metalness === undefined || m.metalness < 0.5) return m
+        const c = m.clone(); c.metalness = 0; c.metalnessMap = null; c.roughnessMap = null; c.roughness = 0.9; c.normalMap = null
+        return c
+      }
+      o.material = Array.isArray(o.material) ? o.material.map(fix) : fix(o.material)
+    })
+
     return clone
   }, [scene])
 
   return (
-    <group ref={ref} rotation={[0, rotationY, 0]}>
-      <primitive object={model} />
+    // El balanceo ocioso (useIdleFloat) reescribe rotation.y del grupo con `ref` cada frame, así
+    // que la rotación del modelo va en un grupo interno: antes `modelRotationY` se perdía en el
+    // primer frame y por eso los avatares "caminaban de lado" por más que se calibrara el ángulo.
+    <group ref={ref}>
+      <group rotation={[0, rotationY, 0]}>
+        <primitive object={model} />
+      </group>
     </group>
   )
 }
