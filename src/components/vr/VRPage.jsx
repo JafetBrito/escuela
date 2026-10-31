@@ -4319,6 +4319,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           {worldTreeMode && <pointLight position={[0, 22, 0]} intensity={3.0} color="#44ffaa" distance={80} />}
           {worldTreeMode && <pointLight position={[0, 3, 18]} intensity={2.0} color="#aaffee" distance={35} />}
           {worldTreeMode && <directionalLight position={[0, 8, 20]} intensity={0.8} color="#ccffdd" />}
+          {/* Suspense AFUERA de <Physics>: rapier suspende mientras carga su wasm, y si nadie
+              dentro del Canvas lo atrapa, r3f suspende el árbol DOM (<Block>), React corre el
+              cleanup del Canvas y 500 ms después le mata el contexto WebGL ("Context Lost" →
+              crash en EffectComposer.addPass). */}
+          <Suspense fallback={null}>
           <Physics gravity={[0, -20, 0]}>
           <Suspense fallback={null}>
             <World
@@ -4360,6 +4365,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
             {rescuePos && <FallRescueCat position={rescuePos} />}
           </Suspense>
           </Physics>
+          </Suspense>
         </Canvas>}
 
         {/* GLB asset progress — slim bar while models stream in after Canvas mounts */}
