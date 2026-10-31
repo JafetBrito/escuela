@@ -9,11 +9,11 @@ import { playMeow } from '../../../utils/meow'
 // cómo se ven: iluminados por la plaza nueva y, opcionalmente, "estilizados".
 export const DEMO_NPCS = [
   {
-    id: 'jafet', mascotId: 10, pos: [4.2, 9.5], size: 2.1,
+    id: 'jafet', mascotId: 10, pos: [5, 12.5], size: 2.1,
     script: 'Bienvenido a la Plaza de las Academias. Esta es la nueva casa del campus: cada columna de luz que ves en el horizonte es un camino hacia una academia. Inteligencia Artificial, Medicina, Filosofía y Linux. Sigue la luz, recoge las gemas y deja que la curiosidad te guíe.',
   },
   {
-    id: 'einstein', mascotId: 9, pos: [-5, 11.5], size: 1.9,
+    id: 'einstein', mascotId: 9, pos: [-5.5, 13.5], size: 1.9,
     script: 'Hola, soy Albert. Observa el cielo: relativamente hablando, el atardecer dura exactamente lo que tardas en decidir a qué academia ir. Prueba a cambiar la hora del día arriba a la derecha. El campus cambia de ánimo contigo.',
   },
   {

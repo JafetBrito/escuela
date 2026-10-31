@@ -89,6 +89,9 @@ import { useWorldTreeGround, WT_CLASS_NODES } from './worlds/useWorldTreeGround'
 import { useImportedGlbGround } from './worlds/useImportedGlbGround'
 import SceneEffects from '../shared/SceneEffects'
 import DayNightCycle from './DayNightCycle'
+import PlazaScenery from './lookdev/PlazaScenery'
+import { PRESETS, presetForHour, PLAZA_Y } from './lookdev/plazaWorld'
+import { startAmbience, setAmbiencePreset, shutdownAmbience } from './lookdev/plazaAudio'
 import {
   PLAYER_SCALE,
   PLAYER_HEIGHT,
@@ -2599,6 +2602,79 @@ function BirthdayIntroScreen({ name, onEnter }) {
   )
 }
 
+// La Plaza de las Academias (/vr/plaza): el paisaje low-poly atmosférico con
+// toque griego (lookdev/PlazaScenery) enchufado a los mismos sistemas del VR
+// de siempre — Player (raycast contra la "cáscara" invisible), IdleNpc,
+// tarjetas de misión, NpcSpeechPlayer, chat y HUD. El paisaje está diseñado a
+// otra escala que el Campus, por eso PLAZA_S lo encoge al tamaño del jugador.
+const PLAZA_S = 0.6
+const ambienceOf = (id) => (id === 'dia' ? 'atardecer' : id) // el ambiente sonoro no tiene acorde de mediodía
+const PLAZA_NPC_ANGLES = [0, 20, 70, 110, 160, 180, 200, 250, 270, 290, 340] // sin 90°: ese es el camino de entrada
+function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearbyNpcChange, onGem, remoteTransformsRef, remoteActionsRef, onSelectPlayer }) {
+  const { lang } = useI18n()
+  const spawnedNpcs = useSpawnedNpcStore((s) => s.npcs)
+  const [shell, setShell] = useState(null)
+  const [presetId, setPresetId] = useState(() => presetForHour(useDayNightStore.getState().getTimeOfDay()))
+  const noChannelRef = useRef(null)
+
+  // La hora del mundo (la misma que el Campus, incluido el override del admin) elige la paleta.
+  useEffect(() => {
+    const id = setInterval(() => setPresetId(presetForHour(useDayNightStore.getState().getTimeOfDay())), 20000)
+    return () => clearInterval(id)
+  }, [])
+  // Ambiente sintetizado (Web Audio): arranca con el primer gesto, se corta al salir.
+  useEffect(() => {
+    const go = () => startAmbience(ambienceOf(presetId))
+    window.addEventListener('pointerdown', go, { once: true })
+    window.addEventListener('keydown', go, { once: true })
+    return () => { window.removeEventListener('pointerdown', go); window.removeEventListener('keydown', go); shutdownAmbience() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar; los cambios de paleta van por el efecto de abajo
+  }, [])
+  useEffect(() => { setAmbiencePreset(ambienceOf(presetId)) }, [presetId])
+
+  const ringNpcs = useMemo(() => {
+    const seen = new Set()
+    return [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
+      .filter((n) => !seen.has(n.id) && seen.add(n.id))
+      .slice(0, PLAZA_NPC_ANGLES.length)
+      .map((npc, i) => {
+        const a = (PLAZA_NPC_ANGLES[i] * Math.PI) / 180
+        return { ...localizeNpcDialogue(npc, lang), position: [Math.cos(a) * 16 * PLAZA_S, PLAZA_Y * PLAZA_S, Math.sin(a) * 16 * PLAZA_S] }
+      })
+  }, [lang])
+  const npcPositions = useMemo(
+    () => [...ringNpcs, ...spawnedNpcs].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
+    [ringNpcs, spawnedNpcs],
+  )
+
+  return (
+    <>
+      <PlazaScenery p={PRESETS[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />
+      {ringNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
+      {spawnedNpcs.map((npc) => <IdleNpc key={npc._spawnId} config={npc} playerPositionRef={playerPositionRef} />)}
+      <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} npcs={npcPositions} />
+      <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />
+      <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
+      {shell && (
+        <Player
+          mascot={mascot}
+          skin={skin}
+          scenery={shell}
+          raycastGround
+          groundRayHeight={40}
+          keysRef={keysRef}
+          cameraRef={cameraRef}
+          playerPositionRef={playerPositionRef}
+          playerRotationRef={playerRotationRef}
+          authorName={authorName}
+          playerId={playerId}
+          spawnAt={[0, 0, 44 * PLAZA_S]}
+        />
+      )}
+    </>
+  )
+}
+
 // Picks the test ground or the real city model (USE_TEST_SCENERY), then adds
 // the player, NPCs, remote players, and the portal to the player's Room.
 // When roomMode/anfiteatroMode/worldTreeMode=true, renders the respective world.
@@ -2631,6 +2707,8 @@ function World({
   birthdayMode,
   classroomMode,
   watchRoomMode,
+  plazaMode,
+  onGem,
   classId,
 }) {
   // Called unconditionally (before any of the per-mode early returns below)
@@ -2700,6 +2778,26 @@ function World({
         <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} npcs={linedNpcPositions} />
         <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
       </>
+    )
+  }
+
+  if (plazaMode) {
+    return (
+      <PlazaGroundWorld
+        mascot={mascot}
+        skin={skin}
+        keysRef={keysRef}
+        cameraRef={cameraRef}
+        playerPositionRef={playerPositionRef}
+        playerRotationRef={playerRotationRef}
+        authorName={authorName}
+        playerId={playerId}
+        onNearbyNpcChange={onNearbyNpcChange}
+        onGem={onGem}
+        remoteTransformsRef={remoteTransformsRef}
+        remoteActionsRef={remoteActionsRef}
+        onSelectPlayer={onSelectPlayer}
+      />
     )
   }
 
@@ -3231,6 +3329,7 @@ const TRANSPORT_WORLDS = [
   { id: 'campus',     emoji: '🏫', available: true,  path: '/vr' },
   { id: 'room',       emoji: '🏠', available: true,  path: '/vr/room' },
   { id: 'anfiteatro', emoji: '🎭', available: true,  path: '/vr/anfiteatro' },
+  { id: 'plaza',      emoji: '🏛️', available: true,  path: '/vr/plaza' },
   { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
@@ -3718,8 +3817,9 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false, watchRoomMode = false }) {
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false, watchRoomMode = false, plazaMode = false }) {
   const { t, lang } = useI18n()
+  const [plazaGems, setPlazaGems] = useState(null)
   const navigate = useNavigate()
   const { classId, roomId } = useParams()
   const keysRef = useMovementKeys()
@@ -3745,7 +3845,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const connected = useVrPresenceStore((s) => s.connected)
   const remotePlayerCount = useVrPresenceStore((s) => Object.keys(s.players).length)
   // Room, Anfiteatro, and WorldTree are private — no shared presence channel.
-  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode || classroomMode || watchRoomMode
+  const isPrivateWorld = roomMode || anfiteatroMode || worldTreeMode || testMode || birthdayMode || classroomMode || watchRoomMode || plazaMode
   // Sala de transmisión: mundo interior (como el salón) pero COMPARTIDO por su código, con canal propio.
   const indoorMode = classroomMode || watchRoomMode
   const vrAvatarId = useGameStore((s) => s.player.avatarId)
@@ -4177,10 +4277,11 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           }}
         >
           <color attach="background" args={[bgColor]} />
-          <fog attach="fog" args={fogArgs} />
+          {!plazaMode && <fog attach="fog" args={fogArgs} />}
           <SceneEffects
-            bloomIntensity={anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : 0.22}
-            vignetteDarkness={0.38}
+            cinematic={plazaMode}
+            bloomIntensity={plazaMode ? 0.3 : anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : 0.22}
+            vignetteDarkness={plazaMode ? 0.5 : 0.38}
             multisampling={0}
           />
           {/* Campus: DayNightCycle owns all lighting + streetlamps + sky color.
@@ -4189,7 +4290,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               "no quiero que salga en esta parte, pero no se lo quites al
               sistema global"). Solo afecta este modo, el Campus real sigue
               con campusMode=true de siempre. */}
-          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !indoorMode} />
+          <DayNightCycle campusMode={!anfiteatroMode && !roomMode && !worldTreeMode && !indoorMode && !plazaMode} />
           {flashlightOn && flashlightPurchased && (
             <FlashlightSpot playerPositionRef={playerPositionRef} cameraRef={cameraRef} />
           )}
@@ -4242,6 +4343,8 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               birthdayMode={birthdayMode}
               classroomMode={classroomMode}
               watchRoomMode={watchRoomMode}
+              plazaMode={plazaMode}
+              onGem={setPlazaGems}
               classId={classId}
             />
             {/* Parked companion mesh when follow mode is off */}
@@ -4257,6 +4360,12 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
 
         {/* Character switcher — centered above skill bar */}
         <CharSwitcherHud playerPositionRef={playerPositionRef} hudVisible={hudVisible} />
+
+        {plazaMode && plazaGems && (
+          <div className="pointer-events-none absolute left-3 top-14 z-20 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+            💎 {plazaGems.n}/{plazaGems.total}
+          </div>
+        )}
 
         {/* NPC proximity prompt — any NPC type */}
         {nearbyNpcId && !activeNpcId && (
@@ -4322,7 +4431,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* NPC mission card / nearby-NPC hint (campus, and el Mapa de Pruebas
             so admins can test NPC missions there too — the other private
             worlds are 1-player rooms with no real NPCs to show one for) */}
-        {(!isPrivateWorld || testMode) && (
+        {(!isPrivateWorld || testMode || plazaMode) && (
           activeNpcId ? (
             IDLE_NPC_IDS.has(activeNpcId) ? (
               <IdleNpcCard
@@ -4627,7 +4736,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

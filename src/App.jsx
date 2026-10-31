@@ -1049,6 +1049,18 @@ export default function App() {
           }
         />
         <Route
+          path="/vr/plaza"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+                <Suspense fallback={<RouteFallback />}>
+                  <VRPage plazaMode />
+                </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
+        <Route
           path="/vr/room"
           element={
             <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
