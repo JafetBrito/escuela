@@ -52,13 +52,14 @@ const stonePineGeo = () => mergeGeometries([
   part(new THREE.IcosahedronGeometry(1.3, 0).scale(1, 0.4, 1), '#5c8a4d', 0.3, 4.2, 0.2),
 ])
 
-function buildTerrain() {
+function buildTerrain(torre) {
   const SIZE = 440, SEG = 160, cell = SIZE / SEG
   const g = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG)
   g.rotateX(-Math.PI / 2)
   const pos = g.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color()
-  const grassA = new THREE.Color('#a9a45a'), grassB = new THREE.Color('#6f7f45'), meadow = new THREE.Color('#c9b765')
-  const rock = new THREE.Color('#c9bda5'), sand = new THREE.Color('#e6cf9f'), stone = new THREE.Color('#e4d8c0'), dirt = new THREE.Color('#cfa77a')
+  const grassA = new THREE.Color(torre ? '#7d8f45' : '#a9a45a'), grassB = new THREE.Color(torre ? '#3f6b4a' : '#6f7f45'), meadow = new THREE.Color(torre ? '#b4a64f' : '#c9b765')
+  const rock = new THREE.Color(torre ? '#7a6a82' : '#c9bda5'), sand = new THREE.Color(torre ? '#d6b58a' : '#e6cf9f')
+  const stone = new THREE.Color(torre ? '#cdb89a' : '#e4d8c0'), dirt = new THREE.Color(torre ? '#c79a6b' : '#cfa77a')
   for (let i = 0; i < pos.count; i++) {
     // Trama irregular: sin esto el low-poly se ve como una rejilla de cuadros.
     const x = pos.getX(i) + (hash(i, 3) - 0.5) * cell * 0.7, z = pos.getZ(i) + (hash(i, 7) - 0.5) * cell * 0.7
@@ -162,8 +163,8 @@ function Ridges({ p }) {
   ))
 }
 
-function Terrain() {
-  const geo = useMemo(() => buildTerrain(), [])
+function Terrain({ torre }) {
+  const geo = useMemo(() => buildTerrain(torre), [torre])
   return (
     <>
       <mesh geometry={geo} receiveShadow><meshStandardMaterial vertexColors flatShading roughness={1} /></mesh>
@@ -395,6 +396,132 @@ function Ruins() {
 }
 
 // ── Gemas y luciérnagas ──────────────────────────────────────────────────────
+
+// ═════════════ Variante "torre faro" (la primera versión, la del demo original) ═════════════
+const pineGeo = (low, high) => mergeGeometries([
+  part(new THREE.CylinderGeometry(0.18, 0.26, 1.2, 5), '#4a3426', 0, 0.6),
+  part(new THREE.ConeGeometry(1.5, 2.4, 6), low, 0, 2.0),
+  part(new THREE.ConeGeometry(1.15, 2.0, 6), low, 0, 3.2),
+  part(new THREE.ConeGeometry(0.75, 1.7, 6), high, 0, 4.3),
+])
+const roundGeo = (low, high) => mergeGeometries([
+  part(new THREE.CylinderGeometry(0.2, 0.3, 1.6, 5), '#4a3426', 0, 0.8),
+  part(new THREE.IcosahedronGeometry(1.5, 0), low, 0, 2.7),
+  part(new THREE.IcosahedronGeometry(1.0, 0), high, 0.55, 3.35, 0.2),
+])
+function scatterTorre() {
+  const R = rng(1337), buckets = { pineTeal: [], pineOlive: [], roundAmber: [], roundGreen: [], rocks: [] }
+  for (let gx = -175; gx <= 175; gx += 5.2) for (let gz = -175; gz <= 175; gz += 5.2) {
+    const x = gx + (R() - 0.5) * 4.6, z = gz + (R() - 0.5) * 4.6, r = Math.hypot(x, z)
+    if (r < 25 || r > 190) continue
+    const h = groundHeight(x, z)
+    if (h < WATER_Y + 0.6 || pathDist(x, z) < 8) continue
+    const forest = vnoise(x * 0.045 + 10, z * 0.045 - 4)
+    const s = 0.9 + R() * 0.9
+    if (R() < 0.05) { buckets.rocks.push({ x, y: h, z, s: 0.6 + R() * 1.8, ry: R() * 6.28 }); continue }
+    if (!(forest > 0.5 ? R() < 0.62 : R() < 0.05)) continue
+    const k = R()
+    buckets[k < 0.34 ? 'pineTeal' : k < 0.6 ? 'pineOlive' : k < 0.82 ? 'roundAmber' : 'roundGreen'].push({ x, y: h, z, s: s * (forest > 0.5 ? 1.1 : 0.9), ry: R() * 6.28 })
+  }
+  return buckets
+}
+function ForestTorre() {
+  const b = useMemo(() => scatterTorre(), [])
+  const g = useMemo(() => ({
+    pineTeal: pineGeo('#2f6b5f', '#3f8a6a'), pineOlive: pineGeo('#4f6b2f', '#7a8f3a'),
+    roundAmber: roundGeo('#d98a3d', '#e8b04a'), roundGreen: roundGeo('#8a9a3a', '#b0b84a'),
+    rocks: paint(new THREE.DodecahedronGeometry(1, 0), '#8a7a8f'),
+  }), [])
+  return (
+    <>
+      {['pineTeal', 'pineOlive', 'roundAmber', 'roundGreen'].map((k) => <Instances key={k} items={b[k]} geometry={g[k]} />)}
+      <Instances items={b.rocks} geometry={g.rocks} wind={false} />
+    </>
+  )
+}
+
+const TOWER_S = 0.75
+function Tower({ p }) {
+  const wins = useRef()
+  const winData = useMemo(() => {
+    const rows = [{ y: 8, R: 4.21 }, { y: 13, R: 3.9 }, { y: 18, R: 3.58 }, { y: 24, R: 3.27 }, { y: 30.6, R: 2.5 }], out = []
+    rows.forEach((row, ri) => { for (let k = 0; k < 8; k++) {
+      if (hash(ri, k) > 0.72) continue
+      const th = (k + 0.5) * (Math.PI / 4), rad = row.R * 0.924 + 0.03
+      out.push({ x: Math.sin(th) * rad, y: row.y, z: Math.cos(th) * rad, ry: th })
+    } })
+    return out
+  }, [])
+  useEffect(() => {
+    const d = new THREE.Object3D()
+    winData.forEach((w, i) => { d.position.set(w.x, w.y, w.z); d.rotation.set(0, w.ry, 0); d.updateMatrix(); wins.current.setMatrixAt(i, d.matrix) })
+    wins.current.instanceMatrix.needsUpdate = true
+  }, [winData])
+  const stone = (c) => <meshStandardMaterial color={c} flatShading roughness={0.95} />
+  const warm = useMemo(() => new THREE.Color('#ffcf7a'), [])
+  return (
+    <group scale={TOWER_S}>
+      <mesh position={[0, 2.5, 0]} castShadow receiveShadow><cylinderGeometry args={[5.6, 6.6, 5, 8]} />{stone('#c9b79c')}</mesh>
+      <mesh position={[0, 13, 0]} castShadow receiveShadow><cylinderGeometry args={[3.4, 4.4, 16, 8]} />{stone('#d8c7a8')}</mesh>
+      <mesh position={[0, 21.5, 0]} castShadow><cylinderGeometry args={[4.3, 4.3, 1, 8]} />{stone('#8c6f5a')}</mesh>
+      <mesh position={[0, 25, 0]} castShadow receiveShadow><cylinderGeometry args={[3.0, 3.4, 6, 8]} />{stone('#e0cfae')}</mesh>
+      <mesh position={[0, 28.3, 0]} castShadow><cylinderGeometry args={[4.2, 4.2, 0.6, 8]} />{stone('#8c6f5a')}</mesh>
+      <mesh position={[0, 30.6, 0]} castShadow><cylinderGeometry args={[2.4, 2.6, 4, 8]} />{stone('#d8c7a8')}</mesh>
+      <mesh position={[0, 36, 0]} castShadow><coneGeometry args={[3.6, 6.5, 8]} />{stone('#3d3a7a')}</mesh>
+      <mesh position={[0, 41.5, 0]}><cylinderGeometry args={[0.12, 0.2, 5, 6]} />{stone('#e8c766')}</mesh>
+      <mesh position={[0, 44.3, 0]}><sphereGeometry args={[0.55, 12, 8]} /><meshBasicMaterial color={new THREE.Color('#ffd978').multiplyScalar(3.2)} toneMapped={false} /></mesh>
+      <instancedMesh ref={wins} args={[undefined, undefined, winData.length]} frustumCulled={false}>
+        <boxGeometry args={[0.7, 1.15, 0.3]} />
+        <meshBasicMaterial color={warm.clone().multiplyScalar(p.glow)} toneMapped={false} />
+      </instancedMesh>
+      <LightPillar color="#ffd978" height={130} radius={1.4} position={[0, 45, 0]} />
+    </group>
+  )
+}
+function PlazaTorre() {
+  return (
+    <group>
+      <mesh position={[0, -0.05, 0]} receiveShadow><cylinderGeometry args={[PLAZA_R + 0.7, PLAZA_R + 0.9, 0.5, 48]} /><meshStandardMaterial color="#9c8466" flatShading roughness={1} /></mesh>
+      <mesh position={[0, 0.05, 0]} receiveShadow><cylinderGeometry args={[PLAZA_R, PLAZA_R, 0.4, 48]} /><meshStandardMaterial color="#cdb89a" flatShading roughness={1} /></mesh>
+      {[9.5, 15].map((r) => (
+        <mesh key={r} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.26, 0]}><ringGeometry args={[r, r + 0.6, 64]} /><meshStandardMaterial color="#a88b6b" roughness={1} /></mesh>
+      ))}
+    </group>
+  )
+}
+function FlagTorre({ color, position, angle }) {
+  const ref = useRef()
+  useFrame((s) => { if (ref.current) ref.current.rotation.y = Math.sin(s.clock.elapsedTime * 2 + angle) * 0.25 })
+  return (
+    <group position={position}>
+      <mesh position={[0, 3, 0]} castShadow><cylinderGeometry args={[0.08, 0.1, 6, 5]} /><meshStandardMaterial color="#5a4636" flatShading /></mesh>
+      <group ref={ref} position={[0, 5.2, 0]}>
+        <mesh position={[1.1, 0, 0]}><planeGeometry args={[2.2, 1.3]} /><meshStandardMaterial color={color} side={THREE.DoubleSide} flatShading emissive={color} emissiveIntensity={0.25} /></mesh>
+      </group>
+    </group>
+  )
+}
+function GateTorre({ ac, pts, p, scale }) {
+  const [x, z] = pts[pts.length - 1], [px, pz] = pts[pts.length - 2]
+  const y = groundHeight(x, z), heading = Math.atan2(x - px, z - pz)
+  const orb = useMemo(() => new THREE.Color(ac.accent).multiplyScalar(2.6), [ac.accent])
+  return (
+    <group position={[x, y, z]} rotation={[0, heading, 0]}>
+      {[-3.2, 3.2].map((o) => <mesh key={o} position={[o, 3.6, 0]} castShadow><boxGeometry args={[1, 7.2, 1]} /><meshStandardMaterial color="#cdb89a" flatShading /></mesh>)}
+      <mesh position={[0, 7.6, 0]} castShadow><boxGeometry args={[8.2, 1, 1.3]} /><meshStandardMaterial color="#8c6f5a" flatShading /></mesh>
+      <mesh position={[0, 9.4, 0]}><octahedronGeometry args={[0.9, 0]} /><meshBasicMaterial color={orb} toneMapped={false} /></mesh>
+      <LightPillar color={ac.accent} height={110} radius={0.9} position={[0, 10, 0]} />
+      <Html position={[0, 13, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+        <div style={{ borderColor: ac.accent, boxShadow: `0 0 18px ${ac.accent}55` }}
+          className="whitespace-nowrap rounded-full border bg-black/55 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+          {ac.emoji} {ac.name}
+        </div>
+      </Html>
+      <pointLight position={[0, 9, 0]} color={ac.accent} intensity={p.glow * 40 * scale * scale} distance={26 * scale} decay={2} />
+    </group>
+  )
+}
+
 const _w = new THREE.Vector3()
 function Gems({ onCollect, followRef, scale }) {
   const refs = useRef([]), got = useRef(new Set())
@@ -481,7 +608,7 @@ function Sun({ p, scale, followRef }) {
 // meshes con userData.isFloor son suelo, el resto bloquea (y aleja la cámara).
 // Material con colorWrite=false: se dibuja "nada" pero el raycast lo ve.
 const GHOST = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })
-function CollisionShell({ shellRef }) {
+function CollisionShell({ shellRef, torre }) {
   const floor = useMemo(() => buildGroundProxy(), [])
   const gates = PATHS.map(({ pts }) => {
     const [x, z] = pts[pts.length - 1], [px, pz] = pts[pts.length - 2], h = Math.atan2(x - px, z - pz), y = groundHeight(x, z)
@@ -490,9 +617,15 @@ function CollisionShell({ shellRef }) {
   return (
     <group ref={shellRef}>
       <mesh geometry={floor} material={GHOST} userData={{ isFloor: true }} />
-      <mesh material={GHOST} position={[0, PLAZA_Y + 0.75, 0]}><boxGeometry args={[27, 1.5, 17]} /></mesh>
-      <mesh material={GHOST} position={[0, TOP + 3.7, -0.35]}><boxGeometry args={[14.6, 7.4, 7.4]} /></mesh>
-      {COLUMNS.map(([x, z], i) => <mesh key={i} material={GHOST} position={[x, TOP + 4, z]}><cylinderGeometry args={[0.7, 0.7, 8, 8]} /></mesh>)}
+      {torre ? (
+        <mesh material={GHOST} position={[0, 15, 0]}><cylinderGeometry args={[4.6, 4.9, 30, 10]} /></mesh>
+      ) : (
+        <>
+          <mesh material={GHOST} position={[0, PLAZA_Y + 0.75, 0]}><boxGeometry args={[27, 1.5, 17]} /></mesh>
+          <mesh material={GHOST} position={[0, TOP + 3.7, -0.35]}><boxGeometry args={[14.6, 7.4, 7.4]} /></mesh>
+          {COLUMNS.map(([x, z], i) => <mesh key={i} material={GHOST} position={[x, TOP + 4, z]}><cylinderGeometry args={[0.7, 0.7, 8, 8]} /></mesh>)}
+        </>
+      )}
       {gates.map(([x, y, z], i) => <mesh key={i} material={GHOST} position={[x, y + 3.5, z]}><boxGeometry args={[1.2, 7, 1.2]} /></mesh>)}
     </group>
   )
@@ -502,7 +635,8 @@ function CollisionShell({ shellRef }) {
 // p: preset (PRESETS[...]); scale: factor del paisaje; followRef: ref a un Vector3 mundo
 // (la cámara en la demo, playerPositionRef en el mundo real); onShell: recibe el objeto
 // contra el que el Player lanza rayos (solo el mundo real lo pide).
-export default function PlazaScenery({ p, scale = 1, followRef, onShell, onCollect }) {
+export default function PlazaScenery({ p, scale = 1, followRef, onShell, onCollect, look = 'torre' }) {
+  const torre = look !== 'griego' // 'torre' = la primera versión; 'griego' = la variante con templo dórico
   const shellRef = useCallback((o) => { if (o) { o.updateMatrixWorld(true); onShell?.(o) } }, [onShell])
   return (
     <>
@@ -514,20 +648,22 @@ export default function PlazaScenery({ p, scale = 1, followRef, onShell, onColle
       <Sun p={p} scale={scale} followRef={followRef} />
       <group scale={scale}>
         <Ridges p={p} />
-        <Terrain />
-        <Plaza />
-        <Temple p={p} />
-        <Forest />
-        <Ruins />
+        <Terrain torre={torre} />
+        {torre ? <PlazaTorre /> : <Plaza />}
+        {torre ? <Tower p={p} /> : <Temple p={p} />}
+        {torre ? <ForestTorre /> : <Forest />}
+        {!torre && <Ruins />}
         {PATHS.map(({ ac, pts }, i) => {
-          const [fx, fz] = pts[0]
-          return <Banner key={ac.id} color={ac.accent} phase={i} position={[fx * 0.92, groundHeight(fx, fz), fz * 0.92]} />
+          const [fx, fz] = pts[0], pos = [fx * 0.92, groundHeight(fx, fz), fz * 0.92]
+          return torre ? <FlagTorre key={ac.id} color={ac.accent} angle={i} position={pos} /> : <Banner key={ac.id} color={ac.accent} phase={i} position={pos} />
         })}
-        {PATHS.map(({ ac, pts }) => <Gate key={ac.id} ac={ac} pts={pts} p={p} scale={scale} />)}
+        {PATHS.map(({ ac, pts }) => torre
+          ? <GateTorre key={ac.id} ac={ac} pts={pts} p={p} scale={scale} />
+          : <Gate key={ac.id} ac={ac} pts={pts} p={p} scale={scale} />)}
         <Gems onCollect={onCollect} followRef={followRef} scale={scale} />
         <Fireflies p={p} scale={scale} />
       </group>
-      {onShell && <group scale={scale}><CollisionShell shellRef={shellRef} /></group>}
+      {onShell && <group scale={scale}><CollisionShell shellRef={shellRef} torre={torre} /></group>}
     </>
   )
 }

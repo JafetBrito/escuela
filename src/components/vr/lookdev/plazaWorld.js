@@ -61,7 +61,7 @@ export function groundHeight(x, z) {
 
 // ── Paletas por hora del día (todo el look sale de aquí) ─────────────────────
 // Luz del Egeo: azul profundo arriba, rosa y oro en el horizonte.
-export const PRESETS = {
+export const PRESETS_GRIEGO = {
   amanecer: {
     label: tr('Amanecer', 'Dawn'), icon: '🌅',
     skyTop: '#4a78b8', skyMid: '#f0b3b8', skyHor: '#ffe6b8',
@@ -90,6 +90,25 @@ export const PRESETS = {
     hemiSky: '#3a4d9a', hemiGround: '#0d0f2b', hemiI: 0.7, dirCol: '#9db6ff', dirI: 0.7,
     ridgeNear: '#0d1235', ridgeFar: '#2a3670', bloom: 0.9, glow: 3.2, flies: 1.8, stars: true,
   },
+}
+// Paletas de la primera versión (la "torre faro"): atardecer violeta/rosa, noche azul índigo.
+export const PRESETS = {
+  atardecer: {
+    label: tr('Atardecer', 'Sunset'), icon: '🌇',
+    skyTop: '#3a2f6b', skyMid: '#c0457a', skyHor: '#ffb27a',
+    fog: '#f2a07a', sunCol: '#ffd08a', sunEl: 7, sunAz: 38,
+    hemiSky: '#ffb59a', hemiGround: '#3b2f5e', hemiI: 0.95, dirCol: '#ffb36b', dirI: 2.6,
+    ridgeNear: '#5b3f78', ridgeFar: '#f0a088', bloom: 0.55, glow: 1.6, flies: 1, stars: false,
+  },
+  amanecer: {
+    label: tr('Amanecer', 'Dawn'), icon: '🌅',
+    skyTop: '#4a6fa5', skyMid: '#e8a5b5', skyHor: '#ffe2b0',
+    fog: '#f6cfae', sunCol: '#ffe0a0', sunEl: 5, sunAz: -42,
+    hemiSky: '#cfe0ff', hemiGround: '#6f6a8f', hemiI: 1.05, dirCol: '#ffd9a0', dirI: 2.1,
+    ridgeNear: '#6a78a8', ridgeFar: '#f2d3bd', bloom: 0.45, glow: 1.0, flies: 0.6, stars: false,
+  },
+  dia: PRESETS_GRIEGO.dia, // la versión original no tenía mediodía; reutiliza el cielo claro
+  noche: PRESETS_GRIEGO.noche,
 }
 export function presetForHour(h) {
   if (h < 5 || h >= 20.5) return 'noche'

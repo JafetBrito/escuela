@@ -90,7 +90,7 @@ import { useImportedGlbGround } from './worlds/useImportedGlbGround'
 import SceneEffects from '../shared/SceneEffects'
 import DayNightCycle from './DayNightCycle'
 import PlazaScenery from './lookdev/PlazaScenery'
-import { PRESETS, presetForHour, PLAZA_Y } from './lookdev/plazaWorld'
+import { PRESETS, PRESETS_GRIEGO, presetForHour, PLAZA_Y } from './lookdev/plazaWorld'
 import { startAmbience, setAmbiencePreset, shutdownAmbience } from './lookdev/plazaAudio'
 import {
   PLAYER_SCALE,
@@ -2616,6 +2616,8 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
   const [shell, setShell] = useState(null)
   const [presetId, setPresetId] = useState(() => presetForHour(useDayNightStore.getState().getTimeOfDay()))
   const noChannelRef = useRef(null)
+  const look = new URLSearchParams(location.search).get('look') === 'griego' ? 'griego' : 'torre' // ?look=griego: variante con templo
+  const presets = look === 'griego' ? PRESETS_GRIEGO : PRESETS
 
   // La hora del mundo (la misma que el Campus, incluido el override del admin) elige la paleta.
   useEffect(() => {
@@ -2649,13 +2651,17 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
 
   return (
     <>
-      <PlazaScenery p={PRESETS[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />
-      {ringNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
-      {spawnedNpcs.map((npc) => <IdleNpc key={npc._spawnId} config={npc} playerPositionRef={playerPositionRef} />)}
+      <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />
+      {/* Suspense propio: los GLB de NPCs/jugador cargan aparte y no deben ocultar el paisaje mientras llegan */}
+      <Suspense fallback={null}>
+        {ringNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
+        {spawnedNpcs.map((npc) => <IdleNpc key={npc._spawnId} config={npc} playerPositionRef={playerPositionRef} />)}
+      </Suspense>
       <NpcProximityTracker playerPositionRef={playerPositionRef} onNearbyChange={onNearbyNpcChange} npcs={npcPositions} />
       <NpcSpeechPlayer channelRef={noChannelRef} playerPositionRef={playerPositionRef} />
       <RemotePlayers transformsRef={remoteTransformsRef} actionsRef={remoteActionsRef} onSelectPlayer={onSelectPlayer} />
       {shell && (
+        <Suspense fallback={null}>
         <Player
           mascot={mascot}
           skin={skin}
@@ -2670,6 +2676,7 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
           playerId={playerId}
           spawnAt={[0, 0, 44 * PLAZA_S]}
         />
+        </Suspense>
       )}
     </>
   )

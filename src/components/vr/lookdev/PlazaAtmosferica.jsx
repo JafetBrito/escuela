@@ -16,7 +16,7 @@ import { startAmbience, setAmbiencePreset, setAmbienceMuted, footstep, shutdownA
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LOOK-DEV: "Plaza de las Academias" — banco de pruebas de dirección de arte
-// (low-poly atmosférico, aire griego). El escenario vive en PlazaScenery.jsx y es
+// (low-poly atmosférico; ?look=griego muestra la variante con templo). El escenario vive en PlazaScenery.jsx y es
 // EL MISMO que usa el mundo real (/vr/plaza en VRPage): lo que se afine aquí se
 // ve allá. Esta página solo agrega lo propio de una demo: caminante libre con
 // cámara en primera persona, NPCs de muestra, HUD y presets de hora.
@@ -142,7 +142,7 @@ export default function PlazaAtmosferica() {
         </Link>
         <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full border border-amber-300/40 bg-black/45 px-5 py-2 text-center backdrop-blur-sm">
           <p className="text-sm font-black text-amber-200">{tr('Plaza de las Academias', 'Academy Plaza')}</p>
-          <p className="text-[10px] text-white/55">{tr('Banco de pruebas de arte · versión griega', 'Art test bench · Greek version')}</p>
+          <p className="text-[10px] text-white/55">{tr('Banco de pruebas de arte', 'Art test bench')}</p>
         </div>
         <div className={`pointer-events-auto absolute right-4 top-4 flex gap-1.5 p-1 ${pill}`}>
           {Object.entries(PRESETS).map(([id, v]) => (
