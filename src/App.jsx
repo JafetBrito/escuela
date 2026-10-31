@@ -77,6 +77,7 @@ const LearningInterface = lazy(() => import('./components/learning/LearningInter
 const CourseRoadmapPage = lazy(() => import('./components/learning/CourseRoadmapPage'))
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
+const PlazaAtmosferica = lazy(() => import('./components/vr/lookdev/PlazaAtmosferica'))
 const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
 const BlogPage = lazy(() => import('./components/blog/BlogPage'))
 const BlogPostPage = lazy(() => import('./components/blog/BlogPostPage'))
@@ -1055,6 +1056,17 @@ export default function App() {
                 <VRPage roomMode />
               </Suspense>
             </ProtectedRoute>
+          }
+        />
+        {/* Look-dev de la plaza (dirección de arte). En producción exige sesión; en dev local queda abierta para poder revisarla. */}
+        <Route
+          path="/vr/plaza-demo"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><PlazaAtmosferica /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false}>
+                <Suspense fallback={<RouteFallback />}><PlazaAtmosferica /></Suspense>
+              </ProtectedRoute>
+            )
           }
         />
         <Route
