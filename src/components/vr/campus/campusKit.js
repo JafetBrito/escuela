@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { Mesher, prismGeo } from './mesher'
 import { rng } from '../lookdev/plazaWorld'
+import { HOSPITAL_CATALOG, hospitalPiece } from './hospitalKit'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Kit de piezas del Campus. Cada pieza es una función pura (parámetros → mallas) en METROS, con el
@@ -513,6 +514,8 @@ export const CATALOG = {
   glb: { label: 'Modelo .glb', group: 'Mis modelos', defaults: { file: '', s: 1 }, fields: [num('s', 'Escala', 0.05, 40, 0.05)] },
 }
 
+Object.assign(CATALOG, HOSPITAL_CATALOG)
+
 const cache = new Map()
 const POS = new Set(['id', 'x', 'y', 'z', 'rot'])
 // Clave de la geometría de una pieza: sus parámetros sin la posición/giro (misma forma = misma malla compartida).
@@ -536,7 +539,7 @@ export function pieceFor(it) {
     case 'tower': v = buildTower(it); break
     case 'bridge': v = buildBridge(it); break
     case 'stadium': v = buildStadium(it); break
-    default: v = null
+    default: v = hospitalPiece(it) ?? null
   }
   cache.set(key, v)
   return v

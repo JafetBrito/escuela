@@ -26,3 +26,10 @@ El campus es **datos**, no código: `src/data/campusLayout.json`. El juego (`/vr
 - Cualquier script puede generar/editar el JSON (ver `genLayout.mjs`, que crea el layout inicial — ojo: sobrescribe).
 - **Modelos propios**: guarda `.glb` en `src/assets/campus/` (Blender, Tripo…). Salen en la paleta del editor (grupo "Mis modelos") y se guardan como `{ "type": "glb", "file": "mi-modelo.glb", "s": 1 }`. Los `.glb` no colisionan todavía (solo decoran).
 - Para exportar desde Blender: Y arriba, 1 unidad = 1 metro, pivote en la base del objeto.
+
+
+## Mapas y editor
+- Mapas: `campusLayout.json` (`/vr/campus`) y `hospitalLayout.json` (`/vr/hospital`). El editor elige mapa con `/vr/editor?map=campus|hospital` (o el selector de arriba).
+- **Hospital**: la pieza base es `room` (`kind`, `level`, `w`, `d`, `door`, `ext`, `walls`, `top`, `up`, `rail`…); ver `src/components/vr/campus/hospitalData.js` para los tipos de área. `scripts/campus/genHospital.mjs` crea el plano inicial y calcula puertas/ventanas/azoteas.
+- Editor: selector de niveles (solo/hasta nivel N), cuadrícula, techos, 🗗 **Ventana aparte** (abre el editor en otra ventana), ❓ **Cómo funciona** (recorrido guiado que NO guarda cambios), ⬆ copiar un cuarto al nivel de arriba.
+- `?spawn=x,z[,y]` en la ruta del juego: aparecer en ese punto (y en metros para pisos altos).

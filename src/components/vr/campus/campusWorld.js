@@ -10,11 +10,15 @@ export const WATER_Y = -2.6
 export const BOUNDS = { x: 235, zMin: -255, zMax: 640 }
 export const RIVER = { z0: 298, z1: 374 }
 
+// 'river' = campus (río al sur y segunda meseta); 'flat' = meseta llana sin río (hospital). Lo fija cada mapa (data.terrain).
+let MODE = 'river'
+export const setTerrainMode = (m) => { MODE = m === 'flat' ? 'flat' : 'river' }
+
 export function heightAt(x, z) {
   const edge = Math.max(0, Math.abs(x) - BOUNDS.x, BOUNDS.zMin - z, z - BOUNDS.zMax) // más allá del borde: sube como muralla
   let h = edge * 0.9 + edge * edge * 0.02
   h += (vnoise(x * 0.018, z * 0.018) - 0.5) * 7 * smooth(160, 235, Math.abs(x)) // lomas suaves en las orillas
-  const bank = smooth(RIVER.z0, RIVER.z0 + 22, z) * (1 - smooth(RIVER.z1 - 22, RIVER.z1, z))
+  const bank = MODE === 'river' ? smooth(RIVER.z0, RIVER.z0 + 22, z) * (1 - smooth(RIVER.z1 - 22, RIVER.z1, z)) : 0
   return lerp(h, -4.6 + (vnoise(x * 0.04, z * 0.04) - 0.5) * 0.8, bank)
 }
 
@@ -35,7 +39,7 @@ export function buildTerrain() {
     const h = heightAt(x, z)
     pos.setXYZ(i, x, h, z)
     c.copy(C.grassA).lerp(C.grassB, vnoise(x * 0.05, z * 0.05)).lerp(C.autumn, smooth(0.6, 0.85, vnoise(x * 0.03 + 7, z * 0.03)) * 0.5)
-    c.lerp(C.lawn, smooth(95, 70, Math.hypot(x, z - 10)) * 0.55) // el Yard, más verde y cuidado
+    c.lerp(C.lawn, MODE === 'river' ? smooth(95, 70, Math.hypot(x, z - 10)) * 0.55 : smooth(160, 90, Math.hypot(x, z + 20)) * 0.6) // el Yard / los jardines del hospital, más verdes y cuidados
     c.lerp(C.rock, smooth(4, 14, h)).lerp(C.sand, smooth(-0.3, -2.4, h) * 0.95)
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b
   }

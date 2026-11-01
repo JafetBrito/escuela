@@ -1064,10 +1064,22 @@ export default function App() {
         <Route
           path="/vr/campus"
           element={
-            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap /></Suspense>) : (
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap="campus" /></Suspense>) : (
               <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
                 <Suspense fallback={<RouteFallback />}>
-                  <VRPage plazaMode campusMap />
+                  <VRPage plazaMode campusMap="campus" />
+                </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
+        <Route
+          path="/vr/hospital"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap="hospital" /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+                <Suspense fallback={<RouteFallback />}>
+                  <VRPage plazaMode campusMap="hospital" />
                 </Suspense>
               </ProtectedRoute>
             )

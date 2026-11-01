@@ -1250,6 +1250,7 @@ export const en = {
         anfiteatro: { name: 'Amphitheater', desc: 'Theater with a live screen' },
         plaza: { name: 'Plaza of the Academies', desc: 'Temple, paths and gems · Greek touch' },
         campusU: { name: 'University Campus', desc: 'Brick yard, library, river and enterable buildings' },
+        hospital: { name: 'El Sagrado Corazón Teaching Hospital', desc: 'ER, operating rooms, ICU, wards and teaching · 5 levels' },
         ciudad: { name: 'City', desc: 'Coming soon…' },
       },
     atlasMap: {
@@ -1361,6 +1362,7 @@ export const en = {
       classroom: 'Classroom',
       plaza: 'Plaza of the Academies',
       campusU: 'University Campus',
+      hospital: 'El Sagrado Corazón Teaching Hospital',
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

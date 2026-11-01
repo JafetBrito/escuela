@@ -73,6 +73,7 @@ export function isBlocked(raycaster, scenery, origin, direction, distance) {
   return hits.length > 0 && hits[0].distance < COLLISION_RADIUS + distance
 }
 
+const UP = new THREE.Vector3(0, 1, 0)
 const STEP_UP = 0.7 // multiLevel: cuánto más alto que los pies puede estar un piso para subirse a él (escalón/rampa)
 
 // Humanoid avatar body for the local player and remote players — the real
@@ -154,6 +155,7 @@ export function Player({
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
   const initialized = useRef(false)
   const camCollisionDistance = useRef(Infinity)
+  const camCeil = useRef(Infinity) // altura máxima de la cámara bajo techo (interiores)
   const camCollisionFrame = useRef(0)
   const cameraMode = useVrSettingsStore((s) => s.cameraMode)
   const fov = useVrSettingsStore((s) => s.fov)
@@ -199,7 +201,7 @@ export function Player({
     if (!initialized.current && bodyRef.current) {
       const sx = spawnAt ? spawnAt[0] : 0
       const sz = spawnAt ? spawnAt[2] : 0
-      const sy = getGroundY(raycaster, scenery, groundRayHeight, sx, sz)
+      const sy = spawnAt && spawnAt[1] > 0 ? spawnAt[1] : getGroundY(raycaster, scenery, groundRayHeight, sx, sz) // spawnAt[1] > 0: aparecer en un piso alto
       bodyRef.current.setTranslation({ x: sx, y: sy + 0.2, z: sz })
       group.current.position.set(sx, sy, sz)
       initialized.current = true
@@ -440,8 +442,13 @@ export function Player({
         // when looking down or zooming out, only real obstacles (walls,
         // buildings) should.
         const camHits = raycaster.intersectObject(scenery, true).filter((hit) => !hit.object.userData?.isFloor)
-        Object.assign(raycaster, { far: Infinity })
         camCollisionDistance.current = camHits.length > 0 ? camHits[0].distance : Infinity
+        // Bajo techo: sin esto la cámara (a ~1.6 u del piso) queda ENCIMA del techo y se ve todo blanco/negro.
+        raycaster.set(new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT, pos.z), UP)
+        Object.assign(raycaster, { far: 8 })
+        const up = raycaster.intersectObject(scenery, true).filter((hit) => !hit.object.userData?.isFloor)
+        Object.assign(raycaster, { far: Infinity })
+        camCeil.current = up.length ? up[0].point.y - 0.18 : Infinity
       }
       const effectiveDistance =
         camCollisionDistance.current < distance
@@ -454,6 +461,7 @@ export function Player({
         effectiveDistance * Math.cos(yaw) * Math.cos(pitch),
       )
       cameraTarget.current.copy(group.current.position).add(offset)
+      if (cameraTarget.current.y > camCeil.current) cameraTarget.current.y = Math.max(camCeil.current, pos.y + PLAYER_HEIGHT * 0.9)
       camera.position.lerp(cameraTarget.current, 1 - Math.exp(-CAMERA_SMOOTHING * delta))
       // Looking up (pitch > 0) lifts the look-at target too, so tilting up
       // while zoomed out actually frames building tops instead of just

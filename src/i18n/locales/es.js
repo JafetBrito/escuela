@@ -1254,6 +1254,7 @@ export const es = {
         anfiteatro: { name: 'Anfiteatro', desc: 'Teatro con pantalla en vivo' },
         plaza: { name: 'Plaza de las Academias', desc: 'Templo, senderos y gemas · toque griego' },
         campusU: { name: 'Campus Universitario', desc: 'Patio de ladrillo, biblioteca, río y edificios con interior' },
+        hospital: { name: 'Hospital Escuela El Sagrado Corazón', desc: 'Urgencias, quirófanos, UCI, hospitalización y enseñanza · 5 niveles' },
         ciudad: { name: 'Ciudad', desc: 'Próximamente…' },
       },
     atlasMap: {
@@ -1365,6 +1366,7 @@ export const es = {
       classroom: 'Salón de Clases',
       plaza: 'Plaza de las Academias',
       campusU: 'Campus Universitario',
+      hospital: 'Hospital Escuela El Sagrado Corazón',
     },
     worldTreeBadge: '🌳 Árbol del Mundo',
     buttons: {

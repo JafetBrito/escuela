@@ -91,7 +91,8 @@ import SceneEffects from '../shared/SceneEffects'
 import DayNightCycle from './DayNightCycle'
 import PlazaScenery from './lookdev/PlazaScenery'
 import { CAMPUS_S, npcPoints } from './campus/campusWorld'
-import campusLayout from '../../data/campusLayout.json'
+import { getMap } from './campus/campusMaps'
+import HospitalOverlay from './campus/HospitalOverlay'
 const CampusScenery = lazy(() => import('./campus/CampusScenery'))
 import { PRESETS, PRESETS_GRIEGO, presetForHour, PLAZA_Y } from './lookdev/plazaWorld'
 import { startAmbience, setAmbiencePreset, shutdownAmbience } from './lookdev/plazaAudio'
@@ -2637,13 +2638,16 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   }, [])
   useEffect(() => { setAmbiencePreset(ambienceOf(presetId)) }, [presetId])
 
-  const campusPts = useMemo(() => (campus ? npcPoints(campusLayout) : null), [campus])
+  // `campus` = id del mapa por datos ('campus' | 'hospital'); falsy = la plaza de siempre
+  const mapData = useMemo(() => (campus ? getMap(campus).data : null), [campus])
+  const campusPts = useMemo(() => (mapData ? npcPoints(mapData) : null), [mapData])
   // ?spawn=x,z (metros del campus): aparecer en otro punto — lo usa el editor ("Probar aquí") y sirve para ir directo a un interior.
   const campusSpawn = useMemo(() => {
     const q = new URLSearchParams(location.search).get('spawn')?.split(',').map(Number)
-    const [x, z] = q && q.length === 2 && q.every(Number.isFinite) ? q : campusLayout.spawn
-    return [x * CAMPUS_S, 0, z * CAMPUS_S]
-  }, [])
+    const ok = q && q.length >= 2 && q.every(Number.isFinite)
+    const [x, z] = ok ? q : (mapData?.spawn || [0, 0])
+    return [x * CAMPUS_S, ok && q[2] > 0 ? q[2] * CAMPUS_S : 0, z * CAMPUS_S] // ?spawn=x,z[,y]: y en metros (pisos altos del hospital)
+  }, [mapData])
   const ringNpcs = useMemo(() => {
     const seen = new Set()
     return [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
@@ -2663,7 +2667,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   return (
     <>
       {campus
-        ? <CampusScenery data={campusLayout} p={presets[presetId]} followRef={playerPositionRef} onShell={setShell} />
+        ? <CampusScenery data={mapData} p={presets[presetId]} followRef={playerPositionRef} onShell={setShell} />
         : <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />}
       {/* Suspense propio: los GLB de NPCs/jugador cargan aparte y no deben ocultar el paisaje mientras llegan */}
       <Suspense fallback={null}>
@@ -3355,6 +3359,7 @@ const TRANSPORT_WORLDS = [
   { id: 'anfiteatro', emoji: '🎭', available: true,  path: '/vr/anfiteatro' },
   { id: 'plaza',      emoji: '🏛️', available: true,  path: '/vr/plaza' },
   { id: 'campusU',    emoji: '🎓', available: true,  path: '/vr/campus' },
+  { id: 'hospital',   emoji: '🏥', available: true,  path: '/vr/hospital' },
   { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
@@ -4393,6 +4398,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {/* Character switcher — centered above skill bar */}
         <CharSwitcherHud playerPositionRef={playerPositionRef} hudVisible={hudVisible} />
 
+        {campusMap === 'hospital' && <HospitalOverlay playerPositionRef={playerPositionRef} />}
         {plazaMode && plazaGems && (
           <div className="pointer-events-none absolute left-3 top-14 z-20 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
             💎 {plazaGems.n}/{plazaGems.total}
@@ -4768,7 +4774,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

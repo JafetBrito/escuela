@@ -652,6 +652,7 @@ export const fr = {
         anfiteatro: { name: 'Amphithéâtre', desc: 'Théâtre avec un écran en direct' },
         plaza: { name: 'Place des Académies', desc: 'Temple, sentiers et gemmes · touche grecque' },
         campusU: { name: 'Campus Universitaire', desc: 'Cour de briques, bibliothèque, rivière et bâtiments à visiter' },
+        hospital: { name: 'Hôpital Universitaire du Sacré-Cœur', desc: 'Urgences, blocs, soins intensifs, hospitalisation et enseignement · 5 niveaux' },
         ciudad: { name: 'Ville', desc: 'Bientôt disponible…' },
       },
     atlasMap: {
@@ -761,6 +762,7 @@ export const fr = {
       campus: 'Campus RV',
       plaza: 'Place des Académies',
       campusU: 'Campus Universitaire',
+      hospital: 'Hôpital Universitaire du Sacré-Cœur',
     },
     worldTreeBadge: '🌳 Arbre-Monde',
     buttons: {

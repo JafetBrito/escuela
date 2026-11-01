@@ -40,12 +40,14 @@ function campusEditorPlugin() {
     configureServer(server) {
       server.middlewares.use('/__campus/save', (req, res) => {
         if (req.method !== 'POST') { res.statusCode = 405; return res.end() }
+        const file = new URL(req.url, 'http://x').searchParams.get('file') || 'campusLayout.json'
+        if (!['campusLayout.json', 'hospitalLayout.json'].includes(file)) { res.statusCode = 400; return res.end('archivo no permitido') }
         let body = ''
         req.on('data', (c) => { body += c })
         req.on('end', () => {
           try {
             if (!Array.isArray(JSON.parse(body).items)) throw new Error('falta items[]')
-            writeFileSync(fileURLToPath(new URL('./src/data/campusLayout.json', import.meta.url)), body)
+            writeFileSync(fileURLToPath(new URL(`./src/data/${file}`, import.meta.url)), body)
             res.end('ok')
           } catch (e) { res.statusCode = 400; res.end(String(e)) }
         })
