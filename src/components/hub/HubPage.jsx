@@ -11,7 +11,8 @@ import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { useDailyRewardsStore } from '../../stores/useDailyRewardsStore'
 import { useEquipmentStore } from '../../stores/useEquipmentStore'
 import { useMascotCompanionStore } from '../../stores/useMascotCompanionStore'
-import { usePetStore, PET_FOODS, bondLevel, moodKey } from '../../stores/usePetStore'
+import { usePetStore, getPetFoods, bondLevel, moodKey } from '../../stores/usePetStore'
+import { useItemDbStore, loadRemoteItems } from '../../data/itemDb/remote'
 import { getMascotById } from '../../data/mascotRegistry'
 import { getSkinById } from '../../data/skinsRegistry'
 import { getSkillById } from '../../data/skillRegistry'
@@ -62,6 +63,8 @@ function Quiz({ onDone }) {
 
 export default function HubPage() {
   useI18n()
+  useItemDbStore((s) => s.version) // re-renderiza si un admin edita objetos
+  useEffect(() => { loadRemoteItems() }, [])
   const [tab, setTab] = useState('pet')
   const [panel, setPanel] = useState(null) // 'food' | 'quiz' | null
   const [toast, setToast] = useState('')
@@ -140,7 +143,7 @@ export default function HubPage() {
                 <button key={l} onClick={fn} className="rounded-xl bg-white/10 py-2.5 active:scale-95 active:bg-white/20"><div className="text-2xl">{ic}</div>{l}</button>))}
             </div>
             {panel === 'food' && (
-              <div className="grid grid-cols-2 gap-2">{PET_FOODS.map((f) => (
+              <div className="grid grid-cols-2 gap-2">{getPetFoods().map((f) => (
                 <button key={f.id} onClick={() => feed(f)} className="rounded-xl bg-white/10 p-2 text-left text-xs active:bg-white/20"><span className="text-xl">{f.emoji}</span> {tr(...f.name)}<div className="opacity-60">{f.cost ? money(f.cost) : tr('Gratis', 'Free')}</div></button>))}</div>
             )}
             {panel === 'quiz' && <Quiz onDone={trainDone} />}

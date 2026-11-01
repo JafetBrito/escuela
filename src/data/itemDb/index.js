@@ -17,6 +17,20 @@ export const ITEM_DB = rawItems().map((it) => ({ ...it, entry: ids[it.key] ?? -1
 const byEntry = new Map(ITEM_DB.map((i) => [i.entry, i]))
 const byKey = new Map(ITEM_DB.map((i) => [i.key, i]))
 
+const SHAPE = { description: '', icon: '❔', image: null, model: null, quality: 'common', bonding: 'none', slot: null, owner: null, requiredLevel: 1, requiredClass: null, stats: {}, effects: [], source: [], buyPrice: 0, sellPrice: 0, stackable: false, maxStack: 1, contexts: ['app'], flags: [], tags: [], i18n: {} }
+
+// Mezcla filas de la tabla item_templates de Supabase: una fila con un entry que ya existe PISA los valores locales;
+// una con un entry nuevo agrega un objeto (creado por un admin). Se modifica ITEM_DB en sitio para que todos los
+// módulos que ya importaron `ITEM_DB` / `getItem` vean el cambio.
+export function applyRemoteRows(rows) {
+  for (const { entry, key, data } of rows || []) {
+    const cur = byEntry.get(entry)
+    if (cur) Object.assign(cur, data, { entry, key: cur.key })
+    else { const it = { ...SHAPE, name: key, ...data, key, entry }; ITEM_DB.push(it); byEntry.set(entry, it); byKey.set(key, it) }
+  }
+  ITEM_DB.sort((a, b) => a.entry - b.entry)
+}
+
 if (import.meta.env?.DEV) {
   const missing = ITEM_DB.filter((i) => i.entry < 0).map((i) => i.key)
   if (missing.length) console.warn('[itemDb] objetos sin entry (corre node scripts/items/sync-ids.mjs):', missing.join(', '))

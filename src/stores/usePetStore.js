@@ -11,9 +11,9 @@ const DEFAULT_NEEDS = { hunger: 80, energy: 90, mood: 80, curiosity: 60 }
 const DECAY_PER_HOUR = { hunger: 7, energy: 3, mood: 2.5, curiosity: 4 }
 const MAX_OFFLINE_H = 24
 
-// La comida ya no vive aquí: son objetos de la base de datos (src/data/itemDb, clase consumible/comida). Esta lista es
-// solo la vista que usa el Hub. cost en "cobre" (10000 = 1 oro); la galleta es gratis para no quedarse sin poder alimentarla.
-export const PET_FOODS = ITEM_DB.filter((i) => i.class === 'consumable' && i.subclass === 'food').map((i) => {
+// La comida ya no vive aquí: son objetos de la base de datos (src/data/itemDb, clase consumible/comida; editables desde
+// /db/items y Supabase). Se calcula en cada llamada para ver las ediciones. cost en "cobre" (10000 = 1 oro).
+export const getPetFoods = () => ITEM_DB.filter((i) => i.class === 'consumable' && i.subclass === 'food').map((i) => {
   const fx = { ...(i.effects.find((e) => e.type === 'pet_need') || {}) }
   delete fx.type
   return { id: i.key, entry: i.entry, emoji: i.icon, name: [i.name, i.i18n?.en?.name || i.name], cost: i.buyPrice, fx }
@@ -51,7 +51,7 @@ export const usePetStore = create((set, get) => ({
   },
 
   feed: (foodId) => {
-    const food = PET_FOODS.find((f) => f.id === foodId), s = get()
+    const food = getPetFoods().find((f) => f.id === foodId), s = get()
     if (!food) return { ok: false, reason: 'unknown' }
     if (s.needs.hunger >= 97) return { ok: false, reason: 'full' }
     if (food.cost > 0 && !useCurrencyStore.getState().spendCoins(food.cost)) return { ok: false, reason: 'coins' }

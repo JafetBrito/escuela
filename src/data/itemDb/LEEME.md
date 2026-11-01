@@ -22,7 +22,12 @@ Todo objeto del juego es **una fila** de `ITEM_DB` con los mismos campos (como `
 2. `node scripts/items/sync-ids.mjs` le asigna su `entry`.
 3. Revísalo en `/db/items`.
 
+## Supabase (etapa 2)
+- `supabase/migration_084.sql` crea `item_templates` (entry, key, data jsonb) con RLS: lectura para todos, escritura solo admin (`is_admin()`), y siembra los objetos actuales (`on conflict do nothing`: no pisa ediciones). Se genera con `node scripts/items/make-migration.mjs`; pégala en el SQL Editor de Supabase.
+- `itemDb/remote.js` carga la tabla al abrir `/db/items` o el Hub, la mezcla sobre los valores locales (`applyRemoteRows`) y guarda copia en localStorage. Si la tabla no existe todavía, todo sigue funcionando con los valores locales.
+- En `/db/items` un admin puede **editar** nombre, descripción, ícono, calidad, precio, nivel y dónde se usa, y crear objetos nuevos (`＋ Nuevo`); se guarda en Supabase y la comida del Hub ya lo respeta.
+
 ## Siguiente etapa (pendiente)
-- Que tienda, bolsas, inventario, equipo y misiones guarden/lean por `entry` (hoy siguen usando `key`).
-- Que la propia DB sea la fuente de edición (tabla en Supabase + editor en `/db/items`), y los registros viejos pasen a ser semilla.
+- Que bolsas, tienda, inventario, equipo y misiones guarden/lean por `entry` (hoy siguen usando `key`).
+- Que tienda y equipo lean de ITEM_DB en lugar de sus registros viejos (hoy solo el Hub lee la tabla editada).
 - Mismo modelo para clases y subclases (`class_template`) y habilidades.
