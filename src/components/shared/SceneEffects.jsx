@@ -1,4 +1,4 @@
-import { EffectComposer, Bloom, Vignette, ToneMapping, HueSaturation, BrightnessContrast } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Vignette, ToneMapping, HueSaturation, BrightnessContrast, N8AO } from '@react-three/postprocessing'
 import { BlendFunction, ToneMappingMode } from 'postprocessing'
 
 // Shared post-processing pass for all 3D Canvases.
@@ -15,12 +15,14 @@ export default function SceneEffects({
   vignetteDarkness = 0.42,
   multisampling = 0,
   cinematic = false, // Plaza griega: bloom suave + ACES + saturación/contraste (mismo look que la demo look-dev)
+  ao = false, // oclusión ambiental N8AO (esquinas con volumen): solo mundos grandes en escritorio
 }) {
   if (typeof window !== 'undefined' && window.innerWidth < 768) return null
 
   if (cinematic) {
     return (
       <EffectComposer multisampling={multisampling}>
+        {ao && <N8AO aoRadius={0.55} distanceFalloff={1.2} intensity={2.2} quality="performance" halfRes />}
         <Bloom mipmapBlur luminanceThreshold={0.85} luminanceSmoothing={0.9} intensity={bloomIntensity} blendFunction={BlendFunction.ADD} />
         <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
         <HueSaturation saturation={0.14} />

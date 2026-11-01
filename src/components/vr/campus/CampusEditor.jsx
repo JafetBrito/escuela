@@ -27,7 +27,7 @@ const uid = (type) => `${type[0]}${Date.now().toString(36)}${Math.floor(Math.ran
 const serialize = (d) => { const { items, ...rest } = d; return `${JSON.stringify(rest).slice(0, -1)},"items":[\n${items.map((i) => JSON.stringify(i)).join(',\n')}\n]}` }
 const loadDraft = (m) => { try { const j = JSON.parse(localStorage.getItem(draftKey(m))); return j?.items ? j : null } catch { return null } }
 const kindLabel = (it) => (it.name || KINDS[it.kind]?.name?.[0] || it.kind)
-const labelOf = (it) => `${CATALOG[it.type]?.label || (it.type === 'path' ? 'Camino' : it.type)}${it.type === 'room' ? ` · ${kindLabel(it)} · N${it.level}` : it.text ? ` · ${it.text}` : it.sign ? ` · ${it.sign}` : it.file ? ` · ${it.file}` : it.interior ? ` · ${it.interior}` : ''}`
+const labelOf = (it) => it.type === 'zone' ? `Zona · ${it.name}` : `${CATALOG[it.type]?.label || (it.type === 'path' ? 'Camino' : it.type)}${it.type === 'room' ? ` · ${kindLabel(it)} · N${it.level}` : it.text ? ` · ${it.text}` : it.sign ? ` · ${it.sign}` : it.file ? ` · ${it.file}` : it.interior ? ` · ${it.interior}` : ''}`
 const SIZES = { aula: [36, 14], lobby: [36, 22], cafeteria: [24, 14], lab: [24, 14], nicu: [24, 14], library: [36, 14], sim: [24, 14], anatomy: [24, 14], pacu: [24, 14], linac: [24, 14], dialysis: [24, 14], corridor: [40, 6], stairs: [6, 14], elevator: [4, 6], closet: [4, 8], research: [14, 14], ward: [12, 14] }
 
 // ── dentro del Canvas ────────────────────────────────────────────────────────

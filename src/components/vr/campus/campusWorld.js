@@ -59,7 +59,7 @@ export function buildGroundProxy() {
 }
 
 // ── Caminos y pavimentos (calcomanías planas sobre la meseta) ────────────────
-export const PAVE_COLORS = { gravel: '#d9c7a4', brick: '#a88468', stone: '#cfc5b0', asphalt: '#6c6d73', plank: '#8a6a47' }
+export const PAVE_COLORS = { gravel: '#d9c7a4', brick: '#a88468', stone: '#cfc5b0', asphalt: '#6c6d73', plank: '#8a6a47', grass: '#6fae4f', court: '#b85c3a', track: '#a0452e', water: '#3fa7c9' }
 const col3 = (hex) => new THREE.Color(hex)
 function paintFlat(g, hex) {
   const c = col3(hex), n = g.attributes.position.count, a = new Float32Array(n * 3)
@@ -90,7 +90,7 @@ export function pathGeo(pts, w, mat = 'gravel') {
 }
 // Rectángulo (w×d, girado ry) o círculo (r) de pavimento.
 export function paveGeo(it) {
-  const y = 0.065
+  const y = 0.065 + (it.dy || 0) // dy: sube un pavimento sobre otro (cancha sobre pista) sin que parpadeen
   const g = it.r
     ? new THREE.CircleGeometry(it.r, 28).rotateX(-Math.PI / 2)
     : new THREE.PlaneGeometry(it.w, it.d).rotateX(-Math.PI / 2).rotateY(it.ry || 0)

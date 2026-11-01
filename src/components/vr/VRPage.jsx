@@ -94,6 +94,9 @@ import { CAMPUS_S, npcPoints } from './campus/campusWorld'
 import { getMap } from './campus/campusMaps'
 import HospitalOverlay from './campus/HospitalOverlay'
 import { PortalGate, PortalWatcher } from './campus/PortalGate'
+import { ZoneWatcher, ZoneToast } from './campus/ZoneDiscovery'
+import Wanderers from './campus/Wanderers'
+import Leaves from './campus/Leaves'
 import { itemY } from './campus/campusWorld'
 const CampusScenery = lazy(() => import('./campus/CampusScenery'))
 import { PRESETS, PRESETS_GRIEGO, presetForHour, PLAZA_Y, groundHeight as plazaGroundHeight } from './lookdev/plazaWorld'
@@ -2658,6 +2661,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   const portals = useMemo(() => (campus
     ? (mapData?.items || []).filter((i) => i.type === 'portal').map((i) => ({ to: i.to, x: i.x * CAMPUS_S, y: itemY(i) * CAMPUS_S + 0.9, z: i.z * CAMPUS_S }))
     : PLAZA_PORTALS.map((p) => ({ to: p.to, x: p.x * PLAZA_S, y: plazaGroundHeight(p.x, p.z) * PLAZA_S + 0.9, z: p.z * PLAZA_S }))), [campus, mapData])
+  const zones = useMemo(() => (mapData?.items || []).filter((i) => i.type === 'zone').map((i) => ({ name: i.name, xp: i.xp ?? 25, x: i.x * CAMPUS_S, z: i.z * CAMPUS_S, r: i.r * CAMPUS_S })), [mapData])
   const ringNpcs = useMemo(() => {
     const seen = new Set()
     return [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
@@ -2681,6 +2685,9 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
         : <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />}
       {!campus && PLAZA_PORTALS.map((p) => <PortalGate key={p.id} position={[p.x * PLAZA_S, plazaGroundHeight(p.x, p.z) * PLAZA_S, p.z * PLAZA_S]} color={p.color} label={tr(...p.label)} />)}
       <PortalWatcher portals={portals} playerPositionRef={playerPositionRef} />
+      {campus && <ZoneWatcher map={campus} zones={zones} playerPositionRef={playerPositionRef} />}
+      {campus === 'campus' && <Leaves followRef={playerPositionRef} />}
+      {campus === 'campus' && shell && <Wanderers shell={shell} />}
       {/* Suspense propio: los GLB de NPCs/jugador cargan aparte y no deben ocultar el paisaje mientras llegan */}
       <Suspense fallback={null}>
         {ringNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
@@ -4322,6 +4329,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
           {!plazaMode && <fog attach="fog" args={fogArgs} />}
           <SceneEffects
             cinematic={plazaMode}
+            ao={plazaMode}
             bloomIntensity={plazaMode ? 0.3 : anfiteatroMode ? 0.5 : roomMode ? 0.4 : worldTreeMode ? 0.35 : 0.22}
             vignetteDarkness={plazaMode ? 0.5 : 0.38}
             multisampling={0}
@@ -4411,6 +4419,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         <CharSwitcherHud playerPositionRef={playerPositionRef} hudVisible={hudVisible} />
 
         {campusMap === 'hospital' && <HospitalOverlay playerPositionRef={playerPositionRef} />}
+        {campusMap && <ZoneToast />}
         {plazaMode && plazaGems && (
           <div className="pointer-events-none absolute left-3 top-14 z-20 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
             💎 {plazaGems.n}/{plazaGems.total}

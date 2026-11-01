@@ -9,6 +9,8 @@ import { CAMPUS_S, WATER_Y, itemY, buildTerrain, buildGroundProxy, pathGeo, pave
 import { CATALOG, pieceFor, pieceKey } from './campusKit'
 import { glbUrl } from './campusAssets'
 import { buildSigns } from './signs'
+import { withBvh } from './bvh'
+import CustomShaderMaterial from 'three-custom-shader-material'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Escenario de un MAPA por datos (campus, hospital...): dibuja un LAYOUT (lista de piezas colocadas) y,
@@ -107,6 +109,36 @@ function Item({ it, piece, showRoofs, onPick, selected, glbOnly }) {
   )
 }
 
+// ── Agua del río: three-custom-shader-material sobre MeshStandardMaterial (olas suaves + destellos), sin escribir un shader entero ──
+const WATER_VERT = `
+  varying vec3 vW;
+  uniform float uTime;
+  void main(){
+    vec3 p = position;
+    float w = sin(p.x * 0.07 + uTime * 1.1) * 0.16 + sin(p.y * 0.11 - uTime * 0.8) * 0.12;
+    vW = vec3(p.x, p.y, w);
+    csm_Position = vec3(p.x, p.y, p.z + w);
+  }`
+const WATER_FRAG = `
+  varying vec3 vW;
+  uniform float uTime;
+  void main(){
+    float s = 0.5 + 0.5 * sin(vW.x * 0.25 + vW.y * 0.18 + uTime * 1.6);
+    float sp = pow(0.5 + 0.5 * sin(vW.x * 0.9 - uTime * 2.0) * sin(vW.y * 0.7 + uTime * 1.3), 8.0);
+    vec3 col = mix(vec3(0.10, 0.45, 0.62), vec3(0.30, 0.74, 0.86), s * 0.6 + vW.z);
+    csm_DiffuseColor = vec4(col + sp * 0.35, 0.9);
+  }`
+const WATER_U = { uTime: { value: 0 } } // compartido (como windU): un solo reloj de olas
+function Water() {
+  useFrame((s) => { WATER_U.uTime.value = s.clock.elapsedTime })
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y, 336]}>
+      <planeGeometry args={[1400, 200, 140, 40]} />
+      <CustomShaderMaterial baseMaterial={THREE.MeshStandardMaterial} vertexShader={WATER_VERT} fragmentShader={WATER_FRAG} uniforms={WATER_U} roughness={0.25} metalness={0.1} transparent />
+    </mesh>
+  )
+}
+
 // ── Luces interiores: un banco fijo de luces que se reparte entre las lámparas más cercanas ──
 const POOL = 6
 function InteriorLights({ lamps, followRef, power = 7 }) {
@@ -159,7 +191,7 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
         const piece = pieceFor(withSeed), k = pieceKey(withSeed, GROUP_SKIP)
         if (!groups.has(k)) groups.set(k, { piece, items: [], wind: it.type === 'tree' })
         groups.get(k).items.push(it)
-      } else if (it.type !== 'path' && it.type !== 'pave' && it.type !== 'npc') singles.push({ it, piece: pieceFor(it) })
+      } else if (!['path', 'pave', 'npc', 'zone'].includes(it.type)) singles.push({ it, piece: pieceFor(it) })
     }
     return { singles, groups: [...groups.values()] }
   }, [items])
@@ -208,7 +240,7 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
       }
     }
     const strip = (gs) => gs.map((g) => { g.deleteAttribute('color'); g.deleteAttribute('normal'); return g })
-    return { proxy: buildGroundProxy(), props: props.length ? mergeGeometries(props) : null, walls: strip(bake(singles, ['collide'])), floors: strip(bake(singles, ['floors', 'ramps'])) }
+    return { proxy: withBvh(buildGroundProxy()), props: props.length ? withBvh(mergeGeometries(props)) : null, walls: strip(bake(singles, ['collide'])).map(withBvh), floors: strip(bake(singles, ['floors', 'ramps'])).map(withBvh) }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- buildGroundProxy lee el modo de terreno global
   }, [groups, singles, onShell, data.terrain])
 
@@ -225,12 +257,7 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
 
       <group scale={CAMPUS_S}>
         <mesh geometry={terrain} receiveShadow><meshStandardMaterial vertexColors flatShading roughness={1} /></mesh>
-        {river && (
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y, 300]}>
-            <planeGeometry args={[1400, 1800]} />
-            <meshStandardMaterial color="#2a9bbd" roughness={0.25} metalness={0.1} transparent opacity={0.88} />
-          </mesh>
-        )}
+        {river && <Water />}
         {decals && <mesh geometry={decals} material={DECAL} receiveShadow />}
         {groups.map((g, i) => <Inst key={i} piece={g.piece} items={g.items} wind={g.wind} onPick={onPick} />)}
         {baked ? (
@@ -242,6 +269,11 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
           </>
         ) : singles.map(({ it, piece }) => <Item key={it.id} it={it} piece={piece} showRoofs={showRoofs} onPick={onPick} selected={it.id === selectedId} />)}
         {signPages.map((pg, i) => <mesh key={`sg${i}`} geometry={pg.geo}><meshBasicMaterial map={pg.tex} toneMapped={false} /></mesh>)}
+        {editor && items.filter((i) => i.type === 'zone').map((i) => (
+          <mesh key={i.id} position={[i.x, 0.3, i.z]} rotation={[-Math.PI / 2, 0, 0]} onClick={onPick ? (e) => { e.stopPropagation(); onPick(i.id) } : undefined}>
+            <ringGeometry args={[i.r - 1, i.r, 48]} /><meshBasicMaterial color={i.id === selectedId ? '#ffd24a' : '#2dd4bf'} transparent opacity={0.7} side={THREE.DoubleSide} />
+          </mesh>
+        ))}
         {editor && items.filter((i) => i.type === 'npc').map((i) => (
           <group key={i.id} position={[i.x, itemY(i), i.z]} onClick={onPick ? (e) => { e.stopPropagation(); onPick(i.id) } : undefined}>
             <mesh position={[0, 1.2, 0]}><coneGeometry args={[0.7, 2.4, 6]} /><meshBasicMaterial color={i.id === selectedId ? '#ffd24a' : '#ff5ea8'} /></mesh>

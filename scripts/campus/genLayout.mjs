@@ -46,7 +46,10 @@ add({ type: 'stadium', x: 160, z: 540, rot: 180, w: 70, d: 120 })
 // ── mobiliario / cercas ──────────────────────────────────────────────────────
 add({ type: 'gate', x: 0, z: 96, rot: 0, w: 12, sign: 'Campus Oliver' })
 add({ type: 'fence', x: -51, z: 95, rot: 0, len: 88 }); add({ type: 'fence', x: 51, z: 95, rot: 0, len: 88 })
-add({ type: 'fence', x: -95, z: 5, rot: 90, len: 182 }); add({ type: 'fence', x: 95, z: 5, rot: 90, len: 182 })
+for (const sx of [-1, 1]) { // vallas laterales partidas por una puerta que lleva a los distritos de las academias
+  add({ type: 'fence', x: sx * 95, z: -34, rot: 90, len: 104 }); add({ type: 'fence', x: sx * 95, z: 63, rot: 90, len: 66 })
+  add({ type: 'gate', x: sx * 95, z: 24, rot: 90, w: 12, sign: sx < 0 ? 'Puerta Oeste · Academias' : 'Puerta Este · Academias' })
+}
 add({ type: 'statue', x: 0, z: 6, rot: 0, s: 1 })
 add({ type: 'fountain', x: 0, z: 62, r: 6 })
 add({ type: 'tower', x: -100, z: 118, h: 26 })
@@ -73,6 +76,57 @@ add({ type: 'pave', x: 47, z: 430, w: 26, d: 14, mat: 'stone', rot: 0 })
 // ── NPC ──────────────────────────────────────────────────────────────────────
 ;[[0, 0, 78], [-18, 0, 48], [18, 0, 48], [0, 0, -40], [0, 1.7, -56], [-40, 0.35, 30], [-60, 0.35, -50], [62, 0.35, -52], [-46, 0.35, 112], [47, 0.4, 330], [0, 0.35, -134]]
   .forEach(([x, y, z]) => add({ type: 'npc', x, y, z }))
+
+
+// ── DISTRITOS DE LAS ACADEMIAS (oeste y este del Yard) ──────────────────────
+// [nombre, x, z, rot, w, d, pisos, estilo, techo, interior, torre, pórtico, semilla]
+const ACADEMIAS = [
+  ['Academia de Programación', -170, -10, 90, 40, 22, 3, 'modern', 'flat', 'lab', 'none', false, 101],
+  ['Academia de Ciberseguridad', -170, 56, 90, 36, 20, 3, 'brut', 'flat', 'lab', 'none', false, 102],
+  ['Academia de Filosofía', -170, -76, 90, 40, 24, 2, 'neo', 'gable', 'classroom', 'none', true, 103],
+  ['Academia de IA', 170, -10, -90, 44, 24, 4, 'modern', 'flat', 'lab', 'cupola', false, 104],
+  ['Academia de Idiomas', 170, 56, -90, 44, 24, 2, 'neo', 'gable', 'classroom', 'none', true, 105],
+  ['Academia de Linux', 170, -76, -90, 34, 20, 2, 'brick', 'gable', 'lab', 'cupola', false, 106],
+]
+for (const [sign, x, z, rot, w, d, floors, style, roof, interior, tower, portico, seed] of ACADEMIAS) {
+  B(x, z, rot, { w, d, floors, style, roof, interior, tower, portico, ivy: style === 'brick' ? 0.7 : 0, sign, door: 4, seed })
+  const px = x < 0 ? -134 : 134
+  add({ type: 'pave', x: px, z, r: 13, mat: 'stone' }); add({ type: 'statue', x: px, z, s: 0.8 })
+  add({ type: 'lamp', x: px - 8, z: z + 8 }); add({ type: 'lamp', x: px + 8, z: z - 8 })
+}
+for (const sx of [-1, 1]) { P([[sx * 95, 24], [sx * 134, 24]], 5, 'gravel'); P([[sx * 134, -76], [sx * 134, 56]], 4, 'gravel') }
+P([[-134, 56], [-134, 110], [-100, 128]], 4, 'gravel'); P([[134, 56], [134, 110], [100, 128]], 4, 'gravel')
+
+// ── PUEBLO UNIVERSITARIO (calle comercial al sur de la plaza de entrada) ────
+add({ type: 'pave', x: 0, z: 148, w: 270, d: 10, mat: 'asphalt', rot: 0 }); add({ type: 'pave', x: 0, z: 141.5, w: 270, d: 3, mat: 'stone', rot: 0 })
+const TIENDAS = ['Panadería', 'Librería Universitaria', 'Papelería', 'Café Central', 'Tienda de música', 'Heladería', 'Café Internet', 'Farmacia', 'Floristería', 'Taller de bicis']
+;[-104, -88, -72, -56, -40, 40, 56, 72, 88, 104].forEach((x, i) => B(x, 134, 0, { w: 14, d: 12, floors: 2, style: 'brick', roof: 'gable', interior: 'cafe', ivy: 0.35, sign: TIENDAS[i], door: 3, seed: 120 + i }))
+for (let x = -120; x <= 120; x += 30) if (Math.abs(x) > 20) { add({ type: 'lamp', x, z: 144 }); add({ type: 'bench', x: x + 8, z: 143, rot: 0 }) }
+add({ type: 'kiosk', x: -60, z: 156 }); add({ type: 'kiosk', x: 60, z: 156 })
+
+// ── COMPLEJO DEPORTIVO (este, junto a las casas del río) ────────────────────
+B(175, 125, -90, { w: 50, d: 28, floors: 2, style: 'modern', roof: 'flat', interior: 'hall', ivy: 0, sign: 'Gimnasio Universitario', door: 4, seed: 140 })
+add({ type: 'pave', x: 170, z: 205, w: 90, d: 130, mat: 'track', rot: 0 }); add({ type: 'pave', x: 170, z: 205, w: 72, d: 112, mat: 'grass', rot: 0, dy: 0.02 })
+add({ type: 'pave', x: 170, z: 205, w: 3, d: 112, mat: 'stone', rot: 0, dy: 0.03 }); add({ type: 'pave', x: 170, z: 205, r: 9, mat: 'stone', dy: 0.03 })
+add({ type: 'pave', x: 218, z: 135, w: 20, d: 32, mat: 'court', rot: 0 }); add({ type: 'pave', x: 218, z: 175, w: 20, d: 32, mat: 'court', rot: 0 })
+add({ type: 'pave', x: 205, z: 285, w: 50, d: 30, mat: 'plank', rot: 0 }); add({ type: 'pave', x: 205, z: 285, w: 40, d: 20, mat: 'water', rot: 0, dy: 0.02 })
+P([[122, 128], [150, 128], [170, 150]], 5, 'gravel')
+
+// ── LAGO Y PARQUE (suroeste) ────────────────────────────────────────────────
+add({ type: 'pave', x: -175, z: 205, r: 42, mat: 'gravel' }); add({ type: 'pave', x: -175, z: 205, r: 36, mat: 'water', dy: 0.02 })
+add({ type: 'pave', x: -140, z: 205, w: 18, d: 4, mat: 'plank', rot: 0, dy: 0.04 })
+for (const [bx, bz, br] of [[-175, 160, 0], [-135, 230, 90], [-215, 190, -90], [-175, 250, 180]]) add({ type: 'bench', x: bx, z: bz, rot: br })
+P([[-100, 140], [-130, 170], [-135, 205]], 4, 'gravel')
+
+// ── NORTE: museo, auditorio y torre del reloj ───────────────────────────────
+B(-110, -150, 0, { w: 40, d: 26, floors: 2, style: 'neo', roof: 'gable', interior: 'hall', portico: true, ivy: 0, sign: 'Museo de Ciencias', door: 4, seed: 150 })
+B(110, -150, 0, { w: 36, d: 26, floors: 2, style: 'neo', roof: 'gable', interior: 'classroom', tower: 'cupola', ivy: 0, sign: 'Auditorio', door: 4, seed: 151 })
+add({ type: 'tower', x: 60, z: -200, h: 28 })
+P([[-20, -118], [-70, -125], [-110, -128]], 4, 'gravel'); P([[20, -118], [70, -125], [110, -128]], 4, 'gravel')
+
+// ── ZONAS DESCUBRIBLES (cada edificio con letrero + áreas): dan XP la primera vez ──
+for (const b of items.filter((i) => i.type === 'building' && i.sign)) add({ type: 'zone', x: b.x, z: b.z, name: b.sign, r: Math.max(b.w, b.d) / 2 + 9, xp: 25 })
+for (const [name, x, z, r, xp] of [['El Yard', 0, 20, 55, 40], ['Pueblo Universitario', 0, 148, 70, 40], ['Complejo Deportivo', 170, 205, 70, 40], ['Lago del Parque', -175, 205, 48, 40], ['Distrito de las Academias · Oeste', -150, -10, 75, 50], ['Distrito de las Academias · Este', 150, -10, 75, 50], ['Río Charles', 47, 336, 36, 40], ['Allston', 47, 450, 70, 50], ['Estadio', 160, 540, 55, 40]]) add({ type: 'zone', x, z, name, r, xp })
 
 // ── vegetación ───────────────────────────────────────────────────────────────
 const rects = items.filter((i) => i.type === 'building').map((b) => {
