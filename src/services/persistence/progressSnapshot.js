@@ -31,6 +31,7 @@ import { useThemeStore } from '../../stores/useThemeStore'
 import { useRoadmapProgressStore } from '../../stores/useRoadmapProgressStore'
 import { useBirthdayStore } from '../../stores/useBirthdayStore'
 import { useThemedAnswersStore } from '../../stores/useThemedAnswersStore'
+import { usePetStore } from '../../stores/usePetStore'
 
 // Unified account file: contains the user's license/key, mascot + settings,
 // and progress for every course (namespaced by courseId).
@@ -144,6 +145,7 @@ export function buildProgressSnapshot() {
     gameState: { player: gamePlayer, oliver: gameOliver, worldTreeCompleted },
     tutorial: useTutorialStore.getState(),
     dailyRewards: useDailyRewardsStore.getState(),
+    pet: (({ needs, updatedAt, affection, goal }) => ({ needs, updatedAt, affection, goal }))(usePetStore.getState()),
     quests: useQuestsStore.getState(),
     terminalRewards: useTerminalRewardsStore.getState(),
     voice: useVoiceStore.getState(),
@@ -210,6 +212,7 @@ export function applyProgressSnapshot(snapshot) {
   useGameStore.getState().loadGameState(snapshot.gameState ?? null)
   useTutorialStore.getState().loadTutorial(snapshot.tutorial ?? null)
   useDailyRewardsStore.getState().loadDailyRewards(snapshot.dailyRewards ?? {})
+  usePetStore.getState().loadPet(snapshot.pet ?? null)
   useQuestsStore.getState().loadQuests(snapshot.quests ?? {})
   useTerminalRewardsStore.getState().loadTerminalRewards(snapshot.terminalRewards ?? {})
   useVoiceStore.getState().loadVoice(snapshot.voice ?? {})

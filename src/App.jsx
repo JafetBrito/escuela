@@ -13,7 +13,7 @@
  */
 
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import LocalizedRouter from './i18n/LocalizedRouter'
 import LandingPage from './components/landing/LandingPage'
 import PrivacyPage from './components/legal/PrivacyPage'
@@ -79,6 +79,9 @@ const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const PlazaAtmosferica = lazy(() => import('./components/vr/lookdev/PlazaAtmosferica'))
 const CampusEditor = lazy(() => import('./components/vr/campus/CampusEditor'))
+const HubPage = lazy(() => import('./components/hub/HubPage'))
+// En el celular el mundo VR no vale la pena: la entrada principal lleva al Hub (mascota + perfil). El resto de rutas /vr/* no cambia.
+const isPhone = () => window.matchMedia('(max-width: 767px)').matches && window.matchMedia('(pointer: coarse)').matches
 const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
 const BlogPage = lazy(() => import('./components/blog/BlogPage'))
 const BlogPostPage = lazy(() => import('./components/blog/BlogPostPage'))
@@ -1041,12 +1044,24 @@ export default function App() {
         />
         <Route
           path="/vr"
-          element={
+          element={isPhone() ? <Navigate to="/hub" replace /> : (
             <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage />
               </Suspense>
             </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/hub"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><HubPage /></Suspense>) : (
+              <ProtectedRoute>
+                <Suspense fallback={<RouteFallback />}>
+                  <HubPage />
+                </Suspense>
+              </ProtectedRoute>
+            )
           }
         />
         <Route
