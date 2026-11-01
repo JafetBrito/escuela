@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { useCurrencyStore } from './useCurrencyStore'
 import { useLevelStore } from './useLevelStore'
+import { ITEM_DB } from '../data/itemDb'
 
 // Estado "Tamagotchi" de la mascota del Hub móvil: cuatro necesidades (0-100, más = mejor) que bajan con
 // el tiempo REAL (también con la app cerrada, hasta 24 h) y se recuperan cuidándola. Cuidarla da vínculo
@@ -10,13 +11,13 @@ const DEFAULT_NEEDS = { hunger: 80, energy: 90, mood: 80, curiosity: 60 }
 const DECAY_PER_HOUR = { hunger: 7, energy: 3, mood: 2.5, curiosity: 4 }
 const MAX_OFFLINE_H = 24
 
-// cost en "cobre" (10000 = 1 oro). La galleta es gratis para que nunca se quede sin poder alimentarla.
-export const PET_FOODS = [
-  { id: 'galleta', emoji: '🍪', name: ['Galleta de datos', 'Data cookie'], cost: 0, fx: { hunger: 12, mood: 2 } },
-  { id: 'manzana', emoji: '🍎', name: ['Manzana de bytes', 'Byte apple'], cost: 1500, fx: { hunger: 26, mood: 5 } },
-  { id: 'pizza', emoji: '🍕', name: ['Pizza de píxeles', 'Pixel pizza'], cost: 4000, fx: { hunger: 45, mood: 12 } },
-  { id: 'cafe', emoji: '☕', name: ['Café de enfoque', 'Focus coffee'], cost: 2500, fx: { hunger: 6, energy: 30, curiosity: 10 } },
-]
+// La comida ya no vive aquí: son objetos de la base de datos (src/data/itemDb, clase consumible/comida). Esta lista es
+// solo la vista que usa el Hub. cost en "cobre" (10000 = 1 oro); la galleta es gratis para no quedarse sin poder alimentarla.
+export const PET_FOODS = ITEM_DB.filter((i) => i.class === 'consumable' && i.subclass === 'food').map((i) => {
+  const fx = { ...(i.effects.find((e) => e.type === 'pet_need') || {}) }
+  delete fx.type
+  return { id: i.key, entry: i.entry, emoji: i.icon, name: [i.name, i.i18n?.en?.name || i.name], cost: i.buyPrice, fx }
+})
 
 export const bondLevel = (affection) => 1 + Math.floor(Math.sqrt(Math.max(0, affection)))
 // Cómo se siente ahora: decide el mensaje y la postura del modelo 3D.

@@ -80,6 +80,7 @@ const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const PlazaAtmosferica = lazy(() => import('./components/vr/lookdev/PlazaAtmosferica'))
 const CampusEditor = lazy(() => import('./components/vr/campus/CampusEditor'))
 const HubPage = lazy(() => import('./components/hub/HubPage'))
+const ItemDbPage = lazy(() => import('./components/items/ItemDbPage'))
 // En el celular el mundo VR no vale la pena: la entrada principal lleva al Hub (mascota + perfil). El resto de rutas /vr/* no cambia.
 const isPhone = () => window.matchMedia('(max-width: 767px)').matches && window.matchMedia('(pointer: coarse)').matches
 const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
@@ -1055,6 +1056,18 @@ export default function App() {
                 <VRPage />
               </Suspense>
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/db/items"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><ItemDbPage /></Suspense>) : (
+              <ProtectedRoute>
+                <Suspense fallback={<RouteFallback />}>
+                  <ItemDbPage />
+                </Suspense>
+              </ProtectedRoute>
+            )
           }
         />
         <Route

@@ -75,6 +75,7 @@ const GROUPS = [
     label: 'Juegos',
     icon: '🎮',
     items: [
+      { to: '/db/items', key: 'dbitems', label: tr('Base de objetos', 'Item DB'), icon: '📚', hideFor: ['kids', 'seniors'] },
       { to: '/hub',      key: 'hub',      label: tr('Mi Mascota', 'My Pet'), icon: '🐾' },
       { to: '/mascota',  key: 'mascota',  label: tr('Mi Equipo', 'My Team'), icon: '⚔️', hideFor: ['kids', 'seniors'] },
       { to: '/arbol',    key: 'arbol',    label: tr('Árbol', 'Tree'),     icon: '🌳', hideFor: ['kids', 'seniors'] },
