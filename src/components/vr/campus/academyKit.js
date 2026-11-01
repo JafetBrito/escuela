@@ -61,7 +61,8 @@ const neuron = (Fx, x, y, z, h, R) => { // núcleo neuronal: columna luminosa, a
   for (let i = 0; i < 6; i++) E.add(new THREE.TorusGeometry(1.2 + (i % 3) * 0.45, 0.04, 5, 28).rotateX(Math.PI / 2), i % 2 ? '#ff6bd6' : '#7ff3ff', x, y + 1.2 + i * (h / 6.5), z)
   const nodes = []
   for (let i = 0; i < 26; i++) { const a = i * 2.4, rr = 1.4 + (i % 5) * 0.5, ny = y + 0.9 + (i / 26) * (h - 0.6); nodes.push([x + Math.cos(a) * rr, ny, z + Math.sin(a) * rr]); E.ball(nodes[i][0], ny, nodes[i][2], 0.12 + R() * 0.08, i % 3 ? '#9ff7ff' : '#ff9be8') }
-  for (let i = 0; i < nodes.length - 2; i += 2) { const [ax, ay, az] = nodes[i], [bx, by, bz] = nodes[i + 2]; E.box((ax + bx) / 2, Math.min(ay, by), (az + bz) / 2, Math.abs(ax - bx) + 0.04, Math.abs(ay - by) + 0.04, Math.abs(az - bz) + 0.04, '#3a7f96') }
+  for (let i = 0; i < nodes.length - 2; i += 2) { const [ax, ay, az] = nodes[i], [bx, by, bz] = nodes[i + 2]; // conexión en 3 tramos finos (x, y, z): una sola caja sería un bloque macizo
+    E.box((ax + bx) / 2, ay, az, Math.abs(ax - bx) + 0.05, 0.05, 0.05, '#3a7f96'); E.box(bx, Math.min(ay, by), az, 0.05, Math.abs(ay - by) + 0.05, 0.05, '#3a7f96'); E.box(bx, by, (az + bz) / 2, 0.05, 0.05, Math.abs(az - bz) + 0.05, '#3a7f96') }
   Fx.C.box(x, y, z, 3.2, 1, 3.2, '#fff'); Fx.lights.push([x, y + 2.4, z])
 }
 
