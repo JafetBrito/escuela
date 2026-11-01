@@ -68,6 +68,7 @@ import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '..
 import { SKILL_REGISTRY } from '../../data/skillRegistry'
 import { useItemEffectsStore } from '../../stores/useItemEffectsStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { ownsItem } from '../../data/itemDb/idmap'
 import VrLoadingScreen from './VrLoadingScreen'
 import VrAssetProgress from './VrAssetProgress'
 import VrMascotOnboarding from './VrMascotOnboarding'
@@ -4051,7 +4052,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
   const [bashTerminalStep, setBashTerminalStep] = useState(null)
   const openLocked = useMascotCompanionStore((s) => s.openLocked)
   const flashlightOn = useItemEffectsStore((s) => s.activeItems['linterna'])
-  const flashlightPurchased = useShopStore((s) => s.purchased.includes('linterna'))
+  const flashlightPurchased = useShopStore((s) => ownsItem(s.purchased, 'linterna'))
 
   // Chat TTS — speak every world-chat message out loud, the local player's
   // own as well as everyone else's, so chat doubles as a voice substitute

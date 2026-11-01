@@ -15,6 +15,7 @@ import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, AI_TONES, AI_VERBOSITY, AGENT_MODES, AI_TOOLS } from '../../stores/useSettingsStore'
 import { useAiCredentialsStore } from '../../stores/useAiCredentialsStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { ownsItem } from '../../data/itemDb/idmap'
 import { usePopupPositionStore } from '../../stores/usePopupPositionStore'
 import { useThemeStore, THEMES } from '../../stores/useThemeStore'
 import { SHOP_ITEMS } from '../../data/shopRegistry'
@@ -134,7 +135,7 @@ export default function SettingsPage() {
   const notionConnected = useAiCredentialsStore((s) => s.connections.some((c) => c.providerId === 'notion'))
 
   const ownedPrompts = SHOP_ITEMS.filter(
-    (item) => item.kind === 'ai-prompt' && purchased.includes(item.id),
+    (item) => item.kind === 'ai-prompt' && ownsItem(purchased, item.id),
   )
 
   const displayName = settingsMascotName || mascot.name

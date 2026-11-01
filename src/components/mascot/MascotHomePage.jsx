@@ -19,6 +19,7 @@ import { useMascotStore } from '../../stores/useMascotStore'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useSettingsStore, DEFAULT_CUSTOM_INSTRUCTIONS } from '../../stores/useSettingsStore'
 import { useShopStore } from '../../stores/useShopStore'
+import { ownsItem } from '../../data/itemDb/idmap'
 import { useGameStore, PLAYER_CLASSES, OLIVER_CLASSES, PLAYER_AVATARS } from '../../stores/useGameStore'
 import { useLevelStore, levelProgress } from '../../stores/useLevelStore'
 import { getMascotById } from '../../data/mascotRegistry'
@@ -378,7 +379,7 @@ function PromptTab({ displayName }) {
   const customInstructions = useSettingsStore((s) => s.customInstructions)
   const setCustomInst      = useSettingsStore((s) => s.setCustomInstructions)
 
-  const promptItems = SHOP_ITEMS.filter((i) => i.kind === 'ai-prompt' && purchased.includes(i.id))
+  const promptItems = SHOP_ITEMS.filter((i) => i.kind === 'ai-prompt' && ownsItem(purchased, i.id))
   const activeItem  = promptItems.find((i) => i.promptText === customInstructions) ?? null
 
   return (
@@ -638,7 +639,7 @@ export default function MascotHomePage() {
   const mascot             = getMascotById(selectedMascotId)
   const settingsMascotName = useSettingsStore((s) => s.mascotName)
   const coins              = useCurrencyStore((s) => s.coins)
-  const hasCamera          = useShopStore((s) => s.purchased.includes('camara'))
+  const hasCamera          = useShopStore((s) => ownsItem(s.purchased, 'camara'))
   const playerClass        = useGameStore((s) => s.player.class)
   const oliverClass        = useGameStore((s) => s.oliver.class)
   const avatarId           = useGameStore((s) => s.player.avatarId)

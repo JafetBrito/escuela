@@ -27,7 +27,12 @@ Todo objeto del juego es **una fila** de `ITEM_DB` con los mismos campos (como `
 - `itemDb/remote.js` carga la tabla al abrir `/db/items` o el Hub, la mezcla sobre los valores locales (`applyRemoteRows`) y guarda copia en localStorage. Si la tabla no existe todavía, todo sigue funcionando con los valores locales.
 - En `/db/items` un admin puede **editar** nombre, descripción, ícono, calidad, precio, nivel y dónde se usa, y crear objetos nuevos (`＋ Nuevo`); se guarda en Supabase y la comida del Hub ya lo respeta.
 
+## Tienda y bolsas por `entry` (etapa 3, hecha)
+- `useShopStore.purchased` y `useBagStore.bags` guardan el **entry numérico**; aceptan también la clave de siempre (`'camara'`) y las cuentas guardadas antes se convierten al cargar (`itemDb/idmap.js`: `entryOf`, `keyOf`, `ownsItem`, `normalizeList`). Lo que no es del catálogo (libros) conserva su id de texto.
+- `getShopItemById` acepta entry o clave. La tienda muestra nombre, descripción, ícono y **precio desde la base** (lo que edites en `/db/items` cambia la tienda) y `buyItem` cobra ese precio.
+- Los comandos GM (`/additem`, `/removeitem`) y las comprobaciones de propiedad (`ownsItem`) trabajan con ambas formas.
+
 ## Siguiente etapa (pendiente)
-- Que bolsas, tienda, inventario, equipo y misiones guarden/lean por `entry` (hoy siguen usando `key`).
-- Que tienda y equipo lean de ITEM_DB en lugar de sus registros viejos (hoy solo el Hub lee la tabla editada).
+- Equipo (`useEquipmentStore`) y objetos activos (`useItemEffectsStore`) siguen usando claves de texto.
+- Que las misiones/recompensas (`useCollectionStore`) entreguen objetos de la base por `entry`.
 - Mismo modelo para clases y subclases (`class_template`) y habilidades.

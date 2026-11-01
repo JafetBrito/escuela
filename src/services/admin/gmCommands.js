@@ -5,6 +5,7 @@ import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { useLevelStore, XP_PER_LEVEL } from '../../stores/useLevelStore'
 import { useMascotStore } from '../../stores/useMascotStore'
 import { getShopItemById, SHOP_ITEMS } from '../../data/shopRegistry'
+import { entryOf, ownsItem } from '../../data/itemDb/idmap'
 import { pushSnapshotToCloud } from '../persistence/autoSave'
 
 export const SELF_TARGET = 'yo'
@@ -73,7 +74,7 @@ export async function runGmCommand(targetId, name, args) {
         if (!already && bagStore.spaceLeft(owner) <= 0) {
           throw new Error(`❌ La bolsa de ${label} está llena (${MAX_BAG_SLOTS}/${MAX_BAG_SLOTS}).`)
         }
-        useShopStore.setState((s) => (s.purchased.includes(itemId) ? s : { purchased: [...s.purchased, itemId] }))
+        useShopStore.setState((s) => (ownsItem(s.purchased, itemId) ? s : { purchased: [...s.purchased, entryOf(itemId)] }))
         if (!already) bagStore.addItem(owner, itemId)
         await pushSnapshotToCloud()
       } else {
@@ -81,11 +82,11 @@ export async function runGmCommand(targetId, name, args) {
           const purchasedItems = snap.purchasedItems ?? []
           const bags = snap.bags ?? { player: [], oliver: [] }
           const bag = bags[owner] ?? []
-          if (!bag.includes(itemId) && bag.length >= MAX_BAG_SLOTS) {
+          if (!ownsItem(bag, itemId) && bag.length >= MAX_BAG_SLOTS) {
             throw new Error(`❌ La bolsa de ${label} está llena (${MAX_BAG_SLOTS}/${MAX_BAG_SLOTS}).`)
           }
-          if (!purchasedItems.includes(itemId)) snap.purchasedItems = [...purchasedItems, itemId]
-          if (!bag.includes(itemId)) snap.bags = { ...bags, [owner]: [...bag, itemId] }
+          if (!ownsItem(purchasedItems, itemId)) snap.purchasedItems = [...purchasedItems, entryOf(itemId)]
+          if (!ownsItem(bag, itemId)) snap.bags = { ...bags, [owner]: [...bag, entryOf(itemId)] }
         })
       }
       return `✅ Objeto "${itemId}" añadido a la bolsa de ${label}.`
@@ -97,14 +98,14 @@ export async function runGmCommand(targetId, name, args) {
       if (!owner) throw new Error('Dueño inválido — usa "avatar" o "mascota". Ej: /removeitem avatar camara')
       const label = OWNER_LABEL[owner]
       if (isSelf) {
-        useShopStore.setState((s) => ({ purchased: s.purchased.filter((id) => id !== itemId) }))
+        useShopStore.setState((s) => ({ purchased: s.purchased.filter((id) => !ownsItem([id], itemId)) }))
         useBagStore.getState().removeItem(owner, itemId)
         await pushSnapshotToCloud()
       } else {
         await mutateRemoteSnapshot(targetId, (snap) => {
-          snap.purchasedItems = (snap.purchasedItems ?? []).filter((id) => id !== itemId)
+          snap.purchasedItems = (snap.purchasedItems ?? []).filter((id) => !ownsItem([id], itemId))
           const bags = snap.bags ?? { player: [], oliver: [] }
-          snap.bags = { ...bags, [owner]: (bags[owner] ?? []).filter((id) => id !== itemId) }
+          snap.bags = { ...bags, [owner]: (bags[owner] ?? []).filter((id) => !ownsItem([id], itemId)) }
         })
       }
       return `✅ Objeto "${itemId}" eliminado de la bolsa de ${label}.`

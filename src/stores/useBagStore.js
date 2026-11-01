@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getShopItemById } from '../data/shopRegistry'
+import { entryOf, normalizeList } from '../data/itemDb/idmap'
 
 // Bolsas por dueño para objetos de Tienda ('player' = Avatar, 'oliver' =
 // Mascota — mismas claves que useEquipmentStore/useGameStore). Decide SOLO
@@ -12,21 +13,22 @@ export const useBagStore = create((set, get) => ({
   migrated: false,
 
   spaceLeft: (owner) => MAX_BAG_SLOTS - (get().bags[owner]?.length ?? 0),
-  hasItem: (owner, itemId) => (get().bags[owner] ?? []).includes(itemId),
+  hasItem: (owner, ref) => (get().bags[owner] ?? []).includes(entryOf(ref)),
 
-  addItem: (owner, itemId) => {
-    const bag = get().bags[owner] ?? []
+  // Las bolsas guardan el ENTRY numérico del objeto; aceptan también la clave de siempre.
+  addItem: (owner, ref) => {
+    const itemId = entryOf(ref), bag = get().bags[owner] ?? []
     if (bag.includes(itemId)) return true
     if (bag.length >= MAX_BAG_SLOTS) return false
     set((s) => ({ bags: { ...s.bags, [owner]: [...bag, itemId] } }))
     return true
   },
 
-  removeItem: (owner, itemId) =>
-    set((s) => ({ bags: { ...s.bags, [owner]: (s.bags[owner] ?? []).filter((id) => id !== itemId) } })),
+  removeItem: (owner, ref) =>
+    set((s) => ({ bags: { ...s.bags, [owner]: (s.bags[owner] ?? []).filter((id) => id !== entryOf(ref)) } })),
 
   loadBags: (bags, migrated) =>
-    set({ bags: { player: bags?.player ?? [], oliver: bags?.oliver ?? [] }, migrated: migrated ?? false }),
+    set({ bags: { player: normalizeList(bags?.player), oliver: normalizeList(bags?.oliver) }, migrated: migrated ?? false }),
 
   // Backfill de una sola vez: objetos comprados bajo el sistema viejo (sin
   // bolsa) se colocan en la bolsa del Avatar. Gateado por `migrated`, no por
@@ -34,9 +36,10 @@ export const useBagStore = create((set, get) => ({
   runMigrationIfNeeded: (purchasedItems) => {
     const { migrated, bags } = get()
     if (migrated) return
-    const already = new Set([...(bags.player ?? []), ...(bags.oliver ?? [])])
+    const already = new Set([...(bags.player ?? []), ...(bags.oliver ?? [])].map(entryOf))
     const toMigrate = (purchasedItems ?? [])
-      .filter((id) => getShopItemById(id) && !already.has(id))
+      .filter((id) => getShopItemById(id) && !already.has(entryOf(id)))
+      .map(entryOf)
       .slice(0, MAX_BAG_SLOTS - (bags.player?.length ?? 0))
     set((s) => ({ bags: { ...s.bags, player: [...(s.bags.player ?? []), ...toMigrate] }, migrated: true }))
   },

@@ -1,4 +1,5 @@
 import { ITEM_RARITY } from './itemsRegistry'
+import { keyOf } from './itemDb/idmap'
 
 // Generates a random flavor stat for items whose characteristics are rolled
 // when the catalog is created (e.g. "Sabiduría +14"). Purely cosmetic.
@@ -332,7 +333,7 @@ export const SHOP_ITEMS = [
 ]
 
 export function getShopItemById(id) {
-  return SHOP_ITEMS.find((i) => i.id === id)
+  return SHOP_ITEMS.find((i) => i.id === keyOf(id)) // acepta el entry numérico o la clave de siempre
 }
 
 export { ITEM_RARITY }

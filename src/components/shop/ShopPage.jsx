@@ -18,7 +18,7 @@
  * ============================================================================
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppTopBar from '../shared/AppTopBar'
 import MascotCompanion from '../mascot/MascotCompanion'
 import PageVideoModal from '../shared/PageVideoModal'
@@ -27,6 +27,9 @@ import NpcChatPanel from '../shared/NpcChatPanel'
 import BagChooserModal from './BagChooserModal'
 import { SHOP_ITEMS, SHOP_CATEGORIES, ITEM_RARITY } from '../../data/shopRegistry'
 import { useShopStore } from '../../stores/useShopStore'
+import { ownsItem } from '../../data/itemDb/idmap'
+import { getItem } from '../../data/itemDb'
+import { useItemDbStore, loadRemoteItems } from '../../data/itemDb/remote'
 import { useCurrencyStore } from '../../stores/useCurrencyStore'
 import { formatCurrency } from '../../utils/currency'
 import { useI18n } from '../../i18n'
@@ -56,6 +59,8 @@ export default function ShopPage() {
   const coins = useCurrencyStore((s) => s.coins)
   const purchased = useShopStore((s) => s.purchased)
   const [chooserItem, setChooserItem] = useState(null)
+  const dbVersion = useItemDbStore((s) => s.version) // re-renderiza cuando un admin edita precios/nombres en la base
+  useEffect(() => { loadRemoteItems() }, [])
 
   /**
    * 🧹 FILTRO Y AGRUPACIÓN DE INVENTARIO (Memoizado por rendimiento)
@@ -66,18 +71,20 @@ export default function ShopPage() {
     const groups = new Map()
     for (const item of SHOP_ITEMS) {
       // Si ya lo compró, sáltalo. El usuario lo encontrará en su inventario/ajustes.
-      if (purchased.includes(item.id)) continue
+      if (ownsItem(purchased, item.id)) continue
       
       const key = item.category ?? 'cosmeticos'
       if (!groups.has(key)) groups.set(key, [])
-      groups.get(key).push(item)
+      const db = getItem(item.id) // nombre, descripción, ícono y precio salen de la base de objetos (editable)
+      groups.get(key).push(db ? { ...item, name: db.name, description: db.description, icon: db.icon, price: item.comingSoon ? item.price : db.buyPrice } : item)
     }
     
     // Convertimos el Map a Array y lo ordenamos según CATEGORY_ORDER
     return Array.from(groups.entries()).sort(
       (a, b) => CATEGORY_ORDER.indexOf(a[0]) - CATEGORY_ORDER.indexOf(b[0]),
     )
-  }, [purchased]) // Solo se recalcula si el usuario compra algo nuevo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dbVersion fuerza el recálculo cuando getItem() devuelve valores editados
+  }, [purchased, dbVersion]) // Se recalcula al comprar o cuando cambia la base de objetos.
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-text">
