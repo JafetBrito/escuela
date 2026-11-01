@@ -1,0 +1,1 @@
+Pon aquí tus modelos .glb (Blender, Tripo, etc.). Aparecen solos en la paleta del editor (/vr/editor), grupo 'Mis modelos'.

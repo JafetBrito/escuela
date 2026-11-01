@@ -78,6 +78,7 @@ const CourseRoadmapPage = lazy(() => import('./components/learning/CourseRoadmap
 const MascotHomePage = lazy(() => import('./components/mascot/MascotHomePage'))
 const LibraryPage = lazy(() => import('./components/library/LibraryPage'))
 const PlazaAtmosferica = lazy(() => import('./components/vr/lookdev/PlazaAtmosferica'))
+const CampusEditor = lazy(() => import('./components/vr/campus/CampusEditor'))
 const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
 const BlogPage = lazy(() => import('./components/blog/BlogPage'))
 const BlogPostPage = lazy(() => import('./components/blog/BlogPostPage'))
@@ -1056,6 +1057,29 @@ export default function App() {
                 <Suspense fallback={<RouteFallback />}>
                   <VRPage plazaMode />
                 </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
+        <Route
+          path="/vr/campus"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+                <Suspense fallback={<RouteFallback />}>
+                  <VRPage plazaMode campusMap />
+                </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
+        {/* Editor del campus (solo admin; en dev local queda abierto). Guarda en src/data/campusLayout.json */}
+        <Route
+          path="/vr/editor"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><CampusEditor /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false}>
+                <Suspense fallback={<RouteFallback />}><CampusEditor /></Suspense>
               </ProtectedRoute>
             )
           }

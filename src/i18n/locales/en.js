@@ -1249,6 +1249,7 @@ export const en = {
         room: { name: 'My Room', desc: 'Your private space' },
         anfiteatro: { name: 'Amphitheater', desc: 'Theater with a live screen' },
         plaza: { name: 'Plaza of the Academies', desc: 'Temple, paths and gems · Greek touch' },
+        campusU: { name: 'University Campus', desc: 'Brick yard, library, river and enterable buildings' },
         ciudad: { name: 'City', desc: 'Coming soon…' },
       },
     atlasMap: {
@@ -1359,6 +1360,7 @@ export const en = {
       birthday: 'Your Birthday Party',
       classroom: 'Classroom',
       plaza: 'Plaza of the Academies',
+      campusU: 'University Campus',
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

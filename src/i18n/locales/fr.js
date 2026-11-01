@@ -651,6 +651,7 @@ export const fr = {
         room: { name: 'Ma Chambre', desc: 'Ton espace privé' },
         anfiteatro: { name: 'Amphithéâtre', desc: 'Théâtre avec un écran en direct' },
         plaza: { name: 'Place des Académies', desc: 'Temple, sentiers et gemmes · touche grecque' },
+        campusU: { name: 'Campus Universitaire', desc: 'Cour de briques, bibliothèque, rivière et bâtiments à visiter' },
         ciudad: { name: 'Ville', desc: 'Bientôt disponible…' },
       },
     atlasMap: {
@@ -759,6 +760,7 @@ export const fr = {
       room: 'Ma Chambre',
       campus: 'Campus RV',
       plaza: 'Place des Académies',
+      campusU: 'Campus Universitaire',
     },
     worldTreeBadge: '🌳 Arbre-Monde',
     buttons: {

@@ -1,6 +1,6 @@
 ﻿import { useVrStreamStore } from '../../stores/useVrStreamStore'
 import StreamHud from './StreamHud'
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, useGLTF } from '@react-three/drei'
 import { Physics, RigidBody, CapsuleCollider, CuboidCollider, useRapier } from '@react-three/rapier'
@@ -90,6 +90,9 @@ import { useImportedGlbGround } from './worlds/useImportedGlbGround'
 import SceneEffects from '../shared/SceneEffects'
 import DayNightCycle from './DayNightCycle'
 import PlazaScenery from './lookdev/PlazaScenery'
+import { CAMPUS_S, npcPoints } from './campus/campusWorld'
+import campusLayout from '../../data/campusLayout.json'
+const CampusScenery = lazy(() => import('./campus/CampusScenery'))
 import { PRESETS, PRESETS_GRIEGO, presetForHour, PLAZA_Y } from './lookdev/plazaWorld'
 import { startAmbience, setAmbiencePreset, shutdownAmbience } from './lookdev/plazaAudio'
 import {
@@ -2610,7 +2613,7 @@ function BirthdayIntroScreen({ name, onEnter }) {
 const PLAZA_S = 0.6
 const ambienceOf = (id) => (id === 'dia' ? 'atardecer' : id) // el ambiente sonoro no tiene acorde de mediodía
 const PLAZA_NPC_ANGLES = [0, 20, 70, 110, 160, 180, 200, 250, 270, 290, 340] // sin 90°: ese es el camino de entrada
-function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearbyNpcChange, onGem, remoteTransformsRef, remoteActionsRef, onSelectPlayer }) {
+function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearbyNpcChange, onGem, remoteTransformsRef, remoteActionsRef, onSelectPlayer }) {
   const { lang } = useI18n()
   const spawnedNpcs = useSpawnedNpcStore((s) => s.npcs)
   const [shell, setShell] = useState(null)
@@ -2634,16 +2637,24 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
   }, [])
   useEffect(() => { setAmbiencePreset(ambienceOf(presetId)) }, [presetId])
 
+  const campusPts = useMemo(() => (campus ? npcPoints(campusLayout) : null), [campus])
+  // ?spawn=x,z (metros del campus): aparecer en otro punto — lo usa el editor ("Probar aquí") y sirve para ir directo a un interior.
+  const campusSpawn = useMemo(() => {
+    const q = new URLSearchParams(location.search).get('spawn')?.split(',').map(Number)
+    const [x, z] = q && q.length === 2 && q.every(Number.isFinite) ? q : campusLayout.spawn
+    return [x * CAMPUS_S, 0, z * CAMPUS_S]
+  }, [])
   const ringNpcs = useMemo(() => {
     const seen = new Set()
     return [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
       .filter((n) => !seen.has(n.id) && seen.add(n.id))
-      .slice(0, PLAZA_NPC_ANGLES.length)
+      .slice(0, campus ? campusPts.length : PLAZA_NPC_ANGLES.length)
       .map((npc, i) => {
+        if (campus) return { ...localizeNpcDialogue(npc, lang), position: campusPts[i] }
         const a = (PLAZA_NPC_ANGLES[i] * Math.PI) / 180
         return { ...localizeNpcDialogue(npc, lang), position: [Math.cos(a) * 16 * PLAZA_S, PLAZA_Y * PLAZA_S, Math.sin(a) * 16 * PLAZA_S] }
       })
-  }, [lang])
+  }, [lang, campus, campusPts])
   const npcPositions = useMemo(
     () => [...ringNpcs, ...spawnedNpcs].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
     [ringNpcs, spawnedNpcs],
@@ -2651,7 +2662,9 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
 
   return (
     <>
-      <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />
+      {campus
+        ? <CampusScenery data={campusLayout} p={presets[presetId]} followRef={playerPositionRef} onShell={setShell} />
+        : <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />}
       {/* Suspense propio: los GLB de NPCs/jugador cargan aparte y no deben ocultar el paisaje mientras llegan */}
       <Suspense fallback={null}>
         {ringNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
@@ -2668,14 +2681,15 @@ function PlazaGroundWorld({ mascot, skin, keysRef, cameraRef, playerPositionRef,
           scenery={shell}
           raycastGround
           fillLight
-          groundRayHeight={40}
+          multiLevel={!!campus}
+          groundRayHeight={campus ? 80 : 40}
           keysRef={keysRef}
           cameraRef={cameraRef}
           playerPositionRef={playerPositionRef}
           playerRotationRef={playerRotationRef}
           authorName={authorName}
           playerId={playerId}
-          spawnAt={[0, 0, 44 * PLAZA_S]}
+          spawnAt={campus ? campusSpawn : [0, 0, 44 * PLAZA_S]}
         />
         </Suspense>
       )}
@@ -2716,6 +2730,7 @@ function World({
   classroomMode,
   watchRoomMode,
   plazaMode,
+  campusMap,
   onGem,
   classId,
 }) {
@@ -2792,6 +2807,7 @@ function World({
   if (plazaMode) {
     return (
       <PlazaGroundWorld
+        campus={campusMap}
         mascot={mascot}
         skin={skin}
         keysRef={keysRef}
@@ -3338,6 +3354,7 @@ const TRANSPORT_WORLDS = [
   { id: 'room',       emoji: '🏠', available: true,  path: '/vr/room' },
   { id: 'anfiteatro', emoji: '🎭', available: true,  path: '/vr/anfiteatro' },
   { id: 'plaza',      emoji: '🏛️', available: true,  path: '/vr/plaza' },
+  { id: 'campusU',    emoji: '🎓', available: true,  path: '/vr/campus' },
   { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
@@ -3825,7 +3842,7 @@ function ClassPreviewCard({ classId, step, playerClass, oliverClass, isAdmin, on
 // para compartirlo con el Templo tutorial (VrArbol).
 
 // roomMode / anfiteatroMode / worldTreeMode come from the route.
-export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false, watchRoomMode = false, plazaMode = false }) {
+export default function VRPage({ roomMode = false, anfiteatroMode = false, worldTreeMode = false, testMode = false, birthdayMode = false, classroomMode = false, watchRoomMode = false, plazaMode = false, campusMap = false }) {
   const { t, lang } = useI18n()
   const [plazaGems, setPlazaGems] = useState(null)
   const navigate = useNavigate()
@@ -4357,6 +4374,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
               classroomMode={classroomMode}
               watchRoomMode={watchRoomMode}
               plazaMode={plazaMode}
+              campusMap={campusMap}
               onGem={setPlazaGems}
               classId={classId}
             />
@@ -4750,7 +4768,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

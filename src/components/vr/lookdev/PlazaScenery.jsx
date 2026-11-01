@@ -23,7 +23,7 @@ import {
 const MARBLE = '#efe6d4', MARBLE_SH = '#d8cdb6', TERRA = '#c2653d', BLUE = '#2f63a8', GOLD = '#e8c766'
 
 // ── Geometría con color por vértice (la paleta vive en la malla, no en texturas) ──
-function paint(g, hex) {
+export function paint(g, hex) {
   const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3)
   for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b }
   g.setAttribute('color', new THREE.BufferAttribute(a, 3))
@@ -131,7 +131,7 @@ void main(){
   #include <colorspace_fragment>
 }`
 
-function SkyDome({ p }) {
+export function SkyDome({ p }) {
   const ref = useRef(), { camera } = useThree()
   const uniforms = useMemo(() => ({
     uTop: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uHor: { value: new THREE.Color() },
@@ -150,7 +150,7 @@ function SkyDome({ p }) {
   )
 }
 
-function Ridges({ p }) {
+export function Ridges({ p }) {
   const rings = useMemo(() => [
     { g: buildRidge(215, 38, 1), t: 0.0 }, { g: buildRidge(262, 62, 5), t: 0.5 }, { g: buildRidge(320, 92, 9), t: 1.0 },
   ], [])
@@ -177,10 +177,10 @@ function Terrain({ torre }) {
 }
 
 // ── Árboles y rocas (instanciados, con viento) ───────────────────────────────
-const windU = { value: 0 } // reloj compartido: viento de los árboles y luciérnagas
-function Clock() { useFrame((s) => { windU.value = s.clock.elapsedTime }); return null }
+export const windU = { value: 0 } // reloj compartido: viento de los árboles y luciérnagas
+export function Clock() { useFrame((s) => { windU.value = s.clock.elapsedTime }); return null }
 
-function Instances({ items, geometry, wind = true }) {
+export function Instances({ items, geometry, wind = true }) {
   const ref = useRef()
   const material = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 })
@@ -559,7 +559,7 @@ void main(){
 const FLY_FRAG = `
 uniform vec3 uColor; uniform float uI; varying float vA;
 void main(){ float d = length(gl_PointCoord - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, d); gl_FragColor = vec4(uColor * uI, a * a * vA); }`
-function Fireflies({ p, scale }) {
+export function Fireflies({ p, scale }) {
   const { gl } = useThree()
   const geo = useMemo(() => {
     const R = rng(7), N = 260, pos = new Float32Array(N * 3), ph = new Float32Array(N)
@@ -582,7 +582,7 @@ function Fireflies({ p, scale }) {
 }
 
 // El sol/luna sigue a quien camina para que la sombra se vea nítida cerca de él.
-function Sun({ p, scale, followRef }) {
+export function Sun({ p, scale, followRef }) {
   const light = useRef()
   const target = useMemo(() => new THREE.Object3D(), [])
   const dir = useMemo(() => sunDirOf(p), [p])

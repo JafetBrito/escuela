@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import i18nDataPlugin from './scripts/i18n-data/vite-plugin.mjs'
 
 // Git-derived build metadata, injected at build time so the app can show
@@ -30,6 +32,28 @@ function recentCommits(n) {
   })
 }
 
+// Editor del campus (/vr/editor): en `npm run dev` guarda el layout directo en src/data/campusLayout.json.
+// En producción no existe (el sitio no puede escribir su propio código): el editor cae a "descargar JSON".
+function campusEditorPlugin() {
+  return {
+    name: 'campus-editor-save',
+    configureServer(server) {
+      server.middlewares.use('/__campus/save', (req, res) => {
+        if (req.method !== 'POST') { res.statusCode = 405; return res.end() }
+        let body = ''
+        req.on('data', (c) => { body += c })
+        req.on('end', () => {
+          try {
+            if (!Array.isArray(JSON.parse(body).items)) throw new Error('falta items[]')
+            writeFileSync(fileURLToPath(new URL('./src/data/campusLayout.json', import.meta.url)), body)
+            res.end('ok')
+          } catch (e) { res.statusCode = 400; res.end(String(e)) }
+        })
+      })
+    },
+  }
+}
+
 export default defineConfig({
   define: {
     __BUILD_NUMBER__: JSON.stringify(git('git rev-list --count HEAD', '0')),
@@ -40,6 +64,7 @@ export default defineConfig({
   },
   plugins: [
     i18nDataPlugin(), // traducciones del contenido (ver scripts/translate-data.mjs)
+    campusEditorPlugin(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

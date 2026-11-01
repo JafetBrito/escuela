@@ -46,14 +46,19 @@ import {
 // for an interior model with a ceiling/dome above the walkable area, the
 // first hit going down from above is the ceiling, which used to snap the
 // player up there permanently instead of onto the real floor.
-export function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
+//
+// `fromY` (solo mundos multinivel, ej. el campus con interiores): el rayo sale de esa altura (los pies +
+// un escalón) y gana el piso MÁS ALTO que cruza, así que se puede subir a un segundo piso por una escalera
+// sin que el piso de abajo "gane" ni el techo cuente (los techos no son isFloor).
+export function getGroundY(raycaster, scenery, groundRayHeight, x, z, fromY) {
   // ponytail: worlds with a flat physics-only floor (no visual scenery mesh,
   // e.g. the Test Map) pass no scenery at all — flat ground is y=0 anyway.
   if (!scenery) return 0
-  raycaster.set(new THREE.Vector3(x, groundRayHeight, z), DOWN)
+  raycaster.far = Infinity
+  raycaster.set(new THREE.Vector3(x, fromY ?? groundRayHeight, z), DOWN)
   const hits = raycaster.intersectObject(scenery, true).filter((h) => h.object.userData.isFloor)
   if (!hits.length) return 0
-  return Math.min(...hits.map((h) => h.point.y))
+  return fromY === undefined ? Math.min(...hits.map((h) => h.point.y)) : Math.max(...hits.map((h) => h.point.y))
 }
 
 // Casts a ray from the player's chest in a horizontal direction to check for
@@ -62,9 +67,13 @@ export function getGroundY(raycaster, scenery, groundRayHeight, x, z) {
 export function isBlocked(raycaster, scenery, origin, direction, distance) {
   if (distance <= 0 || !scenery) return false
   raycaster.set(origin, direction)
+  raycaster.far = COLLISION_RADIUS + distance + 0.01 // sin esto el rayo prueba TODA malla que cruce la línea, por lejos que esté
   const hits = raycaster.intersectObject(scenery, true)
+  raycaster.far = Infinity
   return hits.length > 0 && hits[0].distance < COLLISION_RADIUS + distance
 }
+
+const STEP_UP = 0.7 // multiLevel: cuánto más alto que los pies puede estar un piso para subirse a él (escalón/rampa)
 
 // Humanoid avatar body for the local player and remote players — the real
 // hombre.glb/mujer.glb model for the player's chosen PLAYER_AVATARS entry,
@@ -127,6 +136,8 @@ export function Player({
   // texturas oscuras (chaqueta/pantalón casi negros) y a la sombra de un mundo con poca luz ambiente se
   // ven como una silueta. Solo la pide la plaza; el resto de mundos conserva su iluminación.
   fillLight = false,
+  // Mundos con pisos a distintas alturas (interiores con escaleras): ver getGroundY(fromY).
+  multiLevel = false,
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -318,7 +329,7 @@ export function Player({
       // trimesh pesado (ej. computer_lab.glb, un salón entero) tarda varios
       // frames en construirse de forma asíncrona, así que este camino SÍ se
       // usa de verdad al entrar a esos mundos, no solo en mundos sin física.
-      const groundY = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z)
+      const groundY = getGroundY(raycaster, scenery, groundRayHeight, pos.x, pos.z, multiLevel ? pos.y + STEP_UP : undefined)
       if (pos.y <= groundY) {
         pos.y = groundY
         velocityY.current = 0
@@ -366,7 +377,7 @@ export function Player({
         cs.yaw += Math.atan2(Math.sin(group.current.rotation.y - cs.yaw), Math.cos(group.current.rotation.y - cs.yaw)) * Math.min(1, 3 * delta)
       }
       c.rotation.y = cs.yaw
-      const gy = getGroundY(raycaster, scenery, groundRayHeight, c.position.x, c.position.z)
+      const gy = getGroundY(raycaster, scenery, groundRayHeight, c.position.x, c.position.z, multiLevel ? c.position.y + STEP_UP : undefined)
       c.position.y += (gy - c.position.y) * Math.min(1, 14 * delta)
       const inner = c.children[0]
       if (inner) animateBody(inner, cs.phase, cs.moving ? 1 : 0, state.clock.elapsedTime + 1.7, c.userData.scale)
@@ -424,10 +435,12 @@ export function Player({
       if (camCollisionFrame.current % 3 === 0) {
         const camOrigin = new THREE.Vector3(pos.x, pos.y + PLAYER_HEIGHT * 0.6 + cameraHeight * 0.3, pos.z)
         raycaster.set(camOrigin, camDir)
+        Object.assign(raycaster, { far: distance + 1 }) // limita el rayo (no probar mallas lejanas); se restaura abajo
         // Ignore the flat ground/plaza here — they shouldn't pull the camera in
         // when looking down or zooming out, only real obstacles (walls,
         // buildings) should.
         const camHits = raycaster.intersectObject(scenery, true).filter((hit) => !hit.object.userData?.isFloor)
+        Object.assign(raycaster, { far: Infinity })
         camCollisionDistance.current = camHits.length > 0 ? camHits[0].distance : Infinity
       }
       const effectiveDistance =
