@@ -185,8 +185,10 @@ export function Player({
     camera.updateProjectionMatrix()
   }, [camera, fov])
 
-  useFrame((state, delta) => {
+  useFrame((state, rawDelta) => {
     if (!group.current) return
+    // Un cuadro muy largo (equipo lento, pestaña en segundo plano) hacía caer al jugador 20 m de golpe bajo el piso: tope de 50 ms.
+    const delta = Math.min(rawDelta, 0.05)
     const keys = keysRef.current
     const pos = group.current.position
 
@@ -339,6 +341,7 @@ export function Player({
       }
       velocityY.current += GRAVITY * delta
       pos.y += velocityY.current * delta
+      if (pos.y < groundY) pos.y = groundY // nunca por debajo del piso, ni con un salto de cuadro
       // Sin esto, el body kinematic se queda congelado en su posición
       // inicial (fijada una sola vez al montar) mientras dura este modo.
       // En cuanto el colisionador Rapier terminaba de construirse, el otro

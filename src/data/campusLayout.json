@@ -802,4 +802,5 @@
 {"id":"h802","type":"hedge","x":-26,"z":74,"rot":0,"len":18},
 {"id":"h803","type":"hedge","x":-26,"z":50,"rot":0,"len":18},
 {"id":"h804","type":"hedge","x":26,"z":74,"rot":0,"len":18},
-{"id":"h805","type":"hedge","x":26,"z":50,"rot":0,"len":18}]}
+{"id":"h805","type":"hedge","x":26,"z":50,"rot":0,"len":18},
+{"id":"portal-plaza","type":"portal","x":-14,"z":122,"rot":0,"to":"/vr/plaza","label":"Plaza de las Academias","color":"#ffb347"}]}

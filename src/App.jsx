@@ -1044,13 +1044,18 @@ export default function App() {
         />
         <Route
           path="/vr"
-          element={isPhone() ? <Navigate to="/hub" replace /> : (
+          element={<Navigate to={isPhone() ? '/hub' : '/vr/plaza'} replace />}
+        />
+        {/* El mapa 3D viejo (campus.glb): ya no es la entrada; queda temporalmente aquí hasta mudar sus NPC y misiones al campus nuevo. */}
+        <Route
+          path="/vr/campus-clasico"
+          element={
             <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
               <Suspense fallback={<RouteFallback />}>
                 <VRPage />
               </Suspense>
             </ProtectedRoute>
-          )}
+          }
         />
         <Route
           path="/hub"

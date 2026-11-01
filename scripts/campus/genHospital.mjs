@@ -203,6 +203,7 @@ const npcIn = (kind, name) => { const r = rooms.find((q) => q.kind === kind && (
 add({ type: 'npc', x: 0, z: 14, y: 0.3 })
 ;['triage', 'resus', 'or', 'icu', 'lab', 'pharmacy', 'aula', 'anatomy', 'chapel', 'sim'].forEach((k) => npcIn(k))
 
+add({ type: 'portal', x: -14, z: 70, rot: 0, to: '/vr/plaza', label: 'Plaza de las Academias', color: '#ffb347' })
 const data = { version: 1, map: 'hospital', terrain: 'flat', ambient: 0.26, lamp: 2.6, spawn: [0, 78], items }
 writeFileSync(new URL('../../src/data/hospitalLayout.json', import.meta.url), JSON.stringify(data).replace(/\},\{/g, '},\n{'))
 const byKind = rooms.reduce((a, r) => ((a[r.kind] = (a[r.kind] || 0) + 1), a), {})

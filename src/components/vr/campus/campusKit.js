@@ -483,6 +483,18 @@ export function buildKiosk() { // quiosco de piedra con techo (merenderito en el
   return { solid: M.build(), collide: C.build() }
 }
 
+// Portal: arco de piedra con un velo luminoso. Se camina a través (solo los pilares colisionan); el juego lo
+// detecta por cercanía y viaja a `to`. Compartido por el campus, el hospital y la plaza.
+export function buildPortal({ color = '#ff9f43', w = 4, h = 5.5, label = '' } = {}) {
+  const M = new Mesher(), E = new Mesher(), C = new Mesher(), signs = []
+  for (const sx of [-1, 1]) { M.box(sx * (w / 2 + 0.4), 0, 0, 0.9, h, 1.0, '#cfc6b0'); M.box(sx * (w / 2 + 0.4), h, 0, 1.2, 0.35, 1.3, '#e8dec8'); C.box(sx * (w / 2 + 0.4), 0, 0, 0.9, h, 1.0, '#fff') }
+  M.box(0, h, 0, w + 2.2, 0.9, 1.2, '#cfc6b0'); M.box(0, h + 0.9, 0, w + 2.6, 0.3, 1.4, '#e8dec8'); M.box(0, 0, 0, w + 2.2, 0.15, 1.8, '#a69d8a')
+  for (const z of [0.02, -0.02]) E.add(new THREE.CircleGeometry(w / 2, 24).scale(1, h / w, 1).rotateY(z < 0 ? Math.PI : 0).translate(0, h / 2, z), color, 0, 0, 0)
+  for (let i = 0; i < 12; i++) { const a = (i / 12) * 6.283; E.box(Math.cos(a) * (w / 2 + 0.15), h / 2 + Math.sin(a) * (h / 2 + 0.1), 0, 0.22, 0.22, 0.22, '#ffffff') }
+  if (label) signs.push({ text: label, color, x: 0, y: h + 1.3, z: 0.75, w: Math.max(5, w + 1), h: 1.1, ry: 0 }, { text: label, color, x: 0, y: h + 1.3, z: -0.75, w: Math.max(5, w + 1), h: 1.1, ry: Math.PI })
+  return { solid: M.build(), emissive: E.build(), collide: C.build(), signs, bounds: { w: w + 3, d: 2, h: h + 2 } }
+}
+
 // ── Catálogo (lo lee el editor para armar la paleta y los campos de cada pieza) ──
 const STYLE_OPTS = ['brick', 'neo', 'brut', 'modern']
 const INT_OPTS = ['hall', 'classroom', 'library', 'dining', 'chapel', 'lab', 'dorm', 'cafe']
@@ -511,6 +523,7 @@ export const CATALOG = {
   stadium: { label: 'Estadio', group: 'Edificios', defaults: { w: 70, d: 120 }, fields: [num('w', 'Ancho (m)', 40, 100), num('d', 'Largo (m)', 80, 180)] },
   pave: { label: 'Pavimento', group: 'Suelo', defaults: { w: 30, d: 30, mat: 'stone' }, fields: [num('w', 'Ancho (m)', 2, 200), num('d', 'Fondo (m)', 2, 200), num('r', 'Radio (círculo, 0=rect.)', 0, 60), sel('mat', 'Material', ['gravel', 'brick', 'stone', 'asphalt', 'plank'])] },
   npc: { label: 'Punto de NPC', group: 'Juego', defaults: {}, fields: [] },
+  portal: { label: 'Portal (viaje a otro mapa)', group: 'Juego', defaults: { to: '/vr/plaza', label: 'Plaza de las Academias', color: '#ffb347' }, fields: [text('to', 'Ruta destino'), text('label', 'Letrero'), text('color', 'Color')] },
   glb: { label: 'Modelo .glb', group: 'Mis modelos', defaults: { file: '', s: 1 }, fields: [num('s', 'Escala', 0.05, 40, 0.05)] },
 }
 
@@ -539,6 +552,7 @@ export function pieceFor(it) {
     case 'tower': v = buildTower(it); break
     case 'bridge': v = buildBridge(it); break
     case 'stadium': v = buildStadium(it); break
+    case 'portal': v = buildPortal(it); break
     default: v = hospitalPiece(it) ?? null
   }
   cache.set(key, v)

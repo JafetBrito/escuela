@@ -107,6 +107,7 @@ for (let z = 90; z >= -20; z -= 28) add({ type: 'bench', x: -6.5, z: z - 14, rot
 for (const a of [0, 90, 180, 270]) add({ type: 'bench', x: Math.round(Math.sin((a * Math.PI) / 180) * 9), z: 62 + Math.round(Math.cos((a * Math.PI) / 180) * 9), rot: a })
 for (const sx of [-1, 1]) { add({ type: 'hedge', x: sx * 26, z: 74, rot: 0, len: 18 }); add({ type: 'hedge', x: sx * 26, z: 50, rot: 0, len: 18 }) }
 
+add({ type: 'portal', x: -14, z: 122, rot: 0, to: '/vr/plaza', label: 'Plaza de las Academias', color: '#ffb347' })
 const data = { version: 1, spawn: [0, 132], items }
 writeFileSync(new URL('../../src/data/campusLayout.json', import.meta.url), JSON.stringify(data).replace(/\},\{/g, '},\n{'))
 console.log('items:', items.length, 'trees:', items.filter((i) => i.type === 'tree').length)

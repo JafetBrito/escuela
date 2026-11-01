@@ -7,7 +7,7 @@ import { Physics, RigidBody, CapsuleCollider, CuboidCollider, useRapier } from '
 import * as THREE from 'three'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getAcademy } from '../../data/academies'
-import { useI18n } from '../../i18n'
+import { useI18n, tr } from '../../i18n'
 import AppTopBar from '../shared/AppTopBar'
 import PageVideoModal from '../shared/PageVideoModal'
 import MascotMesh from '../mascot/MascotMesh'
@@ -93,8 +93,10 @@ import PlazaScenery from './lookdev/PlazaScenery'
 import { CAMPUS_S, npcPoints } from './campus/campusWorld'
 import { getMap } from './campus/campusMaps'
 import HospitalOverlay from './campus/HospitalOverlay'
+import { PortalGate, PortalWatcher } from './campus/PortalGate'
+import { itemY } from './campus/campusWorld'
 const CampusScenery = lazy(() => import('./campus/CampusScenery'))
-import { PRESETS, PRESETS_GRIEGO, presetForHour, PLAZA_Y } from './lookdev/plazaWorld'
+import { PRESETS, PRESETS_GRIEGO, presetForHour, PLAZA_Y, groundHeight as plazaGroundHeight } from './lookdev/plazaWorld'
 import { startAmbience, setAmbiencePreset, shutdownAmbience } from './lookdev/plazaAudio'
 import {
   PLAYER_SCALE,
@@ -2613,6 +2615,11 @@ function BirthdayIntroScreen({ name, onEnter }) {
 // otra escala que el Campus, por eso PLAZA_S lo encoge al tamaño del jugador.
 const PLAZA_S = 0.6
 const ambienceOf = (id) => (id === 'dia' ? 'atardecer' : id) // el ambiente sonoro no tiene acorde de mediodía
+// Portales de la plaza (el punto de entrada del VR): a los costados del camino de entrada, de cara al jugador.
+const PLAZA_PORTALS = [
+  { id: 'campus', to: '/vr/campus', label: ['Campus Universitario', 'University Campus'], color: '#ffb347', x: -11, z: 31 },
+  { id: 'hospital', to: '/vr/hospital', label: ['Hospital Escuela', 'Teaching Hospital'], color: '#ff5e7e', x: 11, z: 31 },
+]
 const PLAZA_NPC_ANGLES = [0, 20, 70, 110, 160, 180, 200, 250, 270, 290, 340] // sin 90°: ese es el camino de entrada
 function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPositionRef, playerRotationRef, authorName, playerId, onNearbyNpcChange, onGem, remoteTransformsRef, remoteActionsRef, onSelectPlayer }) {
   const { lang } = useI18n()
@@ -2648,6 +2655,9 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
     const [x, z] = ok ? q : (mapData?.spawn || [0, 0])
     return [x * CAMPUS_S, ok && q[2] > 0 ? q[2] * CAMPUS_S : 0, z * CAMPUS_S] // ?spawn=x,z[,y]: y en metros (pisos altos del hospital)
   }, [mapData])
+  const portals = useMemo(() => (campus
+    ? (mapData?.items || []).filter((i) => i.type === 'portal').map((i) => ({ to: i.to, x: i.x * CAMPUS_S, y: itemY(i) * CAMPUS_S + 0.9, z: i.z * CAMPUS_S }))
+    : PLAZA_PORTALS.map((p) => ({ to: p.to, x: p.x * PLAZA_S, y: plazaGroundHeight(p.x, p.z) * PLAZA_S + 0.9, z: p.z * PLAZA_S }))), [campus, mapData])
   const ringNpcs = useMemo(() => {
     const seen = new Set()
     return [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
@@ -2669,6 +2679,8 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
       {campus
         ? <CampusScenery data={mapData} p={presets[presetId]} followRef={playerPositionRef} onShell={setShell} />
         : <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />}
+      {!campus && PLAZA_PORTALS.map((p) => <PortalGate key={p.id} position={[p.x * PLAZA_S, plazaGroundHeight(p.x, p.z) * PLAZA_S, p.z * PLAZA_S]} color={p.color} label={tr(...p.label)} />)}
+      <PortalWatcher portals={portals} playerPositionRef={playerPositionRef} />
       {/* Suspense propio: los GLB de NPCs/jugador cargan aparte y no deben ocultar el paisaje mientras llegan */}
       <Suspense fallback={null}>
         {ringNpcs.map((npc) => <IdleNpc key={npc.id} config={npc} playerPositionRef={playerPositionRef} />)}
