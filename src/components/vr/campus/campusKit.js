@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { Mesher, prismGeo } from './mesher'
+import { ACADEMY_INTERIORS, RING_INTERIORS, furnishAcademy, emblemAcademy } from './academyKit'
 import { rng } from '../lookdev/plazaWorld'
 import { HOSPITAL_CATALOG, hospitalPiece } from './hospitalKit'
 
@@ -230,9 +231,14 @@ export function buildBuilding(raw) {
     const left = k % 2 === 1, sx = (left ? -1 : 1) * (iw / 2 - 1.5), z0 = id / 2 - 1.2, z1 = z0 - stairRun
     stairs.push({ k, sx, z0, z1 })
     let rects = [[-iw / 2, iw / 2, -id / 2, id / 2]]
-    if (p.interior === 'library' && k >= 1) rects = [[-iw / 2, -iw / 2 + 6, -id / 2, id / 2], [iw / 2 - 6, iw / 2, -id / 2, id / 2], [-iw / 2 + 6, iw / 2 - 6, -id / 2, -id / 2 + 5]] // galería
+    if (RING_INTERIORS.has(p.interior) && k >= 1) rects = [[-iw / 2, -iw / 2 + 6, -id / 2, id / 2], [iw / 2 - 6, iw / 2, -id / 2, id / 2], [-iw / 2 + 6, iw / 2 - 6, -id / 2, -id / 2 + 5]] // galería
     const hole = [sx - sw / 2 - 0.05, sx + sw / 2 + 0.05, z1, z0 + 0.4]
     rects.flatMap((r) => subRect(r, hole)).forEach(([x0, x1, a0, a1]) => F.box((x0 + x1) / 2, P + k * fh - 0.35, (a0 + a1) / 2, x1 - x0, 0.35, a1 - a0, S.floor))
+    if (RING_INTERIORS.has(p.interior)) { // barandal en el borde del vacío central (visual + colisión)
+      const ry0 = P + k * fh
+      for (const sx of [-1, 1]) { M.box(sx * (iw / 2 - 6), ry0, 0, 0.12, 1.05, id, '#b8b2a0'); C.box(sx * (iw / 2 - 6), ry0, 0, 0.3, 1.5, id, '#fff') }
+      M.box(0, ry0, -id / 2 + 5, iw - 12, 1.05, 0.12, '#b8b2a0'); C.box(0, ry0, -id / 2 + 5, iw - 12, 1.5, 0.3, '#fff')
+    }
     // peldaños visibles + rampa invisible (isFloor) + barandas
     const yb = P + (k - 1) * fh, steps = Math.round(fh / 0.28), rise = fh / steps, sd = stairRun / steps
     for (let i = 0; i < steps; i++) M.box(sx, yb, z0 - (i + 0.5) * sd, sw, (i + 1) * rise, sd, i % 2 ? S.floor : '#9b7a56')
@@ -291,7 +297,9 @@ export function buildBuilding(raw) {
     const nx = Math.max(1, Math.round(iw / 13)), nz = Math.max(1, Math.round(id / 13))
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
       const x = x0 + iw * (i + 0.5) / nx, z = z0 + id * (j + 0.5) / nz
-      if (!inStair(x, z, lv)) Fx.lamp(x + ox, P + lv * fh + fh - 1.0, z)
+      const inVoid = RING_INTERIORS.has(interior) && lv >= 1 && Math.abs(x) < iw / 2 - 6 && z > -id / 2 + 5 // sobre el vacío central no hay piso donde apoyar la lámpara
+      const inCore = interior === 'ai' && Math.hypot(x, z) < 4.5
+      if (!inStair(x, z, lv) && !inVoid && !inCore) Fx.lamp(x + ox, P + lv * fh + fh - 1.0, z)
     }
   }
   const furnishLevel = (kind, lv) => {
@@ -360,7 +368,9 @@ export function buildBuilding(raw) {
       } else { for (let i = 0; i < Math.floor(w / 9); i++) Fx.frameArt(-iw / 2 + 4 + i * 9, yy + 1.7, z0 + 0.35, 0); Fx.sofa(6, yy, -2, Math.PI) }
     }
   }
+  if (ACADEMY_INTERIORS.has(interior)) emblemAcademy(interior, { M, E, RF, C, w, d, H, P, porchD, door })
   for (let lv = 0; lv < floors; lv++) {
+    if (ACADEMY_INTERIORS.has(interior)) { furnishAcademy(interior, { Fx, yy: P + lv * fh + 0.02, lv, floors, fh, iw, id, x0, x1, z0, z1, R, inStair }); lightsGrid(lv); continue }
     furnishLevel(interior === 'library' || interior === 'dining' || interior === 'chapel' ? interior : lv === 0 ? interior : (interior === 'dorm' ? 'dorm' : interior === 'lab' ? 'lab' : 'classroom'), lv)
     if (!(interior === 'dining' || interior === 'chapel') || lv === 0) lightsGrid(lv)
   }
@@ -497,7 +507,7 @@ export function buildPortal({ color = '#ff9f43', w = 4, h = 5.5, label = '' } = 
 
 // ── Catálogo (lo lee el editor para armar la paleta y los campos de cada pieza) ──
 const STYLE_OPTS = ['brick', 'neo', 'brut', 'modern']
-const INT_OPTS = ['hall', 'classroom', 'library', 'dining', 'chapel', 'lab', 'dorm', 'cafe']
+const INT_OPTS = ['hall', 'classroom', 'library', 'dining', 'chapel', 'lab', 'dorm', 'cafe', 'prog', 'cyber', 'philo', 'ai', 'lang', 'linux']
 const num = (k, label, min, max, step = 1) => ({ k, label, kind: 'num', min, max, step })
 const sel = (k, label, opts) => ({ k, label, kind: 'sel', opts })
 const bool = (k, label) => ({ k, label, kind: 'bool' })

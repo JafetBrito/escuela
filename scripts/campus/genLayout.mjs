@@ -81,12 +81,12 @@ add({ type: 'pave', x: 47, z: 430, w: 26, d: 14, mat: 'stone', rot: 0 })
 // ── DISTRITOS DE LAS ACADEMIAS (oeste y este del Yard) ──────────────────────
 // [nombre, x, z, rot, w, d, pisos, estilo, techo, interior, torre, pórtico, semilla]
 const ACADEMIAS = [
-  ['Academia de Programación', -170, -10, 90, 40, 22, 3, 'modern', 'flat', 'lab', 'none', false, 101],
-  ['Academia de Ciberseguridad', -170, 56, 90, 36, 20, 3, 'brut', 'flat', 'lab', 'none', false, 102],
-  ['Academia de Filosofía', -170, -76, 90, 40, 24, 2, 'neo', 'gable', 'classroom', 'none', true, 103],
-  ['Academia de IA', 170, -10, -90, 44, 24, 4, 'modern', 'flat', 'lab', 'cupola', false, 104],
-  ['Academia de Idiomas', 170, 56, -90, 44, 24, 2, 'neo', 'gable', 'classroom', 'none', true, 105],
-  ['Academia de Linux', 170, -76, -90, 34, 20, 2, 'brick', 'gable', 'lab', 'cupola', false, 106],
+  ['Academia de Programación', -170, -10, 90, 40, 22, 3, 'modern', 'flat', 'prog', 'none', false, 101],
+  ['Academia de Ciberseguridad', -170, 56, 90, 36, 20, 3, 'brut', 'flat', 'cyber', 'none', false, 102],
+  ['Academia de Filosofía', -170, -76, 90, 40, 24, 2, 'neo', 'gable', 'philo', 'none', true, 103],
+  ['Academia de IA', 170, -10, -90, 44, 24, 4, 'modern', 'flat', 'ai', 'cupola', false, 104],
+  ['Academia de Idiomas', 170, 56, -90, 44, 24, 2, 'neo', 'gable', 'lang', 'none', true, 105],
+  ['Academia de Linux', 170, -76, -90, 34, 20, 2, 'brick', 'gable', 'linux', 'cupola', false, 106],
 ]
 for (const [sign, x, z, rot, w, d, floors, style, roof, interior, tower, portico, seed] of ACADEMIAS) {
   B(x, z, rot, { w, d, floors, style, roof, interior, tower, portico, ivy: style === 'brick' ? 0.7 : 0, sign, door: 4, seed })
