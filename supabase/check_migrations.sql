@@ -141,7 +141,12 @@ with expected(mig, kind, a, b) as (values
   ('077','column','live_classes','academy_id'),
   ('077','function','_my_academy',''),
   ('077','function','teacher_create_live_class',''),
-  ('077','function','teacher_notify_live','')
+  ('077','function','teacher_notify_live',''),
+  ('078','function','validate_recruiter_pass',''),
+  ('078','function','is_admin',''),
+  ('078','function','protect_admin_only_columns',''),
+  ('084','table','item_templates',''),
+  ('084','function','item_templates_touch','')
 ), missing as (
   select * from expected e where not (
     (kind = 'table'    and exists (select 1 from information_schema.tables  where table_schema = 'public' and table_name = e.a)) or
