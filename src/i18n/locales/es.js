@@ -1256,6 +1256,7 @@ export const es = {
         campusU: { name: 'Campus Universitario', desc: 'Patio de ladrillo, biblioteca, río y edificios con interior' },
         hospital: { name: 'Hospital Escuela El Sagrado Corazón', desc: 'Urgencias, quirófanos, UCI, hospitalización y enseñanza · 5 niveles' },
         santuario: { name: 'Santuario de los Caminos', desc: 'Amanecer dorado: altares de clase, nidos de mascota y observatorio' },
+        caverna: { name: 'La Caverna de Platón', desc: 'Campo, ágora y la caverna: prisioneros, fuego y sombras' },
         ciudad: { name: 'Ciudad', desc: 'Próximamente…' },
       },
     atlasMap: {
@@ -1369,6 +1370,7 @@ export const es = {
       campusU: 'Campus Universitario',
       hospital: 'Hospital Escuela El Sagrado Corazón',
       santuario: 'Santuario de los Caminos',
+      caverna: 'La Caverna de Platón',
     },
     worldTreeBadge: '🌳 Árbol del Mundo',
     buttons: {

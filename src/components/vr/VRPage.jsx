@@ -2664,7 +2664,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   const portals = useMemo(() => (campus
     ? (mapData?.items || []).filter((i) => i.type === 'portal').map((i) => ({ to: i.to, x: i.x * CAMPUS_S, y: itemY(i) * CAMPUS_S + 0.9, z: i.z * CAMPUS_S }))
     : PLAZA_PORTALS.map((p) => ({ to: p.to, x: p.x * PLAZA_S, y: plazaGroundHeight(p.x, p.z) * PLAZA_S + 0.9, z: p.z * PLAZA_S }))), [campus, mapData])
-  const zones = useMemo(() => (mapData?.items || []).filter((i) => i.type === 'zone').map((i) => ({ name: i.name, xp: i.xp ?? 25, x: i.x * CAMPUS_S, z: i.z * CAMPUS_S, r: i.r * CAMPUS_S })), [mapData])
+  const zones = useMemo(() => (mapData?.items || []).filter((i) => i.type === 'zone' && !i.silent).map((i) => ({ name: i.name, xp: i.xp ?? 25, x: i.x * CAMPUS_S, z: i.z * CAMPUS_S, r: i.r * CAMPUS_S })), [mapData])
   const ringNpcs = useMemo(() => {
     const seen = new Set()
     const known = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
@@ -2689,7 +2689,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   return (
     <>
       {campus
-        ? <CampusScenery data={mapData} p={presets[presetId]} followRef={playerPositionRef} onShell={setShell} />
+        ? <CampusScenery data={mapData} p={mapData.sunAz != null ? { ...presets[presetId], sunAz: mapData.sunAz } : presets[presetId]} followRef={playerPositionRef} onShell={setShell} />
         : <PlazaScenery look={look} p={presets[presetId]} scale={PLAZA_S} followRef={playerPositionRef} onShell={setShell} onCollect={(n, total) => onGem?.({ n, total })} />}
       {!campus && PLAZA_PORTALS.map((p) => <PortalGate key={p.id} position={[p.x * PLAZA_S, plazaGroundHeight(p.x, p.z) * PLAZA_S, p.z * PLAZA_S]} color={p.color} label={tr(...p.label)} />)}
       <PortalWatcher portals={portals} playerPositionRef={playerPositionRef} />
@@ -3388,6 +3388,7 @@ const TRANSPORT_WORLDS = [
   { id: 'campusU',    emoji: '🎓', available: true,  path: '/vr/campus' },
   { id: 'hospital',   emoji: '🏥', available: true,  path: '/vr/hospital' },
   { id: 'santuario',  emoji: '🌅', available: true,  path: '/vr/santuario' },
+  { id: 'caverna',    emoji: '🔥', available: true,  path: '/vr/caverna' },
   { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
@@ -4804,7 +4805,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={campusMap === 'santuario' ? t('vr.worldNames.santuario') : campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={campusMap === 'caverna' ? t('vr.worldNames.caverna') : campusMap === 'santuario' ? t('vr.worldNames.santuario') : campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

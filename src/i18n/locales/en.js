@@ -1252,6 +1252,7 @@ export const en = {
         campusU: { name: 'University Campus', desc: 'Brick yard, library, river and enterable buildings' },
         hospital: { name: 'El Sagrado Corazón Teaching Hospital', desc: 'ER, operating rooms, ICU, wards and teaching · 5 levels' },
         santuario: { name: 'Sanctuary of the Paths', desc: 'Golden dawn: class altars, pet nests and an observatory' },
+        caverna: { name: "Plato's Cave", desc: 'Fields, agora and the cave: prisoners, fire and shadows' },
         ciudad: { name: 'City', desc: 'Coming soon…' },
       },
     atlasMap: {
@@ -1365,6 +1366,7 @@ export const en = {
       campusU: 'University Campus',
       hospital: 'El Sagrado Corazón Teaching Hospital',
       santuario: 'Sanctuary of the Paths',
+      caverna: "Plato's Cave",
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

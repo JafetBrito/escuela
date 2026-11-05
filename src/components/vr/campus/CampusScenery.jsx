@@ -4,7 +4,7 @@ import { useGLTF, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { SkyDome, Ridges, Sun, Clock, windU } from '../lookdev/PlazaScenery'
-import { hash } from '../lookdev/plazaWorld'
+import { hash, smooth } from '../lookdev/plazaWorld'
 import { CAMPUS_S, WATER_Y, itemY, buildTerrain, buildGroundProxy, pathGeo, paveGeo, setTerrainMode, flatsKey } from './campusWorld'
 import { CATALOG, pieceFor, pieceKey } from './campusKit'
 import { glbUrl } from './campusAssets'
@@ -159,6 +159,25 @@ function InteriorLights({ lamps, followRef, power = 7 }) {
   return Array.from({ length: POOL }, (_, i) => <pointLight key={i} ref={(o) => { refs.current[i] = o }} color="#ffe6bf" intensity={0} distance={9} decay={1.6} />)
 }
 
+// ── Oscuridad de cueva: las zonas con `dark` (0–1) apagan la luz del cielo cuando el jugador entra en ellas ──
+// d = 1 en el 70 % interior del radio y baja a 0 a 1.5× el radio. Atenúa el hemisferio y la luz ambiente y oscurece la niebla,
+// así la boca de la caverna se ve brillante y el fondo solo lo alumbran el fuego y las lámparas (`piece.lights`).
+function CaveMood({ zones, p, ambient, hemiRef, ambRef, fogRef, followRef }) {
+  const cur = useRef(0), night = useMemo(() => new THREE.Color('#0a0807'), []), day = useMemo(() => new THREE.Color(p.fog), [p.fog])
+  useFrame((_, dt) => {
+    const f = followRef?.current
+    if (!f) return
+    let d = 0
+    for (const z of zones) d = Math.max(d, z.dark * (1 - smooth(z.r * 0.7, z.r * 1.5, Math.hypot(f.x / CAMPUS_S - z.x, f.z / CAMPUS_S - z.z))))
+    cur.current += (d - cur.current) * Math.min(1, dt * 3)
+    const k = cur.current
+    if (hemiRef.current) hemiRef.current.intensity = p.hemiI * (1 - 0.9 * k)
+    if (ambRef.current) ambRef.current.intensity = ambient * (1 - 0.9 * k)
+    if (fogRef.current) { fogRef.current.color.copy(day).lerp(night, k); fogRef.current.far = 150 * (1 - 0.5 * k) }
+  })
+  return null
+}
+
 // `levelView` (solo editor): { mode: 'all' | 'upTo' | 'only', n } → qué niveles del hospital se dibujan.
 const levelOk = (it, lv) => !lv || lv.mode === 'all' || it.level == null || (lv.mode === 'only' ? it.level === lv.n : it.level <= lv.n)
 
@@ -168,6 +187,8 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
   const items = useMemo(() => data.items.filter((it) => levelOk(it, levelView)), [data.items, levelView])
   const shellRef = useCallback((o) => { if (o) { o.updateMatrixWorld(true); onShell?.(o) } }, [onShell])
   const river = !data.terrain || data.terrain === 'river'
+  const hemiRef = useRef(), ambRef = useRef(), fogRef = useRef()
+  const darkZones = useMemo(() => (editor ? [] : items.filter((i) => i.type === 'zone' && i.dark > 0).map((i) => ({ x: i.x, z: i.z, r: i.r, dark: i.dark }))), [items, editor])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- buildTerrain lee el modo de terreno global (setTerrainMode)
   const terrain = useMemo(() => buildTerrain(), [data.terrain, flats])
@@ -249,12 +270,13 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
   return (
     <>
       <Clock />
-      <fog attach="fog" args={editor ? [p.fog, 250, 900] : [p.fog, 30, 150]} />
+      <fog ref={fogRef} attach="fog" args={editor ? [p.fog, 250, 900] : [p.fog, 30, 150]} />
       <SkyDome p={p} />
       {p.stars && <Stars radius={320} depth={60} count={2500} factor={6} fade />}
       <group position={[0, 0, 60]}><Ridges p={p} /></group>
-      <hemisphereLight args={[p.hemiSky, p.hemiGround, p.hemiI]} />
-      {data.ambient > 0 && <ambientLight intensity={data.ambient} color="#fff6ea" />}
+      <hemisphereLight ref={hemiRef} args={[p.hemiSky, p.hemiGround, p.hemiI]} />
+      {data.ambient > 0 && <ambientLight ref={ambRef} intensity={data.ambient} color="#fff6ea" />}
+      {darkZones.length > 0 && <CaveMood zones={darkZones} p={p} ambient={data.ambient || 0} hemiRef={hemiRef} ambRef={ambRef} fogRef={fogRef} followRef={followRef} />}
       <Sun p={p} scale={0.55} followRef={followRef} />
 
       <group scale={CAMPUS_S}>

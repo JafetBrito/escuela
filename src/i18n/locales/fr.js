@@ -654,6 +654,7 @@ export const fr = {
         campusU: { name: 'Campus Universitaire', desc: 'Cour de briques, bibliothèque, rivière et bâtiments à visiter' },
         hospital: { name: 'Hôpital Universitaire du Sacré-Cœur', desc: 'Urgences, blocs, soins intensifs, hospitalisation et enseignement · 5 niveaux' },
         santuario: { name: 'Sanctuaire des Chemins', desc: 'Aube dorée : autels de classe, nids de compagnon et observatoire' },
+        caverna: { name: 'La Caverne de Platon', desc: 'Champs, agora et la caverne : prisonniers, feu et ombres' },
         ciudad: { name: 'Ville', desc: 'Bientôt disponible…' },
       },
     atlasMap: {
@@ -765,6 +766,7 @@ export const fr = {
       campusU: 'Campus Universitaire',
       hospital: 'Hôpital Universitaire du Sacré-Cœur',
       santuario: 'Sanctuaire des Chemins',
+      caverna: 'La Caverne de Platon',
     },
     worldTreeBadge: '🌳 Arbre-Monde',
     buttons: {

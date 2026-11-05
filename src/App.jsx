@@ -1133,6 +1133,18 @@ export default function App() {
             )
           }
         />
+        <Route
+          path="/vr/caverna"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap="caverna" /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+                <Suspense fallback={<RouteFallback />}>
+                  <VRPage plazaMode campusMap="caverna" />
+                </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
         {/* Editor del campus (solo admin; en dev local queda abierto). Guarda en src/data/campusLayout.json */}
         <Route
           path="/vr/editor"

@@ -244,12 +244,12 @@ export default function CampusEditor() {
   const groups = useMemo(() => {
     const g = {}
     for (const [type, c] of Object.entries(CATALOG)) {
-      if (type === 'glb' || type === 'room' || (!isHosp && c.group === 'Hospital') || (isHosp && c.group === 'Edificios') || (!isSanct && c.group === 'Santuario')) continue
+      if (type === 'glb' || type === 'room' || (!isHosp && c.group === 'Hospital') || (isHosp && c.group === 'Edificios') || ({ Santuario: ['santuario', 'caverna'], Caverna: ['caverna'] }[c.group] || [mapId]).indexOf(mapId) < 0) continue
       ;(g[c.group] ||= []).push([type, c.label])
     }
     g['Suelo'] = [...(g['Suelo'] || []), ['path', 'Camino (dibujar)']]
     return g
-  }, [isHosp, isSanct])
+  }, [isHosp, mapId])
   const fields = selItem && CATALOG[selItem.type]?.fields
   const btn = 'rounded border border-white/15 bg-white/5 px-2 py-1 text-xs text-white hover:bg-white/15'
   const placeRoom = (kind) => { const [w, d] = SIZES[kind] || [12, 14]; setTool({ kind: 'place', type: 'room', extra: { kind, w, d, name: '', door: kind === 'corridor' ? '' : 'S', walls: kind === 'corridor' ? '' : 'NSEW' } }) }

@@ -14,15 +14,17 @@ export const RIVER = { z0: 298, z1: 374 }
 // suben hacia el norte con explanadas planas bajo cada `zone` del layout (Santuario de los Caminos). Lo fija cada mapa (data.terrain).
 let MODE = 'river'
 let FLATS = [] // [[x, z, radio plano, elevación extra]] — salen de los items `zone` del layout
+let RISE = 14, AUTUMN = 0.28 // cuánto sube hacia el norte (m) y cuánto otoño tiene el pasto: los fija el layout (`rise`, `autumn`)
 export const setTerrainMode = (m, data) => {
   MODE = m === 'flat' || m === 'sanctuary' ? m : 'river'
+  RISE = data?.rise ?? 14; AUTUMN = data?.autumn ?? 0.28
   FLATS = MODE === 'sanctuary' ? (data?.items || []).filter((i) => i.type === 'zone' && i.flat !== false).map((i) => [i.x, i.z, i.r * 0.8, i.lift || 0]) : []
 }
 // Clave estable de las explanadas (para que los memos del terreno se rehagan si el editor mueve una zona)
 export const flatsKey = (data) => (data?.terrain === 'sanctuary' ? (data.items || []).filter((i) => i.type === 'zone').map((i) => `${i.x},${i.z},${i.r},${i.lift || 0}`).join('|') : '')
 
 // Altura base del santuario: sube 14 m del atrio (sur) a la puerta (norte)
-const sanctBase = (z) => 14 * smooth(170, -230, z)
+const sanctBase = (z) => RISE * smooth(170, -230, z)
 function sanctuaryH(x, z) {
   const edge = Math.hypot(Math.max(0, Math.abs(x) - 140), Math.max(0, z - 190, -255 - z)) // más allá: muralla de montañas
   let w = 0, tgt = 0
@@ -64,7 +66,7 @@ export function buildTerrain() {
     pos.setXYZ(i, x, h, z)
     c.copy(C.grassA).lerp(C.grassB, vnoise(x * 0.05, z * 0.05)).lerp(C.autumn, smooth(0.6, 0.85, vnoise(x * 0.03 + 7, z * 0.03)) * 0.5)
     if (MODE === 'sanctuary') { // pradera dorada de amanecer; explanadas más verdes; roca solo en las montañas del borde
-      c.lerp(C.autumn, 0.28 + 0.3 * vnoise(x * 0.04 + 11, z * 0.04)).lerp(C.lawn, flatWeight(x, z) * 0.7).lerp(C.rock, smooth(22, 60, h - sanctBase(z)))
+      c.lerp(C.autumn, AUTUMN * (1 + 1.07 * vnoise(x * 0.04 + 11, z * 0.04))).lerp(C.lawn, flatWeight(x, z) * 0.7).lerp(C.rock, smooth(22, 60, h - sanctBase(z)))
     } else {
       c.lerp(C.lawn, MODE === 'river' ? smooth(95, 70, Math.hypot(x, z - 10)) * 0.55 : smooth(160, 90, Math.hypot(x, z + 20)) * 0.6) // el Yard / los jardines del hospital, más verdes y cuidados
       c.lerp(C.rock, smooth(4, 14, h)).lerp(C.sand, smooth(-0.3, -2.4, h) * 0.95)
