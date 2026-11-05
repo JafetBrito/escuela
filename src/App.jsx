@@ -1120,6 +1120,19 @@ export default function App() {
             )
           }
         />
+        {/* Santuario de los Caminos: el mapa del tutorial (sin requireTutorial: es justamente donde se hace) */}
+        <Route
+          path="/vr/santuario"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap="santuario" /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false}>
+                <Suspense fallback={<RouteFallback />}>
+                  <VRPage plazaMode campusMap="santuario" />
+                </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
         {/* Editor del campus (solo admin; en dev local queda abierto). Guarda en src/data/campusLayout.json */}
         <Route
           path="/vr/editor"

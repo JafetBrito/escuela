@@ -42,6 +42,13 @@ Un mapa NO es código: es un **layout JSON** (`src/data/<mapa>Layout.json`) que 
 3. Si necesita capa propia (como `HospitalOverlay`), móntala en `VRPage` bajo `campusMap === '<id>'`.
 4. Agrega el id al whitelist de `campusEditorPlugin` en `vite.config.js` para que el editor guarde directo.
 
+## Santuario de los Caminos (mapa del tutorial)
+- Terreno `sanctuary` (campusWorld): `sanctuaryH` = subida al norte + lomas + explanadas bajo cada `zone` (`FLATS`, salen de los items del layout; `flatsKey` rehace el terreno si el editor los mueve). Las calcomanías (`path`/`pave`) se **pegan al terreno** (`drape`/`densify`) solo en este modo; en campus/hospital siguen planas.
+- `data.preset` (p. ej. `'amanecer'`) fija la paleta del mapa en vez de seguir la hora del mundo (VRPage → `fixedPreset`).
+- Piezas: `sanctuaryKit.js` (`SANCTUARY_CATALOG`, `sanctuaryPiece`). Un altar nuevo = agregar la clase a `CLASS_LOOK` y un caso en `emblem()`.
+- Escala heroica: el jugador mide ~1.2 m en estas unidades, así que las piezas son enormes a propósito (columnas de 9 m, arco de 18 m).
+- Materiales de piso cálidos `sand`/`slate` (los `stone`/`gravel` se lavan con el sol del amanecer).
+
 ## Hospital: modelo de datos
 - `room`: `{x,z (centro), w,d, level 0-4, hh (niveles de alto), kind, name, door (N/S/E/W), extraDoor, dpos, ext (lados con ventana), walls, top (azotea), up (escalera sube), rail}`. Nivel = `level * 4.4 m`. Las puertas dan a pasillos (`corridor`), cada puerta lleva su letrero con el color del departamento.
 - Escaleras = mismo `x,z` en todos los niveles (`stairs`), ascensores igual (`elevator`; cambio de piso en `HospitalOverlay`).

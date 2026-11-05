@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { SkyDome, Ridges, Sun, Clock, windU } from '../lookdev/PlazaScenery'
 import { hash } from '../lookdev/plazaWorld'
-import { CAMPUS_S, WATER_Y, itemY, buildTerrain, buildGroundProxy, pathGeo, paveGeo, setTerrainMode } from './campusWorld'
+import { CAMPUS_S, WATER_Y, itemY, buildTerrain, buildGroundProxy, pathGeo, paveGeo, setTerrainMode, flatsKey } from './campusWorld'
 import { CATALOG, pieceFor, pieceKey } from './campusKit'
 import { glbUrl } from './campusAssets'
 import { buildSigns } from './signs'
@@ -163,13 +163,14 @@ function InteriorLights({ lamps, followRef, power = 7 }) {
 const levelOk = (it, lv) => !lv || lv.mode === 'all' || it.level == null || (lv.mode === 'only' ? it.level === lv.n : it.level <= lv.n)
 
 export default function CampusScenery({ data, p, followRef, onShell, editor = false, showRoofs = true, selectedId, onPick, levelView }) {
-  setTerrainMode(data.terrain)
+  setTerrainMode(data.terrain, data)
+  const flats = flatsKey(data)
   const items = useMemo(() => data.items.filter((it) => levelOk(it, levelView)), [data.items, levelView])
   const shellRef = useCallback((o) => { if (o) { o.updateMatrixWorld(true); onShell?.(o) } }, [onShell])
-  const river = data.terrain !== 'flat'
+  const river = !data.terrain || data.terrain === 'river'
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- buildTerrain lee el modo de terreno global (setTerrainMode)
-  const terrain = useMemo(() => buildTerrain(), [data.terrain])
+  const terrain = useMemo(() => buildTerrain(), [data.terrain, flats])
   const decals = useMemo(() => {
     const gs = []
     for (const it of items) {
@@ -178,7 +179,8 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
     }
     const ok = gs.filter(Boolean)
     return ok.length ? mergeGeometries(ok) : null
-  }, [items])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- las calcomanías del santuario siguen el terreno (flats)
+  }, [items, flats])
 
   // piezas únicas y grupos de instanciadas
   const { singles, groups } = useMemo(() => {
@@ -242,7 +244,7 @@ export default function CampusScenery({ data, p, followRef, onShell, editor = fa
     const strip = (gs) => gs.map((g) => { g.deleteAttribute('color'); g.deleteAttribute('normal'); return g })
     return { proxy: withBvh(buildGroundProxy()), props: props.length ? withBvh(mergeGeometries(props)) : null, walls: strip(bake(singles, ['collide'])).map(withBvh), floors: strip(bake(singles, ['floors', 'ramps'])).map(withBvh) }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- buildGroundProxy lee el modo de terreno global
-  }, [groups, singles, onShell, data.terrain])
+  }, [groups, singles, onShell, data.terrain, flats])
 
   return (
     <>

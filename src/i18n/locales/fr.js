@@ -653,6 +653,7 @@ export const fr = {
         plaza: { name: 'Place des Académies', desc: 'Temple, sentiers et gemmes · touche grecque' },
         campusU: { name: 'Campus Universitaire', desc: 'Cour de briques, bibliothèque, rivière et bâtiments à visiter' },
         hospital: { name: 'Hôpital Universitaire du Sacré-Cœur', desc: 'Urgences, blocs, soins intensifs, hospitalisation et enseignement · 5 niveaux' },
+        santuario: { name: 'Sanctuaire des Chemins', desc: 'Aube dorée : autels de classe, nids de compagnon et observatoire' },
         ciudad: { name: 'Ville', desc: 'Bientôt disponible…' },
       },
     atlasMap: {
@@ -763,6 +764,7 @@ export const fr = {
       plaza: 'Place des Académies',
       campusU: 'Campus Universitaire',
       hospital: 'Hôpital Universitaire du Sacré-Cœur',
+      santuario: 'Sanctuaire des Chemins',
     },
     worldTreeBadge: '🌳 Arbre-Monde',
     buttons: {

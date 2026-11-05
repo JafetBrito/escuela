@@ -3,6 +3,7 @@ import { Mesher, prismGeo } from './mesher'
 import { ACADEMY_INTERIORS, RING_INTERIORS, furnishAcademy, emblemAcademy } from './academyKit'
 import { rng } from '../lookdev/plazaWorld'
 import { HOSPITAL_CATALOG, hospitalPiece } from './hospitalKit'
+import { SANCTUARY_CATALOG, sanctuaryPiece } from './sanctuaryKit'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Kit de piezas del Campus. Cada pieza es una función pura (parámetros → mallas) en METROS, con el
@@ -531,14 +532,14 @@ export const CATALOG = {
   tower: { label: 'Torre del reloj', group: 'Edificios', defaults: { h: 26 }, fields: [num('h', 'Altura (m)', 12, 50)] },
   bridge: { label: 'Puente', group: 'Edificios', defaults: { len: 80, w: 8 }, fields: [num('len', 'Largo (m)', 20, 160), num('w', 'Ancho (m)', 4, 14)] },
   stadium: { label: 'Estadio', group: 'Edificios', defaults: { w: 70, d: 120 }, fields: [num('w', 'Ancho (m)', 40, 100), num('d', 'Largo (m)', 80, 180)] },
-  pave: { label: 'Pavimento', group: 'Suelo', defaults: { w: 30, d: 30, mat: 'stone' }, fields: [num('w', 'Ancho (m)', 2, 200), num('d', 'Fondo (m)', 2, 200), num('r', 'Radio (círculo, 0=rect.)', 0, 60), sel('mat', 'Material', ['gravel', 'brick', 'stone', 'asphalt', 'plank', 'grass', 'court', 'track', 'water']), num('dy', 'Elevar (m)', 0, 0.2, 0.01)] },
+  pave: { label: 'Pavimento', group: 'Suelo', defaults: { w: 30, d: 30, mat: 'stone' }, fields: [num('w', 'Ancho (m)', 2, 200), num('d', 'Fondo (m)', 2, 200), num('r', 'Radio (círculo, 0=rect.)', 0, 60), sel('mat', 'Material', ['gravel', 'brick', 'stone', 'asphalt', 'plank', 'grass', 'court', 'track', 'water', 'sand', 'slate']), num('dy', 'Elevar (m)', 0, 0.2, 0.01)] },
   npc: { label: 'Punto de NPC', group: 'Juego', defaults: {}, fields: [] },
-  zone: { label: 'Zona descubrible (XP)', group: 'Juego', defaults: { name: 'Nueva zona', r: 30, xp: 25 }, fields: [text('name', 'Nombre'), num('r', 'Radio (m)', 5, 150), num('xp', 'XP', 0, 500, 5)] },
+  zone: { label: 'Zona descubrible (XP)', group: 'Juego', defaults: { name: 'Nueva zona', r: 30, xp: 25 }, fields: [text('name', 'Nombre'), num('r', 'Radio (m)', 5, 150), num('xp', 'XP', 0, 500, 5), num('lift', 'Elevación extra (m, santuario)', 0, 20), text('step', 'Paso del tutorial (santuario)')] },
   portal: { label: 'Portal (viaje a otro mapa)', group: 'Juego', defaults: { to: '/vr/plaza', label: 'Plaza de las Academias', color: '#ffb347' }, fields: [text('to', 'Ruta destino'), text('label', 'Letrero'), text('color', 'Color')] },
   glb: { label: 'Modelo .glb', group: 'Mis modelos', defaults: { file: '', s: 1 }, fields: [num('s', 'Escala', 0.05, 40, 0.05)] },
 }
 
-Object.assign(CATALOG, HOSPITAL_CATALOG)
+Object.assign(CATALOG, HOSPITAL_CATALOG, SANCTUARY_CATALOG)
 
 const cache = new Map()
 const POS = new Set(['id', 'x', 'y', 'z', 'rot'])
@@ -564,7 +565,7 @@ export function pieceFor(it) {
     case 'bridge': v = buildBridge(it); break
     case 'stadium': v = buildStadium(it); break
     case 'portal': v = buildPortal(it); break
-    default: v = hospitalPiece(it) ?? null
+    default: v = hospitalPiece(it) ?? sanctuaryPiece(it) ?? null
   }
   cache.set(key, v)
   return v

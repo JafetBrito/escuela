@@ -10,11 +10,35 @@ export const WATER_Y = -2.6
 export const BOUNDS = { x: 235, zMin: -255, zMax: 640 }
 export const RIVER = { z0: 298, z1: 374 }
 
-// 'river' = campus (río al sur y segunda meseta); 'flat' = meseta llana sin río (hospital). Lo fija cada mapa (data.terrain).
+// 'river' = campus (río al sur y segunda meseta); 'flat' = meseta llana sin río (hospital); 'sanctuary' = colinas que
+// suben hacia el norte con explanadas planas bajo cada `zone` del layout (Santuario de los Caminos). Lo fija cada mapa (data.terrain).
 let MODE = 'river'
-export const setTerrainMode = (m) => { MODE = m === 'flat' ? 'flat' : 'river' }
+let FLATS = [] // [[x, z, radio plano, elevación extra]] — salen de los items `zone` del layout
+export const setTerrainMode = (m, data) => {
+  MODE = m === 'flat' || m === 'sanctuary' ? m : 'river'
+  FLATS = MODE === 'sanctuary' ? (data?.items || []).filter((i) => i.type === 'zone' && i.flat !== false).map((i) => [i.x, i.z, i.r * 0.8, i.lift || 0]) : []
+}
+// Clave estable de las explanadas (para que los memos del terreno se rehagan si el editor mueve una zona)
+export const flatsKey = (data) => (data?.terrain === 'sanctuary' ? (data.items || []).filter((i) => i.type === 'zone').map((i) => `${i.x},${i.z},${i.r},${i.lift || 0}`).join('|') : '')
+
+// Altura base del santuario: sube 14 m del atrio (sur) a la puerta (norte)
+const sanctBase = (z) => 14 * smooth(170, -230, z)
+function sanctuaryH(x, z) {
+  const edge = Math.hypot(Math.max(0, Math.abs(x) - 140), Math.max(0, z - 190, -255 - z)) // más allá: muralla de montañas
+  let w = 0, tgt = 0
+  for (const [fx, fz, fr, lift] of FLATS) {
+    const wi = smooth(fr + 25 + lift * 3, fr, Math.hypot(x - fx, z - fz))
+    if (wi > w) { w = wi; tgt = sanctBase(fz) + lift }
+  }
+  const roll = ((vnoise(x * 0.02, z * 0.02) - 0.5) * 9 + (vnoise(x * 0.07 + 3, z * 0.07) - 0.5) * 2) * (0.25 + 0.75 * smooth(20, 110, Math.abs(x)))
+  const h = sanctBase(z) + roll * (1 - w) + edge * 0.6 + edge * edge * 0.025
+  return lerp(h, tgt, w)
+}
+// 0 fuera, 1 en una explanada (para teñir el pasto más cuidado)
+const flatWeight = (x, z) => { let w = 0; for (const [fx, fz, fr] of FLATS) w = Math.max(w, smooth(fr + 18, fr, Math.hypot(x - fx, z - fz))); return w }
 
 export function heightAt(x, z) {
+  if (MODE === 'sanctuary') return sanctuaryH(x, z)
   const edge = Math.max(0, Math.abs(x) - BOUNDS.x, BOUNDS.zMin - z, z - BOUNDS.zMax) // más allá del borde: sube como muralla
   let h = edge * 0.9 + edge * edge * 0.02
   h += (vnoise(x * 0.018, z * 0.018) - 0.5) * 7 * smooth(160, 235, Math.abs(x)) // lomas suaves en las orillas
@@ -39,8 +63,12 @@ export function buildTerrain() {
     const h = heightAt(x, z)
     pos.setXYZ(i, x, h, z)
     c.copy(C.grassA).lerp(C.grassB, vnoise(x * 0.05, z * 0.05)).lerp(C.autumn, smooth(0.6, 0.85, vnoise(x * 0.03 + 7, z * 0.03)) * 0.5)
-    c.lerp(C.lawn, MODE === 'river' ? smooth(95, 70, Math.hypot(x, z - 10)) * 0.55 : smooth(160, 90, Math.hypot(x, z + 20)) * 0.6) // el Yard / los jardines del hospital, más verdes y cuidados
-    c.lerp(C.rock, smooth(4, 14, h)).lerp(C.sand, smooth(-0.3, -2.4, h) * 0.95)
+    if (MODE === 'sanctuary') { // pradera dorada de amanecer; explanadas más verdes; roca solo en las montañas del borde
+      c.lerp(C.autumn, 0.28 + 0.3 * vnoise(x * 0.04 + 11, z * 0.04)).lerp(C.lawn, flatWeight(x, z) * 0.7).lerp(C.rock, smooth(22, 60, h - sanctBase(z)))
+    } else {
+      c.lerp(C.lawn, MODE === 'river' ? smooth(95, 70, Math.hypot(x, z - 10)) * 0.55 : smooth(160, 90, Math.hypot(x, z + 20)) * 0.6) // el Yard / los jardines del hospital, más verdes y cuidados
+      c.lerp(C.rock, smooth(4, 14, h)).lerp(C.sand, smooth(-0.3, -2.4, h) * 0.95)
+    }
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3))
@@ -59,7 +87,7 @@ export function buildGroundProxy() {
 }
 
 // ── Caminos y pavimentos (calcomanías planas sobre la meseta) ────────────────
-export const PAVE_COLORS = { gravel: '#d9c7a4', brick: '#a88468', stone: '#cfc5b0', asphalt: '#6c6d73', plank: '#8a6a47', grass: '#6fae4f', court: '#b85c3a', track: '#a0452e', water: '#3fa7c9' }
+export const PAVE_COLORS = { gravel: '#d9c7a4', brick: '#a88468', stone: '#cfc5b0', asphalt: '#6c6d73', plank: '#8a6a47', grass: '#6fae4f', court: '#b85c3a', track: '#a0452e', water: '#3fa7c9', sand: '#c4a574', slate: '#a39580' }
 const col3 = (hex) => new THREE.Color(hex)
 function paintFlat(g, hex) {
   const c = col3(hex), n = g.attributes.position.count, a = new Float32Array(n * 3)
@@ -72,8 +100,26 @@ function paintFlat(g, hex) {
 }
 
 // Una cinta de `w` metros siguiendo la polilínea `pts` [[x,z],...] + un disco en cada vértice para redondear las uniones.
-export function pathGeo(pts, w, mat = 'gravel') {
-  const parts = [], y = 0.07, half = w / 2
+// Pega la calcomanía al terreno (solo en el santuario, donde el suelo sube y baja): y = altura del suelo + `lift`.
+function drape(g, lift) {
+  if (MODE !== 'sanctuary') return g
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) p.setY(i, heightAt(p.getX(i), p.getZ(i)) + lift + 0.35) // +0.35: el terreno es de triángulos grandes, el sobrante evita que se hunda
+  g.computeVertexNormals()
+  return g
+}
+// Parte cada tramo en pedazos de ≤ `step` metros para que la cinta siga las lomas
+function densify(pts, step) {
+  if (MODE !== 'sanctuary') return pts
+  const out = [pts[0]]
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, az] = pts[i - 1], [bx, bz] = pts[i], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step))
+    for (let k = 1; k <= n; k++) out.push([ax + (bx - ax) * (k / n), az + (bz - az) * (k / n)])
+  }
+  return out
+}
+export function pathGeo(pathPts, w, mat = 'gravel') {
+  const parts = [], y = 0.07, half = w / 2, pts = densify(pathPts, 4)
   for (let i = 0; i < pts.length - 1; i++) {
     const [ax, az] = pts[i], [bx, bz] = pts[i + 1], len = Math.hypot(bx - ax, bz - az)
     if (len < 0.01) continue
@@ -83,9 +129,9 @@ export function pathGeo(pts, w, mat = 'gravel') {
       ax + nx, y, az + nz, bx + nx, y, bz + nz, bx - nx, y, bz - nz,
       ax + nx, y, az + nz, bx - nx, y, bz - nz, ax - nx, y, az - nz,
     ], 3))
-    parts.push(paintFlat(g, PAVE_COLORS[mat] || PAVE_COLORS.gravel))
+    parts.push(drape(paintFlat(g, PAVE_COLORS[mat] || PAVE_COLORS.gravel), 0))
   }
-  pts.forEach(([x, z]) => parts.push(paintFlat(new THREE.CircleGeometry(half, 14).rotateX(-Math.PI / 2).translate(x, y, z), PAVE_COLORS[mat] || PAVE_COLORS.gravel)))
+  pts.forEach(([x, z]) => parts.push(drape(paintFlat(new THREE.CircleGeometry(half, 14).rotateX(-Math.PI / 2).translate(x, y, z), PAVE_COLORS[mat] || PAVE_COLORS.gravel), 0)))
   return parts.length ? mergeGeometries(parts) : null
 }
 // Rectángulo (w×d, girado ry) o círculo (r) de pavimento.
@@ -95,7 +141,7 @@ export function paveGeo(it) {
     ? new THREE.CircleGeometry(it.r, 28).rotateX(-Math.PI / 2)
     : new THREE.PlaneGeometry(it.w, it.d).rotateX(-Math.PI / 2).rotateY(it.ry || 0)
   g.translate(it.x, y, it.z)
-  return paintFlat(g, PAVE_COLORS[it.mat] || PAVE_COLORS.stone)
+  return drape(paintFlat(g, PAVE_COLORS[it.mat] || PAVE_COLORS.stone), (it.dy || 0) * 4) // en el santuario los pavimentos apilados se separan más (dy ×4)
 }
 
 // Altura donde se apoya una pieza (suelo del terreno salvo que el layout fije `y`) y puntos de NPC (en unidades de mundo).

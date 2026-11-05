@@ -1255,6 +1255,7 @@ export const es = {
         plaza: { name: 'Plaza de las Academias', desc: 'Templo, senderos y gemas · toque griego' },
         campusU: { name: 'Campus Universitario', desc: 'Patio de ladrillo, biblioteca, río y edificios con interior' },
         hospital: { name: 'Hospital Escuela El Sagrado Corazón', desc: 'Urgencias, quirófanos, UCI, hospitalización y enseñanza · 5 niveles' },
+        santuario: { name: 'Santuario de los Caminos', desc: 'Amanecer dorado: altares de clase, nidos de mascota y observatorio' },
         ciudad: { name: 'Ciudad', desc: 'Próximamente…' },
       },
     atlasMap: {
@@ -1367,6 +1368,7 @@ export const es = {
       plaza: 'Plaza de las Academias',
       campusU: 'Campus Universitario',
       hospital: 'Hospital Escuela El Sagrado Corazón',
+      santuario: 'Santuario de los Caminos',
     },
     worldTreeBadge: '🌳 Árbol del Mundo',
     buttons: {

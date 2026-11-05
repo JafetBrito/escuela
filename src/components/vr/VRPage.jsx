@@ -2629,16 +2629,18 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   const { lang } = useI18n()
   const spawnedNpcs = useSpawnedNpcStore((s) => s.npcs)
   const [shell, setShell] = useState(null)
-  const [presetId, setPresetId] = useState(() => presetForHour(useDayNightStore.getState().getTimeOfDay()))
+  const fixedPreset = campus ? getMap(campus).data.preset : undefined // el santuario es un amanecer eterno; los demás siguen la hora del mundo
+  const [presetId, setPresetId] = useState(() => fixedPreset || presetForHour(useDayNightStore.getState().getTimeOfDay()))
   const noChannelRef = useRef(null)
   const look = new URLSearchParams(location.search).get('look') === 'griego' ? 'griego' : 'torre' // ?look=griego: variante con templo
   const presets = look === 'griego' ? PRESETS_GRIEGO : PRESETS
 
   // La hora del mundo (la misma que el Campus, incluido el override del admin) elige la paleta.
   useEffect(() => {
+    if (fixedPreset) return undefined
     const id = setInterval(() => setPresetId(presetForHour(useDayNightStore.getState().getTimeOfDay())), 20000)
     return () => clearInterval(id)
-  }, [])
+  }, [fixedPreset])
   // Ambiente sintetizado (Web Audio): arranca con el primer gesto, se corta al salir.
   useEffect(() => {
     const go = () => startAmbience(ambienceOf(presetId))
@@ -2657,7 +2659,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
     const q = new URLSearchParams(location.search).get('spawn')?.split(',').map(Number)
     const ok = q && q.length >= 2 && q.every(Number.isFinite)
     const [x, z] = ok ? q : (mapData?.spawn || [0, 0])
-    return [x * CAMPUS_S, ok && q[2] > 0 ? q[2] * CAMPUS_S : 0, z * CAMPUS_S] // ?spawn=x,z[,y]: y en metros (pisos altos del hospital)
+    return [x * CAMPUS_S, (ok && q[2] > 0 ? q[2] : mapData?.terrain === 'sanctuary' ? itemY({ x, z }) : 0) * CAMPUS_S, z * CAMPUS_S] // en el santuario el suelo sube: aparece sobre el terreno // ?spawn=x,z[,y]: y en metros (pisos altos del hospital)
   }, [mapData])
   const portals = useMemo(() => (campus
     ? (mapData?.items || []).filter((i) => i.type === 'portal').map((i) => ({ to: i.to, x: i.x * CAMPUS_S, y: itemY(i) * CAMPUS_S + 0.9, z: i.z * CAMPUS_S }))
@@ -2665,7 +2667,12 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
   const zones = useMemo(() => (mapData?.items || []).filter((i) => i.type === 'zone').map((i) => ({ name: i.name, xp: i.xp ?? 25, x: i.x * CAMPUS_S, z: i.z * CAMPUS_S, r: i.r * CAMPUS_S })), [mapData])
   const ringNpcs = useMemo(() => {
     const seen = new Set()
-    return [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
+    const known = [OLIVER_NPC, EINSTEIN_NPC, JAFET_NPC, SHOPKEEPER_NPC, ...VR_NPCS]
+    const npcItems = mapData ? mapData.items.filter((i) => i.type === 'npc') : []
+    if (campus && npcItems.some((i) => i.who)) { // puntos de NPC con nombre (santuario): cada punto lleva a su personaje
+      return npcItems.map((it, i) => { const npc = known.find((n) => n.id === it.who); return npc && { ...localizeNpcDialogue(npc, lang), position: campusPts[i] } }).filter(Boolean)
+    }
+    return known
       .filter((n) => !seen.has(n.id) && seen.add(n.id))
       .slice(0, campus ? campusPts.length : PLAZA_NPC_ANGLES.length)
       .map((npc, i) => {
@@ -2673,7 +2680,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
         const a = (PLAZA_NPC_ANGLES[i] * Math.PI) / 180
         return { ...localizeNpcDialogue(npc, lang), position: [Math.cos(a) * 16 * PLAZA_S, PLAZA_Y * PLAZA_S, Math.sin(a) * 16 * PLAZA_S] }
       })
-  }, [lang, campus, campusPts])
+  }, [lang, campus, campusPts, mapData])
   const npcPositions = useMemo(
     () => [...ringNpcs, ...spawnedNpcs].map((npc) => ({ id: npc.id, vec: new THREE.Vector3(...npc.position) })),
     [ringNpcs, spawnedNpcs],
@@ -3380,6 +3387,7 @@ const TRANSPORT_WORLDS = [
   { id: 'plaza',      emoji: '🏛️', available: true,  path: '/vr/plaza' },
   { id: 'campusU',    emoji: '🎓', available: true,  path: '/vr/campus' },
   { id: 'hospital',   emoji: '🏥', available: true,  path: '/vr/hospital' },
+  { id: 'santuario',  emoji: '🌅', available: true,  path: '/vr/santuario' },
   { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
@@ -4796,7 +4804,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={campusMap === 'santuario' ? t('vr.worldNames.santuario') : campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

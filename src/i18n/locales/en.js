@@ -1251,6 +1251,7 @@ export const en = {
         plaza: { name: 'Plaza of the Academies', desc: 'Temple, paths and gems · Greek touch' },
         campusU: { name: 'University Campus', desc: 'Brick yard, library, river and enterable buildings' },
         hospital: { name: 'El Sagrado Corazón Teaching Hospital', desc: 'ER, operating rooms, ICU, wards and teaching · 5 levels' },
+        santuario: { name: 'Sanctuary of the Paths', desc: 'Golden dawn: class altars, pet nests and an observatory' },
         ciudad: { name: 'City', desc: 'Coming soon…' },
       },
     atlasMap: {
@@ -1363,6 +1364,7 @@ export const en = {
       plaza: 'Plaza of the Academies',
       campusU: 'University Campus',
       hospital: 'El Sagrado Corazón Teaching Hospital',
+      santuario: 'Sanctuary of the Paths',
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

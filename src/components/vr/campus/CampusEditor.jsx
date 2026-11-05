@@ -140,18 +140,18 @@ function Tour({ steps, onClose }) {
 export default function CampusEditor() {
   const isAdmin = useAuthStore((s) => s.profile?.role === 'admin')
   const mapId = useMemo(() => { const m = new URLSearchParams(location.search).get('map'); return MAPS[m] ? m : 'campus' }, [])
-  const map = MAPS[mapId], isHosp = mapId === 'hospital'
+  const map = MAPS[mapId], isHosp = mapId === 'hospital', isSanct = mapId === 'santuario'
   const [draft] = useState(() => loadDraft(mapId))
-  const [st, setSt] = useState(() => { setTerrainMode((draft || map.data).terrain); return { data: draft || map.data, past: [], future: [] } })
+  const [st, setSt] = useState(() => { setTerrainMode((draft || map.data).terrain, draft || map.data); return { data: draft || map.data, past: [], future: [] } })
   const [sel, setSel] = useState(null)
   const [tool, setTool] = useState({ kind: 'select' })
   const [gizmo, setGizmo] = useState('translate')
   const [snap, setSnap] = useState(isHosp ? 2 : 1)
   const [roofs, setRoofs] = useState(true)
   const [grid, setGrid] = useState(false)
-  const [preset, setPreset] = useState('dia')
+  const [preset, setPreset] = useState(map.data.preset || 'dia')
   const [levelView, setLevelView] = useState({ mode: 'all', n: 0 })
-  const [filter, setFilter] = useState(isHosp ? 'room' : 'building')
+  const [filter, setFilter] = useState(isHosp ? 'room' : isSanct ? 'zone' : 'building')
   const [query, setQuery] = useState('')
   const [msg, setMsg] = useState(draft ? 'Borrador sin guardar recuperado.' : '')
   const [tour, setTour] = useState(false)
@@ -244,12 +244,12 @@ export default function CampusEditor() {
   const groups = useMemo(() => {
     const g = {}
     for (const [type, c] of Object.entries(CATALOG)) {
-      if (type === 'glb' || type === 'room' || (!isHosp && c.group === 'Hospital') || (isHosp && c.group === 'Edificios')) continue
+      if (type === 'glb' || type === 'room' || (!isHosp && c.group === 'Hospital') || (isHosp && c.group === 'Edificios') || (!isSanct && c.group === 'Santuario')) continue
       ;(g[c.group] ||= []).push([type, c.label])
     }
     g['Suelo'] = [...(g['Suelo'] || []), ['path', 'Camino (dibujar)']]
     return g
-  }, [isHosp])
+  }, [isHosp, isSanct])
   const fields = selItem && CATALOG[selItem.type]?.fields
   const btn = 'rounded border border-white/15 bg-white/5 px-2 py-1 text-xs text-white hover:bg-white/15'
   const placeRoom = (kind) => { const [w, d] = SIZES[kind] || [12, 14]; setTool({ kind: 'place', type: 'room', extra: { kind, w, d, name: '', door: kind === 'corridor' ? '' : 'S', walls: kind === 'corridor' ? '' : 'NSEW' } }) }
@@ -324,7 +324,7 @@ export default function CampusEditor() {
           </details>
           <hr className="border-white/10" />
           <div className="flex gap-1">
-            <select className={`${btn} flex-1`} value={filter} onChange={(e) => setFilter(e.target.value)}>{[['room', 'Cuartos'], ['building', 'Edificios'], ['', 'Todo'], ['sign', 'Letreros'], ['path', 'Caminos'], ['pave', 'Pavimentos'], ['npc', 'NPC'], ['fence', 'Rejas'], ['tree', 'Árboles']].map(([k, l]) => <option key={l} value={k}>{l}</option>)}</select>
+            <select className={`${btn} flex-1`} value={filter} onChange={(e) => setFilter(e.target.value)}>{[['room', 'Cuartos'], ['building', 'Edificios'], ['zone', 'Lugares'], ['altar', 'Altares'], ['', 'Todo'], ['sign', 'Letreros'], ['path', 'Caminos'], ['pave', 'Pavimentos'], ['npc', 'NPC'], ['fence', 'Rejas'], ['tree', 'Árboles']].map(([k, l]) => <option key={l} value={k}>{l}</option>)}</select>
             <input className="w-24 rounded border border-white/15 bg-black/40 px-1.5 text-xs" placeholder="buscar" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           <div className="flex flex-col gap-0.5">
