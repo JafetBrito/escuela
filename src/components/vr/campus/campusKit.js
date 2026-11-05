@@ -5,6 +5,7 @@ import { rng } from '../lookdev/plazaWorld'
 import { HOSPITAL_CATALOG, hospitalPiece } from './hospitalKit'
 import { SANCTUARY_CATALOG, sanctuaryPiece } from './sanctuaryKit'
 import { CAVERN_CATALOG, cavernPiece } from './cavernKit'
+import { OFFICE_CATALOG, officePiece } from './officeKit'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Kit de piezas del Campus. Cada pieza es una función pura (parámetros → mallas) en METROS, con el
@@ -540,7 +541,7 @@ export const CATALOG = {
   glb: { label: 'Modelo .glb', group: 'Mis modelos', defaults: { file: '', s: 1 }, fields: [num('s', 'Escala', 0.05, 40, 0.05)] },
 }
 
-Object.assign(CATALOG, HOSPITAL_CATALOG, SANCTUARY_CATALOG, CAVERN_CATALOG)
+Object.assign(CATALOG, HOSPITAL_CATALOG, SANCTUARY_CATALOG, CAVERN_CATALOG, OFFICE_CATALOG)
 
 const cache = new Map()
 const POS = new Set(['id', 'x', 'y', 'z', 'rot'])
@@ -566,7 +567,7 @@ export function pieceFor(it) {
     case 'bridge': v = buildBridge(it); break
     case 'stadium': v = buildStadium(it); break
     case 'portal': v = buildPortal(it); break
-    default: v = hospitalPiece(it) ?? sanctuaryPiece(it) ?? cavernPiece(it) ?? null
+    default: v = hospitalPiece(it) ?? sanctuaryPiece(it) ?? cavernPiece(it) ?? officePiece(it) ?? null
   }
   cache.set(key, v)
   return v

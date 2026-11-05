@@ -49,6 +49,11 @@ Un mapa NO es código: es un **layout JSON** (`src/data/<mapa>Layout.json`) que 
 - Escala heroica: el jugador mide ~1.2 m en estas unidades, así que las piezas son enormes a propósito (columnas de 9 m, arco de 18 m).
 - Materiales de piso cálidos `sand`/`slate` (los `stone`/`gravel` se lavan con el sol del amanecer).
 
+## Caverna de Platón y Oficinas (mapas 3 y 4)
+- Caverna (`cavernKit.js`): montaña hueca hecha de losas gruesas (cara interior = cueva, exterior = ladera, ambas colisionan); el mismo terreno `sanctuary` con `rise: 0`; `CaveMood` oscurece el cielo dentro de las zonas con `dark`; `sunAz` por mapa mueve el sol para que la fachada reciba luz. Las figuras humanas miden ~1.2 m (la escala del jugador).
+- Oficinas (`officeKit.js`): sin techo; cámara inicial por mapa (`camera`) + `lookLiftK = 0`; paredes de 2.6 m con hueco de puerta; proporciones reales a escala del jugador (escritorio 0.55 m, puerta 1.9 m).
+- Cada mapa nuevo: generador `scripts/campus/gen<Mapa>.mjs`, kit propio con `*_CATALOG` + `*Piece` enganchados en `campusKit.js`, grupo de paleta restringido en `CampusEditor` (objeto `{Grupo: [mapas]}`), registro en `campusMaps.js`, ruta en `App.jsx`, menú de transporte, i18n (`vr.worldNames.*`, `vr.transportMenu.worlds.*`) y whitelist en `vite.config.js`.
+
 ## Hospital: modelo de datos
 - `room`: `{x,z (centro), w,d, level 0-4, hh (niveles de alto), kind, name, door (N/S/E/W), extraDoor, dpos, ext (lados con ventana), walls, top (azotea), up (escalera sube), rail}`. Nivel = `level * 4.4 m`. Las puertas dan a pasillos (`corridor`), cada puerta lleva su letrero con el color del departamento.
 - Escaleras = mismo `x,z` en todos los niveles (`stairs`), ascensores igual (`elevator`; cambio de piso en `HospitalOverlay`).

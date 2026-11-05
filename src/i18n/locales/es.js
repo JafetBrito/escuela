@@ -1257,6 +1257,7 @@ export const es = {
         hospital: { name: 'Hospital Escuela El Sagrado Corazón', desc: 'Urgencias, quirófanos, UCI, hospitalización y enseñanza · 5 niveles' },
         santuario: { name: 'Santuario de los Caminos', desc: 'Amanecer dorado: altares de clase, nidos de mascota y observatorio' },
         caverna: { name: 'La Caverna de Platón', desc: 'Campo, ágora y la caverna: prisioneros, fuego y sombras' },
+        oficinas: { name: 'Oficinas Oliver Academy', desc: 'Espacio de trabajo en equipo: escritorios, salas, lounge y cocina · se ve desde arriba' },
         ciudad: { name: 'Ciudad', desc: 'Próximamente…' },
       },
     atlasMap: {
@@ -1371,6 +1372,7 @@ export const es = {
       hospital: 'Hospital Escuela El Sagrado Corazón',
       santuario: 'Santuario de los Caminos',
       caverna: 'La Caverna de Platón',
+      oficinas: 'Oficinas Oliver Academy',
     },
     worldTreeBadge: '🌳 Árbol del Mundo',
     buttons: {

@@ -139,6 +139,7 @@ export function Player({
   fillLight = false,
   // Mundos con pisos a distintas alturas (interiores con escaleras): ver getGroundY(fromY).
   multiLevel = false,
+  lookLiftK = 0.6, // cuánto sube el punto de mira al inclinar la cámara hacia arriba; 0 = mirar siempre al jugador (vista aérea de las oficinas)
 }) {
   const group = useRef()
   const meshGroup = useRef()
@@ -470,7 +471,7 @@ export function Player({
       // while zoomed out actually frames building tops instead of just
       // moving the camera further away while still aiming near the player's
       // feet.
-      const lookLift = Math.max(0, pitch) * effectiveDistance * 0.6
+      const lookLift = Math.max(0, pitch) * effectiveDistance * lookLiftK
       camera.lookAt(
         group.current.position.x,
         group.current.position.y + 0.6 + lookLift,

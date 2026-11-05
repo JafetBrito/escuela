@@ -2653,6 +2653,12 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
 
   // `campus` = id del mapa por datos ('campus' | 'hospital'); falsy = la plaza de siempre
   const mapData = useMemo(() => (campus ? getMap(campus).data : null), [campus])
+  // Cámara inicial propia del mapa (`camera: { pitch, distance }`): las oficinas arrancan inclinadas y alejadas para verse desde arriba;
+  // después el jugador la mueve con la órbita y el zoom de siempre.
+  useEffect(() => {
+    const c = mapData?.camera
+    if (c && cameraRef?.current) Object.assign(cameraRef.current, { pitch: c.pitch, distance: c.distance, targetDistance: c.distance })
+  }, [mapData, cameraRef])
   const campusPts = useMemo(() => (mapData ? npcPoints(mapData) : null), [mapData])
   // ?spawn=x,z (metros del campus): aparecer en otro punto — lo usa el editor ("Probar aquí") y sirve para ir directo a un interior.
   const campusSpawn = useMemo(() => {
@@ -2713,6 +2719,7 @@ function PlazaGroundWorld({ campus, mascot, skin, keysRef, cameraRef, playerPosi
           raycastGround
           fillLight
           multiLevel={!!campus}
+          lookLiftK={mapData?.camera ? 0 : 0.6}
           groundRayHeight={campus ? 80 : 40}
           keysRef={keysRef}
           cameraRef={cameraRef}
@@ -3389,6 +3396,7 @@ const TRANSPORT_WORLDS = [
   { id: 'hospital',   emoji: '🏥', available: true,  path: '/vr/hospital' },
   { id: 'santuario',  emoji: '🌅', available: true,  path: '/vr/santuario' },
   { id: 'caverna',    emoji: '🔥', available: true,  path: '/vr/caverna' },
+  { id: 'oficinas',   emoji: '🏢', available: true,  path: '/vr/oficinas' },
   { id: 'ciudad',     emoji: '🌆', available: false, path: null },
 ]
 
@@ -4805,7 +4813,7 @@ export default function VRPage({ roomMode = false, anfiteatroMode = false, world
         {!vrReady && !(birthdayMode && !birthdayIntroSeen) && !(classroomMode && !classIntroSeen) && (
           <VrLoadingScreen
             onEnter={() => setVrReady(true)}
-            worldName={campusMap === 'caverna' ? t('vr.worldNames.caverna') : campusMap === 'santuario' ? t('vr.worldNames.santuario') : campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
+            worldName={campusMap === 'oficinas' ? t('vr.worldNames.oficinas') : campusMap === 'caverna' ? t('vr.worldNames.caverna') : campusMap === 'santuario' ? t('vr.worldNames.santuario') : campusMap === 'hospital' ? t('vr.worldNames.hospital') : campusMap ? t('vr.worldNames.campusU') : plazaMode ? t('vr.worldNames.plaza') : birthdayMode ? t('vr.worldNames.birthday') : indoorMode ? t('vr.worldNames.classroom') : worldTreeMode ? t('vr.worldNames.worldTree') : anfiteatroMode ? t('vr.worldNames.anfiteatro') : roomMode ? t('vr.worldNames.room') : t('vr.worldNames.campus')}
           />
         )}
 

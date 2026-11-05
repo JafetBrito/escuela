@@ -1253,6 +1253,7 @@ export const en = {
         hospital: { name: 'El Sagrado Corazón Teaching Hospital', desc: 'ER, operating rooms, ICU, wards and teaching · 5 levels' },
         santuario: { name: 'Sanctuary of the Paths', desc: 'Golden dawn: class altars, pet nests and an observatory' },
         caverna: { name: "Plato's Cave", desc: 'Fields, agora and the cave: prisoners, fire and shadows' },
+        oficinas: { name: 'Oliver Academy Offices', desc: 'Team workspace: desks, meeting rooms, lounge and kitchen · viewable from above' },
         ciudad: { name: 'City', desc: 'Coming soon…' },
       },
     atlasMap: {
@@ -1367,6 +1368,7 @@ export const en = {
       hospital: 'El Sagrado Corazón Teaching Hospital',
       santuario: 'Sanctuary of the Paths',
       caverna: "Plato's Cave",
+      oficinas: 'Oliver Academy Offices',
     },
     worldTreeBadge: '🌳 World Tree',
     buttons: {

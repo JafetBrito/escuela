@@ -244,7 +244,7 @@ export default function CampusEditor() {
   const groups = useMemo(() => {
     const g = {}
     for (const [type, c] of Object.entries(CATALOG)) {
-      if (type === 'glb' || type === 'room' || (!isHosp && c.group === 'Hospital') || (isHosp && c.group === 'Edificios') || ({ Santuario: ['santuario', 'caverna'], Caverna: ['caverna'] }[c.group] || [mapId]).indexOf(mapId) < 0) continue
+      if (type === 'glb' || type === 'room' || (!isHosp && c.group === 'Hospital') || (isHosp && c.group === 'Edificios') || ({ Santuario: ['santuario', 'caverna'], Caverna: ['caverna'], Oficina: ['oficinas'] }[c.group] || [mapId]).indexOf(mapId) < 0) continue
       ;(g[c.group] ||= []).push([type, c.label])
     }
     g['Suelo'] = [...(g['Suelo'] || []), ['path', 'Camino (dibujar)']]

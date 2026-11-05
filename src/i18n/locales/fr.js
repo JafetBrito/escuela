@@ -655,6 +655,7 @@ export const fr = {
         hospital: { name: 'Hôpital Universitaire du Sacré-Cœur', desc: 'Urgences, blocs, soins intensifs, hospitalisation et enseignement · 5 niveaux' },
         santuario: { name: 'Sanctuaire des Chemins', desc: 'Aube dorée : autels de classe, nids de compagnon et observatoire' },
         caverna: { name: 'La Caverne de Platon', desc: 'Champs, agora et la caverne : prisonniers, feu et ombres' },
+        oficinas: { name: 'Bureaux Oliver Academy', desc: "Espace de travail en équipe : bureaux, salles, lounge et cuisine · vue du dessus" },
         ciudad: { name: 'Ville', desc: 'Bientôt disponible…' },
       },
     atlasMap: {
@@ -767,6 +768,7 @@ export const fr = {
       hospital: 'Hôpital Universitaire du Sacré-Cœur',
       santuario: 'Sanctuaire des Chemins',
       caverna: 'La Caverne de Platon',
+      oficinas: 'Bureaux Oliver Academy',
     },
     worldTreeBadge: '🌳 Arbre-Monde',
     buttons: {

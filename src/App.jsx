@@ -1134,6 +1134,18 @@ export default function App() {
           }
         />
         <Route
+          path="/vr/oficinas"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap="oficinas" /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false} requireTutorial blockAgeProfiles={['kids', 'seniors']}>
+                <Suspense fallback={<RouteFallback />}>
+                  <VRPage plazaMode campusMap="oficinas" />
+                </Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
+        <Route
           path="/vr/caverna"
           element={
             import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><VRPage plazaMode campusMap="caverna" /></Suspense>) : (
