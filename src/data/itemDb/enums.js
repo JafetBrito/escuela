@@ -39,5 +39,26 @@ export const SLOT_LABEL = {
   hat: ['Gorro', 'Hat'], accessory: ['Accesorio', 'Accessory'], backpack: ['Mochila', 'Backpack'],
 }
 
+// Tipo del objeto (columna derecha de la fila "ranura / tipo" del tooltip)
+export const SUBCLASS_LABEL = {
+  food: ['Comida', 'Food'], potion: ['Poción', 'Potion'], scroll: ['Pergamino', 'Scroll'], weapon: ['Arma', 'Weapon'], armor: ['Armadura', 'Armor'],
+  accessory: ['Accesorio', 'Accessory'], bag: ['Bolsa', 'Bag'], theme: ['Tema', 'Theme'], skin: ['Apariencia', 'Skin'], 'pet-skin': ['Apariencia de mascota', 'Pet skin'],
+  model: ['Modelo 3D', '3D model'], study: ['Estudio', 'Study'], media: ['Medios', 'Media'], utility: ['Utilidad', 'Utility'], persona: ['Personalidad', 'Persona'],
+  course: ['Curso', 'Course'], trophy: ['Trofeo', 'Trophy'],
+}
+// Cómo se liga (línea bajo el nivel de objeto)
+export const BONDING_LABEL = {
+  pickup: ['Se liga al recogerlo', 'Binds when picked up'], equip: ['Se liga al equiparlo', 'Binds when equipped'],
+  use: ['Se liga al usarlo', 'Binds when used'], soul: ['Ligado al alma', 'Soulbound'], account: ['Ligado a la cuenta', 'Account-bound'],
+}
+// Estadísticas (las 5 clásicas + las propias de Oliver Academy) y resistencias
+export const STAT_LABEL = {
+  str: ['Fuerza', 'Strength'], agi: ['Agilidad', 'Agility'], sta: ['Aguante', 'Stamina'], int: ['Intelecto', 'Intellect'], spi: ['Espíritu', 'Spirit'],
+  power: ['Poder', 'Power'], speed: ['Velocidad', 'Speed'], intellect: ['Intelecto', 'Intellect'], creativity: ['Creatividad', 'Creativity'], wisdom: ['Sabiduría', 'Wisdom'],
+}
+export const RESIST_LABEL = { fire: ['Fuego', 'Fire'], nature: ['Naturaleza', 'Nature'], frost: ['Escarcha', 'Frost'], arcane: ['Arcano', 'Arcane'], shadow: ['Sombra', 'Shadow'] }
+// Prefijo de las líneas verdes de efecto
+export const TRIGGER_LABEL = { use: ['Uso:', 'Use:'], equip: ['Equipar:', 'Equip:'], hit: ['Probabilidad al golpear:', 'Chance on hit:'], pickup: ['Al recogerlo:', 'On pickup:'] }
+
 // Moneda: 100 cobre = 1 plata, 100 plata = 1 oro (igual que useCurrencyStore).
 export const priceParts = (cobre) => ({ gold: Math.floor(cobre / 10000), silver: Math.floor((cobre % 10000) / 100), copper: cobre % 100 })

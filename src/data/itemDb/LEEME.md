@@ -32,6 +32,9 @@ Todo objeto del juego es **una fila** de `ITEM_DB` con los mismos campos (como `
 - `getShopItemById` acepta entry o clave. La tienda muestra nombre, descripción, ícono y **precio desde la base** (lo que edites en `/db/items` cambia la tienda) y `buyItem` cobra ese precio.
 - Los comandos GM (`/additem`, `/removeitem`) y las comprobaciones de propiedad (`ownsItem`) trabajan con ambas formas.
 
+## Tooltip con estructura de MMO (hecho)
+`ItemTooltip` muestra las filas en el orden clásico: nombre (color de calidad) → nivel de objeto → ligadura → único → ranura | tipo → daño | velocidad → (DPS) → estadísticas → resistencias → durabilidad → requisitos → líneas verdes de efecto (Uso / Equipar / Probabilidad al golpear) → texto dorado → precio de venta/compra. Cada fila solo sale si el objeto tiene el dato. Campos nuevos (todos opcionales, viven en el `jsonb` de `item_templates`, sin migración): `itemLevel`, `unique`, `durability`, `damage {min,max,speed}`, `resist {fire,nature,frost,arcane}`, y efectos de texto `{type:'text', trigger:'use|equip|hit', text, en}`. En `/db/items` el editor del admin tiene una casilla por fila y Ctrl/Shift+clic en otra fila compara dos objetos.
+
 ## Siguiente etapa (pendiente)
 - Equipo (`useEquipmentStore`) y objetos activos (`useItemEffectsStore`) siguen usando claves de texto.
 - Que las misiones/recompensas (`useCollectionStore`) entreguen objetos de la base por `entry`.
