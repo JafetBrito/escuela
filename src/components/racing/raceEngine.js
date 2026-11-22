@@ -121,7 +121,7 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     g.holding = !!(f && f.asked && !f.revealed && g.s >= f.start - RACE.holdDist) // espera en el pórtico a que termine de leerse la pregunta
 
     const vMax = tierSpeed(g.tier) * (g.boost > 0 ? 1.3 : 1) * (g.crash > 0 ? 0.4 : 1)
-    let a = throttle * 15 * Math.max(0, 1 - g.v / vMax) - 0.03 * g.v - slopeAt(g.s) * 9.8 * 0.7 // pendiente: bajar (slope < 0) acelera, subir frena
+    let a = throttle * 21 * Math.max(0, 1 - g.v / vMax) - 0.03 * g.v - slopeAt(g.s) * 9.8 * 0.7 // pendiente: bajar (slope < 0) acelera, subir frena
     if (g.v > vMax) a -= (g.v - vMax) * 1.5 // pasarse del máximo (turbo, bajada) se va disipando
     if (brake > 0) a -= 26 * brake
     if (g.holding) a -= 40

@@ -7,8 +7,8 @@ import { DEEP } from './racingDeep.js'
 
 export const RACE = {
   missions: 3, forksPerMission: 4, // 12 preguntas por partida
-  firstFork: 700, spacing: 950, forkLen: 160, finishExtra: 400, // metros: pistas largas
-  armDist: 800, askDist: 460, holdDist: 45, // se elige la pregunta 800 m antes, se anuncia a 460 m y el vehículo espera en el pórtico (si aún no termina de leerse)
+  firstFork: 875, spacing: 1190, forkLen: 200, finishExtra: 500, // metros: pistas largas (≈ +25 % que antes para acompañar la mayor velocidad)
+  armDist: 1000, askDist: 575, holdDist: 55, // se elige la pregunta 800 m antes, se anuncia a 460 m y el vehículo espera en el pórtico (si aún no termina de leerse)
   roadHalf: 8.5, // medio ancho de la pista
 }
 export const FORKS = RACE.missions * RACE.forksPerMission
@@ -31,7 +31,7 @@ export const TIERS = 14
 export const MAX_TIER = TIERS - 1
 export const FLY_FROM = 10
 // Velocidad máxima (m/s) según el nivel del vehículo
-export const tierSpeed = (tier) => 20 + tier * 3.2
+export const tierSpeed = (tier) => 26 + tier * 3.9 // más rápido: camilla ≈ 94 km/h, nave espacial ≈ 277 km/h
 // Dificultad de las preguntas (0–4) que corresponde al nivel del vehículo
 export const lvlOfTier = (tier) => Math.round((tier * 4) / MAX_TIER)
 // Altura de vuelo (m) por nivel

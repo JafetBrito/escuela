@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { PerformanceMonitor } from '@react-three/drei'
+import { EffectComposer, Bloom, Vignette, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
@@ -11,6 +13,7 @@ import { frame, centerX, pitchAt } from './track'
 import { buildTrack, bannerTexture } from './trackBuild'
 import { buildRoute, stationTexture, routePoint, ROUTE_PAL } from './routeBuild'
 import { buildVehicle } from './vehicles'
+import { SkyDome, Particles, Flyers } from './RaceFx'
 import { Mesher } from '../vr/campus/mesher'
 import RacingGarage from './RacingGarage'
 import { useRacingStore, levelOfXp, levelUnlocked } from '../../stores/useRacingStore'
@@ -83,7 +86,7 @@ function RouteWorld({ world, route, backText }) {
   )
 }
 
-function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish }) {
+function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish, onDpr }) {
   const { world, game } = run
   const track = useMemo(() => buildTrack(world, game.forks, game.missionStarts), [world, game])
   const textures = useMemo(() => track.banners.map((b) => bannerTexture(b.label, b.text, b.color)), [track])
@@ -91,10 +94,11 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
   const [sign, setSign] = useState(null)
   const model = useMemo(() => buildVehicle(world.tiers[tier].kind, world.color, world.emblem, run.custom), [world, tier, run.custom])
   const vehicle = useRef(), shadow = useRef(), bg = useRef(), fog = useRef(), hemi = useRef(), dir = useRef()
+  const sunTarget = useMemo(() => new THREE.Object3D(), [])
   const shown = useRef(game.tier), shownSign = useRef(-1), acc = useRef(0), first = useRef(true), sent = useRef(false), roll = useRef(0), wasDetour = useRef(false)
   const pal0 = world.missions[0].pal
 
-  useEffect(() => () => { textures.forEach((t) => t.dispose()); track.geos.forEach((g) => g.dispose()); track.glowGeos.forEach((g) => g.dispose()); track.solid?.dispose(); track.glow?.dispose() }, [textures, track])
+  useEffect(() => () => { textures.forEach((t) => t.dispose()); for (const k of ['geos', 'glowGeos', 'solidChunks', 'glowChunks']) track[k].forEach((g) => g.dispose()) }, [textures, track])
   useEffect(() => () => { model.solid?.dispose(); model.glow?.dispose() }, [model])
   useEffect(() => { if (vehicle.current) vehicle.current.rotation.order = 'YXZ' }, [])
 
@@ -132,13 +136,14 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       cam.fov = 60 + game.v * 0.3 + (game.boost > 0 ? 7 : 0) + alt * 0.6; cam.updateProjectionMatrix()
     }
 
+    if (dir.current && v) { dir.current.position.set(v.position.x + 55, v.position.y + 90, v.position.z + 35); sunTarget.position.copy(v.position); sunTarget.updateMatrixWorld() } // las sombras cubren solo el entorno del vehículo
     // el ambiente (cielo, niebla, luz) se funde hacia el de la misión (o el de la ruta de repaso)
     const pal = d ? ROUTE_PAL : world.missions[game.mission].pal, k = 1 - Math.exp(-1.6 * dt)
     if (bg.current) bg.current.lerp(COL.set(pal.sky), k)
     if (fog.current) fog.current.color.lerp(COL.set(pal.fog), k)
     const lum = COL.set(pal.sky).getHSL(HSL).l
-    if (hemi.current) hemi.current.intensity += ((d ? 1.4 : 0.7 + lum * 1.1) - hemi.current.intensity) * k
-    if (dir.current) dir.current.intensity += ((d ? 1.2 : 0.5 + lum * 2) - dir.current.intensity) * k
+    if (hemi.current) hemi.current.intensity += ((d ? 1.4 : 0.5 + lum * 0.75) - hemi.current.intensity) * k
+    if (dir.current) dir.current.intensity += ((d ? 1.2 : 0.45 + lum * 1.5) - dir.current.intensity) * k
 
     acc.current += dt
     if (acc.current > 0.1) {
@@ -156,12 +161,17 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       <color ref={bg} attach="background" args={[pal0.sky]} />
       <fog ref={fog} attach="fog" args={[pal0.fog, 70, 360]} />
       <hemisphereLight ref={hemi} args={['#ffffff', pal0.ground2, 1.2]} />
-      <directionalLight ref={dir} position={[60, 120, 40]} intensity={1.5} color="#fff4dd" />
+      <primitive object={sunTarget} />
+      <directionalLight ref={dir} target={sunTarget} position={[60, 120, 40]} intensity={1.5} color="#fff4dd" castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-46} shadow-camera-right={46} shadow-camera-top={46} shadow-camera-bottom={-46} shadow-camera-near={5} shadow-camera-far={260} shadow-bias={-0.0006} shadow-normalBias={0.08} />
+      <SkyDome game={game} world={world} />
       <Backdrop game={game} world={world} />
-      {track.geos.map((g, i) => <mesh key={`r${i}`} geometry={g} material={SOLID} />)}
+      <PerformanceMonitor onChange={({ factor }) => onDpr(0.8 + 0.8 * factor)} />
+      {track.geos.map((g, i) => <mesh key={`r${i}`} geometry={g} material={SOLID} receiveShadow />)}
       {track.glowGeos.map((g, i) => <mesh key={`g${i}`} geometry={g} material={GLOW} />)}
-      {track.solid && <mesh geometry={track.solid} material={SOLID} />}
-      {track.glow && <mesh geometry={track.glow} material={GLOW} />}
+      {track.solidChunks.map((g, i) => <mesh key={`s${i}`} geometry={g} material={SOLID} castShadow receiveShadow />)}
+      {track.glowChunks.map((g, i) => <mesh key={`e${i}`} geometry={g} material={GLOW} />)}
+      <Particles game={game} world={world} />
+      <Flyers game={game} world={world} />
       {track.banners.map((b, i) => (
         <mesh key={`b${i}`} position={[b.x, b.y, b.z]} rotation={[0, b.yaw, 0]}>
           <planeGeometry args={[b.w, b.h]} /><meshBasicMaterial map={textures[i]} toneMapped={false} />
@@ -169,17 +179,39 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       ))}
       {sign && <ForkSigns key={sign.id} gantry={track.gantries[sign.id]} opts={sign.opts} color={world.missions[game.mission].pal.accent} />}
       {route && <RouteWorld key={route.id} world={world} route={route} backText={backText} />}
-      <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} visible={false}><circleGeometry args={[1.8, 20]} /><meshBasicMaterial color="#000" transparent opacity={0.35} depthWrite={false} /></mesh>
+      <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} visible={false} renderOrder={2}><circleGeometry args={[1.8, 20]} /><meshBasicMaterial color="#000" transparent opacity={0.35} depthWrite={false} /></mesh>
       <group ref={vehicle} scale={1.5}>
-        {model.solid && <mesh geometry={model.solid} material={SOLID} />}
+        {model.solid && <mesh geometry={model.solid} material={SOLID} castShadow />}
         {model.glow && <mesh geometry={model.glow} material={GLOW} />}
       </group>
-      <EffectComposer multisampling={0}><Bloom intensity={0.75} luminanceThreshold={0.72} luminanceSmoothing={0.25} mipmapBlur /></EffectComposer>
+      <EffectComposer multisampling={0}>
+        <Bloom intensity={0.8} luminanceThreshold={0.7} luminanceSmoothing={0.25} mipmapBlur />
+        <Vignette offset={0.3} darkness={0.55} />
+        <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      </EffectComposer>
     </>
   )
 }
 
 const kmh = (v) => Math.round(v * 3.6)
+// Velocímetro de arco con aguja: se enciende en ámbar al derrapar y en amarillo con turbo
+function Speedo({ speed, boost, drifting, color }) {
+  const max = 360, v = Math.min(max, kmh(speed)), ang = Math.PI * (1 - v / max) // 180° → 0°
+  const pt = (a, r) => `${(100 + Math.cos(a) * r).toFixed(1)},${(100 - Math.sin(a) * r).toFixed(1)}`
+  const arc = (a0, a1, r) => `M ${pt(a0, r)} A ${r} ${r} 0 0 1 ${pt(a1, r)}`
+  const live = boost ? '#fde047' : drifting ? '#fb923c' : color
+  return (
+    <svg viewBox="0 0 200 118" className="h-28 w-48 drop-shadow-[0_0_8px_rgba(0,0,0,0.6)]">
+      <path d={arc(Math.PI, 0, 86)} fill="none" stroke="#ffffff22" strokeWidth="11" strokeLinecap="round" />
+      <path d={arc(Math.PI, ang, 86)} fill="none" stroke={live} strokeWidth="11" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${live})` }} />
+      {[0, 60, 120, 180, 240, 300, 360].map((t) => { const a = Math.PI * (1 - t / max); return <g key={t}><line x1={pt(a, 70).split(',')[0]} y1={pt(a, 70).split(',')[1]} x2={pt(a, 76).split(',')[0]} y2={pt(a, 76).split(',')[1]} stroke="#ffffff88" strokeWidth="2" /></g> })}
+      <line x1="100" y1="100" x2={pt(ang, 66).split(',')[0]} y2={pt(ang, 66).split(',')[1]} stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="100" cy="100" r="6" fill={live} />
+      <text x="100" y="84" textAnchor="middle" fontSize="30" fontWeight="900" fill="#fff" fontFamily="Arial">{kmh(speed)}</text>
+      <text x="100" y="114" textAnchor="middle" fontSize="11" fontWeight="700" fill="#ffffffaa" fontFamily="Arial">km/h</text>
+    </svg>
+  )
+}
 const fmtTime = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
 
 // Minimapa: la pista vista desde arriba con las bifurcaciones (verde = acertada, roja = fallada) y tu posición
@@ -214,6 +246,7 @@ export default function RacingDemo() {
   const [narr, setNarr] = useState(-1) // estación de la ruta que el narrador está contando
   const [prefs, setPrefs] = useState(loadPrefs)
   const [auto, setAuto] = useState(isTouch)
+  const [dpr, setDpr] = useState(1.25) // resolución adaptativa: baja sola si la fluidez cae (PerformanceMonitor)
   const input = useRef({ left: false, right: false, gas: false, brake: false, drift: false })
   const runRef = useRef(null)
   const routeRef = useRef(null), routeQ = useRef([]), routeSpeaking = useRef(false), routeSkip = useRef(null) // narración de la ruta de repaso
@@ -420,8 +453,8 @@ export default function RacingDemo() {
   return (
     <div className="fixed inset-0 select-none overflow-hidden bg-black text-white" style={{ touchAction: 'none' }}>
       {run && (
-        <Canvas key={run.id} camera={{ fov: 62, near: 0.3, far: 900, position: [0, 6, 14] }} dpr={[1, 1.75]}>
-          <RaceScene run={run} input={input} lang={lang} route={route} backText={T('backRace')} onHud={setHud} onEvent={onEvent}
+        <Canvas key={run.id} shadows camera={{ fov: 62, near: 0.3, far: 1300, position: [0, 6, 14] }} dpr={dpr} gl={{ antialias: true, powerPreference: 'high-performance' }}>
+          <RaceScene run={run} input={input} lang={lang} route={route} backText={T('backRace')} onDpr={setDpr} onHud={setHud} onEvent={onEvent}
             onFinish={(r) => { const gain = useRacingStore.getState().finishRun(run.world.id, { ...r, levelId: run.world.levelId }); setResult({ ...r, ...gain }); setPhase('done'); stopMusic() }} />
         </Canvas>
       )}
@@ -502,9 +535,9 @@ export default function RacingDemo() {
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-12 mx-auto w-fit rounded-xl bg-black/55 px-4 py-2 text-center backdrop-blur sm:bottom-9">
-        <div className="text-4xl font-black tabular-nums" style={{ color: hud?.boost ? '#fde047' : hud?.drifting ? '#fb923c' : '#fff' }}>{kmh(hud?.speed ?? 0)}<span className="ml-1 text-xs font-semibold opacity-60">{T('speed')}</span></div>
-        <div className="text-[11px] opacity-70">✔ {hud?.correct ?? 0} · ✘ {hud?.wrong ?? 0} · ⭐ {hud?.score ?? 0} · {fmtTime(hud?.time ?? 0)}</div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-10 mx-auto flex w-fit flex-col items-center rounded-2xl bg-black/45 px-4 pb-1.5 pt-1 backdrop-blur sm:bottom-7">
+        <Speedo speed={hud?.speed ?? 0} boost={hud?.boost} drifting={hud?.drifting} color={world?.color || '#22d3ee'} />
+        <div className="-mt-1 text-[11px] opacity-80">✔ {hud?.correct ?? 0} · ✘ {hud?.wrong ?? 0} · ⭐ {hud?.score ?? 0} · {fmtTime(hud?.time ?? 0)}</div>
         {hud?.drifting && <div className="mt-0.5 h-1 w-full rounded bg-white/20"><div className="h-full rounded bg-orange-400" style={{ width: `${Math.min(100, (hud.driftT / 2) * 100)}%` }} /></div>}
       </div>
       {!inRoute && <div className="pointer-events-none absolute inset-x-0 bottom-2 mx-auto h-1.5 w-[min(70vw,520px)] rounded-full bg-white/20 sm:bottom-3">

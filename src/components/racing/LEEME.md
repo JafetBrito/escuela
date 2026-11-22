@@ -31,6 +31,11 @@ Carrera 3D estilo Tux Racer donde **el mundo (profesión) que eliges define las 
 - **Editor** `/carrera/editor` (solo admin): preguntas (tema, dificultad, emoji, trampas, dato, explicación de 2 párrafos, pestañas ES/EN/FR), misiones (escenario, paleta, temas, introducción y 4 episodios), niveles nuevos, informe de calidad, importar/exportar JSON, y **IA del usuario** (Ajustes → Núcleo) para traducir a EN/FR (una o todas las pendientes) y para generar preguntas nuevas. Guarda en **Supabase `racing_content`** (`supabase/migration_085.sql`, una fila por mundo; si no existe, el juego usa el contenido de serie). `racingContent.js` fusiona lo remoto sobre la semilla y guarda caché local.
 - Contenido traducible: cualquier misión o pregunta acepta `i18n: { en: {...}, fr: {...} }` (en preguntas, `deep` como texto con párrafos separados por `|`).
 
+## Mejora gráfica y velocidad (2026-11-22)
+- **Más rápido**: `tierSpeed = 26 + 3.9 × nivel` (camilla ≈ 94 km/h, nave ≈ 277 km/h), aceleración mayor y pista un 25 % más larga (14.7 km, mismos tiempos).
+- **Rendimiento**: la pista (terreno, asfalto, barreras, decorado, luces) se parte en tramos de 300 m (`splitByZ`) para que el motor descarte lo que no se ve (antes era una malla gigante); resolución adaptativa (`PerformanceMonitor`).
+- **Gráficos**: cielo con degradado/sol/nubes (`RaceFx.SkyDome`), sombras reales que siguen al vehículo, terreno con lomas (`bumpAt`), línea central discontinua, construcciones grandes por escenario (hospital de campo, rascacielos, centro de datos, templo, cristales, obelisco...), detalles (bancas, estatuas, semáforos, soportes de suero, arcos con cruz), partículas (líneas de velocidad, chispas de derrape/turbo/choque, polvo ambiental), aves/palomas/drones/murciélagos, post-proceso (bloom, viñeta, tonos de cine ACES), velocímetro de arco.
+
 ## Pendiente
 **Fase 4 — Modos y menús.** Selector de personaje; **modo libre** (solo rodar y probar); competir contra **IA** (bots) y contra otra persona (Supabase Realtime).
 **Fase 5 — Pistas y arte.** Más variación procedural (saltos, rampas, túneles, tramos de vuelo con más control), mejores gráficos y partículas, más música por mundo, **modelos 3D del campus** como decorado grande, y **editor de pistas/modelos** como el de mapas (`/vr/editor`).
