@@ -15,9 +15,16 @@ Carrera 3D estilo Tux Racer donde **el mundo (profesión) que eliges define las 
 ## Archivos
 `racingData.js` (mundos, misiones, preguntas, constantes) · `raceEngine.js` (motor sin React, prueba: `node src/components/racing/raceEngine.test.mjs`) · `trackMath.js` / `track.js` / `trackBuild.js` (pista) · `vehicles.js` · `racingAudio.js` · `racingVoice.js` · `racingI18n.js` · `RacingDemo.jsx` (menú, escena, HUD).
 
-## Plan de fases (pedido del usuario, 2026-11-22)
-**Fase 2 — Progreso y garaje.** 14 vehículos por mundo (los 2 últimos: avión y nave espacial con turbo; el tramo final se vuelve vuelo). Perfil guardado en la cuenta (nivel, XP, vehículos, récords). Menú de garaje: ver tu vehículo, nivel y progreso; **personalizar** (colores, piezas, calcomanías según los gustos de cada profesión). Poderes/mejoras al avanzar (escudo, 50/50, tiempo lento, salto extra...), 1 por misión.
-**Fase 3 — Contenido por niveles.** Mundos con varios niveles/misiones (cada uno con una historia que se va aprendiendo), ≥ 30 preguntas por nivel, traducciones EN/FR. **Editor de preguntas/misiones** con importar/exportar JSON-CSV (y generación con IA del usuario).
+## Fase 2 (hecha)
+- **14 vehículos por mundo** (nivel 0–13): los 10–11 son aerodeslizadores, el 12 un avión y el 13 una nave espacial; del 10 en adelante **vuelan** (altura, sombra en el suelo, cámara más alta). Velocidad = `20 + 3.2 × nivel` m/s. La dificultad de las preguntas sigue al nivel (`lvlOfTier`).
+- **Garaje** (`RacingGarage.jsx`): vista 3D de tu vehículo, los 14 con candado (se desbloquea el más alto que alcances en una carrera), nivel/XP/estadísticas del mundo y **personalización** (pintura, luces, accesorio: bandera/antena/alerones). Elige con qué vehículo empezar.
+- **Perfil guardado en la cuenta** (`stores/useRacingStore.js`, snapshot `racing`): XP, nivel, `bestTier`, estadísticas, vehículo inicial y personalización por mundo.
+- **Poderes**: al empezar cada misión nueva eliges 1 de 3 (🛡️ escudo pasivo, 💡 pista, 🔥 nitro, 🌀 salto extra); se usan con Q/E/R o tocando el ícono. Máximo 3.
+- **Acertar ya NO detiene el vehículo**: aviso con el dato (9 s) y botón "Visitar ruta de repaso". Fallar abre una ventana que sí pausa.
+- **Ruta de repaso real**: "Visitar ruta" lleva el vehículo a una pista aparte (`routeBuild.js`, a 4000 m de la carrera) con una **estación por tramo de la explicación detallada** (respuesta → 2 párrafos de `racingDeep.js` → por qué las otras no → dato). En cada estación el locutor la cuenta y el vehículo espera (botón "Siguiente"); al final o con "Volver a la carrera" regresas exactamente donde estabas. Las 70 preguntas tienen explicación de 2 párrafos.
+- Resultados con XP ganada, subida de nivel y vehículo desbloqueado.
+
+## Plan de fases pendientes (pedido del usuario)
+**Fase 3 — Contenido por niveles.** Mundos con varios niveles/misiones (cada uno con una historia que se va aprendiendo), ≥ 30 preguntas por nivel, traducciones EN/FR (`i18n` por pregunta, incluida `deep`). **Editor de preguntas/misiones** con importar/exportar JSON-CSV (y generación con IA del usuario).
 **Fase 4 — Modos y menús.** Selector de personaje y de nivel; **modo libre** (solo rodar y probar); competir contra **IA** (bots) y contra otra persona (Supabase Realtime).
-**Fase 5 — Pistas y arte.** Más variación procedural (saltos, rampas, túneles, tramos de vuelo), mejores gráficos y partículas, más música por mundo, **modelos 3D del campus** como decorado grande, y **editor de pistas/modelos** como el de mapas (`/vr/editor`).
-**Fase 6 — Ruta especial real.** Hoy la "ruta de repaso" es una ventana; la versión final sería un desvío físico en la pista que cuenta la respuesta y vuelve a la pista principal.
+**Fase 5 — Pistas y arte.** Más variación procedural (saltos, rampas, túneles, tramos de vuelo con más control), mejores gráficos y partículas, más música por mundo, **modelos 3D del campus** como decorado grande, y **editor de pistas/modelos** como el de mapas (`/vr/editor`).

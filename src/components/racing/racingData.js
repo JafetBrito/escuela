@@ -1,3 +1,5 @@
+import { DEEP } from './racingDeep.js'
+
 // Datos del juego de carreras educativo (Oliver Racing): MUNDOS (uno por profesión), cada uno con 5 vehículos, 3 MISIONES
 // (tramos con su propio escenario, historia y paleta) y un banco de preguntas con dificultad 0–4 (la dificultad que se pregunta
 // sigue al nivel del vehículo: camilla = fácil, ambulancia turbo = difícil). Cada pregunta trae 1 correcta + 1–2 trampas, un
@@ -24,8 +26,28 @@ export function laneBounds(n, i) {
 }
 export const laneOf = (n, u) => Math.max(0, Math.min(n - 1, Math.floor((u + RACE.roadHalf) / ((2 * RACE.roadHalf) / n))))
 
-// Velocidad máxima (m/s) según el nivel del vehículo (0–4)
-export const tierSpeed = (tier) => 20 + tier * 7.5
+// 14 vehículos por mundo (nivel 0–13). Los niveles 10–11 son aerodeslizadores, el 12 un avión y el 13 una nave espacial: vuelan.
+export const TIERS = 14
+export const MAX_TIER = TIERS - 1
+export const FLY_FROM = 10
+// Velocidad máxima (m/s) según el nivel del vehículo
+export const tierSpeed = (tier) => 20 + tier * 3.2
+// Dificultad de las preguntas (0–4) que corresponde al nivel del vehículo
+export const lvlOfTier = (tier) => Math.round((tier * 4) / MAX_TIER)
+// Altura de vuelo (m) por nivel
+export const flyAlt = (tier) => (tier < FLY_FROM ? 0 : [1.6, 3.2, 8, 12][tier - FLY_FROM])
+
+// Poderes que se eligen al empezar cada misión (1 de 3). shield es pasivo (absorbe la próxima trampa); los demás se activan (Q, E, R).
+export const POWERS = {
+  shield: { icon: '🛡️', passive: true }, hint: { icon: '💡', passive: false }, nitro: { icon: '🔥', passive: false }, jump: { icon: '🌀', passive: false },
+}
+export const POWER_KEYS = Object.keys(POWERS)
+export const MAX_POWERS = 3
+
+// Ruta de repaso: pista aparte con una estación por cada tramo de la explicación; distancias en metros de la ruta
+export const ROUTE = { first: 120, gap: 120, tail: 130, x0: 4000, stop: 20 } // `stop` = metros antes del cartel donde espera el vehículo
+export const routeLength = (stations) => ROUTE.first + (stations - 1) * ROUTE.gap + ROUTE.tail
+export const stationPos = (i) => ROUTE.first + i * ROUTE.gap
 
 // Pregunta: tema, dificultad 0–4, texto, correcta, trampas[], dato curioso, emoji
 const Q = (t, lvl, q, ok, bad, fact, img) => ({ t, lvl, q, ok, bad, fact, img })
@@ -35,8 +57,20 @@ export const WORLDS = {
     id: 'medicina', name: 'Medicina', icon: '🩺', color: '#22d3ee', tagline: 'De la camilla a la ambulancia turbo', emblem: 'cross',
     music: { root: 261.63, scale: [0, 2, 4, 7, 9], bass: [0, 0, 5, 7], bpm: 116, wave: 'triangle' },
     tiers: [
-      { name: 'Camilla', kind: 'stretcher' }, { name: 'Silla de ruedas', kind: 'wheelchair' }, { name: 'Scooter médico', kind: 'scooter' },
-      { name: 'Ambulancia', kind: 'ambulance' }, { name: 'Ambulancia turbo', kind: 'turbo' },
+      { name: 'Camilla', kind: 'stretcher' },
+      { name: 'Silla de ruedas', kind: 'wheelchair' },
+      { name: 'Scooter médico', kind: 'scooter' },
+      { name: 'Moto de enfermería', kind: 'bike' },
+      { name: 'Kart de urgencias', kind: 'kart' },
+      { name: 'Buggy de rescate', kind: 'buggy' },
+      { name: 'Ambulancia', kind: 'ambulance' },
+      { name: 'Ambulancia 4x4', kind: 'van' },
+      { name: 'Deportivo de trauma', kind: 'sports' },
+      { name: 'Ambulancia turbo', kind: 'turbo' },
+      { name: 'Hovercar médico', kind: 'hovercar' },
+      { name: 'Moto aérea de rescate', kind: 'hoverbike' },
+      { name: 'Avión sanitario', kind: 'plane' },
+      { name: 'Nave Hipócrates', kind: 'spaceship' },
     ],
     missions: [
       { name: 'Urgencias del Hospital', img: '🏥', deco: 'hospital', topics: ['urgencias', 'cuerpo'], pal: { sky: '#e8f1f5', fog: '#eaf4f8', ground: '#dfe8ec', ground2: '#cfdbe1', road: '#b7c2ca', accent: '#38bdf8' },
@@ -84,8 +118,20 @@ export const WORLDS = {
     id: 'programacion', name: 'Programación', icon: '💻', color: '#22c55e', tagline: 'De la patineta al cohete con IA', emblem: 'code',
     music: { root: 220, scale: [0, 3, 5, 7, 10], bass: [0, 0, 3, 5], bpm: 130, wave: 'square' },
     tiers: [
-      { name: 'Patineta Hello World', kind: 'board' }, { name: 'Scooter for-loop', kind: 'scooter' }, { name: 'Moto Python', kind: 'bike' },
-      { name: 'Coche compilado', kind: 'car' }, { name: 'Cohete IA', kind: 'rocket' },
+      { name: 'Patineta Hello World', kind: 'board' },
+      { name: 'Scooter for-loop', kind: 'scooter' },
+      { name: 'Moto Python', kind: 'bike' },
+      { name: 'Kart JavaScript', kind: 'kart' },
+      { name: 'Buggy Linux', kind: 'buggy' },
+      { name: 'Coche compilado', kind: 'car' },
+      { name: 'Furgoneta DevOps', kind: 'van' },
+      { name: 'Deportivo Rust', kind: 'sports' },
+      { name: 'Fórmula Open Source', kind: 'formula' },
+      { name: 'Racer Cuántico', kind: 'turbo' },
+      { name: 'Hovercar Cloud', kind: 'hovercar' },
+      { name: 'Moto Hover GPU', kind: 'hoverbike' },
+      { name: 'Jet de la Nube', kind: 'plane' },
+      { name: 'Nave IA General', kind: 'spaceship' },
     ],
     missions: [
       { name: 'La Terminal', img: '💻', deco: 'servers', topics: ['basico'], pal: { sky: '#0b1220', fog: '#0f1a2e', ground: '#0f2a22', ground2: '#0a1f19', road: '#1b2433', accent: '#22c55e' },
@@ -123,8 +169,20 @@ export const WORLDS = {
     id: 'filosofia', name: 'Filosofía', icon: '📜', color: '#eab308', tagline: 'De la carreta a la nave de la Razón', emblem: 'omega',
     music: { root: 146.83, scale: [0, 2, 3, 7, 9], bass: [0, 3, 0, 5], bpm: 100, wave: 'triangle' },
     tiers: [
-      { name: 'Carreta socrática', kind: 'cart' }, { name: 'Cuadriga de Platón', kind: 'chariot' }, { name: 'Vespa de Aristóteles', kind: 'scooter' },
-      { name: 'Carruaje de Kant', kind: 'car' }, { name: 'Nave de la Razón', kind: 'rocket' },
+      { name: 'Carreta socrática', kind: 'cart' },
+      { name: 'Cuadriga de Platón', kind: 'chariot' },
+      { name: 'Vespa de Aristóteles', kind: 'scooter' },
+      { name: 'Moto de Epicuro', kind: 'bike' },
+      { name: 'Kart de Diógenes', kind: 'kart' },
+      { name: 'Buggy estoico', kind: 'buggy' },
+      { name: 'Carruaje de Kant', kind: 'car' },
+      { name: 'Furgón de la Ilustración', kind: 'van' },
+      { name: 'Deportivo de Nietzsche', kind: 'sports' },
+      { name: 'Fórmula del Logos', kind: 'formula' },
+      { name: 'Hovercar de Hegel', kind: 'hovercar' },
+      { name: 'Moto del Eterno Retorno', kind: 'hoverbike' },
+      { name: 'Avión de Ícaro', kind: 'plane' },
+      { name: 'Nave de la Razón', kind: 'spaceship' },
     ],
     missions: [
       { name: 'El Ágora', img: '🏛️', deco: 'agora', topics: ['antigua'], pal: { sky: '#ffd9a0', fog: '#ffe9c7', ground: '#e9d9a8', ground2: '#d8c88f', road: '#a89878', accent: '#eab308' },
@@ -158,6 +216,8 @@ export const WORLDS = {
     ],
   },
 }
+// Explicaciones detalladas (racingDeep.js): 2 párrafos por pregunta, en el mismo orden que `questions`
+for (const w of Object.values(WORLDS)) w.questions.forEach((q, i) => { q.deep = (DEEP[w.id]?.[i] || '').split('|').filter(Boolean) })
 export const WORLD_LIST = Object.values(WORLDS)
 
 // Texto en el idioma actual: `obj.i18n[lang][campo]` si existe; si no, el campo en español (la base, igual que el resto de la app)
