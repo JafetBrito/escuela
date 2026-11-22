@@ -18,6 +18,8 @@ export const CHARACTERS = [
   { id: 'sage', name: 'Sage', skin: '#a7f3d0', hat: 'crown', hair: '#facc15', shirt: '#7c3aed' },
   { id: 'rex', name: 'Rex', skin: '#d9a066', hat: 'hair', hair: '#b91c1c', shirt: '#0f172a' },
   { id: 'luna', name: 'Luna', skin: '#fde0c8', hat: 'cap', hair: '#a855f7', shirt: '#f8fafc' },
+  { id: 'oliver', name: 'Oliver', skin: '#e98a3c', hat: 'cat', hair: '#bf571a', shirt: '#f2a75e' }, // el gato naranja de la escuela
+  { id: 'jafet', name: 'Jafet', skin: '#f1c9a5', hat: 'wizard', hair: '#6d28d9', shirt: '#4c1d95' }, // el mago director
 ]
 let CH = CHARACTERS[0] // el piloto del vehículo que se está armando (lo fija buildVehicle)
 function rider(M, x, y, z, hex) {
@@ -28,7 +30,14 @@ function rider(M, x, y, z, hex) {
   else if (CH.hat === 'helmet') M.ball(x, hy + 0.04, z, 0.3, CH.hair)
   else if (CH.hat === 'band') { M.box(x, hy + 0.08, z, 0.52, 0.1, 0.5, CH.hair); M.box(x, hy + 0.2, z + 0.05, 0.4, 0.14, 0.4, CH.hair) }
   else if (CH.hat === 'crown') for (const k of [-1, 0, 1]) M.box(x + k * 0.15, hy + 0.3, z, 0.08, 0.16, 0.08, CH.hair)
-  else if (CH.hat === 'ears') for (const k of [-1, 1]) M.box(x + k * 0.22, hy + 0.34, z, 0.08, 0.3, 0.08, CH.hair)
+  else if (CH.hat === 'cat') { // Oliver: orejas triangulares, hocico crema, nariz rosa y cola
+    for (const k of [-1, 1]) { M.cone(x + k * 0.15, hy + 0.16, z, 0.1, 0.22, 4, CH.skin); M.cone(x + k * 0.15, hy + 0.17, z - 0.02, 0.05, 0.14, 4, '#f0b6a0') }
+    M.ball(x, hy - 0.07, z - 0.2, 0.1, '#f6dfb8'); M.ball(x, hy - 0.02, z - 0.28, 0.04, '#e58a8f')
+    M.box(x, y + 0.25, z + 0.3, 0.12, 0.12, 0.5, CH.skin); M.box(x, y + 0.5, z + 0.55, 0.12, 0.4, 0.12, CH.hair)
+  } else if (CH.hat === 'wizard') { // Jafet: sombrero puntiagudo de mago y barba blanca
+    M.box(x, hy + 0.17, z, 0.7, 0.05, 0.7, CH.hair); M.cone(x, hy + 0.2, z, 0.3, 0.7, 6, CH.hair); M.ball(x, hy + 0.92, z, 0.05, '#fde047')
+    M.box(x, hy - 0.2, z - 0.15, 0.32, 0.3, 0.12, '#f8fafc'); M.ball(x, hy - 0.33, z - 0.15, 0.1, '#f8fafc')
+  } else if (CH.hat === 'ears') for (const k of [-1, 1]) M.box(x + k * 0.22, hy + 0.34, z, 0.08, 0.3, 0.08, CH.hair)
 }
 // Emblema de la clase en el techo/capó: cruz, </> o omega (barras emisivas)
 function emblem(G, kind, x, y, z, s, hex) {
