@@ -15,10 +15,14 @@ import { slopeAt } from './trackMath.js'
 // PODERES: al empezar cada misión nueva se elige 1 de 3 (`powerChoice` → `addPower`); `usePower(i)` activa los que no son pasivos.
 // RUTA DE REPASO: `startDetour(q)` lleva el vehículo a una pista aparte con una estación por cada tramo de la explicación; en cada una
 // espera hasta que la interfaz avise (`revealStation`); al final `endDetour` devuelve a la carrera donde la dejaste.
-export function createRace(world, { rng = Math.random, auto = false, startTier = 0 } = {}) {
+// Opciones de la fase 4: `free` = modo libre (sin preguntas ni bifurcaciones, solo conducir); `fixed` = las 12 preguntas se eligen al empezar
+// con dificultad por número de bifurcación (todos los jugadores de una misma `seed` reciben lo mismo); `bots` = rivales de IA [{ name, skill, color,
+// char }]; `rivals` = rivales controlados desde fuera (en línea) [{ id, name, color, char }]; `countdown` = segundos de cuenta atrás.
+export function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } }
+export function createRace(world, { rng = Math.random, auto = false, startTier = 0, free = false, fixed = false, bots = [], rivals = [], countdown = 0 } = {}) {
   const L = trackLength(), len = RACE.forkLen
-  const forks = Array.from({ length: FORKS }, (_, i) => ({ id: i, start: RACE.firstFork + i * RACE.spacing, n: forkLanes(i), mission: Math.floor(i / RACE.forksPerMission), q: null, asked: false, revealed: false, jumped: false }))
-  const missionStarts = Array.from({ length: RACE.missions }, (_, m) => (m === 0 ? 0 : forks[m * RACE.forksPerMission - 1].start + len + 30))
+  const forks = free ? [] : Array.from({ length: FORKS }, (_, i) => ({ id: i, start: RACE.firstFork + i * RACE.spacing, n: forkLanes(i), mission: Math.floor(i / RACE.forksPerMission), q: null, asked: false, revealed: false, jumped: false }))
+  const missionStarts = Array.from({ length: RACE.missions }, (_, m) => (m === 0 ? 0 : free ? Math.round((L / RACE.missions) * m) : forks[m * RACE.forksPerMission - 1].start + len + 30))
   const used = new Set()
   const t0 = Math.max(0, Math.min(MAX_TIER, startTier))
   const g = {
@@ -26,15 +30,19 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     s: 0, u: 0, uv: 0, v: 0, alt: flyAlt(t0), tier: t0, maxTier: t0, correct: 0, wrong: 0, score: 0, time: 0,
     lock: -1, idx: 0, evald: false, crash: 0, boost: 0, jumpT: 0, jumpLane: 0, drifting: false, driftT: 0, holding: false,
     msg: null, msgT: 0, finished: false, finishT: 0, mission: 0, events: [], results: [],
-    powers: [], hintFor: -1, detour: null, detours: 0, choosing: null, storyIdx: 0,
+    powers: [], hintFor: -1, detour: null, detours: 0, choosing: null, storyIdx: 0, fxOk: 0,
+    free, startIn: countdown, finishTime: null, rivals: [],
   }
+  const botRng = mulberry(Math.floor(rng() * 4294967296))
+  const mk = (r, i, bot) => ({ id: r.id || `bot${i}`, name: r.name || `Bot ${i + 1}`, color: r.color || '#94a3b8', char: r.char || null, bot, skill: r.skill ?? 0.7, tier: t0, s: 0, u: ((i % 3) - 1) * 3, uv: 0, v: 0, alt: flyAlt(t0), idx: 0, ok: null, evald: false, crash: 0, boost: 0, finished: false, finishT: null })
+  g.rivals = [...bots.map((b, i) => mk(b, i, true)), ...rivals.map((r, i) => mk(r, bots.length + i, false))]
   const say = (kind, tier = null) => { g.msg = { kind, tier }; g.msgT = 3.2 } // la interfaz lo traduce
   const emit = (e) => g.events.push(e)
   emit({ type: 'mission', index: 0 })
 
   // Elige la pregunta de la bifurcación `f`: del tema de la misión, sin repetir, con n−1 trampas y la dificultad más cercana al nivel actual
   function pick(f) {
-    const topics = world.missions[f.mission].topics, want = lvlOfTier(g.tier)
+    const topics = world.missions[f.mission].topics, want = fixed ? Math.min(4, Math.floor(f.id / 3)) : lvlOfTier(g.tier)
     const pool = (strict, reuse) => world.questions.filter((q) => (reuse || !used.has(q)) && q.bad.length >= f.n - 1 && (!strict || topics.includes(q.t)))
     let c = pool(true, false); if (!c.length) c = pool(false, false); if (!c.length) c = pool(false, true)
     const best = Math.min(...c.map((q) => Math.abs(q.lvl - want)))
@@ -44,6 +52,8 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     f.q = { src: q, q: q.q, opts: opts.map((o) => o.t), correct: opts.findIndex((o) => o.ok), optSrc: opts.map((o) => o.src), ok: q.ok, fact: q.fact, img: q.img, lvl: q.lvl }
   }
 
+  if (fixed) forks.forEach(pick) // las mismas 12 preguntas para todos los que usen la misma semilla
+  g.resume = () => { g.paused = false }
   g.drain = () => g.events.splice(0)
   g.question = () => { const f = forks[g.idx]; return f && f.q && f.asked && g.s < f.start + len - 10 ? f : null }
   g.forkDistance = () => { const f = forks[g.idx]; return f ? f.start - g.s : null }
@@ -81,25 +91,56 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
   }
   g.revealStation = (i) => { if (g.detour) g.detour.revealed[i] = true }
   g.endDetour = () => { if (!g.detour) return; g.detour = null; emit({ type: 'detourEnd' }) }
-  // La ruta NO se detiene en las estaciones: el vehículo avanza solo a ritmo moderado (`ROUTE.vmax`; se puede frenar y girar) mientras el locutor
+  // La ruta NO se detiene en las estaciones: el vehículo avanza solo hasta el límite de 255 km/h (`ROUTE.vmax`; se puede frenar y girar) mientras el locutor
   // cuenta cada estación al irte acercando. Solo espera al final del recorrido si la última aún no terminó de contarse.
   function stepDetour(dt, input) {
     const d = g.detour, n = d.stations.length, brake = input.brake || 0, steer = input.steer || 0, end = routeLength(n)
-    if (d.si < n && !d.announced[d.si] && d.rs >= stationPos(d.si) - 110) { d.announced[d.si] = true; emit({ type: 'station', index: d.si }) }
+    if (d.si < n && !d.announced[d.si] && d.rs >= stationPos(d.si) - ROUTE.announce) { d.announced[d.si] = true; emit({ type: 'station', index: d.si }) }
     d.holding = d.rs >= end - 10 && !d.revealed[n - 1]
-    let a = (ROUTE.vmax - d.v) * 1.2 - 26 * brake
-    if (d.holding) a -= 40
-    d.v = Math.max(0, d.v + a * dt); d.rs += d.v * dt
+    const a = (ROUTE.vmax - d.v) * 0.9 - 40 * brake
+    d.v = Math.max(0, d.v + a * dt)
+    if (!d.revealed[n - 1]) d.v = Math.min(d.v, Math.sqrt(2 * 30 * Math.max(0, end - d.rs))) // frena suave para esperar en la meta a que termine la última estación
+    d.rs += d.v * dt
     d.uv += (steer * 11 - d.uv) * (1 - Math.exp(-9 * dt)); d.ru = Math.max(-6, Math.min(6, d.ru + d.uv * dt))
     if (d.si < n && d.rs > stationPos(d.si) + 14) d.si++
     if (d.rs >= end && d.revealed[n - 1]) g.endDetour()
   }
 
+  // ── Rivales de IA: corren la misma pista; aciertan cada bifurcación con probabilidad `skill` y suben o bajan de vehículo como tú ──
+  function stepBot(r, dt) {
+    if (r.finished) { r.v *= Math.exp(-1.6 * dt); r.s += r.v * dt; return }
+    r.crash = Math.max(0, r.crash - dt); r.boost = Math.max(0, r.boost - dt)
+    const vMax = tierSpeed(r.tier) * (r.boost > 0 ? 1.42 : 1) * (r.crash > 0 ? 0.4 : 1) * 0.97
+    r.v += (vMax - r.v) * Math.min(1, 1.1 * dt); r.s += r.v * dt
+    r.alt += (flyAlt(r.tier) - r.alt) * (1 - Math.exp(-2.2 * dt))
+    const f = forks[r.idx]; let target = 0
+    if (f) {
+      if (r.ok === null && r.s >= f.start - 60) r.ok = botRng() < r.skill
+      if (r.ok !== null) {
+        const c = f.q ? f.q.correct : 0, lane = r.ok ? c : (c + 1) % f.n
+        if (r.s >= f.start - 30) target = laneBounds(f.n, lane).center
+        if (!r.evald && r.s > f.start + len - 28) {
+          r.evald = true
+          if (r.ok) { r.boost = 2.6; r.v *= 1.2; r.tier = Math.min(MAX_TIER, r.tier + 1) } else { r.crash = 1.8; r.v *= 0.4; r.tier = Math.max(0, r.tier - 1) }
+        }
+        if (r.s > f.start + len + 5) { r.idx++; r.ok = null; r.evald = false }
+      }
+    } else target = Math.sin(r.s * 0.01 + r.v) * 3
+    r.uv = (target - r.u) * 2.2; r.u += r.uv * dt
+    if (r.s >= L - 40) { r.finished = true; r.finishT = g.time }
+  }
+  // Puesto: los que ya terminaron antes que tú o, mientras corres, los que van más adelante
+  g.rank = () => 1 + g.rivals.filter((r) => (r.finished && (g.finishTime == null || r.finishT < g.finishTime)) || (!r.finished && g.finishTime == null && r.s > g.s)).length
+  g.board = () => [{ id: 'me', me: true, s: g.s, finished: g.finished, t: g.finishTime }, ...g.rivals.map((r) => ({ id: r.id, name: r.name, color: r.color, s: r.s, finished: r.finished, t: r.finishT }))]
+    .sort((a, b) => (a.finished && b.finished ? a.t - b.t : a.finished ? -1 : b.finished ? 1 : b.s - a.s))
+
   // input: { steer: -1..1, throttle: 0..1, brake: 0..1, drift: bool }
   g.step = (dt, input = {}) => {
     g.msgT = Math.max(0, g.msgT - dt); if (!g.msgT) g.msg = null
+    if (g.startIn > 0) { g.startIn = Math.max(0, g.startIn - dt); return } // cuenta atrás: nadie arranca todavía
     if (g.detour) { stepDetour(dt, input); return }
     if (g.paused) return
+    for (const r of g.rivals) if (r.bot) stepBot(r, dt)
     if (g.finished) { g.finishT += dt; g.v *= Math.exp(-1.6 * dt); g.s += g.v * dt; return }
     const steer = input.steer || 0, throttle = g.auto ? 1 : input.throttle || 0, brake = input.brake || 0
     g.time += dt; g.crash = Math.max(0, g.crash - dt); g.boost = Math.max(0, g.boost - dt)
@@ -108,6 +149,8 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     let m = 0; while (m + 1 < missionStarts.length && g.s >= missionStarts[m + 1]) m++
     if (m !== g.mission) {
       g.mission = m; emit({ type: 'mission', index: m })
+      if (free) return
+      if (g.rivals.length) { g.addPower(shuffle(POWER_KEYS, rng)[0]); return } // con rivales no se pausa: te toca un poder al azar
       g.choosing = shuffle(POWER_KEYS, rng).slice(0, 3); g.paused = true; emit({ type: 'powerChoice', options: g.choosing }) // 1 poder por misión nueva
       return
     }
@@ -120,7 +163,7 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     if (f && f.q && !f.asked && g.s >= f.start - RACE.askDist) { f.asked = true; emit({ type: 'ask', fork: f }) }
     g.holding = !!(f && f.asked && !f.revealed && g.s >= f.start - RACE.holdDist) // espera en el pórtico a que termine de leerse la pregunta
 
-    const vMax = tierSpeed(g.tier) * (g.boost > 0 ? 1.3 : 1) * (g.crash > 0 ? 0.4 : 1)
+    const vMax = tierSpeed(g.tier) * (g.boost > 0 ? 1.42 : 1) * (g.crash > 0 ? 0.4 : 1)
     let a = throttle * 21 * Math.max(0, 1 - g.v / vMax) - 0.03 * g.v - slopeAt(g.s) * 9.8 * 0.7 // pendiente: bajar (slope < 0) acelera, subir frena
     if (g.v > vMax) a -= (g.v - vMax) * 1.5 // pasarse del máximo (turbo, bajada) se va disipando
     if (brake > 0) a -= 26 * brake
@@ -154,7 +197,7 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
         const ok = g.lock === f.q.correct, from = g.tier
         let shielded = false
         if (ok) {
-          g.correct++; g.score += 100 * (g.tier + 1); g.boost = 1.4; g.v *= 1.1
+          g.correct++; g.score += 100 * (g.tier + 1); g.boost = 2.6; g.v *= 1.2; g.fxOk++
           if (g.tier < MAX_TIER) { g.tier++; g.maxTier = Math.max(g.maxTier, g.tier); say('up', g.tier) } else say('ok')
         } else if (g.powers.includes('shield')) { // el escudo absorbe la trampa: sin choque ni pérdida de nivel
           g.powers.splice(g.powers.indexOf('shield'), 1); shielded = true; g.wrong++; say('shield')
@@ -169,7 +212,7 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     }
     if (g.u < lo) { g.u = lo; if (g.uv < 0) g.uv = 0 }
     if (g.u > hi) { g.u = hi; if (g.uv > 0) g.uv = 0 }
-    if (g.s >= L - 40) { g.finished = true; say('finish'); emit({ type: 'finish' }) }
+    if (g.s >= L - 40) { g.finished = true; g.finishTime = g.time; say('finish'); emit({ type: 'finish' }) }
   }
   return g
 }

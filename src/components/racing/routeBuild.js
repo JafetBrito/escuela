@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { Mesher } from '../vr/campus/mesher'
 import { ROUTE, routeLength, stationPos } from './racingData'
+import { splitByZ } from './trackBuild'
 
 // La RUTA DE REPASO: una avenida recta y tranquila, aparte de la pista (a ROUTE.x0 metros de distancia), con una ESTACIÓN por cada tramo
 // de la explicación: un cartel enorme con una imagen y el texto, entre dos columnas. El vehículo se detiene antes de cada estación
@@ -11,6 +12,7 @@ export const ROUTE_PAL = { sky: '#10163a', fog: '#171f4a', ground: '#141b40', gr
 export const routePoint = (rs, ru = 0, out = { x: 0, y: 0, z: 0 }) => { out.x = ROUTE.x0 + ru; out.y = 0; out.z = -rs; return out }
 
 export function buildRoute(world, n) {
+  // (la avenida mide ~5 km: se parte en tramos de 300 m para que el motor gráfico descarte lo que no se ve)
   const M = new Mesher(), G = new Mesher(), len = routeLength(n), x0 = ROUTE.x0, color = world.color
   M.box(x0, -0.6, -len / 2, 1200, 0.5, len + 600, ROUTE_PAL.ground) // suelo
   M.box(x0, -0.1, -len / 2, 16, 0.2, len + 80, ROUTE_PAL.road) // camino
@@ -29,7 +31,7 @@ export function buildRoute(world, n) {
   const ze = -(len - 24)
   for (const sg of [-1, 1]) M.box(x0 + sg * 9.5, 0, ze, 1.4, 11, 1.4, '#2b2f38')
   M.box(x0, 11, ze, 21, 1.2, 1.4, '#2b2f38'); G.box(x0, 11, ze + 0.75, 19, 0.5, 0.1, color)
-  return { solid: M.build(), glow: G.build(), boards, endBoard: { x: x0, y: 8.3, z: ze + 0.8, w: 14, h: 2.4 } }
+  return { solidChunks: splitByZ(M.build()), glowChunks: splitByZ(G.build()), boards, endBoard: { x: x0, y: 8.3, z: ze + 0.8, w: 14, h: 2.4 } }
 }
 
 // Cartel de una estación: imagen (emoji) grande a la izquierda, título y texto partido en líneas

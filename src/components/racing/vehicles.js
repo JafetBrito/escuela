@@ -8,7 +8,28 @@ const WHEEL = '#23262d', WHITE = '#f4f6f8', STEEL = '#aab2bd', WOOD = '#8a5a34'
 // Rueda (cilindro acostado sobre el eje X) con eje en (x, r, z)
 const wheel = (M, x, z, r, w = 0.22) => M.add(new THREE.CylinderGeometry(r, r, w, 12).rotateZ(Math.PI / 2), WHEEL, x, r, z)
 // Conductor sencillo: torso + cabeza; (x, y, z) = base del torso
-function rider(M, x, y, z, hex) { M.box(x, y, z, 0.5, 0.7, 0.34, hex); M.ball(x, y + 0.95, z, 0.24, '#e2b48c') }
+// Pilotos para elegir (fase 4): piel, camisa (si no, el color de la clase) y un detalle en la cabeza. `hat`: cap | hair | helmet | band | crown | ears
+export const CHARACTERS = [
+  { id: 'doc', name: 'Ana', skin: '#e2b48c', hat: 'hair', hair: '#3a2415' },
+  { id: 'leo', name: 'Leo', skin: '#c68a5b', hat: 'cap', hair: '#1d4ed8' },
+  { id: 'maya', name: 'Maya', skin: '#8d5a3b', hat: 'band', hair: '#111827', shirt: '#ec4899' },
+  { id: 'kai', name: 'Kai', skin: '#f1c9a5', hat: 'helmet', hair: '#f59e0b' },
+  { id: 'nova', name: 'Nova', skin: '#cbd5e1', hat: 'ears', hair: '#22d3ee', shirt: '#334155' },
+  { id: 'sage', name: 'Sage', skin: '#a7f3d0', hat: 'crown', hair: '#facc15', shirt: '#7c3aed' },
+  { id: 'rex', name: 'Rex', skin: '#d9a066', hat: 'hair', hair: '#b91c1c', shirt: '#0f172a' },
+  { id: 'luna', name: 'Luna', skin: '#fde0c8', hat: 'cap', hair: '#a855f7', shirt: '#f8fafc' },
+]
+let CH = CHARACTERS[0] // el piloto del vehículo que se está armando (lo fija buildVehicle)
+function rider(M, x, y, z, hex) {
+  M.box(x, y, z, 0.5, 0.7, 0.34, CH.shirt || hex); M.ball(x, y + 0.95, z, 0.24, CH.skin)
+  const hy = y + 0.95
+  if (CH.hat === 'hair') M.box(x, hy + 0.17, z + 0.05, 0.5, 0.2, 0.46, CH.hair)
+  else if (CH.hat === 'cap') { M.box(x, hy + 0.2, z, 0.5, 0.14, 0.5, CH.hair); M.box(x, hy + 0.13, z - 0.3, 0.4, 0.05, 0.25, CH.hair) }
+  else if (CH.hat === 'helmet') M.ball(x, hy + 0.04, z, 0.3, CH.hair)
+  else if (CH.hat === 'band') { M.box(x, hy + 0.08, z, 0.52, 0.1, 0.5, CH.hair); M.box(x, hy + 0.2, z + 0.05, 0.4, 0.14, 0.4, CH.hair) }
+  else if (CH.hat === 'crown') for (const k of [-1, 0, 1]) M.box(x + k * 0.15, hy + 0.3, z, 0.08, 0.16, 0.08, CH.hair)
+  else if (CH.hat === 'ears') for (const k of [-1, 1]) M.box(x + k * 0.22, hy + 0.34, z, 0.08, 0.3, 0.08, CH.hair)
+}
 // Emblema de la clase en el techo/capó: cruz, </> o omega (barras emisivas)
 function emblem(G, kind, x, y, z, s, hex) {
   if (kind === 'cross') { G.box(x, y, z, 0.7 * s, 0.05, 0.22 * s, hex); G.box(x, y, z, 0.22 * s, 0.05, 0.7 * s, hex) }
@@ -51,9 +72,10 @@ const ACCESSORIES = {
 }
 export const ACCESSORY_LIST = ['none', ...Object.keys(ACCESSORIES)]
 
-// custom = { color, glow, accessory }: pintura (acento), color de luces y accesorio; sin custom usa el color del mundo
+// custom = { color, glow, accessory, char }: pintura (acento), color de luces y accesorio; sin custom usa el color del mundo
 export function buildVehicle(kind, accent, emblemKind, custom = {}) {
   const color = custom.color || accent, glow = custom.glow || null
+  CH = CHARACTERS.find((c) => c.id === custom.char) || CHARACTERS[0]
   const M = new Mesher(), G = new Mesher();
   (KINDS[kind] || KINDS.car)(M, G, color)
   if (!['ambulance', 'turbo', 'car', 'van', 'sports', 'plane', 'spaceship', 'hovercar'].includes(kind)) emblem(G, emblemKind, 0, 1.05, 0.9, 0.5, color) // distintivo pequeño en los demás

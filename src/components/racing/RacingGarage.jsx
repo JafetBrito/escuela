@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useRacingStore, levelOfXp, xpForLevel } from '../../stores/useRacingStore'
-import { buildVehicle, ACCESSORY_LIST } from './vehicles'
+import { buildVehicle, ACCESSORY_LIST, CHARACTERS } from './vehicles'
 import { tierSpeed, MAX_TIER, FLY_FROM } from './racingData'
 import { tt, worldText, tierName } from './racingI18n'
 import * as THREE from 'three'
@@ -36,14 +36,15 @@ function Preview({ world, tier, custom }) {
   )
 }
 
-export default function RacingGarage({ world, lang, onBack, onStart }) {
+export default function RacingGarage({ world, lang, onBack, onStart, unlockAll = false }) {
   const T = (k) => tt(lang, k)
   const raw = useRacingStore((s) => s.worlds[world.id])
   const pr = useMemo(() => useRacingStore.getState().profile(world.id), [raw, world.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const { patch, setCustom } = useRacingStore.getState()
   const level = levelOfXp(pr.xp), lo = xpForLevel(level), hi = xpForLevel(level + 1)
-  const sel = Math.min(pr.startTier, pr.bestTier)
-  const custom = useMemo(() => ({ color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory }), [pr.custom.color, pr.custom.glow, pr.custom.accessory])
+  const best = unlockAll ? MAX_TIER : pr.bestTier // en el modo libre están todos los vehículos
+  const sel = Math.min(pr.startTier, best)
+  const custom = useMemo(() => ({ color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory, char: pr.custom.char }), [pr.custom.color, pr.custom.glow, pr.custom.accessory, pr.custom.char])
   const btn = 'rounded-xl px-4 py-2 text-sm font-bold transition active:scale-95'
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b1020] to-[#1a1033] p-3 text-white sm:p-6">
@@ -81,18 +82,22 @@ export default function RacingGarage({ world, lang, onBack, onStart }) {
                 <label className="ml-2 flex items-center gap-1.5 text-xs">{T('glowC')}<input type="color" className="h-7 w-9 rounded bg-transparent" value={pr.custom.glow || '#ffffff'} onChange={(e) => setCustom(world.id, { glow: e.target.value })} /></label>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="opacity-60">{T('pilot')}</span>
+                {CHARACTERS.map((c) => <button key={c.id} className={`flex items-center gap-1 rounded-lg px-2 py-1 font-bold ${pr.custom.char === c.id ? 'bg-white text-black' : 'bg-white/10'}`} onClick={() => setCustom(world.id, { char: c.id })}><span className="h-3.5 w-3.5 rounded-full border border-black/30" style={{ background: c.skin }} />{c.name}</button>)}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                 <span className="opacity-60">{T('accessory')}</span>
                 {ACCESSORY_LIST.map((a) => <button key={a} className={`rounded-lg px-2.5 py-1 font-bold ${pr.custom.accessory === a ? 'bg-white text-black' : 'bg-white/10'}`} onClick={() => setCustom(world.id, { accessory: a })}>{T(`acc_${a}`)}</button>)}
-                <button className="ml-auto rounded-lg bg-white/10 px-2.5 py-1" onClick={() => setCustom(world.id, { color: null, glow: null, accessory: 'none' })}>{T('resetC')}</button>
+                <button className="ml-auto rounded-lg bg-white/10 px-2.5 py-1" onClick={() => setCustom(world.id, { color: null, glow: null, accessory: 'none', char: 'doc' })}>{T('resetC')}</button>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl bg-white/5 p-3">
-            <div className="mb-2 flex items-center justify-between text-sm font-extrabold"><span>🏎️ {T('vehicles')}</span><span className="text-xs font-semibold opacity-60">{pr.bestTier + 1} / {MAX_TIER + 1} {T('unlocked').toLowerCase()}</span></div>
+            <div className="mb-2 flex items-center justify-between text-sm font-extrabold"><span>🏎️ {T('vehicles')}</span><span className="text-xs font-semibold opacity-60">{best + 1} / {MAX_TIER + 1} {T('unlocked').toLowerCase()}</span></div>
             <div className="grid max-h-[70vh] gap-1.5 overflow-auto pr-1">
               {world.tiers.map((t, i) => {
-                const open = i <= pr.bestTier
+                const open = i <= best
                 return (
                   <button key={i} disabled={!open} onClick={() => patch(world.id, { startTier: i })}
                     className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${sel === i ? 'bg-white/15' : 'bg-white/5'} ${open ? 'hover:bg-white/10' : 'cursor-not-allowed opacity-50'}`}

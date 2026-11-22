@@ -15,7 +15,7 @@ function pickVoice(lang) {
 }
 
 // speak(texto, { now, lang, onEnd }): `now` corta lo que esté diciendo; si no, se pone en cola. Devuelve false si no hay voz (el que llama debe resolver solo).
-export function speak(text, { now = false, rate = 1.04, pitch = 1, lang = 'es-MX', onEnd } = {}) {
+export function speak(text, { now = false, rate = 1.14, pitch = 1, lang = 'es-MX', onEnd } = {}) {
   if (!synth || !on || !text) return false
   if (now) synth.cancel()
   const u = new SpeechSynthesisUtterance(text)

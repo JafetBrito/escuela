@@ -14,7 +14,7 @@ const tone = (hex, d) => new THREE.Color(hex).offsetHSL(0, 0, d).getStyle()
 const _c = new THREE.Color()
 
 // Parte una malla fusionada SIN índice en pedazos por z (la pista corre hacia -Z), cada uno con su esfera de recorte
-function splitByZ(geo) {
+export function splitByZ(geo) {
   if (!geo) return []
   const pos = geo.attributes.position, nor = geo.attributes.normal, col = geo.attributes.color, buckets = new Map()
   for (let i = 0; i < pos.count; i += 3) {
@@ -175,9 +175,18 @@ export function buildTrack(world, forks, missionStarts) {
   for (let s = -90; s < L + 280; s += CHUNK) { const e = Math.min(s + CHUNK, L + 280); geos.push(terrain(s, e, -1, palAt), terrain(s, e, 1, palAt)) }
   const road = (s0, s1, u0, u1) => { for (let a = s0; a < s1; a += CHUNK) geos.push(ribbon(a, Math.min(a + CHUNK, s1), u0, u1, 0.02, (s, i) => tone(palAt(s).road, i % 2 ? 0.02 : 0), 6)) }
   let cursor = -40
+  const forkSegs = []
   for (const f of forks) {
     road(cursor, f.start, -half, half)
-    for (let i = 0; i < f.n; i++) { const lb = laneBounds(f.n, i); road(f.start, f.start + len, lb.from, lb.to) }
+    // los carriles de la bifurcación se parten en losas de 20 m: las del carril equivocado se derrumban al pasar (ver RaceEvents.jsx)
+    for (let i = 0; i < f.n; i++) {
+      const lb = laneBounds(f.n, i)
+      for (let a = f.start; a < f.start + len; a += 20) {
+        const geo = ribbon(a, a + 20, lb.from, lb.to, 0.02, (s, k) => tone(palAt(s).road, k % 2 ? 0.02 : 0), 5)
+        frame(a + 10, lb.center, 0.02, p); geo.translate(-p.x, -p.y, -p.z)
+        forkSegs.push({ fork: f.id, lane: i, s: a + 10, i: forkSegs.length, x: p.x, y: p.y, z: p.z, geo })
+      }
+    }
     cursor = f.start + len
   }
   road(cursor, L + 60, -half, half)
@@ -229,7 +238,7 @@ export function buildTrack(world, forks, missionStarts) {
     }
   })
 
-  return { geos: [...geos, ...splitByZ(dash).map((g) => g)], glowGeos, solidChunks: splitByZ(M.build()), glowChunks: splitByZ(G.build()), dashCount: dash.attributes.position.count / 6, banners, gantries, centerY }
+  return { geos: [...geos, ...splitByZ(dash).map((g) => g)], glowGeos, solidChunks: splitByZ(M.build()), glowChunks: splitByZ(G.build()), dashCount: dash.attributes.position.count / 6, banners, gantries, centerY, forkSegs }
 }
 
 // Cartel con una letra (A/B/C) y el texto de la respuesta partido en líneas

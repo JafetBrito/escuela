@@ -53,7 +53,7 @@ export function SkyDome({ game, world }) {
 }
 
 // ── Partículas: 34 líneas de velocidad + 70 chispas + 56 motas de polvo, todo en UNA malla instanciada ──
-const N_LINE = 34, N_SPARK = 70, N_MOTE = 56, N = N_LINE + N_SPARK + N_MOTE
+const N_LINE = 34, N_SPARK = 150, N_MOTE = 56, N = N_LINE + N_SPARK + N_MOTE
 const MOTE_COL = { hospital: '#e0f2fe', garden: '#fde68a', city: '#e5e7eb', servers: '#38bdf8', matrix: '#4ade80', neon: '#e879f9', agora: '#fde68a', cave: '#fdba74', sun: '#fff7c2' }
 const DUMMY = new THREE.Object3D()
 const FXS = { lines: [], sparks: [], motes: [], spawn: 0, t: 0 }
@@ -61,6 +61,12 @@ function resetFx() {
   FXS.lines = Array.from({ length: N_LINE }, () => ({ s0: -999, r: 0, a: 0 }))
   FXS.sparks = Array.from({ length: N_SPARK }, () => ({ life: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, c: '#fff', sz: 0.2 }))
   FXS.motes = Array.from({ length: N_MOTE }, (_, i) => ({ x: 0, y: -999, z: 0, ph: i * 1.7 })); FXS.spawn = 0; FXS.t = 0
+}
+// Una chispa suelta (polvo del derrumbe, anillo de energía del turbo…) desde cualquier componente de la escena
+// eslint-disable-next-line react-refresh/only-export-components
+export function emit(x, y, z, vx, vy, vz, c, sz = 0.3, life = 0.8) {
+  const sp = FXS.sparks.find((s) => s.life <= 0); if (!sp) return
+  sp.life = life; sp.x = x; sp.y = y; sp.z = z; sp.vx = vx; sp.vy = vy; sp.vz = vz; sp.c = c; sp.sz = sz
 }
 export function Particles({ game, world }) {
   const ref = useRef()

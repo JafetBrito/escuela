@@ -131,6 +131,32 @@ console.log('ok · salto, parada, espera en el pórtico y derrape')
   g.startDetour(q)
   for (let i = 0; i < 60 * 300; i++) g.step(1 / 60, {})
   assert.ok(g.detour && g.detour.holding && g.detour.rs < routeLength(5) + 1, 'espera al final a que termine la última estación')
-  assert.ok(ROUTE.vmax <= 20, 'ritmo moderado para que el narrador alcance')
+  assert.ok(Math.abs(ROUTE.vmax * 3.6 - 255) < 0.01, 'límite de 255 km/h en la ruta de aprendizaje')
 }
 console.log('ok · 14 vehículos, poderes, historias y ruta de repaso sin paradas')
+
+// Fase 4: modo libre, rivales de IA y cuenta atrás
+{
+  const { mulberry } = await import('./raceEngine.js')
+  const fr = createRace(V('medicina'), { rng: seeded(3), free: true, startTier: 6 })
+  assert.equal(fr.forks.length, 0, 'modo libre: sin bifurcaciones')
+  for (let i = 0; i < 60 * 400 && !fr.finished; i++) { fr.step(1 / 60, { throttle: 1 }); if (fr.choosing || fr.paused) assert.fail('modo libre no se pausa') }
+  assert.ok(fr.finished && fr.tier === 6, 'termina la pista sin cambiar de vehículo')
+  // misma semilla = mismas preguntas (para jugar en línea)
+  const a = createRace(V('medicina'), { rng: mulberry(42), fixed: true }), b = createRace(V('medicina'), { rng: mulberry(42), fixed: true })
+  assert.deepEqual(a.forks.map((f) => f.q.q + f.q.correct), b.forks.map((f) => f.q.q + f.q.correct), 'preguntas y orden idénticos con la misma semilla')
+  assert.ok(a.forks.every((f) => f.q), 'todas las preguntas se eligen al empezar')
+  // con rivales: cuenta atrás, los bots avanzan, hay puesto y terminan
+  const g = createRace(V('medicina'), { rng: mulberry(7), fixed: true, countdown: 3, bots: [{ name: 'A', skill: 0.9 }, { name: 'B', skill: 0.3 }] })
+  for (let i = 0; i < 60 * 2; i++) g.step(1 / 60, { throttle: 1 })
+  assert.ok(g.startIn > 0 && g.s === 0 && g.rivals.every((r) => r.s === 0), 'nadie arranca durante la cuenta atrás')
+  for (let i = 0; i < 60 * 1.5; i++) g.step(1 / 60, { throttle: 0 })
+  assert.ok(g.rivals.every((r) => r.s > 0) && g.s < 8, 'arrancan los bots; tú no aceleraste')
+  assert.equal(g.rank(), 3, 'último si no te mueves')
+  for (let i = 0; i < 60 * 900 && !g.rivals.every((r) => r.finished); i++) g.step(1 / 60, { throttle: 0 })
+  assert.ok(g.rivals.every((r) => r.finished), 'los bots terminan solos')
+  const top = g.rivals.find((r) => r.name === 'A'), low = g.rivals.find((r) => r.name === 'B')
+  assert.ok(top.finishT < low.finishT, 'el bot hábil termina antes que el torpe')
+  assert.equal(g.board().length, 3)
+  console.log('ok · modo libre, semilla compartida, rivales de IA y cuenta atrás')
+}

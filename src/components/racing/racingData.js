@@ -31,7 +31,7 @@ export const TIERS = 14
 export const MAX_TIER = TIERS - 1
 export const FLY_FROM = 10
 // Velocidad máxima (m/s) según el nivel del vehículo
-export const tierSpeed = (tier) => 26 + tier * 3.9 // más rápido: camilla ≈ 94 km/h, nave espacial ≈ 277 km/h
+export const tierSpeed = (tier) => 36 + tier * 3.2 // más rápido desde el inicio: camilla ≈ 130 km/h, nave espacial ≈ 280 km/h
 // Dificultad de las preguntas (0–4) que corresponde al nivel del vehículo
 export const lvlOfTier = (tier) => Math.round((tier * 4) / MAX_TIER)
 // Altura de vuelo (m) por nivel
@@ -45,8 +45,8 @@ export const POWER_KEYS = Object.keys(POWERS)
 export const MAX_POWERS = 3
 
 // Ruta de repaso: pista aparte con una estación por cada tramo de la explicación; distancias en metros de la ruta.
-// El vehículo NO se detiene en las estaciones: avanza a ritmo moderado mientras el locutor cuenta cada una al irte acercando.
-export const ROUTE = { first: 120, gap: 260, tail: 220, x0: 4000, vmax: 16 } // el vehículo recorre la ruta a `vmax` m/s sin detenerse en las estaciones: el locutor las va contando
+// El vehículo NO se detiene en las estaciones: va hasta el límite de 255 km/h (`vmax`) mientras el locutor cuenta cada una al irte acercando.
+export const ROUTE = { first: 450, gap: 1000, tail: 700, x0: 4000, vmax: 255 / 3.6, announce: 450 } // el vehículo recorre la ruta a `vmax` m/s sin detenerse en las estaciones: el locutor las va contando
 export const routeLength = (stations) => ROUTE.first + (stations - 1) * ROUTE.gap + ROUTE.tail
 export const stationPos = (i) => ROUTE.first + i * ROUTE.gap
 
@@ -75,11 +75,11 @@ export const WORLDS = {
     ],
     missions: [
       { name: 'Urgencias del Hospital', story: ['Hace más de doscientos años, el cirujano francés Dominique Larrey, médico de los ejércitos de Napoleón, notó que los heridos morían esperando ayuda en medio del campo de batalla.', 'Inventó las ambulancias volantes: carretas ligeras tiradas por caballos que recogían a los heridos mientras aún se combatía. Así nació la idea de llevar la atención al paciente, en lugar de esperar a que él llegue.', 'También creó el triaje: atender primero a quien más urgentemente lo necesita, sin importar su rango. Hoy, cada sala de urgencias del mundo usa esa idea.', 'Por eso tu camilla corre hoy por estos pasillos: en una emergencia cada segundo cuenta, y saber primeros auxilios puede salvar una vida.'], img: '🏥', deco: 'hospital', topics: ['urgencias', 'cuerpo'], pal: { sky: '#e8f1f5', fog: '#eaf4f8', ground: '#dfe8ec', ground2: '#cfdbe1', road: '#b7c2ca', accent: '#38bdf8' },
-        intro: 'Bienvenido al Hospital Escuela Sagrado Corazón. Eres paramédico en prácticas y tu camilla corre por los pasillos de Urgencias. Cada pasillo se divide en dos o tres: elige la respuesta correcta y ganarás velocidad. Si fallas, perderás un nivel.' },
+        intro: 'Eres paramédico en prácticas en el Hospital Sagrado Corazón. Elige el pasillo correcto para ganar velocidad; si fallas, pierdes un nivel.' },
       { name: 'Jardín de recuperación', story: ['Hipócrates, en la Antigua Grecia, es llamado el padre de la medicina. Fue de los primeros en afirmar que las enfermedades tienen causas naturales, y no son castigos de los dioses.', 'Enseñaba a observar al paciente con atención: su respiración, su pulso, su alimentación, su entorno. Esa observación cuidadosa sigue siendo la base del diagnóstico.', 'Se le atribuye el juramento hipocrático, que aún inspira a los médicos: ayudar al enfermo, no hacer daño y guardar el secreto de sus pacientes.', 'Mientras recorres este jardín de recuperación, recuerda que cuidar el cuerpo empieza por entenderlo.'], img: '🌿', deco: 'garden', topics: ['cuerpo', 'salud'], pal: { sky: '#bfe9ff', fog: '#dff3ff', ground: '#cfe9c8', ground2: '#b9dcb2', road: '#8f9ca6', accent: '#22c55e' },
-        intro: 'Los pacientes descansan en el jardín del hospital. Aquí aprenderás cómo funciona el cuerpo humano y cómo cuidarlo. Tu vehículo ya es más rápido, ¡aprovecha!' },
+        intro: 'El jardín de recuperación: aquí aprenderás cómo funciona el cuerpo y cómo cuidarlo.' },
       { name: 'Ciudad de emergencias', story: ['En el siglo diecinueve, Louis Pasteur demostró que muchas enfermedades las causan microbios invisibles. Con esa idea cambió la medicina para siempre.', 'Pasteur desarrolló vacunas, como la de la rabia, y enseñó a pasteurizar los alimentos para eliminar gérmenes.', 'En mil novecientos veintiocho, Alexander Fleming notó que un moho mataba las bacterias a su alrededor. Era la penicilina, el primer antibiótico, que ha salvado millones de vidas.', 'Gracias a ellos, una infección que antes era mortal hoy suele curarse. La ciudad entera depende de la ciencia que aprendiste en este viaje.'], img: '🚑', deco: 'city', topics: ['urgencias', 'salud', 'cuerpo'], pal: { sky: '#9fc9ff', fog: '#d6e6f6', ground: '#c9ccd1', ground2: '#b8bcc3', road: '#4f5763', accent: '#ef4444' },
-        intro: 'Suena la alarma: hay una emergencia en la ciudad. Todo lo que aprendiste cuenta ahora. Sirenas, ambulancias y mucha velocidad. ¡Llega a la meta!' },
+        intro: 'Hay una emergencia en la ciudad. Usa todo lo aprendido y llega a la meta.' },
     ],
     questions: [
       Q('urgencias', 0, 'Si alguien sangra mucho, ¿qué haces primero?', 'Presionar la herida con un paño limpio', ['Darle de beber agua', 'Sacudirlo para que reaccione'], 'Presionar directamente la herida frena la hemorragia mientras llega la ayuda.', '🩸'),
@@ -136,11 +136,11 @@ export const WORLDS = {
     ],
     missions: [
       { name: 'La Terminal', story: ['En mil ochocientos cuarenta y tres, Ada Lovelace, hija del poeta Lord Byron, escribió notas sobre la Máquina Analítica de Charles Babbage, una computadora mecánica que nunca llegó a construirse.', 'En esas notas describió un algoritmo para calcular números de Bernoulli, considerado el primer programa de la historia.', 'Ada imaginó que las máquinas podrían trabajar con música, arte y símbolos, no solo con números. Se adelantó más de cien años a la computación moderna.', 'Cada vez que escribes un bucle o una condición, sigues el camino que ella abrió.'], img: '💻', deco: 'servers', topics: ['basico'], pal: { sky: '#0b1220', fog: '#0f1a2e', ground: '#0f2a22', ground2: '#0a1f19', road: '#1b2433', accent: '#22c55e' },
-        intro: 'Has sido compilado dentro de la Terminal. Tu patineta de código avanza entre servidores. Cada bifurcación es un if: elige la rama verdadera. Si fallas, perderás un nivel de vehículo.' },
+        intro: 'Estás dentro de la Terminal. Cada bifurcación es un if: elige la rama verdadera.' },
       { name: 'La Red', story: ['A finales de los años ochenta, Tim Berners-Lee trabajaba en el CERN, en Suiza, y quería que los científicos compartieran documentos con facilidad.', 'Inventó tres cosas: HTML para escribir las páginas, HTTP para enviarlas y las direcciones web, o URL, para encontrarlas. Así nació la World Wide Web en mil novecientos noventa y uno.', 'Lo más sorprendente: decidió no patentarla y la regaló al mundo, para que cualquiera pudiera crear sitios sin pedir permiso.', 'Hoy, cada página que visitas y cada enlace que tocas viaja por ese camino.'], img: '🌐', deco: 'matrix', topics: ['web', 'basico'], pal: { sky: '#02130a', fog: '#04200f', ground: '#031a0d', ground2: '#02140a', road: '#0b2a1a', accent: '#4ade80' },
-        intro: 'Sales a la red. Los paquetes vuelan a tu lado: la web, HTML, protocolos. Acierta para recibir más ancho de banda.' },
+        intro: 'Sales a la red: web, HTML y protocolos. Acierta para ganar ancho de banda.' },
       { name: 'Núcleo de IA', story: ['En mil novecientos cincuenta, el matemático británico Alan Turing se preguntó si las máquinas pueden pensar. Propuso un experimento llamado la prueba de Turing.', 'Si una persona conversa con una máquina y no puede distinguirla de otra persona, diríamos que la máquina piensa. La pregunta sigue abierta hoy.', 'Años antes, Turing ayudó a descifrar el código Enigma durante la Segunda Guerra Mundial, acortando la guerra y salvando millones de vidas.', 'Hoy los modelos de lenguaje conversan con nosotros. Entender cómo aprenden es entender la herencia de Turing.'], img: '🧠', deco: 'neon', topics: ['ia', 'basico', 'web'], pal: { sky: '#14061f', fog: '#1d0a2e', ground: '#1b0b2b', ground2: '#140820', road: '#251338', accent: '#d946ef' },
-        intro: 'Llegas al núcleo de la inteligencia artificial. Aquí las preguntas son profundas: cada acierto entrena a tu vehículo.' },
+        intro: 'Llegas al núcleo de la inteligencia artificial. Cada acierto entrena a tu vehículo.' },
     ],
     questions: [
       Q('basico', 0, 'En Python, ¿qué imprime print(2 + 3)?', '5', ['23', 'print'], 'Con números el signo más suma; con texto une cadenas.', '➕'),
@@ -197,11 +197,11 @@ export const WORLDS = {
     ],
     missions: [
       { name: 'El Ágora', story: ['Atenas, siglo quinto antes de Cristo. Sócrates caminaba descalzo por el ágora y detenía a la gente con una pregunta: qué es la justicia, qué es el valor.', 'No daba respuestas: hacía preguntas hasta que la otra persona descubría sus propias contradicciones. A eso se le llama el método socrático.', 'En el año trescientos noventa y nueve antes de Cristo fue juzgado por corromper a la juventud y por no creer en los dioses de la ciudad. Pudo huir, pero eligió aceptar la sentencia.', 'Murió fiel a sus ideas. Su gran lección: una vida sin examen no merece ser vivida.'], img: '🏛️', deco: 'agora', topics: ['antigua'], pal: { sky: '#ffd9a0', fog: '#ffe9c7', ground: '#e9d9a8', ground2: '#d8c88f', road: '#a89878', accent: '#eab308' },
-        intro: 'Atenas, siglo quinto antes de Cristo. Sócrates pregunta en el ágora y tu carreta rueda entre columnas. Cada bifurcación es una pregunta: piensa antes de elegir. Si te equivocas, perderás un nivel.' },
+        intro: 'Atenas, siglo quinto antes de Cristo. Sócrates pregunta en el ágora: piensa antes de elegir.' },
       { name: 'La Caverna', story: ['Platón imaginó una caverna donde unos prisioneros viven encadenados desde niños, mirando una pared. Detrás de ellos arde un fuego.', 'Entre el fuego y los prisioneros pasan personas con objetos, y las sombras que se proyectan en la pared son lo único que los prisioneros conocen. Para ellos, esas sombras son la realidad.', 'Un día uno se libera. La luz del fuego le duele y, al salir, el sol lo deslumbra. Poco a poco descubre el mundo real.', 'Al volver a contarlo, los demás se burlan de él. Platón nos pregunta: cuántas sombras creemos que son verdad.'], img: '🔥', deco: 'cave', topics: ['mente', 'antigua'], pal: { sky: '#1a1410', fog: '#241a12', ground: '#2a2018', ground2: '#201810', road: '#4a3b2c', accent: '#ff9f43' },
-        intro: 'Entras en la caverna de Platón. Las sombras en la pared parecen reales, pero solo son reflejos de lo que pasa detrás de ti. Aprende a distinguir la apariencia de la verdad.' },
+        intro: 'Entras en la caverna de Platón. Distingue la apariencia de la verdad.' },
       { name: 'La luz del Sol', story: ['En mil setecientos ochenta y cuatro, Immanuel Kant respondió a la pregunta qué es la Ilustración con un lema: atrévete a saber, ten el valor de usar tu propio entendimiento.', 'Para Kant, la minoría de edad no es cuestión de años, sino de dejar que otros piensen por nosotros por pereza o por miedo.', 'Esa idea inspiró la ciencia moderna, los derechos humanos y la educación. Pensar críticamente es una responsabilidad.', 'Ahora que saliste de la caverna, la tarea es compartir la luz: preguntar, estudiar y no dejar de aprender.'], img: '☀️', deco: 'sun', topics: ['etica', 'mente'], pal: { sky: '#fff3c4', fog: '#fff7dc', ground: '#f3e7b5', ground2: '#ead99a', road: '#c9b87f', accent: '#f59e0b' },
-        intro: 'Sales de la caverna. La luz te deslumbra: es el mundo de las ideas. Lo que sabes ahora cambia cómo ves todo lo demás. Corre hacia la meta.' },
+        intro: 'Sales de la caverna: la luz es el mundo de las ideas. Corre hacia la meta.' },
     ],
     questions: [
       Q('antigua', 0, '¿Quién fue el maestro de Platón?', 'Sócrates', ['Pitágoras', 'Heráclito'], 'Sócrates no escribió nada: lo conocemos sobre todo por lo que contó Platón.', '🏛️'),

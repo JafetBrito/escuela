@@ -8,12 +8,15 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { WORLD_LIST, RACE, FORKS, POWERS, MAX_TIER, FLY_FROM, levelView } from './racingData'
 import { useRacingContentStore, loadRemoteRacing } from './racingContent'
-import { createRace } from './raceEngine'
+import { createRace, mulberry } from './raceEngine'
 import { frame, centerX, pitchAt } from './track'
 import { buildTrack, bannerTexture } from './trackBuild'
 import { buildRoute, stationTexture, routePoint, ROUTE_PAL } from './routeBuild'
-import { buildVehicle } from './vehicles'
+import { buildVehicle, CHARACTERS } from './vehicles'
 import { SkyDome, Particles, Flyers } from './RaceFx'
+import { CollapseLanes, EnergyBurst, Rivals } from './RaceEvents'
+import { joinRoom, newCode, netAvailable, applyState } from './racingNet'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { Mesher } from '../vr/campus/mesher'
 import RacingGarage from './RacingGarage'
 import { useRacingStore, levelOfXp, levelUnlocked } from '../../stores/useRacingStore'
@@ -75,11 +78,11 @@ function RouteWorld({ world, route, backText }) {
   const geo = useMemo(() => buildRoute(world, route.texts.length), [world, route.texts.length])
   const textures = useMemo(() => route.texts.map((t) => stationTexture(t, world.color)), [route.texts, world.color])
   const endTex = useMemo(() => bannerTexture('', backText, world.color), [backText, world.color])
-  useEffect(() => () => { geo.solid.dispose(); geo.glow.dispose() }, [geo])
+  useEffect(() => () => { geo.solidChunks.forEach((g) => g.dispose()); geo.glowChunks.forEach((g) => g.dispose()) }, [geo])
   useEffect(() => () => { textures.forEach((t) => t.dispose()); endTex.dispose() }, [textures, endTex])
   return (
     <>
-      <mesh geometry={geo.solid} material={SOLID} /><mesh geometry={geo.glow} material={GLOW} />
+      {geo.solidChunks.map((g, i) => <mesh key={`s${i}`} geometry={g} material={SOLID} />)}{geo.glowChunks.map((g, i) => <mesh key={`g${i}`} geometry={g} material={GLOW} />)}
       {geo.boards.map((b, i) => <mesh key={i} position={[b.x, b.y, b.z]}><planeGeometry args={[b.w, b.h]} /><meshBasicMaterial map={textures[i]} toneMapped={false} /></mesh>)}
       <mesh position={[geo.endBoard.x, geo.endBoard.y, geo.endBoard.z]}><planeGeometry args={[geo.endBoard.w, geo.endBoard.h]} /><meshBasicMaterial map={endTex} toneMapped={false} /></mesh>
     </>
@@ -95,10 +98,10 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
   const model = useMemo(() => buildVehicle(world.tiers[tier].kind, world.color, world.emblem, run.custom), [world, tier, run.custom])
   const vehicle = useRef(), shadow = useRef(), bg = useRef(), fog = useRef(), hemi = useRef(), dir = useRef()
   const sunTarget = useMemo(() => new THREE.Object3D(), [])
-  const shown = useRef(game.tier), shownSign = useRef(-1), acc = useRef(0), first = useRef(true), sent = useRef(false), roll = useRef(0), wasDetour = useRef(false)
+  const netAcc = useRef(0), shown = useRef(game.tier), shownSign = useRef(-1), acc = useRef(0), first = useRef(true), sent = useRef(false), roll = useRef(0), wasDetour = useRef(false)
   const pal0 = world.missions[0].pal
 
-  useEffect(() => () => { textures.forEach((t) => t.dispose()); for (const k of ['geos', 'glowGeos', 'solidChunks', 'glowChunks']) track[k].forEach((g) => g.dispose()) }, [textures, track])
+  useEffect(() => () => { textures.forEach((t) => t.dispose()); for (const k of ['geos', 'glowGeos', 'solidChunks', 'glowChunks']) track[k].forEach((g) => g.dispose()); track.forkSegs.forEach((sg) => sg.geo.dispose()) }, [textures, track])
   useEffect(() => () => { model.solid?.dispose(); model.glow?.dispose() }, [model])
   useEffect(() => { if (vehicle.current) vehicle.current.rotation.order = 'YXZ' }, [])
 
@@ -115,7 +118,7 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       if (v) { v.position.set(R1.x, 0.1, R1.z); v.rotation.set(0, -d.uv * 0.03, -d.uv * 0.025) }
       routePoint(d.rs - 13, d.ru * 0.7, R1); routePoint(d.rs + 16, d.ru * 0.9, R2)
       if (!wasDetour.current) { cam.position.set(R1.x, 5.4, R1.z); wasDetour.current = true } else cam.position.lerp(V3.set(R1.x, 5.4, R1.z), 1 - Math.exp(-7 * dt))
-      cam.lookAt(R2.x, 1.5, R2.z); cam.fov = 62; cam.updateProjectionMatrix()
+      cam.lookAt(R2.x, 1.5, R2.z); cam.fov = 60 + d.v * 0.3; cam.updateProjectionMatrix()
       if (shadow.current) shadow.current.visible = false
     } else {
       if (wasDetour.current) { wasDetour.current = false; first.current = true }
@@ -133,7 +136,7 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       if (first.current) { cam.position.set(T2.x, T2.y, T2.z); first.current = false } else cam.position.lerp(V3.set(T2.x, T2.y, T2.z), 1 - Math.exp(-7 * dt))
       if (game.crash > 0) cam.position.add(V3.set((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.4, 0))
       cam.lookAt(T3.x, T3.y, T3.z)
-      cam.fov = 60 + game.v * 0.3 + (game.boost > 0 ? 7 : 0) + alt * 0.6; cam.updateProjectionMatrix()
+      cam.fov = 60 + game.v * 0.3 + Math.min(1, game.boost) * 13 + alt * 0.6; cam.updateProjectionMatrix()
     }
 
     if (dir.current && v) { dir.current.position.set(v.position.x + 55, v.position.y + 90, v.position.z + 35); sunTarget.position.copy(v.position); sunTarget.updateMatrixWorld() } // las sombras cubren solo el entorno del vehículo
@@ -145,15 +148,19 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
     if (hemi.current) hemi.current.intensity += ((d ? 1.4 : 0.5 + lum * 0.75) - hemi.current.intensity) * k
     if (dir.current) dir.current.intensity += ((d ? 1.2 : 0.45 + lum * 1.5) - dir.current.intensity) * k
 
+    if (run.net) { // en línea: ~8 veces por segundo mando mi posición
+      netAcc.current += dt
+      if (netAcc.current > 0.12) { netAcc.current = 0; run.net.sendState({ id: run.myId, s: game.s, u: game.u, tier: game.tier, fin: game.finished, t: game.finishTime }) }
+    }
     acc.current += dt
     if (acc.current > 0.1) {
       acc.current = 0
       const f = game.question(), cur = game.forks[game.idx]
       const sid = !d && cur && cur.q && cur.revealed && game.s < cur.start + RACE.forkLen + 20 ? cur.id : -1
       if (sid !== shownSign.current) { shownSign.current = sid; setSign(sid >= 0 ? { id: sid, opts: cur.q.opts.map((_, i) => optText(lang, cur.q, i)) } : null) }
-      onHud({ speed: d ? d.v : game.v, tier: game.tier, correct: game.correct, wrong: game.wrong, score: game.score, s: game.s, L: game.L, q: f, qIdx: game.idx, dist: game.forkDistance(), msg: game.msg, time: game.time, boost: game.boost > 0, mission: game.mission, holding: d ? d.holding : game.holding, drifting: game.drifting, driftT: game.driftT, results: game.results.slice(), powers: game.powers.slice(), hintFor: game.hintFor, alt: game.alt, detour: d ? { si: d.si, n: d.stations.length, holding: d.holding } : null })
+      onHud({ speed: d ? d.v : game.v, tier: game.tier, correct: game.correct, wrong: game.wrong, score: game.score, s: game.s, L: game.L, q: f, qIdx: game.idx, dist: game.forkDistance(), msg: game.msg, time: game.time, boost: game.boost > 0, fxOk: game.fxOk, mission: game.mission, holding: d ? d.holding : game.holding, drifting: game.drifting, driftT: game.driftT, results: game.results.slice(), powers: game.powers.slice(), hintFor: game.hintFor, alt: game.alt, startIn: game.startIn, rank: game.rivals.length ? game.rank() : 0, board: game.rivals.length ? game.board() : null, detour: d ? { si: d.si, n: d.stations.length, holding: d.holding } : null })
     }
-    if (game.finished && game.finishT > 1.8 && !sent.current) { sent.current = true; onFinish({ correct: game.correct, wrong: game.wrong, score: game.score, time: game.time, tier: game.tier, maxTier: game.maxTier }) }
+    if (game.finished && game.finishT > 1.8 && !sent.current) { sent.current = true; onFinish({ correct: game.correct, wrong: game.wrong, score: game.score, time: game.time, tier: game.tier, maxTier: game.maxTier, rank: game.rivals.length ? game.rank() : 0, total: game.rivals.length + 1 }) }
   })
 
   return (
@@ -170,6 +177,9 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       {track.glowGeos.map((g, i) => <mesh key={`g${i}`} geometry={g} material={GLOW} />)}
       {track.solidChunks.map((g, i) => <mesh key={`s${i}`} geometry={g} material={SOLID} castShadow receiveShadow />)}
       {track.glowChunks.map((g, i) => <mesh key={`e${i}`} geometry={g} material={GLOW} />)}
+      <CollapseLanes game={game} segs={track.forkSegs} material={SOLID} />
+      <EnergyBurst game={game} />
+      {game.rivals.length > 0 && <Rivals game={game} world={world} solid={SOLID} glow={GLOW} />}
       <Particles game={game} world={world} />
       <Flyers game={game} world={world} />
       {track.banners.map((b, i) => (
@@ -193,6 +203,9 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
   )
 }
 
+const newSeed = () => Math.floor(Math.random() * 4294967295)
+const AI_BOTS = [{ name: 'Rayo', skill: 0.55, color: '#f59e0b' }, { name: 'Turbo', skill: 0.7, color: '#ef4444' }, { name: 'Nube', skill: 0.85, color: '#a78bfa' }]
+const CHAR_IDS = CHARACTERS.map((c) => c.id)
 const kmh = (v) => Math.round(v * 3.6)
 // Velocímetro de arco con aguja: se enciende en ámbar al derrapar y en amarillo con turbo
 function Speedo({ speed, boost, drifting, color }) {
@@ -243,6 +256,13 @@ export default function RacingDemo() {
   const [pick, setPick] = useState(null) // elección de poder al empezar una misión
   const [route, setRoute] = useState(null) // ruta de repaso activa: { id, texts }
   const [levelIdx, setLevelIdx] = useState(0)
+  const [mode, setMode] = useState('race') // race | free | ai | online
+  const [room, setRoom] = useState(null) // en línea: { code, players }
+  const [codeIn, setCodeIn] = useState('')
+  const [garageFree, setGarageFree] = useState(false)
+  const [myId] = useState(() => `p${Math.random().toString(36).slice(2, 10)}`)
+  const authProfile = useAuthStore((s) => s.profile)
+  const netRef = useRef(null), startRef = useRef(null)
   const [narr, setNarr] = useState(-1) // estación de la ruta que el narrador está contando
   const [prefs, setPrefs] = useState(loadPrefs)
   const [auto, setAuto] = useState(isTouch)
@@ -255,15 +275,38 @@ export default function RacingDemo() {
   useEffect(() => { loadRemoteRacing() }, [])
 
   const stopAll = () => { stopMusic(); stopVoice() }
-  const start = (wid = worldId, startTier = null, li = levelIdx) => {
+  const start = (wid = worldId, startTier = null, li = levelIdx, opts = {}) => {
     const world = levelView(WORLD_LIST.find((w) => w.id === wid), li), pr = useRacingStore.getState().profile(wid)
     const tier = startTier ?? Math.min(pr.startTier, pr.bestTier)
     initAudio(); setMusicOn(prefs.music); setVoiceOn(prefs.voice); onDuck(duck)
-    const next = { id: uid(), world, game: createRace(world, { auto, startTier: tier }), custom: { color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory } }
+    const m = opts.mode || 'race', seed = opts.seed ?? newSeed()
+    const ro = { auto, startTier: tier }
+    if (m === 'free') ro.free = true
+    else if (m === 'ai') Object.assign(ro, { rng: mulberry(seed), fixed: true, countdown: 3, bots: AI_BOTS.map((b, i) => ({ ...b, char: CHAR_IDS[(i * 2 + seed) % CHAR_IDS.length] })) })
+    else if (m === 'online') Object.assign(ro, { rng: mulberry(seed), fixed: true, countdown: 3, rivals: (opts.players || []).filter((p) => p.id !== myId) })
+    const next = { id: uid(), mode: m, world, game: createRace(world, ro), net: m === 'online' ? netRef.current : null, myId: myId, custom: { color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory, char: pr.custom.char } }
     runRef.current = next
     startMusic(world.music); setMusicTier(tier)
     setRun(next); setHud(null); setResult(null); setCard(null); setToast(null); setPop(null); setPick(null); setRoute(null); setNarr(-1); setPhase('race')
   }
+  useEffect(() => { startRef.current = start }) // el mensaje `start` de la sala llama siempre a la versión más reciente
+  const leaveRoom = () => { netRef.current?.leave(); netRef.current = null; setRoom(null) }
+  const enterRoom = (code) => {
+    leaveRoom()
+    const pr = useRacingStore.getState().profile(worldId), me = { id: myId, name: authProfile?.display_name || 'Piloto', color: pr.custom.color || WORLD_LIST.find((w) => w.id === worldId).color, char: pr.custom.char }
+    netRef.current = joinRoom(code, me, {
+      onPlayers: (players) => setRoom({ code, players }),
+      onStart: (m) => startRef.current(m.worldId, null, m.level, { mode: 'online', seed: m.seed, players: m.players }),
+      onState: (m) => { const g = runRef.current?.game; if (g && runRef.current.net) applyState(g, m) },
+    })
+    setRoom({ code, players: [] })
+  }
+  const startOnline = () => {
+    const players = (room?.players || []).map(({ id, name, color, char }) => ({ id, name, color, char })), seed = newSeed()
+    netRef.current.sendStart({ seed, worldId, level: levelIdx, players })
+    start(worldId, null, levelIdx, { mode: 'online', seed, players })
+  }
+  useEffect(() => () => { netRef.current?.leave() }, [])
   const exit = () => { stopAll(); input.current = { left: false, right: false, gas: false, brake: false, drift: false }; setPop(null); setPick(null); setRoute(null); routeQ.current = []; routeSpeaking.current = false; setPhase('menu') }
   const selectWorld = (id) => { setWorldId(id); setLevelIdx(0) }
   const toggle = (k) => {
@@ -278,7 +321,7 @@ export default function RacingDemo() {
   const openRoute = (q) => {
     const game = runRef.current?.game
     if (!game) return
-    game.paused = false; setPop(null); setToast(null); stopVoice()
+    game.resume(); setPop(null); setToast(null); stopVoice()
     game.startDetour(q)
   }
   const endRoute = () => { runRef.current?.game.endDetour() }
@@ -309,8 +352,9 @@ export default function RacingDemo() {
   const onEvent = (e) => {
     const { world, game } = runRef.current, sl = speechLang(lang)
     if (e.type === 'mission') {
+      if (game.free) return // modo libre: sin misiones ni preguntas
       const m = world.missions[e.index], name = missionText(lang, m, 'name'), intro = missionText(lang, m, 'intro')
-      setCard({ key: `m${e.index}`, img: m.img, title: `${T('mission')} ${e.index + 1} / ${RACE.missions} · ${name}`, text: intro, ttl: 12 })
+      setCard({ key: `m${e.index}`, img: m.img, title: `${T('mission')} ${e.index + 1} / ${RACE.missions} · ${name}`, text: intro, ttl: 6 })
       speak(`${T('mission')} ${e.index + 1}. ${name}. ${intro}`, { now: true, lang: sl })
     } else if (e.type === 'powerChoice') {
       setPick(e.options); sfx('up')
@@ -327,7 +371,7 @@ export default function RacingDemo() {
       sfx(e.ok ? (up ? 'up' : 'ok') : (down ? 'down' : 'bad'))
       const tierLine = up ? ` ${T('tierUp')}: ${tierName(lang, world, e.tier)}.` : down ? ` ${T('tierDown')}: ${tierName(lang, world, e.tier)}.` : ''
       const line = LINES[lang]?.[e.ok ? 'ok' : 'bad']?.() ?? LINES.es[e.ok ? 'ok' : 'bad']()
-      if (e.ok || e.shielded) {
+      if (e.ok || e.shielded || game.rivals.length) {
         // SIN pausar: el vehículo sigue; aviso con el dato y el botón de la ruta
         setToast({ key: `t${uid()}`, ok: e.ok, shielded: e.shielded, q: e.q, tier: e.tier, up })
         speak(`${e.shielded ? T('shieldUsed') : line} ${e.ok ? '' : `${T('answerWas')}: ${okText(lang, e.q)}.`} ${factText(lang, e.q)}${tierLine}`, { now: true, lang: sl })
@@ -390,7 +434,7 @@ export default function RacingDemo() {
     </div>
   )
 
-  if (phase === 'garage') return <RacingGarage world={wsel} lang={lang} onBack={() => setPhase('menu')} onStart={(t) => start(worldId, t, levelIdx)} />
+  if (phase === 'garage') return <RacingGarage world={wsel} lang={lang} unlockAll={garageFree} onBack={() => { setGarageFree(false); setPhase('menu') }} onStart={(t) => { const f = garageFree; setGarageFree(false); start(worldId, t, levelIdx, f ? { mode: 'free' } : {}) }} />
 
   if (phase === 'menu') {
     return (
@@ -428,8 +472,39 @@ export default function RacingDemo() {
               })}
             </div>
           </div>
+          <div className="mt-5">
+            <div className="text-sm font-extrabold">{T('modeTitle')}</div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-4">
+              {[['race', '🏁'], ['free', '🛣️'], ['ai', '🤖'], ['online', '🌐']].map(([k, ic]) => (
+                <button key={k} onClick={() => setMode(k)} className={`rounded-xl border-2 p-3 text-left transition ${mode === k ? 'bg-white/10' : 'bg-white/5 opacity-80 hover:opacity-100'}`} style={{ borderColor: mode === k ? wsel.color : 'transparent' }}>
+                  <div className="text-sm font-black">{ic} {T(`mode${k[0].toUpperCase()}${k.slice(1)}`)}</div>
+                  <div className="mt-0.5 text-[11px] opacity-70">{T(`mode${k[0].toUpperCase()}${k.slice(1)}D`)}</div>
+                </button>
+              ))}
+            </div>
+            {mode === 'online' && (
+              <div className="mt-3 rounded-xl bg-white/5 p-3 text-sm">
+                {!netAvailable() ? <div className="opacity-70">{T('noRealtime')}</div> : !room ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button className={`${btn} bg-emerald-400 text-black`} onClick={() => enterRoom(newCode())}>{T('createRoom')}</button>
+                    <input value={codeIn} onChange={(e) => setCodeIn(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))} placeholder={T('roomCode')} className="w-32 rounded-lg bg-black/40 px-3 py-2 text-center text-sm font-black uppercase tracking-widest" />
+                    <button disabled={codeIn.length !== 4} className={`${btn} bg-white/15 disabled:opacity-40`} onClick={() => enterRoom(codeIn)}>{T('joinRoom')}</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-3"><span className="opacity-60">{T('roomCode')}</span><span className="rounded-lg bg-black/40 px-3 py-1 text-2xl font-black tracking-[0.3em]">{room.code}</span><button className="ml-auto rounded-lg bg-white/10 px-2.5 py-1 text-xs" onClick={leaveRoom}>{T('leaveRoom')}</button></div>
+                    <div className="mt-2 text-xs opacity-70">{T('playersIn')} ({room.players.length})</div>
+                    <div className="mt-1 flex flex-wrap gap-1.5">{room.players.map((p, i) => <span key={p.id} className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: `${p.color}55` }}>{i === 0 ? '👑 ' : ''}{p.name}{p.id === myId ? ` (${T('you')})` : ''}</span>)}</div>
+                    {room.players[0]?.id === myId
+                      ? <div className="mt-3 flex items-center gap-3"><button disabled={room.players.length < 2} className={`${btn} bg-amber-400 text-black disabled:opacity-40`} onClick={startOnline}>{T('startOnline')} →</button><span className="text-xs opacity-60">{room.players.length < 2 ? T('needTwo') : T('youHost')}</span></div>
+                      : <div className="mt-3 text-xs opacity-70">{T('waitHost')}</div>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <button className={`${btn} bg-amber-400 text-black`} onClick={() => start()}>{T('go')} {worldText(lang, wsel, 'name')} →</button>
+            {mode !== 'online' && <button className={`${btn} bg-amber-400 text-black`} onClick={() => (mode === 'free' ? (setGarageFree(true), setPhase('garage')) : start(worldId, null, levelIdx, { mode }))}>{mode === 'free' ? T('freeGo') : mode === 'ai' ? T('aiGo') : `${T('go')} ${worldText(lang, wsel, 'name')}`} →</button>}
             <button className={`${btn} bg-white/15`} onClick={() => setPhase('garage')}>🔧 {T('garage')}</button>
             {toggles}
           </div>
@@ -446,7 +521,7 @@ export default function RacingDemo() {
   const canJump = !inRoute && q && q.revealed && !q.jumped && (hud?.dist ?? 0) > -RACE.forkLen + 34
   const msg = hud?.msg
   const msgText = !msg ? '' : msg.kind === 'up' ? `⭐ ${T('tierUp')}: ${tierName(lang, world, msg.tier)}` : msg.kind === 'ok' ? `✔ ${T('correct')}` : msg.kind === 'shield' ? `🛡️ ${T('shieldUsed')}` : msg.kind === 'bad' ? (msg.tier != null ? `✘ ${T('tierDown')}: ${tierName(lang, world, msg.tier)}` : '✘') : `🏁 ${T('done')}`
-  const noGas = !auto && (hud?.speed ?? 0) < 1 && !hud?.holding && !pop && !pick && phase === 'race'
+  const noGas = !auto && !(hud?.startIn > 0) && (hud?.speed ?? 0) < 1 && !hud?.holding && !pop && !pick && phase === 'race'
   const baseWorld = world ? WORLD_LIST.find((w) => w.id === world.id) : null
   const nextLevelOk = !!(result && baseWorld && baseWorld.levels[world.levelIndex + 1] && levelUnlocked(useRacingStore.getState().profile(world.id), world.levelIndex + 1, baseWorld.levels))
   const stTexts = route?.texts, st = inRoute && stTexts ? stTexts[Math.min(narr >= 0 ? narr : hud.detour.si, stTexts.length - 1)] : null
@@ -455,7 +530,7 @@ export default function RacingDemo() {
       {run && (
         <Canvas key={run.id} shadows camera={{ fov: 62, near: 0.3, far: 1300, position: [0, 6, 14] }} dpr={dpr} gl={{ antialias: true, powerPreference: 'high-performance' }}>
           <RaceScene run={run} input={input} lang={lang} route={route} backText={T('backRace')} onDpr={setDpr} onHud={setHud} onEvent={onEvent}
-            onFinish={(r) => { const gain = useRacingStore.getState().finishRun(run.world.id, { ...r, levelId: run.world.levelId }); setResult({ ...r, ...gain }); setPhase('done'); stopMusic() }} />
+            onFinish={(r) => { const gain = run.mode === 'free' ? { free: true, stars: 0, gain: 0 } : useRacingStore.getState().finishRun(run.world.id, { ...r, levelId: run.world.levelId }); setResult({ ...r, ...gain }); setPhase('done'); stopMusic() }} />
         </Canvas>
       )}
 
@@ -513,10 +588,31 @@ export default function RacingDemo() {
       )}
 
       {msgText && !pop && !inRoute && <div className={`pointer-events-none absolute inset-x-0 top-[44%] mx-auto w-fit max-w-[90vw] rounded-2xl px-5 py-3 text-center text-lg font-black shadow-2xl ${msg.kind === 'bad' ? 'bg-red-600' : msg.kind === 'ok' || msg.kind === 'shield' ? 'bg-emerald-500' : 'bg-amber-400 text-black'}`}>{msgText}</div>}
+      {hud?.startIn > 0 && <div className="pointer-events-none absolute inset-x-0 top-[24%] text-center text-8xl font-black text-white" style={{ textShadow: '0 0 30px #000' }}>{Math.ceil(hud.startIn)}</div>}
+      {hud?.board && (
+        <div className="pointer-events-none absolute left-3 top-24 w-44 rounded-xl bg-black/55 p-2 text-xs backdrop-blur">
+          <div className="mb-1 text-[10px] font-bold uppercase tracking-wider opacity-60">{T('ranking')}</div>
+          {hud.board.map((b, i) => (
+            <div key={b.id} className={`flex items-center gap-1.5 py-0.5 ${b.me ? 'font-black text-amber-300' : ''}`}>
+              <span className="w-4 text-right opacity-70">{i + 1}</span>
+              <span className="h-2 w-2 rounded-full" style={{ background: b.me ? '#fbbf24' : b.color }} />
+              <span className="min-w-0 flex-1 truncate">{b.me ? T('you') : b.name}</span>
+              {b.finished && <span>🏁</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      {!inRoute && hud?.fxOk > 0 && (
+        <div key={hud.fxOk} className="pointer-events-none absolute inset-0" style={{ animation: 'boostflash 0.9s ease-out forwards' }}>
+          <style>{'@keyframes boostflash{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.05)}100%{opacity:0;transform:scale(1.3) translateY(-30px)}}'}</style>
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle, transparent 45%, rgba(253,224,71,.28) 100%)' }} />
+          <div className="absolute inset-x-0 top-[28%] text-center text-5xl font-black italic tracking-wider text-yellow-300" style={{ textShadow: '0 0 18px #facc15, 0 0 40px #f59e0b' }}>⚡ BOOST!</div>
+        </div>
+      )}
       {noGas && !inRoute && <div className="pointer-events-none absolute inset-x-0 top-[54%] mx-auto w-fit max-w-[90vw] animate-pulse rounded-xl bg-black/70 px-4 py-2 text-center text-sm font-bold text-amber-300">{T('stopHint')}</div>}
 
       {card && !inRoute && (
-        <div key={card.key} className="pointer-events-none absolute inset-x-0 top-1/3 mx-auto flex w-[min(92vw,520px)] gap-3 rounded-2xl border bg-black/75 p-3 shadow-2xl backdrop-blur" style={{ borderColor: world?.color }}>
+        <div key={card.key} onClick={() => { setCard(null); stopVoice() }} className="absolute inset-x-0 top-1/3 mx-auto flex w-[min(92vw,520px)] cursor-pointer gap-3 rounded-2xl border bg-black/75 p-3 shadow-2xl backdrop-blur" style={{ borderColor: world?.color }}>
           <div className="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-white/10 text-5xl">{card.img}</div>
           <div className="min-w-0"><div className="text-sm font-extrabold leading-tight" style={{ color: world?.color }}>{card.title}</div><div className="mt-0.5 text-xs leading-snug opacity-90">{card.text}</div></div>
         </div>
@@ -531,7 +627,7 @@ export default function RacingDemo() {
               <div className="mt-0.5 text-xs leading-snug opacity-90">{factText(lang, toast.q)}</div>
             </div>
           </div>
-          <button className="mt-2 w-full rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold hover:bg-white/25" onClick={() => openRoute(toast.q)}>📘 {T('visitRoute')}</button>
+          {!game?.rivals.length && <button className="mt-2 w-full rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold hover:bg-white/25" onClick={() => openRoute(toast.q)}>📘 {T('visitRoute')}</button>}
         </div>
       )}
 
@@ -611,16 +707,17 @@ export default function RacingDemo() {
               <div className="rounded-xl bg-white/10 p-2"><div className="text-2xl font-black text-amber-300">{result.score}</div>{T('points')}</div>
               <div className="rounded-xl bg-white/10 p-2"><div className="text-2xl font-black">{fmtTime(result.time)}</div>{T('time')}</div>
             </div>
+            {result.total > 1 && <div className="mt-3 text-3xl font-black text-amber-300">{['🥇', '🥈', '🥉'][result.rank - 1] || '🏁'} {T('yourPlace')}: {result.rank} / {result.total}</div>}
             <div className="mt-3 text-sm opacity-80">{T('finalVehicle')}: <b style={{ color: world.color }}>{tierName(lang, world, result.tier)}</b></div>
-            <div className="mt-2 space-y-0.5 text-sm font-bold">
+            {!result.free && <div className="mt-2 space-y-0.5 text-sm font-bold">
               <div className="text-lg text-amber-300">{'⭐'.repeat(result.stars)}{'☆'.repeat(3 - result.stars)}</div>
               <div className="text-sky-300">+{result.gain} {T('xpGain')} · {T('level')} {result.level}</div>
               {result.leveledUp && <div className="text-amber-300">⭐ {T('levelUp')}</div>}
               {result.unlocked != null && <div className="text-emerald-300">🏎️ {T('newVehicle')}: {tierName(lang, world, result.unlocked)}</div>}
-            </div>
+            </div>}
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {nextLevelOk && <button className={`${btn} bg-emerald-400 text-black`} onClick={() => start(world.id, null, world.levelIndex + 1)}>{T('nextLevel')} ▶</button>}
-              <button className={`${btn} bg-amber-400 text-black`} onClick={() => start(world.id, null, world.levelIndex)}>{T('again')}</button>
+              {nextLevelOk && !result.free && <button className={`${btn} bg-emerald-400 text-black`} onClick={() => start(world.id, null, world.levelIndex + 1)}>{T('nextLevel')} ▶</button>}
+              <button className={`${btn} bg-amber-400 text-black`} onClick={() => (run.mode === 'online' ? exit() : start(world.id, null, world.levelIndex, { mode: run.mode }))}>{T('again')}</button>
               <button className={`${btn} bg-white/15`} onClick={() => { stopAll(); setWorldId(world.id); setPhase('garage') }}>🔧 {T('garage')}</button>
               <button className={`${btn} bg-white/15`} onClick={exit}>{T('changeWorld')}</button>
             </div>
