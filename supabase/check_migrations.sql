@@ -146,7 +146,9 @@ with expected(mig, kind, a, b) as (values
   ('078','function','is_admin',''),
   ('078','function','protect_admin_only_columns',''),
   ('084','table','item_templates',''),
-  ('084','function','item_templates_touch','')
+  ('084','function','item_templates_touch',''),
+  ('085','table','racing_content',''),
+  ('085','function','racing_content_touch','')
 ), missing as (
   select * from expected e where not (
     (kind = 'table'    and exists (select 1 from information_schema.tables  where table_schema = 'public' and table_name = e.a)) or

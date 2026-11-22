@@ -42,6 +42,7 @@ const S2 = {
     pwd_shield: 'Absorbe la próxima trampa.', pwd_hint: 'Marca la respuesta correcta de esta pregunta.', pwd_nitro: 'Turbo de 3 segundos.', pwd_jump: 'Te da otro salto en esta pregunta.',
     powers: 'Poderes', shieldUsed: '¡El escudo te salvó!', visitRoute: 'Visitar ruta de repaso', routeFull: 'Ruta de repaso', station: 'Estación', skipStation: 'Siguiente ▶', backRace: 'Volver a la carrera', routeHold: 'Escuchando la estación… tu vehículo espera',
     routeIntro: 'Bienvenido a la ruta de repaso. Vamos a ver esta respuesta con calma, estación por estación.', routeAnswer: 'La respuesta correcta', routeExplain: 'Explicación', routeOthers: 'Por qué las otras opciones no', routeRemember: 'Para recordar',
+    levelsTitle: 'Niveles', stars: 'Estrellas', nextLevel: 'Siguiente nivel', story: 'Historia', skipNarr: 'Saltar ▶', routeCruise: 'El narrador te va contando mientras avanzas', questionsLevel: 'preguntas en este nivel', lockedLevel: 'Gana al menos 1 estrella en el nivel anterior',
     othersText: 'Las otras opciones eran', notCorrect: 'y no son correctas', levelUp: '¡Subiste de nivel!', newVehicle: 'Vehículo desbloqueado', xpGain: 'XP ganada', menu: 'Menú', viewRoute: 'Ver explicación',
   },
   en: {
@@ -51,6 +52,7 @@ const S2 = {
     pwd_shield: 'Absorbs the next trap.', pwd_hint: 'Highlights the correct answer of this question.', pwd_nitro: '3-second turbo.', pwd_jump: 'Gives you another jump on this question.',
     powers: 'Powers', shieldUsed: 'The shield saved you!', visitRoute: 'Visit the review route', routeFull: 'Review route', station: 'Station', skipStation: 'Next ▶', backRace: 'Back to the race', routeHold: 'Listening to the station… your vehicle waits',
     routeIntro: "Welcome to the review route. Let's go through this answer calmly, station by station.", routeAnswer: 'The correct answer', routeExplain: 'Explanation', routeOthers: 'Why the other options are wrong', routeRemember: 'To remember',
+    levelsTitle: 'Levels', stars: 'Stars', nextLevel: 'Next level', story: 'Story', skipNarr: 'Skip ▶', routeCruise: 'The narrator tells you as you drive', questionsLevel: 'questions in this level', lockedLevel: 'Earn at least 1 star in the previous level',
     othersText: 'The other options were', notCorrect: 'and they are not correct', levelUp: 'Level up!', newVehicle: 'Vehicle unlocked', xpGain: 'XP earned', menu: 'Menu', viewRoute: 'See explanation',
   },
   fr: {
@@ -60,6 +62,7 @@ const S2 = {
     pwd_shield: 'Absorbe le prochain piège.', pwd_hint: 'Met en évidence la bonne réponse de cette question.', pwd_nitro: 'Turbo de 3 secondes.', pwd_jump: 'Te donne un autre saut sur cette question.',
     powers: 'Pouvoirs', shieldUsed: 'Le bouclier t’a sauvé !', visitRoute: 'Visiter le parcours de révision', routeFull: 'Parcours de révision', station: 'Station', skipStation: 'Suivant ▶', backRace: 'Retour à la course', routeHold: 'Écoute de la station… ton véhicule attend',
     routeIntro: 'Bienvenue sur le parcours de révision. Voyons cette réponse calmement, station par station.', routeAnswer: 'La bonne réponse', routeExplain: 'Explication', routeOthers: 'Pourquoi les autres options sont fausses', routeRemember: 'À retenir',
+    levelsTitle: 'Niveaux', stars: 'Étoiles', nextLevel: 'Niveau suivant', story: 'Histoire', skipNarr: 'Passer ▶', routeCruise: 'Le narrateur te raconte pendant que tu roules', questionsLevel: 'questions dans ce niveau', lockedLevel: 'Obtiens au moins 1 étoile au niveau précédent',
     othersText: 'Les autres options étaient', notCorrect: 'et elles ne sont pas correctes', levelUp: 'Niveau supérieur !', newVehicle: 'Véhicule débloqué', xpGain: 'XP gagnée', menu: 'Menu', viewRoute: 'Voir l’explication',
   },
 }
@@ -77,3 +80,5 @@ export const factText = (lang, q) => L(lang, q.src, 'fact')
 export const optText = (lang, q, i) => { const k = q.optSrc[i]; return k < 0 ? L(lang, q.src, 'ok') : (q.src.i18n?.[lang]?.bad?.[k] ?? q.src.bad[k]) }
 // Párrafo `k` de la explicación detallada (la ruta de repaso); `i18n[lang].deep` puede ser un texto con párrafos separados por `|`
 export const deepText = (lang, q, k) => { const alt = q.src.i18n?.[lang]?.deep, arr = typeof alt === 'string' ? alt.split('|') : alt; return (arr || q.src.deep || [])[k] || '' }
+// Episodio `k` (0–3) de la historia de una misión en el idioma actual
+export const missionStory = (lang, m, k) => m.i18n?.[lang]?.story?.[k] || m.story?.[k] || ''

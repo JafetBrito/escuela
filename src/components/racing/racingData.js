@@ -44,8 +44,9 @@ export const POWERS = {
 export const POWER_KEYS = Object.keys(POWERS)
 export const MAX_POWERS = 3
 
-// Ruta de repaso: pista aparte con una estación por cada tramo de la explicación; distancias en metros de la ruta
-export const ROUTE = { first: 120, gap: 120, tail: 130, x0: 4000, stop: 20 } // `stop` = metros antes del cartel donde espera el vehículo
+// Ruta de repaso: pista aparte con una estación por cada tramo de la explicación; distancias en metros de la ruta.
+// El vehículo NO se detiene en las estaciones: avanza a ritmo moderado mientras el locutor cuenta cada una al irte acercando.
+export const ROUTE = { first: 120, gap: 260, tail: 220, x0: 4000, vmax: 16 } // el vehículo recorre la ruta a `vmax` m/s sin detenerse en las estaciones: el locutor las va contando
 export const routeLength = (stations) => ROUTE.first + (stations - 1) * ROUTE.gap + ROUTE.tail
 export const stationPos = (i) => ROUTE.first + i * ROUTE.gap
 
@@ -73,11 +74,11 @@ export const WORLDS = {
       { name: 'Nave Hipócrates', kind: 'spaceship' },
     ],
     missions: [
-      { name: 'Urgencias del Hospital', img: '🏥', deco: 'hospital', topics: ['urgencias', 'cuerpo'], pal: { sky: '#e8f1f5', fog: '#eaf4f8', ground: '#dfe8ec', ground2: '#cfdbe1', road: '#b7c2ca', accent: '#38bdf8' },
+      { name: 'Urgencias del Hospital', story: ['Hace más de doscientos años, el cirujano francés Dominique Larrey, médico de los ejércitos de Napoleón, notó que los heridos morían esperando ayuda en medio del campo de batalla.', 'Inventó las ambulancias volantes: carretas ligeras tiradas por caballos que recogían a los heridos mientras aún se combatía. Así nació la idea de llevar la atención al paciente, en lugar de esperar a que él llegue.', 'También creó el triaje: atender primero a quien más urgentemente lo necesita, sin importar su rango. Hoy, cada sala de urgencias del mundo usa esa idea.', 'Por eso tu camilla corre hoy por estos pasillos: en una emergencia cada segundo cuenta, y saber primeros auxilios puede salvar una vida.'], img: '🏥', deco: 'hospital', topics: ['urgencias', 'cuerpo'], pal: { sky: '#e8f1f5', fog: '#eaf4f8', ground: '#dfe8ec', ground2: '#cfdbe1', road: '#b7c2ca', accent: '#38bdf8' },
         intro: 'Bienvenido al Hospital Escuela Sagrado Corazón. Eres paramédico en prácticas y tu camilla corre por los pasillos de Urgencias. Cada pasillo se divide en dos o tres: elige la respuesta correcta y ganarás velocidad. Si fallas, perderás un nivel.' },
-      { name: 'Jardín de recuperación', img: '🌿', deco: 'garden', topics: ['cuerpo', 'salud'], pal: { sky: '#bfe9ff', fog: '#dff3ff', ground: '#cfe9c8', ground2: '#b9dcb2', road: '#8f9ca6', accent: '#22c55e' },
+      { name: 'Jardín de recuperación', story: ['Hipócrates, en la Antigua Grecia, es llamado el padre de la medicina. Fue de los primeros en afirmar que las enfermedades tienen causas naturales, y no son castigos de los dioses.', 'Enseñaba a observar al paciente con atención: su respiración, su pulso, su alimentación, su entorno. Esa observación cuidadosa sigue siendo la base del diagnóstico.', 'Se le atribuye el juramento hipocrático, que aún inspira a los médicos: ayudar al enfermo, no hacer daño y guardar el secreto de sus pacientes.', 'Mientras recorres este jardín de recuperación, recuerda que cuidar el cuerpo empieza por entenderlo.'], img: '🌿', deco: 'garden', topics: ['cuerpo', 'salud'], pal: { sky: '#bfe9ff', fog: '#dff3ff', ground: '#cfe9c8', ground2: '#b9dcb2', road: '#8f9ca6', accent: '#22c55e' },
         intro: 'Los pacientes descansan en el jardín del hospital. Aquí aprenderás cómo funciona el cuerpo humano y cómo cuidarlo. Tu vehículo ya es más rápido, ¡aprovecha!' },
-      { name: 'Ciudad de emergencias', img: '🚑', deco: 'city', topics: ['urgencias', 'salud', 'cuerpo'], pal: { sky: '#9fc9ff', fog: '#d6e6f6', ground: '#c9ccd1', ground2: '#b8bcc3', road: '#4f5763', accent: '#ef4444' },
+      { name: 'Ciudad de emergencias', story: ['En el siglo diecinueve, Louis Pasteur demostró que muchas enfermedades las causan microbios invisibles. Con esa idea cambió la medicina para siempre.', 'Pasteur desarrolló vacunas, como la de la rabia, y enseñó a pasteurizar los alimentos para eliminar gérmenes.', 'En mil novecientos veintiocho, Alexander Fleming notó que un moho mataba las bacterias a su alrededor. Era la penicilina, el primer antibiótico, que ha salvado millones de vidas.', 'Gracias a ellos, una infección que antes era mortal hoy suele curarse. La ciudad entera depende de la ciencia que aprendiste en este viaje.'], img: '🚑', deco: 'city', topics: ['urgencias', 'salud', 'cuerpo'], pal: { sky: '#9fc9ff', fog: '#d6e6f6', ground: '#c9ccd1', ground2: '#b8bcc3', road: '#4f5763', accent: '#ef4444' },
         intro: 'Suena la alarma: hay una emergencia en la ciudad. Todo lo que aprendiste cuenta ahora. Sirenas, ambulancias y mucha velocidad. ¡Llega a la meta!' },
     ],
     questions: [
@@ -134,11 +135,11 @@ export const WORLDS = {
       { name: 'Nave IA General', kind: 'spaceship' },
     ],
     missions: [
-      { name: 'La Terminal', img: '💻', deco: 'servers', topics: ['basico'], pal: { sky: '#0b1220', fog: '#0f1a2e', ground: '#0f2a22', ground2: '#0a1f19', road: '#1b2433', accent: '#22c55e' },
+      { name: 'La Terminal', story: ['En mil ochocientos cuarenta y tres, Ada Lovelace, hija del poeta Lord Byron, escribió notas sobre la Máquina Analítica de Charles Babbage, una computadora mecánica que nunca llegó a construirse.', 'En esas notas describió un algoritmo para calcular números de Bernoulli, considerado el primer programa de la historia.', 'Ada imaginó que las máquinas podrían trabajar con música, arte y símbolos, no solo con números. Se adelantó más de cien años a la computación moderna.', 'Cada vez que escribes un bucle o una condición, sigues el camino que ella abrió.'], img: '💻', deco: 'servers', topics: ['basico'], pal: { sky: '#0b1220', fog: '#0f1a2e', ground: '#0f2a22', ground2: '#0a1f19', road: '#1b2433', accent: '#22c55e' },
         intro: 'Has sido compilado dentro de la Terminal. Tu patineta de código avanza entre servidores. Cada bifurcación es un if: elige la rama verdadera. Si fallas, perderás un nivel de vehículo.' },
-      { name: 'La Red', img: '🌐', deco: 'matrix', topics: ['web', 'basico'], pal: { sky: '#02130a', fog: '#04200f', ground: '#031a0d', ground2: '#02140a', road: '#0b2a1a', accent: '#4ade80' },
+      { name: 'La Red', story: ['A finales de los años ochenta, Tim Berners-Lee trabajaba en el CERN, en Suiza, y quería que los científicos compartieran documentos con facilidad.', 'Inventó tres cosas: HTML para escribir las páginas, HTTP para enviarlas y las direcciones web, o URL, para encontrarlas. Así nació la World Wide Web en mil novecientos noventa y uno.', 'Lo más sorprendente: decidió no patentarla y la regaló al mundo, para que cualquiera pudiera crear sitios sin pedir permiso.', 'Hoy, cada página que visitas y cada enlace que tocas viaja por ese camino.'], img: '🌐', deco: 'matrix', topics: ['web', 'basico'], pal: { sky: '#02130a', fog: '#04200f', ground: '#031a0d', ground2: '#02140a', road: '#0b2a1a', accent: '#4ade80' },
         intro: 'Sales a la red. Los paquetes vuelan a tu lado: la web, HTML, protocolos. Acierta para recibir más ancho de banda.' },
-      { name: 'Núcleo de IA', img: '🧠', deco: 'neon', topics: ['ia', 'basico', 'web'], pal: { sky: '#14061f', fog: '#1d0a2e', ground: '#1b0b2b', ground2: '#140820', road: '#251338', accent: '#d946ef' },
+      { name: 'Núcleo de IA', story: ['En mil novecientos cincuenta, el matemático británico Alan Turing se preguntó si las máquinas pueden pensar. Propuso un experimento llamado la prueba de Turing.', 'Si una persona conversa con una máquina y no puede distinguirla de otra persona, diríamos que la máquina piensa. La pregunta sigue abierta hoy.', 'Años antes, Turing ayudó a descifrar el código Enigma durante la Segunda Guerra Mundial, acortando la guerra y salvando millones de vidas.', 'Hoy los modelos de lenguaje conversan con nosotros. Entender cómo aprenden es entender la herencia de Turing.'], img: '🧠', deco: 'neon', topics: ['ia', 'basico', 'web'], pal: { sky: '#14061f', fog: '#1d0a2e', ground: '#1b0b2b', ground2: '#140820', road: '#251338', accent: '#d946ef' },
         intro: 'Llegas al núcleo de la inteligencia artificial. Aquí las preguntas son profundas: cada acierto entrena a tu vehículo.' },
     ],
     questions: [
@@ -162,6 +163,16 @@ export const WORLDS = {
       Q('ia', 4, '¿Qué es el sobreajuste (overfitting)?', 'Memorizar los datos de entrenamiento', ['Entrenar demasiado rápido', 'Usar poca memoria RAM'], 'El modelo luce perfecto en el examen de práctica y falla con datos nuevos.', '📈'),
       Q('basico', 4, '¿Qué estructura sigue "último en entrar, primero en salir"?', 'Una pila (stack)', ['Una cola (queue)', 'Un árbol'], 'El botón deshacer de tu editor usa una pila.', '🥞'),
       Q('ia', 4, '¿Qué es una red neuronal?', 'Capas de nodos que aprenden patrones', ['Un cable de red', 'Una base de datos SQL'], 'Se inspiran, de forma muy libre, en las neuronas del cerebro.', '🕸️'),
+      Q('basico', 0, '¿Qué es una variable?', 'Un espacio con nombre que guarda un valor', ['Un tipo de error', 'Un programa terminado'], 'Es como una caja etiquetada en la que guardas datos que pueden cambiar.', '📦'),
+      Q('web', 0, '¿Qué lenguaje da interactividad a una página en el navegador?', 'JavaScript', ['CSS', 'SQL'], 'Hace que los botones respondan, los menús se abran y los juegos funcionen en la página.', '🖱️'),
+      Q('ia', 1, '¿Qué necesita un modelo de IA para aprender?', 'Datos de ejemplo', ['Solo electricidad', 'Un teclado nuevo'], 'Cuantos más ejemplos buenos y variados, mejor aprende los patrones.', '📊'),
+      Q('basico', 1, '¿Qué hace una condición if?', 'Ejecuta código solo si algo es verdadero', ['Repite código para siempre', 'Guarda un archivo'], 'if significa si: así el programa toma decisiones.', '🔀'),
+      Q('web', 2, '¿Para qué sirve una API?', 'Para que dos programas se comuniquen', ['Para dibujar páginas', 'Para enfriar el procesador'], 'Cuando una app del clima te da la temperatura, usa una API.', '🔌'),
+      Q('basico', 2, '¿Qué es una función?', 'Un bloque de código con nombre que se puede reutilizar', ['Un tipo de comentario', 'Una variable global'], 'Escribes la receta una vez y la usas todas las veces que quieras.', '🧩'),
+      Q('ia', 3, '¿Qué es el aprendizaje supervisado?', 'Entrenar con ejemplos que ya traen la respuesta correcta', ['Aprender sin ningún dato', 'Un modelo que vigila a otros'], 'Por ejemplo, fotos de gatos y perros ya etiquetadas.', '🏷️'),
+      Q('basico', 3, '¿Qué es un algoritmo?', 'Una secuencia de pasos para resolver un problema', ['Un lenguaje de programación', 'Un virus'], 'Una receta de cocina es un algoritmo.', '🍳'),
+      Q('web', 4, '¿Qué es una inyección SQL?', 'Meter código SQL malicioso en un formulario para manipular la base de datos', ['Un virus que borra el teclado', 'Un error de CSS'], 'Se evita validando los datos y usando consultas parametrizadas.', '💉'),
+      Q('ia', 4, '¿Qué es el aprendizaje por refuerzo?', 'Aprender probando y recibiendo recompensas o castigos', ['Aprender memorizando un libro', 'Reforzar el hardware'], 'Así aprenden las IA que juegan videojuegos o ajedrez.', '🎮'),
     ],
   },
 
@@ -185,11 +196,11 @@ export const WORLDS = {
       { name: 'Nave de la Razón', kind: 'spaceship' },
     ],
     missions: [
-      { name: 'El Ágora', img: '🏛️', deco: 'agora', topics: ['antigua'], pal: { sky: '#ffd9a0', fog: '#ffe9c7', ground: '#e9d9a8', ground2: '#d8c88f', road: '#a89878', accent: '#eab308' },
+      { name: 'El Ágora', story: ['Atenas, siglo quinto antes de Cristo. Sócrates caminaba descalzo por el ágora y detenía a la gente con una pregunta: qué es la justicia, qué es el valor.', 'No daba respuestas: hacía preguntas hasta que la otra persona descubría sus propias contradicciones. A eso se le llama el método socrático.', 'En el año trescientos noventa y nueve antes de Cristo fue juzgado por corromper a la juventud y por no creer en los dioses de la ciudad. Pudo huir, pero eligió aceptar la sentencia.', 'Murió fiel a sus ideas. Su gran lección: una vida sin examen no merece ser vivida.'], img: '🏛️', deco: 'agora', topics: ['antigua'], pal: { sky: '#ffd9a0', fog: '#ffe9c7', ground: '#e9d9a8', ground2: '#d8c88f', road: '#a89878', accent: '#eab308' },
         intro: 'Atenas, siglo quinto antes de Cristo. Sócrates pregunta en el ágora y tu carreta rueda entre columnas. Cada bifurcación es una pregunta: piensa antes de elegir. Si te equivocas, perderás un nivel.' },
-      { name: 'La Caverna', img: '🔥', deco: 'cave', topics: ['mente', 'antigua'], pal: { sky: '#1a1410', fog: '#241a12', ground: '#2a2018', ground2: '#201810', road: '#4a3b2c', accent: '#ff9f43' },
+      { name: 'La Caverna', story: ['Platón imaginó una caverna donde unos prisioneros viven encadenados desde niños, mirando una pared. Detrás de ellos arde un fuego.', 'Entre el fuego y los prisioneros pasan personas con objetos, y las sombras que se proyectan en la pared son lo único que los prisioneros conocen. Para ellos, esas sombras son la realidad.', 'Un día uno se libera. La luz del fuego le duele y, al salir, el sol lo deslumbra. Poco a poco descubre el mundo real.', 'Al volver a contarlo, los demás se burlan de él. Platón nos pregunta: cuántas sombras creemos que son verdad.'], img: '🔥', deco: 'cave', topics: ['mente', 'antigua'], pal: { sky: '#1a1410', fog: '#241a12', ground: '#2a2018', ground2: '#201810', road: '#4a3b2c', accent: '#ff9f43' },
         intro: 'Entras en la caverna de Platón. Las sombras en la pared parecen reales, pero solo son reflejos de lo que pasa detrás de ti. Aprende a distinguir la apariencia de la verdad.' },
-      { name: 'La luz del Sol', img: '☀️', deco: 'sun', topics: ['etica', 'mente'], pal: { sky: '#fff3c4', fog: '#fff7dc', ground: '#f3e7b5', ground2: '#ead99a', road: '#c9b87f', accent: '#f59e0b' },
+      { name: 'La luz del Sol', story: ['En mil setecientos ochenta y cuatro, Immanuel Kant respondió a la pregunta qué es la Ilustración con un lema: atrévete a saber, ten el valor de usar tu propio entendimiento.', 'Para Kant, la minoría de edad no es cuestión de años, sino de dejar que otros piensen por nosotros por pereza o por miedo.', 'Esa idea inspiró la ciencia moderna, los derechos humanos y la educación. Pensar críticamente es una responsabilidad.', 'Ahora que saliste de la caverna, la tarea es compartir la luz: preguntar, estudiar y no dejar de aprender.'], img: '☀️', deco: 'sun', topics: ['etica', 'mente'], pal: { sky: '#fff3c4', fog: '#fff7dc', ground: '#f3e7b5', ground2: '#ead99a', road: '#c9b87f', accent: '#f59e0b' },
         intro: 'Sales de la caverna. La luz te deslumbra: es el mundo de las ideas. Lo que sabes ahora cambia cómo ves todo lo demás. Corre hacia la meta.' },
     ],
     questions: [
@@ -213,11 +224,31 @@ export const WORLDS = {
       Q('etica', 4, '¿Qué propone Rawls con el "velo de la ignorancia"?', 'Elegir reglas sin saber qué lugar tendrás en la sociedad', ['Ocultar la verdad', 'Castigar a todos igual'], 'Si no sabes si serás rico o pobre, eliges reglas más justas.', '🕶️'),
       Q('antigua', 4, '¿Qué defendió Parménides?', 'Que el ser es uno e inmutable', ['Que todo cambia', 'Que el hombre es la medida de todo'], 'Para él, el cambio es solo una ilusión de los sentidos.', '🗿'),
       Q('mente', 4, 'La "habitación china" de Searle critica la idea de que…', 'Una máquina que manipula símbolos ya entiende', ['El alma es inmortal', 'La experiencia es la fuente del saber'], 'Es un debate muy vivo hoy, con las inteligencias artificiales.', '🈶'),
+      Q('etica', 0, '¿Qué significa la palabra filosofía en griego?', 'Amor a la sabiduría', ['Estudio de las estrellas', 'Arte de gobernar'], 'Viene de philos, amor, y sophía, sabiduría.', '💖'),
+      Q('antigua', 0, '¿En qué país nació la filosofía occidental?', 'Grecia', ['Egipto', 'Roma'], 'En ciudades griegas como Mileto y Atenas, hace unos 2 600 años.', '🏺'),
+      Q('mente', 1, '¿Qué estudia la epistemología?', 'El conocimiento: qué podemos saber y cómo', ['La belleza', 'El origen del universo'], 'Su pregunta es: cómo sabemos que sabemos.', '🔍'),
+      Q('etica', 1, '¿Qué es la virtud para Aristóteles?', 'Un hábito que nos lleva a actuar bien, en un término medio', ['Un don con el que se nace y no cambia', 'Obedecer siempre al gobernante'], 'El valor es el punto medio entre la cobardía y la temeridad.', '⚖️'),
+      Q('antigua', 2, '¿Qué enseñaba la escuela cínica de Diógenes?', 'Vivir con sencillez, según la naturaleza, sin depender de lujos', ['Acumular riquezas', 'Obedecer las costumbres sin cuestionarlas'], 'Se cuenta que Diógenes vivía en un barril y le pidió a Alejandro que no le tapara el sol.', '🛢️'),
+      Q('mente', 2, '¿Qué sostiene el racionalismo?', 'Que la razón es la principal fuente del conocimiento', ['Que todo conocimiento viene de los sentidos', 'Que no se puede conocer nada'], 'Descartes, Spinoza y Leibniz son racionalistas.', '🧮'),
+      Q('etica', 3, '¿Qué dice la ética de las virtudes?', 'Lo importante es el tipo de persona que somos, no solo cada acto', ['Lo único que importa es el resultado', 'Solo importa cumplir la ley'], 'Pregunta: qué haría una persona buena en mi lugar.', '🌟'),
+      Q('antigua', 3, '¿Quién dijo que el hombre es la medida de todas las cosas?', 'Protágoras', ['Platón', 'Heráclito'], 'Es el lema del relativismo de los sofistas.', '📏'),
+      Q('mente', 4, '¿Qué es el solipsismo?', 'La idea de que solo puedo estar seguro de mi propia mente', ['La creencia de que todo es materia', 'La defensa de la vida en comunidad'], 'Es un problema clásico: cómo sé que otras mentes existen.', '🪞'),
+      Q('etica', 4, '¿Qué defiende el existencialismo de Sartre?', 'Que la existencia precede a la esencia: nos definimos con nuestras elecciones', ['Que el destino está escrito desde el nacimiento', 'Que la razón basta para todo'], 'Estamos condenados a ser libres, decía Sartre.', '🧭'),
     ],
   },
 }
 // Explicaciones detalladas (racingDeep.js): 2 párrafos por pregunta, en el mismo orden que `questions`
 for (const w of Object.values(WORLDS)) w.questions.forEach((q, i) => { q.deep = (DEEP[w.id]?.[i] || '').split('|').filter(Boolean) })
+// ── Niveles ──
+// Cada mundo tiene una lista de NIVELES; cada nivel = 3 misiones (con su historia) + un banco de preguntas (≥ MIN_QUESTIONS). Los niveles
+// extra se crean en el editor (/carrera/editor) o llegan de Supabase (racingContent.js). `levelView` arma el "mundo" que usa el motor.
+export const MIN_QUESTIONS = 30
+const LEVEL1 = { medicina: ['Nivel 1 · Urgencias y cuerpo humano', 'Primeros auxilios, anatomía y salud básica'], programacion: ['Nivel 1 · Fundamentos', 'Variables, bucles, la web y la IA desde cero'], filosofia: ['Nivel 1 · Del mito a la razón', 'Sócrates, Platón, Aristóteles y las grandes preguntas'] }
+for (const w of Object.values(WORLDS)) {
+  w.levels = [{ id: `${w.id}-1`, name: LEVEL1[w.id][0], blurb: LEVEL1[w.id][1], missions: w.missions, questions: w.questions }]
+  delete w.missions; delete w.questions
+}
+export const levelView = (world, i = 0) => { const lv = world.levels[Math.min(i, world.levels.length - 1)]; return { ...world, levelIndex: Math.min(i, world.levels.length - 1), levelId: lv.id, levelName: lv.name, missions: lv.missions, questions: lv.questions } }
 export const WORLD_LIST = Object.values(WORLDS)
 
 // Texto en el idioma actual: `obj.i18n[lang][campo]` si existe; si no, el campo en español (la base, igual que el resto de la app)

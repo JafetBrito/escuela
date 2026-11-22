@@ -23,7 +23,7 @@ export function buildRoute(world, n) {
     const z = -stationPos(i)
     for (const sg of [-1, 1]) { M.cyl(x0 + sg * 10.5, 0, z, 0.9, 12, 8, '#e8e3d6', 0.75); M.box(x0 + sg * 10.5, 12, z, 2.4, 0.6, 2.4, '#cfc8b4') } // columnas
     M.box(x0, 12, z, 23, 0.7, 1.4, '#cfc8b4')
-    G.box(x0, 0.02, z + ROUTE.stop + 0.5, 15, 0.06, 0.5, color) // línea de parada: aquí espera el vehículo
+    G.box(x0, 0.02, z + 14, 15, 0.06, 0.5, color) // marca en el piso justo antes de cada cartel
     boards.push({ x: x0, y: 6.4, z: z + 0.2, w: 13, h: 6.6 })
   }
   const ze = -(len - 24)

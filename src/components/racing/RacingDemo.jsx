@@ -4,7 +4,8 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
-import { WORLD_LIST, RACE, FORKS, POWERS, MAX_TIER, FLY_FROM } from './racingData'
+import { WORLD_LIST, RACE, FORKS, POWERS, MAX_TIER, FLY_FROM, levelView } from './racingData'
+import { useRacingContentStore, loadRemoteRacing } from './racingContent'
 import { createRace } from './raceEngine'
 import { frame, centerX, pitchAt } from './track'
 import { buildTrack, bannerTexture } from './trackBuild'
@@ -12,10 +13,10 @@ import { buildRoute, stationTexture, routePoint, ROUTE_PAL } from './routeBuild'
 import { buildVehicle } from './vehicles'
 import { Mesher } from '../vr/campus/mesher'
 import RacingGarage from './RacingGarage'
-import { useRacingStore, levelOfXp } from '../../stores/useRacingStore'
+import { useRacingStore, levelOfXp, levelUnlocked } from '../../stores/useRacingStore'
 import { initAudio, startMusic, stopMusic, setMusicTier, setMusicOn, duck, sfx, loadPrefs, savePrefs } from './racingAudio'
 import { speak, stopVoice, setVoiceOn, onDuck, voiceSupported, voiceOn, LINES } from './racingVoice'
-import { tt, speechLang, worldText, missionText, tierName, qText, okText, factText, optText, deepText } from './racingI18n'
+import { tt, speechLang, worldText, missionText, tierName, qText, okText, factText, optText, deepText, missionStory } from './racingI18n'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OLIVER RACING: carrera estilo Tux Racer. Eliges un MUNDO (profesión) y tu vehículo en el GARAJE (14 niveles, personalizables); la partida son
@@ -209,23 +210,29 @@ export default function RacingDemo() {
   const [pop, setPop] = useState(null) // trampa: ventana que pausa la partida
   const [pick, setPick] = useState(null) // elección de poder al empezar una misión
   const [route, setRoute] = useState(null) // ruta de repaso activa: { id, texts }
+  const [levelIdx, setLevelIdx] = useState(0)
+  const [narr, setNarr] = useState(-1) // estación de la ruta que el narrador está contando
   const [prefs, setPrefs] = useState(loadPrefs)
   const [auto, setAuto] = useState(isTouch)
   const input = useRef({ left: false, right: false, gas: false, brake: false, drift: false })
   const runRef = useRef(null)
+  const routeRef = useRef(null), routeQ = useRef([]), routeSpeaking = useRef(false), routeSkip = useRef(null) // narración de la ruta de repaso
   const racingWorlds = useRacingStore((s) => s.worlds)
+  useRacingContentStore((s) => s.version) // se actualiza cuando llega o se edita el contenido (niveles, preguntas)
+  useEffect(() => { loadRemoteRacing() }, [])
 
   const stopAll = () => { stopMusic(); stopVoice() }
-  const start = (wid = worldId, startTier = null) => {
-    const world = WORLD_LIST.find((w) => w.id === wid), pr = useRacingStore.getState().profile(wid)
+  const start = (wid = worldId, startTier = null, li = levelIdx) => {
+    const world = levelView(WORLD_LIST.find((w) => w.id === wid), li), pr = useRacingStore.getState().profile(wid)
     const tier = startTier ?? Math.min(pr.startTier, pr.bestTier)
     initAudio(); setMusicOn(prefs.music); setVoiceOn(prefs.voice); onDuck(duck)
     const next = { id: uid(), world, game: createRace(world, { auto, startTier: tier }), custom: { color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory } }
     runRef.current = next
     startMusic(world.music); setMusicTier(tier)
-    setRun(next); setHud(null); setResult(null); setCard(null); setToast(null); setPop(null); setPick(null); setRoute(null); setPhase('race')
+    setRun(next); setHud(null); setResult(null); setCard(null); setToast(null); setPop(null); setPick(null); setRoute(null); setNarr(-1); setPhase('race')
   }
-  const exit = () => { stopAll(); input.current = { left: false, right: false, gas: false, brake: false, drift: false }; setPop(null); setPick(null); setRoute(null); setPhase('menu') }
+  const exit = () => { stopAll(); input.current = { left: false, right: false, gas: false, brake: false, drift: false }; setPop(null); setPick(null); setRoute(null); routeQ.current = []; routeSpeaking.current = false; setPhase('menu') }
+  const selectWorld = (id) => { setWorldId(id); setLevelIdx(0) }
   const toggle = (k) => {
     const n = { ...prefs, [k]: !prefs[k] }
     setPrefs(n); savePrefs(n)
@@ -242,6 +249,20 @@ export default function RacingDemo() {
     game.startDetour(q)
   }
   const endRoute = () => { runRef.current?.game.endDetour() }
+  // La ruta NO detiene el vehículo: el narrador cuenta las estaciones EN ORDEN (cola) a medida que te acercas; al terminar cada una avisa al motor
+  const nextStation = (game, sl) => {
+    const idx = routeQ.current.shift()
+    if (idx == null) { routeSpeaking.current = false; return }
+    routeSpeaking.current = true; setNarr(idx)
+    const t = routeRef.current?.texts?.[idx]
+    if (!t) { game.revealStation(idx); nextStation(game, sl); return }
+    let fired = false
+    const done = () => { if (fired) return; fired = true; routeSkip.current = null; game.revealStation(idx); nextStation(game, sl) }
+    routeSkip.current = done
+    const spoke = voiceOn() && speak(`${t.title}. ${t.text}`, { lang: sl, onEnd: done })
+    setTimeout(done, spoke ? 150000 : t.text.split(' ').length * 330 + 3000)
+  }
+  const skipNarration = () => { stopVoice(); routeSkip.current?.() }
 
   // Textos de las estaciones de la ruta de repaso, en el idioma actual
   const stationTexts = (q, stations) => stations.map((k) => {
@@ -284,15 +305,18 @@ export default function RacingDemo() {
       }
     } else if (e.type === 'detour') {
       const q = game.detour.q, texts = stationTexts(q, e.stations)
+      routeRef.current = { id: e.id, texts }; routeQ.current = []; routeSpeaking.current = false; setNarr(-1)
       setRoute({ id: e.id, texts })
       speak(T('routeIntro'), { now: true, lang: sl })
     } else if (e.type === 'station') {
-      const t = route?.texts?.[e.index] ?? stationTexts(game.detour.q, game.detour.stations)[e.index]
-      const done = () => game.revealStation(e.index)
-      const spoke = voiceOn() && speak(`${t.title}. ${t.text}`, { lang: sl, onEnd: done })
-      setTimeout(done, spoke ? 60000 : (t.text.split(' ').length * 330 + 2500))
+      routeQ.current.push(e.index)
+      if (!routeSpeaking.current) nextStation(game, sl)
     } else if (e.type === 'detourEnd') {
+      routeQ.current = []; routeSpeaking.current = false; routeSkip.current = null; routeRef.current = null; setNarr(-1)
       stopVoice(); setRoute(null)
+    } else if (e.type === 'story') {
+      const m = world.missions[e.mission], text = missionStory(lang, m, e.beat)
+      if (text) { setCard({ key: `s${uid()}`, img: m.img, title: `📖 ${T('story')} · ${missionText(lang, m, 'name')} (${e.beat + 1}/4)`, text, ttl: 18 }); speak(text, { lang: sl }) }
     } else if (e.type === 'finish') {
       sfx('finish')
     }
@@ -333,7 +357,7 @@ export default function RacingDemo() {
     </div>
   )
 
-  if (phase === 'garage') return <RacingGarage world={wsel} lang={lang} onBack={() => setPhase('menu')} onStart={(t) => start(worldId, t)} />
+  if (phase === 'garage') return <RacingGarage world={wsel} lang={lang} onBack={() => setPhase('menu')} onStart={(t) => start(worldId, t, levelIdx)} />
 
   if (phase === 'menu') {
     return (
@@ -346,15 +370,30 @@ export default function RacingDemo() {
             {WORLD_LIST.map((c) => {
               const pr = racingWorlds[c.id] || {}
               return (
-                <button key={c.id} onClick={() => setWorldId(c.id)} className={`rounded-2xl border-2 p-4 text-left transition ${worldId === c.id ? 'scale-[1.02] bg-white/10' : 'bg-white/5 opacity-80 hover:opacity-100'}`} style={{ borderColor: worldId === c.id ? c.color : 'transparent' }}>
+                <button key={c.id} onClick={() => selectWorld(c.id)} className={`rounded-2xl border-2 p-4 text-left transition ${worldId === c.id ? 'scale-[1.02] bg-white/10' : 'bg-white/5 opacity-80 hover:opacity-100'}`} style={{ borderColor: worldId === c.id ? c.color : 'transparent' }}>
                   <div className="flex items-center justify-between"><span className="text-3xl">{c.icon}</span><span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold">{T('level')} {levelOfXp(pr.xp || 0)} · {(pr.bestTier || 0) + 1}/14 🏎️</span></div>
                   <div className="mt-1 text-lg font-extrabold" style={{ color: c.color }}>{worldText(lang, c, 'name')}</div>
                   <div className="text-xs opacity-70">{worldText(lang, c, 'tagline')}</div>
-                  <ol className="mt-3 space-y-0.5 text-[11px] opacity-80">{c.missions.map((m, i) => <li key={m.name}>{m.img} {T('mission')} {i + 1}: {missionText(lang, m, 'name')}</li>)}</ol>
-                  <div className="mt-2 text-[10px] opacity-50">{c.questions.length} {T('questionsN')} · 14 {T('vehicles')}</div>
+                  <ol className="mt-3 space-y-0.5 text-[11px] opacity-80">{c.levels[0].missions.map((m, i) => <li key={m.name}>{m.img} {T('mission')} {i + 1}: {missionText(lang, m, 'name')}</li>)}</ol>
+                  <div className="mt-2 text-[10px] opacity-50">{c.levels.reduce((n, lv) => n + lv.questions.length, 0)} {T('questionsN')} · {c.levels.length} {T('levelsTitle').toLowerCase()} · 14 {T('vehicles')}</div>
                 </button>
               )
             })}
+          </div>
+          <div className="mt-5">
+            <div className="text-sm font-extrabold">{T('levelsTitle')} · {worldText(lang, wsel, 'name')}</div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              {wsel.levels.map((lv, i) => {
+                const prw = racingWorlds[wsel.id] || {}, open = levelUnlocked(prw, i, wsel.levels), stars = prw.levels?.[lv.id]?.stars || 0
+                return (
+                  <button key={lv.id + i} disabled={!open} onClick={() => setLevelIdx(i)} className={`rounded-xl border-2 p-3 text-left transition ${levelIdx === i ? 'bg-white/10' : 'bg-white/5'} ${open ? 'hover:bg-white/10' : 'cursor-not-allowed opacity-45'}`} style={{ borderColor: levelIdx === i ? wsel.color : 'transparent' }}>
+                    <div className="flex items-center justify-between"><span className="text-sm font-black">{open ? '' : '🔒 '}{lv.name}</span><span className="text-xs text-amber-300">{'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}</span></div>
+                    <div className="mt-0.5 text-[11px] opacity-70">{open ? lv.blurb : T('lockedLevel')}</div>
+                    <div className="mt-1 text-[10px] opacity-50">{lv.questions.length} {T('questionsLevel')}</div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button className={`${btn} bg-amber-400 text-black`} onClick={() => start()}>{T('go')} {worldText(lang, wsel, 'name')} →</button>
@@ -375,13 +414,15 @@ export default function RacingDemo() {
   const msg = hud?.msg
   const msgText = !msg ? '' : msg.kind === 'up' ? `⭐ ${T('tierUp')}: ${tierName(lang, world, msg.tier)}` : msg.kind === 'ok' ? `✔ ${T('correct')}` : msg.kind === 'shield' ? `🛡️ ${T('shieldUsed')}` : msg.kind === 'bad' ? (msg.tier != null ? `✘ ${T('tierDown')}: ${tierName(lang, world, msg.tier)}` : '✘') : `🏁 ${T('done')}`
   const noGas = !auto && (hud?.speed ?? 0) < 1 && !hud?.holding && !pop && !pick && phase === 'race'
-  const stTexts = route?.texts, st = inRoute && stTexts ? stTexts[Math.min(hud.detour.si, stTexts.length - 1)] : null
+  const baseWorld = world ? WORLD_LIST.find((w) => w.id === world.id) : null
+  const nextLevelOk = !!(result && baseWorld && baseWorld.levels[world.levelIndex + 1] && levelUnlocked(useRacingStore.getState().profile(world.id), world.levelIndex + 1, baseWorld.levels))
+  const stTexts = route?.texts, st = inRoute && stTexts ? stTexts[Math.min(narr >= 0 ? narr : hud.detour.si, stTexts.length - 1)] : null
   return (
     <div className="fixed inset-0 select-none overflow-hidden bg-black text-white" style={{ touchAction: 'none' }}>
       {run && (
         <Canvas key={run.id} camera={{ fov: 62, near: 0.3, far: 900, position: [0, 6, 14] }} dpr={[1, 1.75]}>
           <RaceScene run={run} input={input} lang={lang} route={route} backText={T('backRace')} onHud={setHud} onEvent={onEvent}
-            onFinish={(r) => { const gain = useRacingStore.getState().finishRun(run.world.id, r); setResult({ ...r, ...gain }); setPhase('done'); stopMusic() }} />
+            onFinish={(r) => { const gain = useRacingStore.getState().finishRun(run.world.id, { ...r, levelId: run.world.levelId }); setResult({ ...r, ...gain }); setPhase('done'); stopMusic() }} />
         </Canvas>
       )}
 
@@ -402,14 +443,14 @@ export default function RacingDemo() {
       {inRoute && (
         <div className="absolute inset-x-0 top-16 mx-auto w-[min(94vw,720px)] rounded-2xl border-2 bg-black/75 p-3 backdrop-blur" style={{ borderColor: world.color }}>
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: world.color }}>📘 {T('routeFull')} · {T('station')} {Math.min(hud.detour.si + 1, hud.detour.n)} / {hud.detour.n}</div>
+            <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: world.color }}>📘 {T('routeFull')} · {T('station')} {Math.min((narr >= 0 ? narr : hud.detour.si) + 1, hud.detour.n)} / {hud.detour.n}</div>
             <div className="flex gap-1.5">
-              {hud.detour.holding && <button className="pointer-events-auto rounded-lg bg-white/15 px-2.5 py-1 text-xs font-bold" onClick={() => game.revealStation(hud.detour.si)}>{T('skipStation')}</button>}
+              {narr >= 0 && <button className="pointer-events-auto rounded-lg bg-white/15 px-2.5 py-1 text-xs font-bold" onClick={skipNarration}>{T('skipNarr')}</button>}
               <button className="pointer-events-auto rounded-lg bg-amber-400 px-2.5 py-1 text-xs font-black text-black" onClick={endRoute}>{T('backRace')} ▶</button>
             </div>
           </div>
           {st && <div className="mt-2 flex gap-3"><div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-white/10 text-4xl">{st.img}</div><div className="min-w-0"><div className="text-sm font-extrabold">{st.title}</div><div className="mt-0.5 text-sm leading-snug opacity-95">{st.text}</div></div></div>}
-          {hud.detour.holding && <div className="mt-1.5 animate-pulse text-[11px] font-semibold text-amber-300">🔊 {T('routeHold')}</div>}
+          <div className="mt-1.5 text-[11px] font-semibold text-amber-300">{hud.detour.holding ? `🔊 ${T('routeHold')}` : `🗣️ ${T('routeCruise')}`}</div>
         </div>
       )}
 
@@ -539,12 +580,14 @@ export default function RacingDemo() {
             </div>
             <div className="mt-3 text-sm opacity-80">{T('finalVehicle')}: <b style={{ color: world.color }}>{tierName(lang, world, result.tier)}</b></div>
             <div className="mt-2 space-y-0.5 text-sm font-bold">
+              <div className="text-lg text-amber-300">{'⭐'.repeat(result.stars)}{'☆'.repeat(3 - result.stars)}</div>
               <div className="text-sky-300">+{result.gain} {T('xpGain')} · {T('level')} {result.level}</div>
               {result.leveledUp && <div className="text-amber-300">⭐ {T('levelUp')}</div>}
               {result.unlocked != null && <div className="text-emerald-300">🏎️ {T('newVehicle')}: {tierName(lang, world, result.unlocked)}</div>}
             </div>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
-              <button className={`${btn} bg-amber-400 text-black`} onClick={() => start(world.id)}>{T('again')}</button>
+              {nextLevelOk && <button className={`${btn} bg-emerald-400 text-black`} onClick={() => start(world.id, null, world.levelIndex + 1)}>{T('nextLevel')} ▶</button>}
+              <button className={`${btn} bg-amber-400 text-black`} onClick={() => start(world.id, null, world.levelIndex)}>{T('again')}</button>
               <button className={`${btn} bg-white/15`} onClick={() => { stopAll(); setWorldId(world.id); setPhase('garage') }}>🔧 {T('garage')}</button>
               <button className={`${btn} bg-white/15`} onClick={exit}>{T('changeWorld')}</button>
             </div>

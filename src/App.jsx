@@ -83,6 +83,7 @@ const HubPage = lazy(() => import('./components/hub/HubPage'))
 const OrangeCatProcDemo = lazy(() => import('./components/mascot/OrangeCatProcDemo'))
 const ItemDbPage = lazy(() => import('./components/items/ItemDbPage'))
 const RacingDemo = lazy(() => import('./components/racing/RacingDemo'))
+const RacingEditor = lazy(() => import('./components/racing/RacingEditor'))
 // En el celular el mundo VR no vale la pena: la entrada principal lleva al Hub (mascota + perfil). El resto de rutas /vr/* no cambia.
 const isPhone = () => window.matchMedia('(max-width: 767px)').matches && window.matchMedia('(pointer: coarse)').matches
 const BookshelfPage = lazy(() => import('./components/library/BookshelfPage'))
@@ -1061,6 +1062,16 @@ export default function App() {
           }
         />
         {import.meta.env.DEV && <Route path="/dev/gato-proc" element={<Suspense fallback={<RouteFallback />}><OrangeCatProcDemo /></Suspense>} />}
+        <Route
+          path="/carrera/editor"
+          element={
+            import.meta.env.DEV ? (<Suspense fallback={<RouteFallback />}><RacingEditor /></Suspense>) : (
+              <ProtectedRoute waitForCourses={false}>
+                <Suspense fallback={<RouteFallback />}><RacingEditor /></Suspense>
+              </ProtectedRoute>
+            )
+          }
+        />
         <Route
           path="/carrera"
           element={

@@ -26,7 +26,7 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     s: 0, u: 0, uv: 0, v: 0, alt: flyAlt(t0), tier: t0, maxTier: t0, correct: 0, wrong: 0, score: 0, time: 0,
     lock: -1, idx: 0, evald: false, crash: 0, boost: 0, jumpT: 0, jumpLane: 0, drifting: false, driftT: 0, holding: false,
     msg: null, msgT: 0, finished: false, finishT: 0, mission: 0, events: [], results: [],
-    powers: [], hintFor: -1, detour: null, detours: 0, choosing: null,
+    powers: [], hintFor: -1, detour: null, detours: 0, choosing: null, storyIdx: 0,
   }
   const say = (kind, tier = null) => { g.msg = { kind, tier }; g.msgT = 3.2 } // la interfaz lo traduce
   const emit = (e) => g.events.push(e)
@@ -81,16 +81,18 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
   }
   g.revealStation = (i) => { if (g.detour) g.detour.revealed[i] = true }
   g.endDetour = () => { if (!g.detour) return; g.detour = null; emit({ type: 'detourEnd' }) }
+  // La ruta NO se detiene en las estaciones: el vehículo avanza solo a ritmo moderado (`ROUTE.vmax`; se puede frenar y girar) mientras el locutor
+  // cuenta cada estación al irte acercando. Solo espera al final del recorrido si la última aún no terminó de contarse.
   function stepDetour(dt, input) {
-    const d = g.detour, n = d.stations.length, throttle = g.auto ? 1 : input.throttle || 0, brake = input.brake || 0, steer = input.steer || 0
-    d.holding = d.si < n && d.rs >= stationPos(d.si) - ROUTE.stop && !d.revealed[d.si]
-    if (d.si < n && !d.announced[d.si] && d.rs >= stationPos(d.si) - 100) { d.announced[d.si] = true; emit({ type: 'station', index: d.si }) }
-    let a = throttle * 15 * Math.max(0, 1 - d.v / 30) - 0.05 * d.v - 26 * brake
+    const d = g.detour, n = d.stations.length, brake = input.brake || 0, steer = input.steer || 0, end = routeLength(n)
+    if (d.si < n && !d.announced[d.si] && d.rs >= stationPos(d.si) - 110) { d.announced[d.si] = true; emit({ type: 'station', index: d.si }) }
+    d.holding = d.rs >= end - 10 && !d.revealed[n - 1]
+    let a = (ROUTE.vmax - d.v) * 1.2 - 26 * brake
     if (d.holding) a -= 40
     d.v = Math.max(0, d.v + a * dt); d.rs += d.v * dt
     d.uv += (steer * 11 - d.uv) * (1 - Math.exp(-9 * dt)); d.ru = Math.max(-6, Math.min(6, d.ru + d.uv * dt))
     if (d.si < n && d.rs > stationPos(d.si) + 14) d.si++
-    if (d.rs >= routeLength(n)) g.endDetour()
+    if (d.rs >= end && d.revealed[n - 1]) g.endDetour()
   }
 
   // input: { steer: -1..1, throttle: 0..1, brake: 0..1, drift: bool }
@@ -109,6 +111,9 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
       g.choosing = shuffle(POWER_KEYS, rng).slice(0, 3); g.paused = true; emit({ type: 'powerChoice', options: g.choosing }) // 1 poder por misión nueva
       return
     }
+
+    const sf = forks[g.storyIdx] // episodio de la historia de la misión: 160 m después de resolver cada bifurcación
+    if (sf && g.s >= sf.start + len + 160) { emit({ type: 'story', mission: sf.mission, beat: sf.id % RACE.forksPerMission }); g.storyIdx++ }
 
     const f = forks[g.idx]
     if (f && !f.q && g.s >= f.start - RACE.armDist) pick(f)
