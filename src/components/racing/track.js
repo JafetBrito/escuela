@@ -1,12 +1,7 @@
 import * as THREE from 'three'
+import { centerX, centerY, yawAt } from './trackMath'
 
-// Matemática de la pista: una línea central que baja una colina serpenteando (como Tux Racer). El avance se mide por la
-// distancia `s` a lo largo de la pista y la posición lateral `u` (+ = derecha). La pista corre hacia -Z.
-export const SLOPE = 0.16 // pendiente (m de caída por m recorrido)
-export const centerX = (s) => 20 * Math.sin(s / 95) + 9 * Math.sin(s / 41 + 1.3)
-const dX = (s) => (20 / 95) * Math.cos(s / 95) + (9 / 41) * Math.cos(s / 41 + 1.3)
-export const centerY = (s) => -s * SLOPE
-export const yawAt = (s) => -Math.atan(dX(s)) // giro sobre Y: el frente del modelo es -Z
+export { SLOPE, centerX, centerY, slopeAt, yawAt, pitchAt } from './trackMath'
 
 // Punto del mundo en (s, u) y giro de la pista ahí
 export function frame(s, u = 0, lift = 0, out = { x: 0, y: 0, z: 0, yaw: 0 }) {

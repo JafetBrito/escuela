@@ -1,31 +1,23 @@
-# Oliver Racing (demo) — `/carrera`
+# Oliver Racing — `/carrera`
 
-Juego de carreras 3D cuesta abajo (inspirado en Tux Racer) donde **la clase que eliges define las preguntas, el vehículo y la pista**.
+Carrera 3D estilo Tux Racer donde **el mundo (profesión) que eliges define las preguntas, el vehículo y la pista**. Controlas tú: acelerar, frenar, girar y derrapar; el vehículo espera en el pórtico a que el locutor termine de leer la pregunta.
 
-## Reglas del demo
-- El vehículo baja la colina solo; tú giras izquierda/derecha (← → / A D, o botones en el celular).
-- Cada ~340 m hay una **bifurcación**: aparece la pregunta, un pórtico con dos carteles (A izquierda, B derecha) y un muro parte la pista en dos carriles. Al entrar a la zona dividida el carril queda fijado según el lado en que vas.
-- Carril correcto → turbo + el vehículo sube de nivel. Carril equivocado → trampa: choque, pierdes velocidad y se muestra la respuesta correcta.
-- 6 preguntas por carrera. Nivel del vehículo = aciertos (máx. 4). Velocidad máxima = `20 + 7.5 × nivel` m/s. (Prueba del motor: carrera perfecta ≈ 66 s, todo mal ≈ 127 s: acertar compensa.)
+## Fase 1 (hecha)
+- **Control manual** (W/↑ acelerar · S/↓ frenar · ←→/AD girar · Espacio/Shift derrapar). Si no aceleras te detienes. Modo **Auto** (por defecto en celular) acelera solo.
+- **Pista larga (~11.7 km) con subidas y bajadas** (`trackMath.js`): la pendiente suma o resta velocidad.
+- **Lectura completa antes de las opciones**: la pregunta se anuncia a 460 m; el vehículo se detiene en el pórtico (`holding`) hasta que la voz termina (`onEnd` → `game.reveal`); entonces aparecen las opciones y los carteles. Sin voz, se revelan tras un tiempo de lectura estimado.
+- **Derrape**: gira + derrapa a más de 14 m/s → más agarre y mini-turbo al soltar.
+- **Ventana de información tras cada respuesta** (la partida se pausa): explicación + dato curioso + cambio de nivel; si fallaste, **Ruta de repaso** (la respuesta correcta explicada y narrada) y luego "Volver a la pista".
+- Fondo de montañas, bloom, minimapa de la pista con tus aciertos, ambiente que cambia por misión.
+- **Idiomas**: interfaz en es/en/fr (`racingI18n.js`). El contenido (mundos, misiones, preguntas) puede traer `i18n: { en: {...}, fr: {...} }`; lo que falte cae a español. La voz usa el idioma actual.
+- Música y efectos sintetizados (Web Audio), locutor con `speechSynthesis`.
 
 ## Archivos
-| Archivo | Qué hace |
-|---|---|
-| `racingData.js` | Clases (paleta + 5 vehículos + banco de preguntas `{q, ok, bad}`), constantes de la pista (`RACE`) y `buildForks` (sortea preguntas y el lado correcto) |
-| `raceEngine.js` | Motor **sin React/three**: avance, carriles, evaluación de bifurcaciones, niveles. Probar con `node src/components/racing/raceEngine.test.mjs` |
-| `track.js` | Línea central de la pista (curvas + pendiente), `frame(s, u)` y cintas de malla que siguen la colina |
-| `trackBuild.js` | Arma la pista temática (terreno, asfalto, barreras, muro, pórticos, decorado por clase) y las texturas de los carteles |
-| `vehicles.js` | 11 vehículos procedurales low-poly (camilla, silla de ruedas, scooter, ambulancia, turbo, patineta, moto, coche, cohete, carreta, cuadriga) |
-| `RacingDemo.jsx` | Menú, escena, HUD, controles táctiles y pantalla de resultados |
+`racingData.js` (mundos, misiones, preguntas, constantes) · `raceEngine.js` (motor sin React, prueba: `node src/components/racing/raceEngine.test.mjs`) · `trackMath.js` / `track.js` / `trackBuild.js` (pista) · `vehicles.js` · `racingAudio.js` · `racingVoice.js` · `racingI18n.js` · `RacingDemo.jsx` (menú, escena, HUD).
 
-## Cómo agregar una clase / preguntas
-1. En `CLASSES` (`racingData.js`) agrega la clase: `sky/fog/ground/ground2/road/accent`, `emblem` (`cross`, `code` u `omega`; para uno nuevo agrega su decorado en `trackBuild.js` y su distintivo en `vehicles.js`), 5 `tiers` (usa los `kind` existentes) y ≥ 6 preguntas.
-2. Para preguntas de más de 2 opciones habría que partir en 3 carriles (hoy son 2).
-
-## Lo que NO está en el demo (ideas para definir)
-- **Programar tu coche** (clase Programación): entre carreras, un mini-reto de código que cambia un parámetro real del vehículo (ej. `acceleration = 12`, un `for` que reparte turbo). Cada clase tendría su propia "mejora" (Medicina: armar el botiquín, Filosofía: argumentar).
-- Preguntas desde la base de cursos reales (hoy es un banco fijo en el código) y por nivel de dificultad.
-- Progreso guardado en la cuenta (vehículos desbloqueados, récords), XP/oro como recompensa y ranking de amigos.
-- Pistas con más temática por clase (hospital, servidores, ágora), obstáculos, derrapes y multijugador.
-- Trampas visibles (el carril malo cae a un foso, se ve el reciclaje de la pista).
-- Textos en inglés/francés (hoy solo español).
+## Plan de fases (pedido del usuario, 2026-11-22)
+**Fase 2 — Progreso y garaje.** 14 vehículos por mundo (los 2 últimos: avión y nave espacial con turbo; el tramo final se vuelve vuelo). Perfil guardado en la cuenta (nivel, XP, vehículos, récords). Menú de garaje: ver tu vehículo, nivel y progreso; **personalizar** (colores, piezas, calcomanías según los gustos de cada profesión). Poderes/mejoras al avanzar (escudo, 50/50, tiempo lento, salto extra...), 1 por misión.
+**Fase 3 — Contenido por niveles.** Mundos con varios niveles/misiones (cada uno con una historia que se va aprendiendo), ≥ 30 preguntas por nivel, traducciones EN/FR. **Editor de preguntas/misiones** con importar/exportar JSON-CSV (y generación con IA del usuario).
+**Fase 4 — Modos y menús.** Selector de personaje y de nivel; **modo libre** (solo rodar y probar); competir contra **IA** (bots) y contra otra persona (Supabase Realtime).
+**Fase 5 — Pistas y arte.** Más variación procedural (saltos, rampas, túneles, tramos de vuelo), mejores gráficos y partículas, más música por mundo, **modelos 3D del campus** como decorado grande, y **editor de pistas/modelos** como el de mapas (`/vr/editor`).
+**Fase 6 — Ruta especial real.** Hoy la "ruta de repaso" es una ventana; la versión final sería un desvío físico en la pista que cuenta la respuesta y vuelve a la pista principal.
