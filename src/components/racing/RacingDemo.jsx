@@ -1,25 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerformanceMonitor } from '@react-three/drei'
-import { EffectComposer, Bloom, Vignette, ToneMapping } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Vignette, ToneMapping, ChromaticAberration } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
-import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
-import { WORLD_LIST, RACE, FORKS, POWERS, MAX_TIER, FLY_FROM, levelView } from './racingData'
+import { WORLD_LIST, RACE, FORKS, POWERS, MAX_TIER, FLY_FROM, levelView, tierSpeed } from './racingData'
 import { useRacingContentStore, loadRemoteRacing } from './racingContent'
 import { createRace, mulberry } from './raceEngine'
-import { frame, centerX, pitchAt } from './track'
+import { frame, centerX, centerZ, pitchAt } from './track'
+import { currentTrack } from './trackMath'
 import { buildTrack, bannerTexture } from './trackBuild'
 import { buildRoute, stationTexture, routePoint, ROUTE_PAL } from './routeBuild'
 import { buildVehicle, CHARACTERS } from './vehicles'
-import { SkyDome, Particles, Flyers } from './RaceFx'
-import { CollapseLanes, EnergyBurst, Rivals } from './RaceEvents'
+import { SkyDome, Particles, Flyers, warpOf } from './RaceFx'
+import { CollapseLanes, EnergyBurst, Rivals, Pickups } from './RaceEvents'
 import { joinRoom, newCode, netAvailable, applyState } from './racingNet'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { Mesher } from '../vr/campus/mesher'
 import RacingGarage from './RacingGarage'
-import { useRacingStore, levelOfXp, levelUnlocked } from '../../stores/useRacingStore'
+import RacingMenu from './RacingMenu'
+import { useRacingStore, levelUnlocked } from '../../stores/useRacingStore'
 import { initAudio, startMusic, stopMusic, setMusicTier, setMusicOn, duck, sfx, loadPrefs, savePrefs } from './racingAudio'
 import { speak, stopVoice, setVoiceOn, onDuck, voiceSupported, voiceOn, LINES } from './racingVoice'
 import { tt, speechLang, worldText, missionText, tierName, qText, okText, factText, optText, deepText, missionStory } from './racingI18n'
@@ -98,6 +99,7 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
   const model = useMemo(() => buildVehicle(world.tiers[tier].kind, world.color, world.emblem, run.custom), [world, tier, run.custom])
   const vehicle = useRef(), shadow = useRef(), bg = useRef(), fog = useRef(), hemi = useRef(), dir = useRef()
   const sunTarget = useMemo(() => new THREE.Object3D(), [])
+  const bloomRef = useRef(), chromaRef = useRef(), vigRef = useRef()
   const netAcc = useRef(0), shown = useRef(game.tier), shownSign = useRef(-1), acc = useRef(0), first = useRef(true), sent = useRef(false), roll = useRef(0), wasDetour = useRef(false)
   const pal0 = world.missions[0].pal
 
@@ -118,7 +120,7 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       if (v) { v.position.set(R1.x, 0.1, R1.z); v.rotation.set(0, -d.uv * 0.03, -d.uv * 0.025) }
       routePoint(d.rs - 13, d.ru * 0.7, R1); routePoint(d.rs + 16, d.ru * 0.9, R2)
       if (!wasDetour.current) { cam.position.set(R1.x, 5.4, R1.z); wasDetour.current = true } else cam.position.lerp(V3.set(R1.x, 5.4, R1.z), 1 - Math.exp(-7 * dt))
-      cam.lookAt(R2.x, 1.5, R2.z); cam.fov = 60 + d.v * 0.3; cam.updateProjectionMatrix()
+      cam.lookAt(R2.x, 1.5, R2.z); cam.fov = 60 + Math.min(32, d.v * 0.11); cam.updateProjectionMatrix()
       if (shadow.current) shadow.current.visible = false
     } else {
       if (wasDetour.current) { wasDetour.current = false; first.current = true }
@@ -132,18 +134,24 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
         v.rotation.set(pitchAt(game.s), T1.yaw - game.uv * 0.03 + spin - roll.current, -game.uv * 0.025 - roll.current * 0.25 + bank)
       }
       if (shadow.current) { shadow.current.visible = alt > 0.6; shadow.current.position.set(T1.x, T1.y + 0.08, T1.z); shadow.current.scale.setScalar(1 + alt * 0.04) }
-      frame(game.s - 13, game.u * 0.7, 5.4 + alt * 0.7, T2); frame(game.s + 16, game.u * 0.9, 1.5 + alt * 0.4, T3)
-      if (first.current) { cam.position.set(T2.x, T2.y, T2.z); first.current = false } else cam.position.lerp(V3.set(T2.x, T2.y, T2.z), 1 - Math.exp(-7 * dt))
+      const sp = game.v, back = 13 + Math.min(11, sp * 0.035), ahead = 16 + Math.min(40, sp * 0.1) // a más velocidad, la cámara se aleja y mira más lejos
+      frame(game.s - back, game.u * 0.7, 5.4 + alt * 0.7 + Math.min(2, sp * 0.006), T2); frame(game.s + ahead, game.u * 0.9, 1.5 + alt * 0.4, T3)
+      if (first.current) { cam.position.set(T2.x, T2.y, T2.z); first.current = false } else cam.position.lerp(V3.set(T2.x, T2.y, T2.z), 1 - Math.exp(-(7 + sp * 0.12) * dt))
       if (game.crash > 0) cam.position.add(V3.set((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.4, 0))
       cam.lookAt(T3.x, T3.y, T3.z)
-      cam.fov = 60 + game.v * 0.3 + Math.min(1, game.boost) * 13 + alt * 0.6; cam.updateProjectionMatrix()
+      cam.fov = 60 + Math.min(32, game.v * 0.11) + Math.min(1, game.boost) * 13 + alt * 0.6; cam.updateProjectionMatrix()
     }
 
     if (dir.current && v) { dir.current.position.set(v.position.x + 55, v.position.y + 90, v.position.z + 35); sunTarget.position.copy(v.position); sunTarget.updateMatrixWorld() } // las sombras cubren solo el entorno del vehículo
     // el ambiente (cielo, niebla, luz) se funde hacia el de la misión (o el de la ruta de repaso)
     const pal = d ? ROUTE_PAL : world.missions[game.mission].pal, k = 1 - Math.exp(-1.6 * dt)
-    if (bg.current) bg.current.lerp(COL.set(pal.sky), k)
-    if (fog.current) fog.current.color.lerp(COL.set(pal.fog), k)
+    const w = d ? 0 : warpOf(game.v)
+    if (bg.current) bg.current.lerp(COL.set(pal.sky).lerp(WARP_BG, w), k)
+    if (bloomRef.current) bloomRef.current.intensity = 0.8 + w * 1.4 + Math.min(1, game.boost) * 0.4
+    if (vigRef.current) vigRef.current.darkness = 0.55 + w * 0.4
+    if (chromaRef.current) chromaRef.current.offset.set(0.0004 + w * 0.0026 + Math.min(1, game.boost) * 0.001, 0.0004 + w * 0.0026)
+    if (w > 0.2 && !d) cam.position.add(V3.set((Math.random() - 0.5) * 0.12 * w, (Math.random() - 0.5) * 0.1 * w, 0)) // vibración del vehículo a toda velocidad
+    if (fog.current) { fog.current.color.lerp(COL.set(pal.fog).lerp(WARP_FOG, w * 0.8), k); const sv = d ? 60 : game.v; fog.current.near = 70 + sv * 0.5; fog.current.far = 360 + sv * 2.6 } // la lejanía crece con la velocidad
     const lum = COL.set(pal.sky).getHSL(HSL).l
     if (hemi.current) hemi.current.intensity += ((d ? 1.4 : 0.5 + lum * 0.75) - hemi.current.intensity) * k
     if (dir.current) dir.current.intensity += ((d ? 1.2 : 0.45 + lum * 1.5) - dir.current.intensity) * k
@@ -158,7 +166,7 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       const f = game.question(), cur = game.forks[game.idx]
       const sid = !d && cur && cur.q && cur.revealed && game.s < cur.start + RACE.forkLen + 20 ? cur.id : -1
       if (sid !== shownSign.current) { shownSign.current = sid; setSign(sid >= 0 ? { id: sid, opts: cur.q.opts.map((_, i) => optText(lang, cur.q, i)) } : null) }
-      onHud({ speed: d ? d.v : game.v, tier: game.tier, correct: game.correct, wrong: game.wrong, score: game.score, s: game.s, L: game.L, q: f, qIdx: game.idx, dist: game.forkDistance(), msg: game.msg, time: game.time, boost: game.boost > 0, fxOk: game.fxOk, mission: game.mission, holding: d ? d.holding : game.holding, drifting: game.drifting, driftT: game.driftT, results: game.results.slice(), powers: game.powers.slice(), hintFor: game.hintFor, alt: game.alt, startIn: game.startIn, rank: game.rivals.length ? game.rank() : 0, board: game.rivals.length ? game.board() : null, detour: d ? { si: d.si, n: d.stations.length, holding: d.holding } : null })
+      onHud({ speed: d ? d.v : game.v, tier: game.tier, correct: game.correct, wrong: game.wrong, score: game.score, s: game.s, L: game.L, q: f, qIdx: game.idx, dist: game.forkDistance(), msg: game.msg, time: game.time, boost: game.boost > 0, fxOk: game.fxOk, mission: game.mission, holding: d ? d.holding : game.holding, drifting: game.drifting, driftT: game.driftT, results: game.results.slice(), powers: game.powers.slice(), hintFor: game.hintFor, alt: game.alt, vmax: tierSpeed(game.tier) * 1.45, startIn: game.startIn, rank: game.rivals.length ? game.rank() : 0, board: game.rivals.length ? game.board() : null, detour: d ? { si: d.si, n: d.stations.length, holding: d.holding } : null })
     }
     if (game.finished && game.finishT > 1.8 && !sent.current) { sent.current = true; onFinish({ correct: game.correct, wrong: game.wrong, score: game.score, time: game.time, tier: game.tier, maxTier: game.maxTier, rank: game.rivals.length ? game.rank() : 0, total: game.rivals.length + 1 }) }
   })
@@ -179,6 +187,7 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
       {track.glowChunks.map((g, i) => <mesh key={`e${i}`} geometry={g} material={GLOW} />)}
       <CollapseLanes game={game} segs={track.forkSegs} material={SOLID} />
       <EnergyBurst game={game} />
+      <Pickups game={game} world={world} />
       {game.rivals.length > 0 && <Rivals game={game} world={world} solid={SOLID} glow={GLOW} />}
       <Particles game={game} world={world} />
       <Flyers game={game} world={world} />
@@ -195,8 +204,9 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
         {model.glow && <mesh geometry={model.glow} material={GLOW} />}
       </group>
       <EffectComposer multisampling={0}>
-        <Bloom intensity={0.8} luminanceThreshold={0.7} luminanceSmoothing={0.25} mipmapBlur />
-        <Vignette offset={0.3} darkness={0.55} />
+        <Bloom ref={(e) => { bloomRef.current = e }} intensity={0.8} luminanceThreshold={0.7} luminanceSmoothing={0.25} mipmapBlur />
+        <ChromaticAberration ref={(e) => { chromaRef.current = e }} offset={CHROMA0} radialModulation modulationOffset={0.3} />
+        <Vignette ref={(e) => { vigRef.current = e }} offset={0.3} darkness={0.55} />
         <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
       </EffectComposer>
     </>
@@ -206,10 +216,23 @@ function RaceScene({ run, input, lang, route, backText, onHud, onEvent, onFinish
 const newSeed = () => Math.floor(Math.random() * 4294967295)
 const AI_BOTS = [{ name: 'Rayo', skill: 0.55, color: '#f59e0b' }, { name: 'Turbo', skill: 0.7, color: '#ef4444' }, { name: 'Nube', skill: 0.85, color: '#a78bfa' }]
 const CHAR_IDS = CHARACTERS.map((c) => c.id)
+const WARP_BG = new THREE.Color('#14052e'), WARP_FOG = new THREE.Color('#5b1a8c'), CHROMA0 = new THREE.Vector2(0.0004, 0.0004)
+// Líneas de velocidad en pantalla: rayos que salen del centro y giran, más intensos con la velocidad (y con el turbo)
+function SpeedFx({ speed, boost }) {
+  const k = Math.max(0, Math.min(1, (speed * 3.6 - 220) / 800)) + (boost ? 0.3 : 0)
+  if (k < 0.03) return null
+  const mask = 'radial-gradient(circle, transparent 30%, #000 75%)'
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ opacity: Math.min(1, k) }}>
+      <style>{'@keyframes spinlines{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(7deg)}}'}</style>
+      <div className="absolute left-1/2 top-1/2 h-[230%] w-[230%]" style={{ background: 'repeating-conic-gradient(from 0deg, transparent 0deg 3deg, rgba(255,255,255,.4) 3deg 3.5deg, transparent 3.5deg 7deg)', WebkitMaskImage: mask, maskImage: mask, animation: `spinlines ${Math.max(0.25, 1.3 - k).toFixed(2)}s linear infinite` }} />
+    </div>
+  )
+}
 const kmh = (v) => Math.round(v * 3.6)
 // Velocímetro de arco con aguja: se enciende en ámbar al derrapar y en amarillo con turbo
-function Speedo({ speed, boost, drifting, color }) {
-  const max = 360, v = Math.min(max, kmh(speed)), ang = Math.PI * (1 - v / max) // 180° → 0°
+function Speedo({ speed, boost, drifting, color, vmax }) {
+  const need = kmh(vmax || 0), max = need > 1800 ? 3600 : need > 900 ? 1800 : need > 450 ? 900 : 450, v = Math.min(max, kmh(speed)), ang = Math.PI * (1 - v / max) // 180° → 0°
   const pt = (a, r) => `${(100 + Math.cos(a) * r).toFixed(1)},${(100 - Math.sin(a) * r).toFixed(1)}`
   const arc = (a0, a1, r) => `M ${pt(a0, r)} A ${r} ${r} 0 0 1 ${pt(a1, r)}`
   const live = boost ? '#fde047' : drifting ? '#fb923c' : color
@@ -217,7 +240,7 @@ function Speedo({ speed, boost, drifting, color }) {
     <svg viewBox="0 0 200 118" className="h-28 w-48 drop-shadow-[0_0_8px_rgba(0,0,0,0.6)]">
       <path d={arc(Math.PI, 0, 86)} fill="none" stroke="#ffffff22" strokeWidth="11" strokeLinecap="round" />
       <path d={arc(Math.PI, ang, 86)} fill="none" stroke={live} strokeWidth="11" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 6px ${live})` }} />
-      {[0, 60, 120, 180, 240, 300, 360].map((t) => { const a = Math.PI * (1 - t / max); return <g key={t}><line x1={pt(a, 70).split(',')[0]} y1={pt(a, 70).split(',')[1]} x2={pt(a, 76).split(',')[0]} y2={pt(a, 76).split(',')[1]} stroke="#ffffff88" strokeWidth="2" /></g> })}
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => { const t = (i * max) / 6, a = Math.PI * (1 - t / max); return <g key={t}><line x1={pt(a, 70).split(',')[0]} y1={pt(a, 70).split(',')[1]} x2={pt(a, 76).split(',')[0]} y2={pt(a, 76).split(',')[1]} stroke="#ffffff88" strokeWidth="2" /></g> })}
       <line x1="100" y1="100" x2={pt(ang, 66).split(',')[0]} y2={pt(ang, 66).split(',')[1]} stroke="#fff" strokeWidth="3" strokeLinecap="round" />
       <circle cx="100" cy="100" r="6" fill={live} />
       <text x="100" y="84" textAnchor="middle" fontSize="30" fontWeight="900" fill="#fff" fontFamily="Arial">{kmh(speed)}</text>
@@ -229,15 +252,23 @@ const fmtTime = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padSt
 
 // Minimapa: la pista vista desde arriba con las bifurcaciones (verde = acertada, roja = fallada) y tu posición
 function Minimap({ game, hud, color }) {
-  const L = game.L, K = 60
-  const path = useMemo(() => { const pts = []; for (let s = 0; s <= L; s += 90) pts.push(`${(centerX(s) * 1.2).toFixed(1)},${(s / K).toFixed(1)}`); return pts.join(' ') }, [L])
-  const s = hud?.s ?? 0
+  const L = game.L, K = 60, tid = currentTrack()
+  // la pista curva se encaja en el cuadro: x centrada y escalada si se sale, y = distancia recorrida hacia delante
+  const map = useMemo(() => {
+    let lo = Infinity, hi = -Infinity
+    for (let s = 0; s <= L; s += 90) { const x = centerX(s); lo = Math.min(lo, x); hi = Math.max(hi, x) }
+    const kx = Math.min(1.2, 78 / Math.max(1, hi - lo)), mid = (lo + hi) / 2
+    const pt = (s) => ({ x: (centerX(s) - mid) * kx, y: -centerZ(s) / K })
+    const pts = []; for (let s = 0; s <= L; s += 90) { const p = pt(s); pts.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`) }
+    return { pt, path: pts.join(' ') }
+  }, [L, tid]) // eslint-disable-line react-hooks/exhaustive-deps -- tid = qué pista está cargada
+  const path = map.path, me = map.pt(hud?.s ?? 0)
   return (
     <svg viewBox={`-45 -4 90 ${L / K + 8}`} preserveAspectRatio="none" className="h-44 w-14 rounded-lg bg-black/45 p-1 backdrop-blur">
       <polyline points={path} fill="none" stroke="#ffffff55" strokeWidth="3" strokeLinejoin="round" />
       <polyline points={path} fill="none" stroke={color} strokeWidth="1.2" strokeDasharray="0.1 4" strokeLinecap="round" />
-      {game.forks.map((f) => <circle key={f.id} cx={centerX(f.start) * 1.2} cy={f.start / K} r="3.4" fill={hud?.results?.[f.id] === true ? '#22c55e' : hud?.results?.[f.id] === false ? '#ef4444' : '#ffffffaa'} />)}
-      <circle cx={centerX(s) * 1.2} cy={s / K} r="5" fill={color} stroke="#fff" strokeWidth="1.6" />
+      {game.forks.map((f) => <circle key={f.id} cx={map.pt(f.start).x} cy={map.pt(f.start).y} r="3.4" fill={hud?.results?.[f.id] === true ? '#22c55e' : hud?.results?.[f.id] === false ? '#ef4444' : '#ffffffaa'} />)}
+      <circle cx={me.x} cy={me.y} r="5" fill={color} stroke="#fff" strokeWidth="1.6" />
     </svg>
   )
 }
@@ -257,6 +288,7 @@ export default function RacingDemo() {
   const [route, setRoute] = useState(null) // ruta de repaso activa: { id, texts }
   const [levelIdx, setLevelIdx] = useState(0)
   const [mode, setMode] = useState('race') // race | free | ai | online
+  const [trackId, setTrackId] = useState('classic') // forma de la pista (trackMath.TRACKS)
   const [room, setRoom] = useState(null) // en línea: { code, players }
   const [codeIn, setCodeIn] = useState('')
   const [garageFree, setGarageFree] = useState(false)
@@ -280,11 +312,12 @@ export default function RacingDemo() {
     const tier = startTier ?? Math.min(pr.startTier, pr.bestTier)
     initAudio(); setMusicOn(prefs.music); setVoiceOn(prefs.voice); onDuck(duck)
     const m = opts.mode || 'race', seed = opts.seed ?? newSeed()
-    const ro = { auto, startTier: tier }
+    const ro = { auto, startTier: tier, track: opts.track || trackId }
     if (m === 'free') ro.free = true
     else if (m === 'ai') Object.assign(ro, { rng: mulberry(seed), fixed: true, countdown: 3, bots: AI_BOTS.map((b, i) => ({ ...b, char: CHAR_IDS[(i * 2 + seed) % CHAR_IDS.length] })) })
     else if (m === 'online') Object.assign(ro, { rng: mulberry(seed), fixed: true, countdown: 3, rivals: (opts.players || []).filter((p) => p.id !== myId) })
-    const next = { id: uid(), mode: m, world, game: createRace(world, ro), net: m === 'online' ? netRef.current : null, myId: myId, custom: { color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory, char: pr.custom.char } }
+    const next = { id: uid(), mode: m, world, game: createRace(world, ro), net: m === 'online' ? netRef.current : null, myId: myId, name: pr.custom.name || '', custom: { color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory, char: pr.custom.char, wheels: pr.custom.wheels } }
+    next.game.trail = pr.custom.trail
     runRef.current = next
     startMusic(world.music); setMusicTier(tier)
     setRun(next); setHud(null); setResult(null); setCard(null); setToast(null); setPop(null); setPick(null); setRoute(null); setNarr(-1); setPhase('race')
@@ -293,18 +326,18 @@ export default function RacingDemo() {
   const leaveRoom = () => { netRef.current?.leave(); netRef.current = null; setRoom(null) }
   const enterRoom = (code) => {
     leaveRoom()
-    const pr = useRacingStore.getState().profile(worldId), me = { id: myId, name: authProfile?.display_name || 'Piloto', color: pr.custom.color || WORLD_LIST.find((w) => w.id === worldId).color, char: pr.custom.char }
+    const pr = useRacingStore.getState().profile(worldId), me = { id: myId, name: pr.custom.name || authProfile?.display_name || 'Piloto', color: pr.custom.color || WORLD_LIST.find((w) => w.id === worldId).color, char: pr.custom.char }
     netRef.current = joinRoom(code, me, {
       onPlayers: (players) => setRoom({ code, players }),
-      onStart: (m) => startRef.current(m.worldId, null, m.level, { mode: 'online', seed: m.seed, players: m.players }),
+      onStart: (m) => startRef.current(m.worldId, null, m.level, { mode: 'online', seed: m.seed, players: m.players, track: m.track }),
       onState: (m) => { const g = runRef.current?.game; if (g && runRef.current.net) applyState(g, m) },
     })
     setRoom({ code, players: [] })
   }
   const startOnline = () => {
     const players = (room?.players || []).map(({ id, name, color, char }) => ({ id, name, color, char })), seed = newSeed()
-    netRef.current.sendStart({ seed, worldId, level: levelIdx, players })
-    start(worldId, null, levelIdx, { mode: 'online', seed, players })
+    netRef.current.sendStart({ seed, worldId, level: levelIdx, players, track: trackId })
+    start(worldId, null, levelIdx, { mode: 'online', seed, players, track: trackId })
   }
   useEffect(() => () => { netRef.current?.leave() }, [])
   const exit = () => { stopAll(); input.current = { left: false, right: false, gas: false, brake: false, drift: false }; setPop(null); setPick(null); setRoute(null); routeQ.current = []; routeSpeaking.current = false; setPhase('menu') }
@@ -312,7 +345,7 @@ export default function RacingDemo() {
   const toggle = (k) => {
     const n = { ...prefs, [k]: !prefs[k] }
     setPrefs(n); savePrefs(n)
-    if (k === 'music') setMusicOn(n.music); else setVoiceOn(n.voice)
+    if (k === 'music') setMusicOn(n.music); else if (k === 'voice') setVoiceOn(n.voice); else if (k === 'story' && !n.story) setCard(null)
   }
   const toggleAuto = () => { const v = !auto; setAuto(v); if (runRef.current) runRef.current.game.auto = v }
   const closePop = () => { if (runRef.current) runRef.current.game.paused = false; stopVoice(); setPop(null) }
@@ -362,7 +395,8 @@ export default function RacingDemo() {
       // se lee la pregunta COMPLETA y solo entonces se revelan las opciones (el vehículo espera en el pórtico)
       const f = e.fork, text = `${T('question')} ${f.id + 1}. ${qText(lang, f.q)}`
       const reveal = () => game.reveal(f.id)
-      const spoke = voiceOn() && speak(text, { lang: sl, onEnd: reveal })
+      setCard((c) => (c && String(c.key).startsWith('s') ? null : c)) // si estaba la historia en pantalla, se quita
+      const spoke = voiceOn() && speak(text, { now: true, lang: sl, onEnd: reveal }) // `now`: corta la historia y lee la pregunta ya
       setTimeout(reveal, spoke ? 40000 : text.split(' ').length * 330 + 2500)
     } else if (e.type === 'jump' || e.type === 'driftboost' || e.type === 'power') {
       sfx('jump')
@@ -393,7 +427,7 @@ export default function RacingDemo() {
       stopVoice(); setRoute(null)
     } else if (e.type === 'story') {
       const m = world.missions[e.mission], text = missionStory(lang, m, e.beat)
-      if (text) { setCard({ key: `s${uid()}`, img: m.img, title: `📖 ${T('story')} · ${missionText(lang, m, 'name')} (${e.beat + 1}/4)`, text, ttl: 18 }); speak(text, { lang: sl }) }
+      if (text && prefs.story && !game.rivals.length) { setCard({ key: `s${uid()}`, img: m.img, title: `📖 ${T('story')} · ${missionText(lang, m, 'name')} (${e.beat + 1}/4)`, text, ttl: 10 }); speak(text, { lang: sl }) } // sin historia contra rivales ni si la apagaste
     } else if (e.type === 'finish') {
       sfx('finish')
     }
@@ -430,88 +464,22 @@ export default function RacingDemo() {
     <div className="flex gap-1.5">
       <button className="pointer-events-auto rounded-lg bg-black/55 px-2.5 py-1.5 text-sm" title={T('music')} onClick={() => toggle('music')}>{prefs.music ? '🎵' : '🔇'}</button>
       {voiceSupported() && <button className="pointer-events-auto rounded-lg bg-black/55 px-2.5 py-1.5 text-sm" title={T('voice')} onClick={() => toggle('voice')}>{prefs.voice ? '🗣️' : '🤐'}</button>}
+      <button className="pointer-events-auto rounded-lg bg-black/55 px-2.5 py-1.5 text-sm" title={T('story')} onClick={() => toggle('story')}>{prefs.story ? '📖' : '🚫'}</button>
       <button className="pointer-events-auto rounded-lg bg-black/55 px-2.5 py-1.5 text-xs font-bold" onClick={toggleAuto}>{auto ? `🤖 ${T('auto')}` : `🕹️ ${T('manual')}`}</button>
     </div>
   )
 
-  if (phase === 'garage') return <RacingGarage world={wsel} lang={lang} unlockAll={garageFree} onBack={() => { setGarageFree(false); setPhase('menu') }} onStart={(t) => { const f = garageFree; setGarageFree(false); start(worldId, t, levelIdx, f ? { mode: 'free' } : {}) }} />
+  if (phase === 'garage') return <RacingGarage world={wsel} lang={lang} unlockAll={garageFree} onBack={() => { setGarageFree(false); setPhase('menu') }} onStart={(t) => { const f = garageFree; setGarageFree(false); start(worldId, t, levelIdx, { mode: f ? 'free' : mode === 'online' ? 'race' : mode }) }} />
 
   if (phase === 'menu') {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0b1020] to-[#1a1033] p-4 text-white sm:p-8">
-        <div className="mx-auto max-w-4xl">
-          <Link to="/dashboard" className="text-xs opacity-60">{T('back')}</Link>
-          <h1 className="mt-2 text-3xl font-black">🏁 Oliver Racing <span className="text-sm font-semibold text-amber-300">{T('demo')}</span></h1>
-          <p className="mt-1 max-w-2xl text-sm opacity-75">{T('pick')}</p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {WORLD_LIST.map((c) => {
-              const pr = racingWorlds[c.id] || {}
-              return (
-                <button key={c.id} onClick={() => selectWorld(c.id)} className={`rounded-2xl border-2 p-4 text-left transition ${worldId === c.id ? 'scale-[1.02] bg-white/10' : 'bg-white/5 opacity-80 hover:opacity-100'}`} style={{ borderColor: worldId === c.id ? c.color : 'transparent' }}>
-                  <div className="flex items-center justify-between"><span className="text-3xl">{c.icon}</span><span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-bold">{T('level')} {levelOfXp(pr.xp || 0)} · {(pr.bestTier || 0) + 1}/14 🏎️</span></div>
-                  <div className="mt-1 text-lg font-extrabold" style={{ color: c.color }}>{worldText(lang, c, 'name')}</div>
-                  <div className="text-xs opacity-70">{worldText(lang, c, 'tagline')}</div>
-                  <ol className="mt-3 space-y-0.5 text-[11px] opacity-80">{c.levels[0].missions.map((m, i) => <li key={m.name}>{m.img} {T('mission')} {i + 1}: {missionText(lang, m, 'name')}</li>)}</ol>
-                  <div className="mt-2 text-[10px] opacity-50">{c.levels.reduce((n, lv) => n + lv.questions.length, 0)} {T('questionsN')} · {c.levels.length} {T('levelsTitle').toLowerCase()} · 14 {T('vehicles')}</div>
-                </button>
-              )
-            })}
-          </div>
-          <div className="mt-5">
-            <div className="text-sm font-extrabold">{T('levelsTitle')} · {worldText(lang, wsel, 'name')}</div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-3">
-              {wsel.levels.map((lv, i) => {
-                const prw = racingWorlds[wsel.id] || {}, open = levelUnlocked(prw, i, wsel.levels), stars = prw.levels?.[lv.id]?.stars || 0
-                return (
-                  <button key={lv.id + i} disabled={!open} onClick={() => setLevelIdx(i)} className={`rounded-xl border-2 p-3 text-left transition ${levelIdx === i ? 'bg-white/10' : 'bg-white/5'} ${open ? 'hover:bg-white/10' : 'cursor-not-allowed opacity-45'}`} style={{ borderColor: levelIdx === i ? wsel.color : 'transparent' }}>
-                    <div className="flex items-center justify-between"><span className="text-sm font-black">{open ? '' : '🔒 '}{lv.name}</span><span className="text-xs text-amber-300">{'⭐'.repeat(stars)}{'☆'.repeat(3 - stars)}</span></div>
-                    <div className="mt-0.5 text-[11px] opacity-70">{open ? lv.blurb : T('lockedLevel')}</div>
-                    <div className="mt-1 text-[10px] opacity-50">{lv.questions.length} {T('questionsLevel')}</div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div className="mt-5">
-            <div className="text-sm font-extrabold">{T('modeTitle')}</div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-4">
-              {[['race', '🏁'], ['free', '🛣️'], ['ai', '🤖'], ['online', '🌐']].map(([k, ic]) => (
-                <button key={k} onClick={() => setMode(k)} className={`rounded-xl border-2 p-3 text-left transition ${mode === k ? 'bg-white/10' : 'bg-white/5 opacity-80 hover:opacity-100'}`} style={{ borderColor: mode === k ? wsel.color : 'transparent' }}>
-                  <div className="text-sm font-black">{ic} {T(`mode${k[0].toUpperCase()}${k.slice(1)}`)}</div>
-                  <div className="mt-0.5 text-[11px] opacity-70">{T(`mode${k[0].toUpperCase()}${k.slice(1)}D`)}</div>
-                </button>
-              ))}
-            </div>
-            {mode === 'online' && (
-              <div className="mt-3 rounded-xl bg-white/5 p-3 text-sm">
-                {!netAvailable() ? <div className="opacity-70">{T('noRealtime')}</div> : !room ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button className={`${btn} bg-emerald-400 text-black`} onClick={() => enterRoom(newCode())}>{T('createRoom')}</button>
-                    <input value={codeIn} onChange={(e) => setCodeIn(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))} placeholder={T('roomCode')} className="w-32 rounded-lg bg-black/40 px-3 py-2 text-center text-sm font-black uppercase tracking-widest" />
-                    <button disabled={codeIn.length !== 4} className={`${btn} bg-white/15 disabled:opacity-40`} onClick={() => enterRoom(codeIn)}>{T('joinRoom')}</button>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-3"><span className="opacity-60">{T('roomCode')}</span><span className="rounded-lg bg-black/40 px-3 py-1 text-2xl font-black tracking-[0.3em]">{room.code}</span><button className="ml-auto rounded-lg bg-white/10 px-2.5 py-1 text-xs" onClick={leaveRoom}>{T('leaveRoom')}</button></div>
-                    <div className="mt-2 text-xs opacity-70">{T('playersIn')} ({room.players.length})</div>
-                    <div className="mt-1 flex flex-wrap gap-1.5">{room.players.map((p, i) => <span key={p.id} className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: `${p.color}55` }}>{i === 0 ? '👑 ' : ''}{p.name}{p.id === myId ? ` (${T('you')})` : ''}</span>)}</div>
-                    {room.players[0]?.id === myId
-                      ? <div className="mt-3 flex items-center gap-3"><button disabled={room.players.length < 2} className={`${btn} bg-amber-400 text-black disabled:opacity-40`} onClick={startOnline}>{T('startOnline')} →</button><span className="text-xs opacity-60">{room.players.length < 2 ? T('needTwo') : T('youHost')}</span></div>
-                      : <div className="mt-3 text-xs opacity-70">{T('waitHost')}</div>}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            {mode !== 'online' && <button className={`${btn} bg-amber-400 text-black`} onClick={() => (mode === 'free' ? (setGarageFree(true), setPhase('garage')) : start(worldId, null, levelIdx, { mode }))}>{mode === 'free' ? T('freeGo') : mode === 'ai' ? T('aiGo') : `${T('go')} ${worldText(lang, wsel, 'name')}`} →</button>}
-            <button className={`${btn} bg-white/15`} onClick={() => setPhase('garage')}>🔧 {T('garage')}</button>
-            {toggles}
-          </div>
-          <p className="mt-3 max-w-2xl text-xs opacity-60">{T('controls')}</p>
-        </div>
-      </div>
-    )
+    const c = {
+      lang, worldId, wsel, levelIdx, mode, trackId, room, codeIn, myId, racingWorlds, btn, toggles,
+      selectWorld, setLevelIdx, setMode, setTrackId, setCodeIn, netAvailable: netAvailable(),
+      createRoom: () => enterRoom(newCode()), enterRoom, leaveRoom, startOnline,
+      play: () => (mode === 'free' ? (setGarageFree(true), setPhase('garage')) : start(worldId, null, levelIdx, { mode })),
+      openGarage: () => { setGarageFree(mode === 'free'); setPhase('garage') },
+    }
+    return <RacingMenu c={c} />
   }
 
   const q = hud?.q, game = run?.game
@@ -520,7 +488,7 @@ export default function RacingDemo() {
   const inRoute = !!hud?.detour
   const canJump = !inRoute && q && q.revealed && !q.jumped && (hud?.dist ?? 0) > -RACE.forkLen + 34
   const msg = hud?.msg
-  const msgText = !msg ? '' : msg.kind === 'up' ? `⭐ ${T('tierUp')}: ${tierName(lang, world, msg.tier)}` : msg.kind === 'ok' ? `✔ ${T('correct')}` : msg.kind === 'shield' ? `🛡️ ${T('shieldUsed')}` : msg.kind === 'bad' ? (msg.tier != null ? `✘ ${T('tierDown')}: ${tierName(lang, world, msg.tier)}` : '✘') : `🏁 ${T('done')}`
+  const msgText = !msg ? '' : msg.kind === 'up' ? `⭐ ${T('tierUp')}: ${tierName(lang, world, msg.tier)}` : msg.kind === 'ok' ? `✔ ${T('correct')}` : msg.kind === 'shield' ? `🛡️ ${T('shieldUsed')}` : msg.kind === 'bad' ? (msg.tier != null ? `✘ ${T('tierDown')}: ${tierName(lang, world, msg.tier)}` : '✘') : msg.kind === 'box' ? `🎁 ${T(`box_${msg.tier}`)}` : `🏁 ${T('done')}`
   const noGas = !auto && !(hud?.startIn > 0) && (hud?.speed ?? 0) < 1 && !hud?.holding && !pop && !pick && phase === 'race'
   const baseWorld = world ? WORLD_LIST.find((w) => w.id === world.id) : null
   const nextLevelOk = !!(result && baseWorld && baseWorld.levels[world.levelIndex + 1] && levelUnlocked(useRacingStore.getState().profile(world.id), world.levelIndex + 1, baseWorld.levels))
@@ -583,7 +551,7 @@ export default function RacingDemo() {
               </div>
               <div className="mt-1.5 text-[11px] opacity-60">{q.jumped ? `⚡ ${T('jumpUsed')}` : canJump ? `⚡ ${T('jumpHint')}` : ''}</div>
             </>
-          ) : <div className="mt-2 animate-pulse text-sm font-semibold text-amber-300">🔊 {T('listening')}</div>}
+          ) : <div className="mt-2 flex items-center justify-center gap-3 text-sm font-semibold text-amber-300"><span className="animate-pulse">🔊 {T('listening')}</span><button className="pointer-events-auto rounded-lg bg-white/20 px-3 py-1 text-xs font-bold text-white" onClick={() => { stopVoice(); runRef.current?.game.reveal(q.id) }}>{T('skipNarr')}</button></div>}
         </div>
       )}
 
@@ -596,12 +564,13 @@ export default function RacingDemo() {
             <div key={b.id} className={`flex items-center gap-1.5 py-0.5 ${b.me ? 'font-black text-amber-300' : ''}`}>
               <span className="w-4 text-right opacity-70">{i + 1}</span>
               <span className="h-2 w-2 rounded-full" style={{ background: b.me ? '#fbbf24' : b.color }} />
-              <span className="min-w-0 flex-1 truncate">{b.me ? T('you') : b.name}</span>
+              <span className="min-w-0 flex-1 truncate">{b.me ? (run?.name || T('you')) : b.name}</span>
               {b.finished && <span>🏁</span>}
             </div>
           ))}
         </div>
       )}
+      {!inRoute && <SpeedFx speed={hud?.speed ?? 0} boost={hud?.boost} />}
       {!inRoute && hud?.fxOk > 0 && (
         <div key={hud.fxOk} className="pointer-events-none absolute inset-0" style={{ animation: 'boostflash 0.9s ease-out forwards' }}>
           <style>{'@keyframes boostflash{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.05)}100%{opacity:0;transform:scale(1.3) translateY(-30px)}}'}</style>
@@ -632,7 +601,7 @@ export default function RacingDemo() {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-10 mx-auto flex w-fit flex-col items-center rounded-2xl bg-black/45 px-4 pb-1.5 pt-1 backdrop-blur sm:bottom-7">
-        <Speedo speed={hud?.speed ?? 0} boost={hud?.boost} drifting={hud?.drifting} color={world?.color || '#22d3ee'} />
+        <Speedo vmax={hud?.vmax} speed={hud?.speed ?? 0} boost={hud?.boost} drifting={hud?.drifting} color={world?.color || '#22d3ee'} />
         <div className="-mt-1 text-[11px] opacity-80">✔ {hud?.correct ?? 0} · ✘ {hud?.wrong ?? 0} · ⭐ {hud?.score ?? 0} · {fmtTime(hud?.time ?? 0)}</div>
         {hud?.drifting && <div className="mt-0.5 h-1 w-full rounded bg-white/20"><div className="h-full rounded bg-orange-400" style={{ width: `${Math.min(100, (hud.driftT / 2) * 100)}%` }} /></div>}
       </div>

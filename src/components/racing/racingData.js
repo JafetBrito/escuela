@@ -31,7 +31,9 @@ export const TIERS = 14
 export const MAX_TIER = TIERS - 1
 export const FLY_FROM = 10
 // Velocidad máxima (m/s) según el nivel del vehículo
-export const tierSpeed = (tier) => 36 + tier * 3.2 // más rápido desde el inicio: camilla ≈ 130 km/h, nave espacial ≈ 280 km/h
+// km/h de cada vehículo (0–13): arranca rápido para no aburrir, el 10.º (índice 9) llega a 1000 km/h y los voladores pasan de 1300
+export const TIER_KMH = [130, 150, 175, 205, 245, 295, 360, 450, 600, 1000, 1300, 1650, 2000, 2500]
+export const tierSpeed = (tier) => TIER_KMH[Math.max(0, Math.min(TIER_KMH.length - 1, tier))] / 3.6
 // Dificultad de las preguntas (0–4) que corresponde al nivel del vehículo
 export const lvlOfTier = (tier) => Math.round((tier * 4) / MAX_TIER)
 // Altura de vuelo (m) por nivel

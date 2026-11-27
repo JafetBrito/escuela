@@ -1,12 +1,12 @@
 import * as THREE from 'three'
-import { centerX, centerY, yawAt } from './trackMath'
+import { centerX, centerY, centerZ, yawAt } from './trackMath'
 
-export { SLOPE, centerX, centerY, slopeAt, yawAt, pitchAt } from './trackMath'
+export { SLOPE, centerX, centerY, centerZ, slopeAt, yawAt, pitchAt } from './trackMath'
 
 // Punto del mundo en (s, u) y giro de la pista ahí
 export function frame(s, u = 0, lift = 0, out = { x: 0, y: 0, z: 0, yaw: 0 }) {
   const yaw = yawAt(s), c = Math.cos(yaw), sn = Math.sin(yaw)
-  out.x = centerX(s) + u * c; out.z = -s - u * sn; out.y = centerY(s) + lift; out.yaw = yaw
+  out.x = centerX(s) + u * c; out.z = centerZ(s) - u * sn; out.y = centerY(s) + lift; out.yaw = yaw
   return out
 }
 

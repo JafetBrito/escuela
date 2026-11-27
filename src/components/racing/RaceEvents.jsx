@@ -97,3 +97,68 @@ function RivalCar({ r, world, solid, glow }) {
 export function Rivals({ game, world, solid, glow }) {
   return game.rivals.map((r) => <RivalCar key={r.id} r={r} world={world} solid={solid} glow={glow} />)
 }
+
+// ── Cajas de bonus (?) que giran y flotan, plataformas de impulso con flechas y aros de luz que cruzas a toda velocidad ──
+const BOX_GEO = new THREE.BoxGeometry(1.9, 1.9, 1.9)
+const PAD_GEO = new THREE.BoxGeometry(5.6, 0.14, 7)
+const ARROW_GEO = (() => {
+  const sh = new THREE.Shape(); sh.moveTo(0, 1.8); sh.lineTo(2.1, -0.2); sh.lineTo(2.1, -1.2); sh.lineTo(0, 0.6); sh.lineTo(-2.1, -1.2); sh.lineTo(-2.1, -0.2); sh.closePath()
+  return new THREE.ShapeGeometry(sh).rotateX(-Math.PI / 2) // plana sobre la pista, apuntando hacia delante
+})()
+const HOOP_GEO = new THREE.TorusGeometry(12, 0.32, 8, 44)
+const D3 = new THREE.Object3D(), HC = new THREE.Color()
+const REWARD_COL = { boost: '#22d3ee', power: '#a78bfa', shield: '#4ade80', coins: '#fde047', pad: '#fb923c' }
+
+export function Pickups({ game, world }) {
+  const boxes = useRef(), frames = useRef(), pads = useRef(), arrows = useRef(), hoops = useRef(), seen = useRef(0)
+  const list = useMemo(() => ({ box: game.pickups.filter((p) => p.kind === 'box'), pad: game.pickups.filter((p) => p.kind === 'pad') }), [game])
+  const hoopS = useMemo(() => {
+    const a = []; for (let s = 700; s < game.L - 300; s += 320) if (!game.forks.some((f) => s > f.start - 120 && s < f.start + 330)) a.push(s)
+    return a
+  }, [game])
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime, S = game.s
+    list.box.forEach((p, i) => {
+      const on = !p.taken && p.s > S - 30 && p.s < S + 1400
+      frame(p.s, p.u, 1.9 + Math.sin(t * 2.4 + i) * 0.35, P)
+      D3.position.set(P.x, P.y, P.z); D3.rotation.set(t * 0.9 + i, t * 1.7 + i, 0); D3.scale.setScalar(on ? 1 : 0); D3.updateMatrix()
+      boxes.current.setMatrixAt(i, D3.matrix); frames.current.setMatrixAt(i, D3.matrix)
+      boxes.current.setColorAt(i, HC.setHSL((t * 0.25 + i * 0.13) % 1, 0.9, 0.58))
+    })
+    boxes.current.instanceMatrix.needsUpdate = true; frames.current.instanceMatrix.needsUpdate = true; if (boxes.current.instanceColor) boxes.current.instanceColor.needsUpdate = true
+    list.pad.forEach((p, i) => {
+      const on = !p.taken && p.s > S - 30 && p.s < S + 1400
+      frame(p.s, p.u, 0.09, P)
+      D3.position.set(P.x, P.y, P.z); D3.rotation.set(pitchAt(p.s), P.yaw, 0); D3.scale.setScalar(on ? 1 : 0); D3.updateMatrix()
+      pads.current.setMatrixAt(i, D3.matrix)
+      D3.position.y += 0.1 + 0.03 * Math.sin(t * 8 + i); D3.updateMatrix(); arrows.current.setMatrixAt(i, D3.matrix) // la flecha parpadea
+    })
+    pads.current.instanceMatrix.needsUpdate = true; arrows.current.instanceMatrix.needsUpdate = true
+    const pal = world.missions[game.mission].pal
+    hoopS.forEach((s, i) => {
+      const on = s > S - 20 && s < S + 1100
+      frame(s, 0, 4, P)
+      D3.position.set(P.x, P.y, P.z); D3.rotation.set(pitchAt(s), P.yaw, t * 0.5 + i); D3.scale.setScalar(on ? 1 : 0); D3.updateMatrix()
+      hoops.current.setMatrixAt(i, D3.matrix); hoops.current.setColorAt(i, HC.set(pal.accent).offsetHSL(Math.sin(t * 0.8 + i) * 0.06, 0, 0.05))
+    })
+    hoops.current.instanceMatrix.needsUpdate = true; if (hoops.current.instanceColor) hoops.current.instanceColor.needsUpdate = true
+    if (game.fxBox !== seen.current) { // al recoger: estallido de chispas del color del premio
+      seen.current = game.fxBox
+      const a = game.boxAt
+      if (a) {
+        frame(a.s, a.u, 2, P)
+        const col = REWARD_COL[a.kind === 'pad' ? 'pad' : 'boost']
+        for (let k = 0; k < 26; k++) { const an = (k / 26) * Math.PI * 2; emit(P.x, P.y, P.z, Math.cos(an) * 9, 3 + Math.random() * 5, Math.sin(an) * 9, k % 3 ? col : '#ffffff', 0.3, 0.7) }
+      }
+    }
+  })
+  return (
+    <>
+      <instancedMesh ref={boxes} args={[BOX_GEO, undefined, Math.max(1, list.box.length)]} frustumCulled={false}><meshBasicMaterial toneMapped={false} transparent opacity={0.72} /></instancedMesh>
+      <instancedMesh ref={frames} args={[BOX_GEO, undefined, Math.max(1, list.box.length)]} frustumCulled={false}><meshBasicMaterial color="#ffffff" wireframe toneMapped={false} /></instancedMesh>
+      <instancedMesh ref={pads} args={[PAD_GEO, undefined, Math.max(1, list.pad.length)]} frustumCulled={false}><meshBasicMaterial color="#7c2d12" /></instancedMesh>
+      <instancedMesh ref={arrows} args={[ARROW_GEO, undefined, Math.max(1, list.pad.length)]} frustumCulled={false}><meshBasicMaterial color="#fdba74" toneMapped={false} side={THREE.DoubleSide} /></instancedMesh>
+      <instancedMesh ref={hoops} args={[HOOP_GEO, undefined, Math.max(1, hoopS.length)]} frustumCulled={false}><meshBasicMaterial toneMapped={false} /></instancedMesh>
+    </>
+  )
+}

@@ -8,6 +8,9 @@ import { frame } from './track'
 const COL = new THREE.Color(), COL2 = new THREE.Color(), HSL = { h: 0, s: 0, l: 0 }
 const P = { x: 0, y: 0, z: 0, yaw: 0 }, Q = { x: 0, y: 0, z: 0, yaw: 0 }
 const rnd = (a, b) => a + Math.random() * (b - a)
+// eslint-disable-next-line react-refresh/only-export-components
+export const warpOf = (v) => Math.max(0, Math.min(1, (v - 150) / 130)) // 0 hasta 540 km/h, 1 a 1000 km/h
+const WARP_TOP = new THREE.Color('#12042e'), WARP_HOR = new THREE.Color('#ff3df0')
 
 // ── Cielo: degradado horizonte → cenit (de la paleta de la misión), disco solar y nubes lentas; sigue a la cámara ──
 const SKY_VERT = 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }'
@@ -33,9 +36,10 @@ export function SkyDome({ game, world }) {
     mesh.current.position.copy(state.camera.position)
     if (pal) {
       COL.set(pal.sky); const lum = COL.getHSL(HSL).l
-      uni.uHor.value.lerp(COL2.set(pal.fog), k); uni.uTop.value.lerp(COL.offsetHSL(0.0, 0.05, lum > 0.5 ? -0.16 : 0.05), k)
+      const w = warpOf(game.v)
+      uni.uHor.value.lerp(COL2.set(pal.fog).lerp(WARP_HOR, w * 0.85), k); uni.uTop.value.lerp(COL.offsetHSL(0.0, 0.05, lum > 0.5 ? -0.16 : 0.05).lerp(WARP_TOP, w), k)
       uni.uSunPow.value += (Math.max(0.1, Math.min(1, lum * 1.6)) - uni.uSunPow.value) * k
-      cloudMat.color.lerp(COL2.set(pal.fog).lerp(COL.set('#ffffff'), 0.55), k); cloudMat.opacity += ((lum > 0.35 ? 0.85 : 0.06) - cloudMat.opacity) * k
+      cloudMat.color.lerp(COL2.set(pal.fog).lerp(COL.set('#ffffff'), 0.55), k); cloudMat.opacity += (((lum > 0.35 ? 0.85 : 0.06) * (1 - w * 0.8)) - cloudMat.opacity) * k
     }
     if (clouds.current) { clouds.current.position.set(state.camera.position.x, 0, state.camera.position.z); clouds.current.rotation.y += dt * 0.004 }
   })
@@ -83,7 +87,7 @@ export function Particles({ game, world }) {
       const l = st.lines[i]
       if (l.s0 < game.s - 12) { l.s0 = game.s + rnd(10, 70); l.r = rnd(4.5, 15); l.a = rnd(0, Math.PI * 2) }
       frame(l.s0, game.u * 0.8 + Math.cos(l.a) * l.r, 1.2 + game.alt + Math.sin(l.a) * l.r * 0.55, P)
-      dummy.position.set(P.x, P.y, P.z); dummy.rotation.set(0, P.yaw, 0); dummy.scale.set(0.05, 0.05, Math.max(0.3, game.v * 0.06) * lineK); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix)
+      dummy.position.set(P.x, P.y, P.z); dummy.rotation.set(0, P.yaw, 0); dummy.scale.set(0.05, 0.05, Math.max(0.3, Math.min(20, game.v * 0.06)) * lineK); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix)
     }
     // chispas: derrape (naranja), turbo (cian) y choque (rojo)
     frame(game.s, game.u, game.alt, P)
@@ -96,7 +100,7 @@ export function Particles({ game, world }) {
         sp.life = rnd(0.35, 0.8); sp.x = P.x + rnd(-0.7, 0.7); sp.y = P.y + 0.3 + rnd(0, 0.5); sp.z = P.z + rnd(-0.5, 0.5)
         const back = Math.min(18, game.v * 0.35)
         sp.vx = (bx / bl) * back + rnd(-4, 4); sp.vz = (bz / bl) * back + rnd(-4, 4); sp.vy = rnd(2, 7)
-        sp.c = game.crash > 0 ? '#ff5a3c' : game.drifting ? (Math.random() < 0.5 ? '#ffb347' : '#ffe08a') : '#7df9ff'; sp.sz = rnd(0.12, 0.3)
+        sp.c = game.crash > 0 ? '#ff5a3c' : game.drifting ? (Math.random() < 0.5 ? '#ffb347' : '#ffe08a') : (game.trail || '#7df9ff'); sp.sz = rnd(0.12, 0.3)
       }
     }
     for (let i = 0; i < N_SPARK; i++) {

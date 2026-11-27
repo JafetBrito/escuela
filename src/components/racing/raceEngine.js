@@ -1,5 +1,5 @@
 import { RACE, FORKS, ROUTE, MAX_TIER, trackLength, tierSpeed, lvlOfTier, flyAlt, forkLanes, laneBounds, laneOf, shuffle, POWER_KEYS, MAX_POWERS, routeLength, stationPos } from './racingData.js'
-import { slopeAt } from './trackMath.js'
+import { slopeAt, setTrack } from './trackMath.js'
 
 // Motor de la carrera, SIN React ni three: avanza el estado (distancia s, lado u, velocidad, nivel del vehículo, puntos, poderes) y
 // resuelve las bifurcaciones. La escena, el HUD, la voz y la música solo lo leen (y consumen `drain()`, la cola de eventos). Se prueba
@@ -19,7 +19,8 @@ import { slopeAt } from './trackMath.js'
 // con dificultad por número de bifurcación (todos los jugadores de una misma `seed` reciben lo mismo); `bots` = rivales de IA [{ name, skill, color,
 // char }]; `rivals` = rivales controlados desde fuera (en línea) [{ id, name, color, char }]; `countdown` = segundos de cuenta atrás.
 export function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } }
-export function createRace(world, { rng = Math.random, auto = false, startTier = 0, free = false, fixed = false, bots = [], rivals = [], countdown = 0 } = {}) {
+export function createRace(world, { rng = Math.random, auto = false, startTier = 0, free = false, fixed = false, bots = [], rivals = [], countdown = 0, track = 'classic', bonus = true } = {}) {
+  setTrack(track) // la forma de la pista (curvas y alturas) se fija antes de crear nada
   const L = trackLength(), len = RACE.forkLen
   const forks = free ? [] : Array.from({ length: FORKS }, (_, i) => ({ id: i, start: RACE.firstFork + i * RACE.spacing, n: forkLanes(i), mission: Math.floor(i / RACE.forksPerMission), q: null, asked: false, revealed: false, jumped: false }))
   const missionStarts = Array.from({ length: RACE.missions }, (_, m) => (m === 0 ? 0 : free ? Math.round((L / RACE.missions) * m) : forks[m * RACE.forksPerMission - 1].start + len + 30))
@@ -34,6 +35,18 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     free, startIn: countdown, finishTime: null, rivals: [],
   }
   const botRng = mulberry(Math.floor(rng() * 4294967296))
+  // CAJAS DE BONUS (?) y PLATAFORMAS DE IMPULSO repartidas al azar (con la misma semilla salen en los mismos sitios): una caja da turbo, un poder,
+  // un escudo o puntos; la plataforma da un turbo corto. No hay nada dentro de las zonas de bifurcación.
+  const pkRng = mulberry(Math.floor(rng() * 4294967296))
+  g.pickups = []
+  for (let s = 380, id = 0; s < L - 260; id++) {
+    s += 150 + pkRng() * 260
+    if (forks.some((f) => s > f.start - 90 && s < f.start + len + 30)) continue
+    if (pkRng() < 0.3) g.pickups.push({ id, kind: 'pad', s, u: (pkRng() - 0.5) * 9, taken: false })
+    else { const row = pkRng() < 0.45 ? [-4.6, 0, 4.6] : [(pkRng() - 0.5) * 11]; for (const u of row) g.pickups.push({ id: `${id}.${u}`, kind: 'box', s, u, taken: false, reward: ['boost', 'power', 'shield', 'coins'][Math.floor(pkRng() * 4)] }) }
+  }
+  if (!bonus) g.pickups = []
+  g.pk = 0; g.fxBox = 0; g.boxAt = null // índice de la siguiente por recoger, contador de efectos y dónde se recogió la última
   const mk = (r, i, bot) => ({ id: r.id || `bot${i}`, name: r.name || `Bot ${i + 1}`, color: r.color || '#94a3b8', char: r.char || null, bot, skill: r.skill ?? 0.7, tier: t0, s: 0, u: ((i % 3) - 1) * 3, uv: 0, v: 0, alt: flyAlt(t0), idx: 0, ok: null, evald: false, crash: 0, boost: 0, finished: false, finishT: null })
   g.rivals = [...bots.map((b, i) => mk(b, i, true)), ...rivals.map((r, i) => mk(r, bots.length + i, false))]
   const say = (kind, tier = null) => { g.msg = { kind, tier }; g.msgT = 3.2 } // la interfaz lo traduce
@@ -159,17 +172,19 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
     if (sf && g.s >= sf.start + len + 160) { emit({ type: 'story', mission: sf.mission, beat: sf.id % RACE.forksPerMission }); g.storyIdx++ }
 
     const f = forks[g.idx]
-    if (f && !f.q && g.s >= f.start - RACE.armDist) pick(f)
-    if (f && f.q && !f.asked && g.s >= f.start - RACE.askDist) { f.asked = true; emit({ type: 'ask', fork: f }) }
+    const askD = RACE.askDist + g.v * 5 // a más velocidad, más metros de aviso (≈ 5 s extra)
+    if (f && !f.q && g.s >= f.start - Math.max(RACE.armDist, askD + 100)) pick(f)
+    if (f && f.q && !f.asked && g.s >= f.start - askD) { f.asked = true; if (g.rivals.length) f.revealed = true; emit({ type: 'ask', fork: f }) } // con rivales NO se espera: la pregunta se lee mientras corres
     g.holding = !!(f && f.asked && !f.revealed && g.s >= f.start - RACE.holdDist) // espera en el pórtico a que termine de leerse la pregunta
 
     const vMax = tierSpeed(g.tier) * (g.boost > 0 ? 1.42 : 1) * (g.crash > 0 ? 0.4 : 1)
-    let a = throttle * 21 * Math.max(0, 1 - g.v / vMax) - 0.03 * g.v - slopeAt(g.s) * 9.8 * 0.7 // pendiente: bajar (slope < 0) acelera, subir frena
+    let a = throttle * (21 + vMax * 0.3) * Math.max(0, 1 - g.v / vMax) - 0.03 * g.v - slopeAt(g.s) * 9.8 * 0.7 // pendiente: bajar (slope < 0) acelera, subir frena
     if (g.v > vMax) a -= (g.v - vMax) * 1.5 // pasarse del máximo (turbo, bajada) se va disipando
-    if (brake > 0) a -= 26 * brake
+    if (brake > 0) a -= (26 + vMax * 0.4) * brake
     if (g.holding) a -= 40
     if (g.crash > 0) a -= 8
     g.v = Math.max(0, g.v + a * dt)
+    if (f && f.asked && !f.revealed && g.s < f.start) g.v = Math.min(g.v, Math.sqrt(2 * 110 * Math.max(0, f.start - 6 - g.s))) // sin leer aún: frena a tiempo para esperar en el pórtico, sin pasarte
 
     g.drifting = !!input.drift && Math.abs(steer) > 0.2 && g.v > 14 && g.crash <= 0
     if (g.drifting) g.driftT += dt
@@ -183,7 +198,24 @@ export function createRace(world, { rng = Math.random, auto = false, startTier =
       const target = steer * 13 * (g.drifting ? 1.75 : 1) * Math.min(1.25, Math.max(0.55, g.v / 22))
       g.uv += (target - g.uv) * (1 - Math.exp(-(g.drifting ? 12 : 9) * dt)); g.u += g.uv * dt
     }
+    const s0 = g.s
     g.s += g.v * dt
+    while (g.pk < g.pickups.length && g.pickups[g.pk].s < g.s + 1.5) { // barre lo que cruzaste este cuadro
+      const p = g.pickups[g.pk++]
+      if (p.taken || p.s < s0 - 1.5 || Math.abs(p.u - g.u) > (p.kind === 'pad' ? 3.2 : 2.7) || g.alt > 4) continue // las naves en vuelo alto pasan por encima
+      p.taken = true; g.fxBox++; g.boxAt = { s: p.s, u: p.u, kind: p.kind }
+      if (p.kind === 'pad') { g.boost = Math.max(g.boost, 1.6); g.v *= 1.1; say('box', 'pad'); emit({ type: 'pickup', kind: 'pad' }) }
+      else {
+        let r = p.reward
+        if (r === 'power' && g.powers.length >= MAX_POWERS) r = 'boost'
+        if (r === 'shield' && g.powers.includes('shield')) r = 'coins'
+        if (r === 'boost') { g.boost = Math.max(g.boost, 2.2); g.v *= 1.12 }
+        else if (r === 'power') { g.powers.push(POWER_KEYS[Math.floor(pkRng() * POWER_KEYS.length)]) }
+        else if (r === 'shield') g.powers.push('shield')
+        else g.score += 60 * (g.tier + 1)
+        say('box', r); emit({ type: 'pickup', kind: 'box', reward: r })
+      }
+    }
 
     let lo = -RACE.roadHalf + 0.7, hi = RACE.roadHalf - 0.7
     if (f) {

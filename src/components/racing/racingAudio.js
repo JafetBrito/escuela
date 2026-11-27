@@ -2,7 +2,7 @@
 // hi-hat, bajo y una melodía en escala pentatónica propia de cada mundo (`world.music`). El tempo sube con el nivel del vehículo.
 // El navegador exige un gesto del usuario: `initAudio()` se llama al pulsar "A correr".
 const KEY = 'oliver_racing_prefs'
-export const loadPrefs = () => { try { return { music: true, voice: true, ...JSON.parse(localStorage.getItem(KEY) || '{}') } } catch { return { music: true, voice: true } } }
+export const loadPrefs = () => { try { return { music: true, voice: true, story: true, ...JSON.parse(localStorage.getItem(KEY) || '{}') } } catch { return { music: true, voice: true, story: true } } }
 export const savePrefs = (p) => { try { localStorage.setItem(KEY, JSON.stringify(p)) } catch { /* sin almacenamiento: no pasa nada */ } }
 
 const MUSIC_VOL = 0.3

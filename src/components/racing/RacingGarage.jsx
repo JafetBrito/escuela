@@ -10,13 +10,15 @@ import * as THREE from 'three'
 // en este mundo, y la personalización (pintura, luces y accesorio) que se guarda en tu cuenta (useRacingStore).
 const SOLID = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.85 })
 const GLOW = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false })
+const TRAILS = ['#7df9ff', '#fde047', '#f472b6', '#4ade80', '#fb923c', '#c084fc']
+const WHEELS = ['#ef4444', '#facc15', '#38bdf8', '#e5e7eb', '#a855f7', '#22c55e']
 const PRESETS = {
   medicina: ['#22d3ee', '#ef4444', '#f8fafc', '#22c55e', '#f97316', '#a78bfa'],
   programacion: ['#22c55e', '#38bdf8', '#a855f7', '#facc15', '#ef4444', '#f472b6'],
   filosofia: ['#eab308', '#f5f5f4', '#7c3aed', '#0ea5e9', '#b45309', '#14b8a6'],
 }
 
-function Preview({ world, tier, custom }) {
+export function Preview({ world, tier, custom }) {
   const group = useRef()
   const model = useMemo(() => buildVehicle(world.tiers[tier].kind, world.color, world.emblem, custom), [world, tier, custom])
   useEffect(() => () => { model.solid?.dispose(); model.glow?.dispose() }, [model])
@@ -44,7 +46,7 @@ export default function RacingGarage({ world, lang, onBack, onStart, unlockAll =
   const level = levelOfXp(pr.xp), lo = xpForLevel(level), hi = xpForLevel(level + 1)
   const best = unlockAll ? MAX_TIER : pr.bestTier // en el modo libre están todos los vehículos
   const sel = Math.min(pr.startTier, best)
-  const custom = useMemo(() => ({ color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory, char: pr.custom.char }), [pr.custom.color, pr.custom.glow, pr.custom.accessory, pr.custom.char])
+  const custom = useMemo(() => ({ color: pr.custom.color, glow: pr.custom.glow, accessory: pr.custom.accessory, char: pr.custom.char, wheels: pr.custom.wheels }), [pr.custom.color, pr.custom.glow, pr.custom.accessory, pr.custom.char, pr.custom.wheels])
   const btn = 'rounded-xl px-4 py-2 text-sm font-bold transition active:scale-95'
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b1020] to-[#1a1033] p-3 text-white sm:p-6">
@@ -82,13 +84,23 @@ export default function RacingGarage({ world, lang, onBack, onStart, unlockAll =
                 <label className="ml-2 flex items-center gap-1.5 text-xs">{T('glowC')}<input type="color" className="h-7 w-9 rounded bg-transparent" value={pr.custom.glow || '#ffffff'} onChange={(e) => setCustom(world.id, { glow: e.target.value })} /></label>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="opacity-60">{T('nick')}</span>
+                <input value={pr.custom.name || ''} maxLength={14} placeholder={T('nickPh')} onChange={(e) => { for (const w of Object.keys(PRESETS)) setCustom(w, { name: e.target.value }) }} className="w-40 rounded-lg bg-black/40 px-3 py-1.5 text-sm font-bold" />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="opacity-60">{T('trailC')}</span>
+                {[null, ...TRAILS].map((c) => <button key={c || 'x'} className="h-6 w-6 rounded-full border-2 text-[10px]" style={{ background: c || '#222', borderColor: pr.custom.trail === c ? '#fff' : 'transparent' }} onClick={() => setCustom(world.id, { trail: c })}>{c ? '' : '∅'}</button>)}
+                <span className="ml-3 opacity-60">{T('wheelC')}</span>
+                {[null, ...WHEELS].map((c) => <button key={c || 'x'} className="h-6 w-6 rounded-full border-2 text-[10px]" style={{ background: c || '#23262d', borderColor: pr.custom.wheels === c ? '#fff' : 'transparent' }} onClick={() => setCustom(world.id, { wheels: c })}>{c ? '' : '∅'}</button>)}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                 <span className="opacity-60">{T('pilot')}</span>
                 {CHARACTERS.map((c) => <button key={c.id} className={`flex items-center gap-1 rounded-lg px-2 py-1 font-bold ${pr.custom.char === c.id ? 'bg-white text-black' : 'bg-white/10'}`} onClick={() => setCustom(world.id, { char: c.id })}><span className="h-3.5 w-3.5 rounded-full border border-black/30" style={{ background: c.skin }} />{c.name}</button>)}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
                 <span className="opacity-60">{T('accessory')}</span>
                 {ACCESSORY_LIST.map((a) => <button key={a} className={`rounded-lg px-2.5 py-1 font-bold ${pr.custom.accessory === a ? 'bg-white text-black' : 'bg-white/10'}`} onClick={() => setCustom(world.id, { accessory: a })}>{T(`acc_${a}`)}</button>)}
-                <button className="ml-auto rounded-lg bg-white/10 px-2.5 py-1" onClick={() => setCustom(world.id, { color: null, glow: null, accessory: 'none', char: 'doc' })}>{T('resetC')}</button>
+                <button className="ml-auto rounded-lg bg-white/10 px-2.5 py-1" onClick={() => setCustom(world.id, { color: null, glow: null, accessory: 'none', char: 'doc', trail: null, wheels: null })}>{T('resetC')}</button>
               </div>
             </div>
           </div>

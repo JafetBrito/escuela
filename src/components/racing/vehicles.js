@@ -6,7 +6,8 @@ import { Mesher } from '../vr/campus/mesher'
 const WHEEL = '#23262d', WHITE = '#f4f6f8', STEEL = '#aab2bd', WOOD = '#8a5a34'
 
 // Rueda (cilindro acostado sobre el eje X) con eje en (x, r, z)
-const wheel = (M, x, z, r, w = 0.22) => M.add(new THREE.CylinderGeometry(r, r, w, 12).rotateZ(Math.PI / 2), WHEEL, x, r, z)
+let WH = WHEEL // color de las ruedas (lo fija buildVehicle)
+const wheel = (M, x, z, r, w = 0.22) => M.add(new THREE.CylinderGeometry(r, r, w, 12).rotateZ(Math.PI / 2), WH, x, r, z)
 // Conductor sencillo: torso + cabeza; (x, y, z) = base del torso
 // Pilotos para elegir (fase 4): piel, camisa (si no, el color de la clase) y un detalle en la cabeza. `hat`: cap | hair | helmet | band | crown | ears
 export const CHARACTERS = [
@@ -77,6 +78,8 @@ Object.assign(KINDS, {
 const ACCESSORIES = {
   flag(M, G, c, glow) { M.cyl(0, 0.2, 1.7, 0.05, 2.4, 5, STEEL); G.box(0.4, 2.2, 1.7, 0.8, 0.5, 0.05, glow || c) },
   antenna(M, G, c, glow) { M.cyl(0.6, 0.3, 1.5, 0.04, 2.0, 5, STEEL); G.ball(0.6, 2.4, 1.5, 0.15, glow || '#ff3b3b') },
+  spoiler(M, G, c, glow) { M.box(0, 1.25, 1.35, 1.5, 0.08, 0.45, c); for (const sx of [-1, 1]) M.box(sx * 0.6, 1.0, 1.35, 0.07, 0.45, 0.07, STEEL); G.box(0, 1.29, 1.6, 1.5, 0.04, 0.06, glow || '#ffffff') },
+  halo(M, G, c, glow) { G.add(new THREE.TorusGeometry(0.95, 0.05, 6, 28).rotateX(Math.PI / 2), glow || c, 0, 2.7, 0.2) },
   wings(M, G, c, glow) { for (const sx of [-1, 1]) { M.box(sx * 1.2, 0.9, 1.5, 1.2, 0.08, 0.8, c, sx * 0.3); G.box(sx * 1.75, 0.9, 1.5, 0.08, 0.1, 0.8, glow || '#ffffff', sx * 0.3) } },
 }
 export const ACCESSORY_LIST = ['none', ...Object.keys(ACCESSORIES)]
@@ -85,6 +88,7 @@ export const ACCESSORY_LIST = ['none', ...Object.keys(ACCESSORIES)]
 export function buildVehicle(kind, accent, emblemKind, custom = {}) {
   const color = custom.color || accent, glow = custom.glow || null
   CH = CHARACTERS.find((c) => c.id === custom.char) || CHARACTERS[0]
+  WH = custom.wheels || WHEEL
   const M = new Mesher(), G = new Mesher();
   (KINDS[kind] || KINDS.car)(M, G, color)
   if (!['ambulance', 'turbo', 'car', 'van', 'sports', 'plane', 'spaceship', 'hovercar'].includes(kind)) emblem(G, emblemKind, 0, 1.05, 0.9, 0.5, color) // distintivo pequeño en los demás

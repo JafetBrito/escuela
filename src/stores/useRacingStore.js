@@ -3,7 +3,7 @@ import { create } from 'zustand'
 // Perfil de Oliver Racing, por mundo (medicina, programacion, filosofia): XP, nivel, el vehículo más alto alcanzado (`bestTier`,
 // desbloquea ese y todos los anteriores), estadísticas, el vehículo elegido para empezar y la personalización. Se guarda en el snapshot de la
 // cuenta (progressSnapshot → `racing`), igual que el descubrimiento de zonas.
-const EMPTY = () => ({ xp: 0, bestTier: 0, runs: 0, correct: 0, wrong: 0, bestScore: 0, startTier: 0, levels: {}, custom: { color: null, glow: null, accessory: 'none', char: 'doc' } })
+const EMPTY = () => ({ xp: 0, bestTier: 0, runs: 0, correct: 0, wrong: 0, bestScore: 0, startTier: 0, levels: {}, custom: { color: null, glow: null, accessory: 'none', char: 'doc', name: '', trail: null, wheels: null } })
 // Estrellas de un nivel según los aciertos de 12: ⭐ 6+, ⭐⭐ 9+, ⭐⭐⭐ 11+. El nivel siguiente se desbloquea con al menos 1 estrella.
 export const starsOf = (correct) => (correct >= 11 ? 3 : correct >= 9 ? 2 : correct >= 6 ? 1 : 0)
 export const levelUnlocked = (profile, i, levels) => i === 0 || (profile.levels?.[levels[i - 1]?.id]?.stars || 0) >= 1

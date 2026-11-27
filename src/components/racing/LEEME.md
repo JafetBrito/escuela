@@ -41,3 +41,10 @@ Carrera 3D estilo Tux Racer donde **el mundo (profesión) que eliges define las 
 **Efectos de respuesta:** los carriles incorrectos se derrumban (losas de 20 m, `CollapseLanes`), un acierto lanza anillos de energía + "⚡ BOOST" (`EnergyBurst`, `game.fxOk`) y da turbo ×1.42 durante 2.6 s. La ruta de repaso va a 255 km/h (`ROUTE.vmax`) con estaciones cada 1 km.
 **Fase 5 — Pistas y arte.** Más variación procedural (saltos, rampas, túneles, tramos de vuelo con más control), mejores gráficos y partículas, más música por mundo, **modelos 3D del campus** como decorado grande, y **editor de pistas/modelos** como el de mapas (`/vr/editor`).
 **Contenido:** más niveles por mundo (≥ 30 preguntas c/u) y traducir las 90 preguntas y las 9 misiones a EN/FR (usa el editor).
+
+## Pulido 2026-11-26
+- **Historia vs preguntas:** la pregunta corta la historia (`speak now`), la historia se apaga con 📖 (pref `story`) y nunca suena contra rivales; con rivales la pregunta se lee en marcha (sin esperar en el pórtico). Botón "Saltar" mientras se espera la lectura. A velocidad alta el vehículo frena a tiempo con un tope de velocidad por distancia (`g.v ≤ √(2·110·dist)`) y la pregunta se anuncia con `askDist + v·5` m.
+- **Velocidades** (`TIER_KMH` en racingData): 130 → 1000 km/h en el vehículo 10 (índice 9) → 2500 km/h. Aceleración, freno, cámara, FOV y niebla escalan con la velocidad. Sobre ~540 km/h entra el **modo hipervelocidad** (`warpOf`): cielo violeta/rosa, bloom, aberración cromática, vibración y rayos en pantalla (`SpeedFx`).
+- **Pistas** (`trackMath.TRACKS`): classic, serpiente, montaña rusa, gran curva. La pista se define por rumbo `yaw(s)` integrado (curvas reales); `setTrack(id)` se llama desde `createRace({track})`. Radio mínimo ≈ 300 m (el terreno mide 350 m a cada lado).
+- **Cajas de bonus `?`, plataformas de impulso y aros de luz** (`Pickups` en RaceEvents.jsx; engine `g.pickups`, opción `bonus:false` en pruebas).
+- **Personalización:** apodo, estela, ruedas, accesorios alerón y halo. **Menú nuevo** `RacingMenu.jsx` (pestañas Mundo / Modo / Pista, vehículo en 3D, botón ¡CORRER!).

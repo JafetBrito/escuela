@@ -8,12 +8,12 @@ const seeded = (seed) => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4
 
 // Corre una carrera con un "jugador" que acelera siempre, "lee" cada pregunta al instante (reveal) y va al carril `pick(fork)`
 function run(world, pick, { rng = seeded(7), maxMin = 30 } = {}) {
-  const g = createRace(world, { rng }), log = []
+  const g = createRace(world, { rng, bonus: false }), log = []
   for (let i = 0; i < 60 * 60 * maxMin && !g.finished; i++) {
     const f = g.forks[g.idx]
     if (f && f.asked) g.reveal(f.id)
     if (g.choosing) g.addPower(g.choosing[0])
-    const want = f && f.q && g.s > f.start - 70 ? laneBounds(f.n, pick(f)).center : 0
+    const want = f && f.q && g.s > f.start - 70 - g.v * 1.5 ? laneBounds(f.n, pick(f)).center : 0
     g.step(1 / 60, { throttle: 1, steer: Math.abs(want - g.u) > 0.4 ? Math.sign(want - g.u) : 0 })
     for (const e of g.drain()) log.push(e)
   }
@@ -50,7 +50,7 @@ for (const world of Object.keys(WORLDS).map(V)) {
 
 // Salto: una vez por pregunta, solo cuando ya se reveló, y lleva al carril correcto
 {
-  const g = createRace(V('programacion'), { rng: seeded(11) })
+  const g = createRace(V('programacion'), { rng: seeded(11), bonus: false })
   let jumps = 0
   for (let i = 0; i < 60 * 600 && g.idx === 0; i++) {
     g.step(1 / 60, { throttle: 1 })
@@ -67,18 +67,18 @@ for (const world of Object.keys(WORLDS).map(V)) {
 
 // Sin acelerar el vehículo se detiene; en el pórtico espera a que se lea la pregunta; el derrape da mini-turbo
 {
-  const g = createRace(V('filosofia'), { rng: seeded(5) })
+  const g = createRace(V('filosofia'), { rng: seeded(5), bonus: false })
   for (let i = 0; i < 60 * 8; i++) g.step(1 / 60, { throttle: 1 })
   assert.ok(g.v > 10, 'acelerando avanza')
   const s0 = g.s
   for (let i = 0; i < 60 * 60; i++) g.step(1 / 60, { throttle: 0, brake: 1 })
   assert.ok(g.v < 0.5 && g.s - s0 < 400, 'sin acelerar se detiene')
-  const h = createRace(V('filosofia'), { rng: seeded(5) })
+  const h = createRace(V('filosofia'), { rng: seeded(5), bonus: false })
   for (let i = 0; i < 60 * 120 && h.s < h.forks[0].start - 20; i++) h.step(1 / 60, { throttle: 1 })
   for (let i = 0; i < 60 * 20; i++) h.step(1 / 60, { throttle: 1 })
   assert.ok(h.holding && h.v < 0.5 && h.s < h.forks[0].start, 'espera en el pórtico sin revelar')
   h.reveal(0); h.step(1 / 60, { throttle: 1 }); assert.equal(h.holding, false)
-  const d = createRace(V('medicina'), { rng: seeded(9) })
+  const d = createRace(V('medicina'), { rng: seeded(9), bonus: false })
   for (let i = 0; i < 60 * 8; i++) d.step(1 / 60, { throttle: 1 })
   for (let i = 0; i < 60 * 1.5; i++) d.step(1 / 60, { throttle: 1, steer: 1, drift: true })
   assert.ok(d.drifting); d.step(1 / 60, { throttle: 1, steer: 0, drift: false }); assert.ok(d.boost > 0, 'soltar el derrape da mini-turbo')
@@ -87,7 +87,7 @@ console.log('ok · salto, parada, espera en el pórtico y derrape')
 
 // 14 vehículos: empezar en un nivel alto da vehículo y preguntas más difíciles
 {
-  const g = createRace(V('medicina'), { rng: seeded(2), startTier: 9 })
+  const g = createRace(V('medicina'), { rng: seeded(2), startTier: 9, bonus: false })
   assert.equal(g.tier, 9); assert.equal(g.startTier, 9)
   assert.equal(createRace(V('medicina'), { startTier: 99 }).tier, MAX_TIER, 'tope en el último vehículo')
   assert.equal(V('medicina').tiers.length, 14); assert.equal(V('medicina').tiers[13].kind, 'spaceship'); assert.equal(V('medicina').tiers[12].kind, 'plane')
@@ -95,7 +95,7 @@ console.log('ok · salto, parada, espera en el pórtico y derrape')
 
 // Poderes: el escudo absorbe una trampa (sin bajar de nivel), el nitro da turbo, la pista solo con la pregunta revelada
 {
-  const g = createRace(V('medicina'), { rng: seeded(21), startTier: 4 })
+  const g = createRace(V('medicina'), { rng: seeded(21), startTier: 4, bonus: false })
   g.addPower('shield'); g.addPower('nitro'); g.addPower('hint')
   assert.equal(g.powers.length, 3)
   assert.equal(g.usePower(2), false, 'la pista no se puede usar antes de que haya pregunta revelada')
@@ -105,7 +105,7 @@ console.log('ok · salto, parada, espera en el pórtico y derrape')
   for (let i = 0; i < 60 * 900 && !ans; i++) {
     const f = g.forks[g.idx]; if (f && f.asked) g.reveal(f.id)
     if (g.choosing) g.addPower('shield')
-    const want = f && f.q && g.s > f.start - 70 ? laneBounds(f.n, (f.q.correct + 1) % f.n).center : 0 // va al carril equivocado
+    const want = f && f.q && g.s > f.start - 70 - g.v * 1.5 ? laneBounds(f.n, (f.q.correct + 1) % f.n).center : 0 // va al carril equivocado
     g.step(1 / 60, { throttle: 1, steer: Math.abs(want - g.u) > 0.4 ? Math.sign(want - g.u) : 0 })
     ans = g.drain().find((e) => e.type === 'answer')
   }
@@ -114,7 +114,7 @@ console.log('ok · salto, parada, espera en el pórtico y derrape')
 
 // Ruta de repaso: NO se detiene en las estaciones (el narrador las cuenta mientras avanzas); al final espera solo si falta contar la última
 {
-  const g = createRace(V('medicina'), { rng: seeded(8) })
+  const g = createRace(V('medicina'), { rng: seeded(8), bonus: false })
   for (let i = 0; i < 60 * 40; i++) { g.step(1 / 60, { throttle: 1 }); if (g.choosing) g.addPower('nitro'); const f = g.forks[0]; if (f.q && f.asked) { g.reveal(0); break } }
   const q = g.forks[0].q, s0 = g.s, u0 = g.u
   assert.ok(g.startDetour(q), 'abre la ruta'); assert.equal(g.startDetour(q), false, 'no se abre otra encima')
@@ -159,4 +159,36 @@ console.log('ok · 14 vehículos, poderes, historias y ruta de repaso sin parada
   assert.ok(top.finishT < low.finishT, 'el bot hábil termina antes que el torpe')
   assert.equal(g.board().length, 3)
   console.log('ok · modo libre, semilla compartida, rivales de IA y cuenta atrás')
+}
+
+// Pistas: cada una cambia de rumbo sin curvas imposibles, avanza siempre hacia delante y pasa por el origen en s = 0
+{
+  const { TRACKS, setTrack, centerX, centerZ, yawAt } = await import('./trackMath.js')
+  for (const id of Object.keys(TRACKS)) {
+    setTrack(id)
+    assert.ok(Math.abs(centerX(0)) < 1e-6 || id === 'classic', `${id}: pasa por el origen`)
+    let maxCurv = 0, minDz = Infinity, maxYaw = 0
+    for (let s = 0; s < 15000; s += 5) { maxCurv = Math.max(maxCurv, Math.abs(yawAt(s + 1) - yawAt(s))); minDz = Math.min(minDz, centerZ(s) - centerZ(s + 5)); maxYaw = Math.max(maxYaw, Math.abs(yawAt(s))) }
+    assert.ok(id === 'classic' || maxCurv < 0.0034, `${id}: radio de curva ≥ 300 m (${maxCurv.toFixed(4)})`)
+    assert.ok(minDz > 0, `${id}: la pista siempre avanza hacia delante`)
+    const g = createRace(V('medicina'), { rng: seeded(2), track: id, free: true, startTier: 9 })
+    for (let i = 0; i < 60 * 600 && !g.finished; i++) g.step(1 / 60, { throttle: 1 })
+    assert.ok(g.finished, `${id}: se puede terminar`)
+    console.log(`ok pista ${id} · giro máx ${(maxYaw * 57.3).toFixed(0)}° · ${(g.time).toFixed(0)} s a 1000 km/h`)
+  }
+  setTrack('classic')
+}
+
+import { mulberry } from './raceEngine.js'
+// Cajas de bonus: hay muchas, no caen en bifurcaciones, son iguales con la misma semilla y se recogen al pasar por encima
+{
+  const a = createRace(V('medicina'), { rng: mulberry(5), fixed: true }), b = createRace(V('medicina'), { rng: mulberry(5), fixed: true })
+  assert.ok(a.pickups.length > 40, `hay cajas y plataformas (${a.pickups.length})`)
+  assert.deepEqual(a.pickups.map((p) => [p.kind, p.s | 0]), b.pickups.map((p) => [p.kind, p.s | 0]), 'mismos lugares con la misma semilla')
+  assert.ok(a.pickups.every((p) => !a.forks.some((f) => p.s > f.start - 90 && p.s < f.start + 230)), 'ninguna dentro de una bifurcación')
+  const g = createRace(V('medicina'), { rng: mulberry(5), free: true, startTier: 3 })
+  const first = g.pickups.find((p) => p.kind === 'box'); let got = null
+  for (let i = 0; i < 60 * 200 && !got; i++) { g.step(1 / 60, { throttle: 1, steer: Math.abs(first.u - g.u) > 0.3 ? Math.sign(first.u - g.u) : 0 }); got = g.drain().find((e) => e.type === 'pickup') }
+  assert.ok(got && g.fxBox > 0, 'recoge una caja al pasar por encima')
+  console.log(`ok · ${a.pickups.length} cajas y plataformas, recogida correcta`)
 }
